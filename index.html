@@ -239,7 +239,7 @@ async function saveBoxAsJpgVisible(id, filename){
   composed.height = canvas.height + margin*3 + titleHeight;
   const ctx = composed.getContext('2d');
   ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,composed.width,composed.height);
-  ctx.fillStyle = '#000000'; ctx.font = 'bold 20px system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillStyle = '#000000'; ctx.font = 'bold 35px system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='top';
   ctx.fillText('Thailand Guide - Supplier By Ye', composed.width/2, margin);
   ctx.drawImage(canvas, margin, margin*2 + titleHeight);
 
