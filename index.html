@@ -140,6 +140,7 @@
       <div class="card">
         <p class="font-semibold mb-2">QR Select (Normal / Big auto)</p>
         <select id="qrSelect" class="w-full border rounded p-2"></select>
+
         <p class="muted mt-2">Normal: <span class="font-mono" id="qrPathNormal"></span></p>
         <p class="muted mt-1">Big: <span class="font-mono" id="qrPathBig"></span></p>
 
@@ -218,8 +219,8 @@
           </div>
         </div>
 
-        <p id="qrPreviewName" class="font-semibold text-center mt-3"></p>
-        <p id="qrOwnerName" class="text-center text-slate-700 mt-1">
+        <!-- ✅ FILE NAME မပြတော့ဘူး -->
+        <p id="qrOwnerName" class="text-center text-slate-700 mt-3">
           အကောင့်ရှင်အမည်: <span class="font-semibold" id="qrOwnerValue">—</span>
         </p>
 
@@ -299,19 +300,21 @@ $('#rate100k').value = '820';
 syncFrom100k();
 recalc();
 
-/* ================= QR setup ================= */
-/* Normal QR: assets/qr/xxx.jpg
-   Big QR:    assets/qr_big/xxx_big.jpg   (optional) */
+/* ================= QR setup =================
+   Normal QR: assets/qr/xxx.jpg
+   Big QR:    assets/qr_big/xxx_big.jpg   (optional)
+*/
 const QR_BASE_NORMAL = 'assets/qr/';
 const QR_BASE_BIG    = 'assets/qr_big/';
 
+/* ✅ ဒီ list ကို မင်း repo ဖိုင်နာမည်တွေနဲ့ တိတိကျကျညှိချင်ရင် ဒီနေရာပဲပြင် */
 const QR_FILES = [
   "hba.jpg","hbq.jpg","hkqr.jpg","ht7.jpg","tkpayq.jpg",
   "yba.jpg","ybq.jpg","yka.jpg","ykpayq.jpg","ykq.jpg",
   "yktba.jpg","yktbq.jpg","ysa.jpg","yt7.jpg","ytq.jpg","ywaveq.jpg"
 ].sort((a,b)=>{
-  const ay=a.startsWith('y');
-  const by=b.startsWith('y');
+  const ay=a.toLowerCase().startsWith('y');
+  const by=b.toLowerCase().startsWith('y');
   if(ay && !by) return -1;
   if(!ay && by) return 1;
   return a.localeCompare(b);
@@ -334,7 +337,6 @@ for(const f of QR_FILES){
 }
 
 let CURRENT_QR = {
-  label: '',
   owner: '',
   urlNormal: null,
   urlBig: null,
@@ -352,30 +354,25 @@ function probeImage(url){
 
 async function refreshQrPreview(){
   const file = qrSelect.value;
-  const label = qrSelect.options[qrSelect.selectedIndex].text; // no ext
+  const labelNoExt = qrSelect.options[qrSelect.selectedIndex].text; // no ext
   const normalUrl = new URL(QR_BASE_NORMAL + file, window.location.href).href;
 
-  // build big filename: xxx_big.jpg
+  // big filename: xxx_big.jpg
   const baseName = file.replace(/\.[^.]+$/,''); // xxx
   const bigFile = baseName + '_big.jpg';
   const bigUrl = new URL(QR_BASE_BIG + bigFile, window.location.href).href;
 
-  // owner
-  const owner = getOwnerFromKey(label);
+  const owner = getOwnerFromKey(labelNoExt);
 
-  // show paths
   document.getElementById('qrPathNormal').textContent = QR_BASE_NORMAL + file;
   document.getElementById('qrPathBig').textContent = QR_BASE_BIG + bigFile;
 
-  // silently check big exists (NO error text)
   const hasBig = await probeImage(bigUrl);
 
-  CURRENT_QR = { label, owner, urlNormal: normalUrl, urlBig: bigUrl, hasBig };
+  CURRENT_QR = { owner, urlNormal: normalUrl, urlBig: bigUrl, hasBig };
 
-  document.getElementById('qrPreviewName').textContent = label;
   document.getElementById('qrOwnerValue').textContent = owner;
 
-  // UI: if big exists show 2; else show 1 big centered (using normal)
   const previewTwo = document.getElementById('previewTwo');
   const previewOne = document.getElementById('previewOne');
 
@@ -526,7 +523,7 @@ async function saveSectionAsJpeg(sectionId, filename){
 
     const img = document.createElement('img');
     img.alt = 'Bank QR';
-    img.style.width = '420px';          // ✅ bigger in export
+    img.style.width = '420px';
     img.style.maxWidth = '95%';
     img.style.margin = '10px auto 0';
     img.style.border = '1px solid #e5e7eb';
@@ -538,17 +535,12 @@ async function saveSectionAsJpeg(sectionId, filename){
     const useUrl = CURRENT_QR.hasBig ? CURRENT_QR.urlBig : CURRENT_QR.urlNormal;
     img.src = useUrl + (useUrl.includes('?')?'&':'?') + 'v=' + Date.now();
 
-    const name = document.createElement('p');
-    name.className = 'font-semibold mt-3';
-    name.textContent = CURRENT_QR.label;
-
     const owner = document.createElement('p');
-    owner.className = 'mt-1 text-slate-700';
+    owner.className = 'mt-3 text-slate-700';
     owner.innerHTML = `အကောင့်ရှင်အမည်: <span style="font-weight:800">${CURRENT_QR.owner}</span>`;
 
     wrap.appendChild(title);
     wrap.appendChild(img);
-    wrap.appendChild(name);
     wrap.appendChild(owner);
     clone.appendChild(wrap);
 
