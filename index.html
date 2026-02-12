@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="my">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MMK ↔ THB Calculator + Bank QR + Save JPEG</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MMK ↔ THB Calculator + Save JPEG + Bank QR</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -12,22 +12,25 @@
     body { background:#f0f4f8; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
     header { background:linear-gradient(to right,#2563eb,#10b981); color:white; padding:1.2rem; text-align:center; border-radius:0.7rem; margin-bottom:1rem; }
     .box { background:white; border-radius:1rem; box-shadow:0 2px 8px rgba(0,0,0,0.1); padding:1.25rem; margin-bottom:1.25rem; }
-    .label { font-size:1.1rem; font-weight:700; display:inline-flex; align-items:center; gap:.5rem; }
-    input, output, select { font-size:1.1rem; font-weight:600; }
+    .label { font-size:1.1rem; font-weight:800; display:inline-flex; align-items:center; gap:.5rem; }
+    input, output, select { font-size:1.08rem; font-weight:700; }
     .sub { font-size:0.85rem; color:#4b5563; margin-bottom:0.3rem; }
-    .rate-note { font-size:0.9rem; color:#6b7280; margin-top:0.4rem; font-weight:700; }
+    .rate-note { font-size:0.9rem; color:#6b7280; margin-top:0.4rem; font-weight:800; }
     .thanks { color:#059669; font-size:0.85rem; margin-top:0.6rem; }
-    .btn { border-radius:0.75rem; border:none; background:#1f2937; color:white; padding:0.55rem 0.9rem; font-size:0.9rem; cursor:pointer; transition:background .2s, transform .05s; }
+    .btn { border-radius:0.75rem; border:none; background:#111827; color:white; padding:0.55rem 0.9rem; font-size:0.95rem; cursor:pointer; transition:background .2s, transform .05s; }
     .btn:hover { background:#0f172a; } .btn:active { transform:translateY(1px); }
     .flag { width:20px; height:auto; border-radius:2px; display:inline-block; }
     .card { border:1px solid #e5e7eb; border-radius:16px; padding:14px; background:#fff; }
-    .export-block { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #cbd5e1; text-align:center; }
     .muted { color:#64748b; font-size:0.9rem; }
+    .export-block { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #cbd5e1; text-align:center; }
+    .ok { display:inline-flex; align-items:center; gap:8px; color:#334155; }
+    .ok .tick { width:18px; height:18px; border-radius:4px; background:#16a34a; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; }
+    .bad { display:inline-flex; align-items:center; gap:8px; color:#b91c1c; }
+    .bad .x { width:18px; height:18px; border-radius:4px; background:#ef4444; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; }
   </style>
 </head>
 
 <body class="p-4">
-
 <header>
   <h1 class="text-2xl font-bold">MMK ↔ THB ငွေလဲတွက်ချက်ခြင်း</h1>
   <p class="text-sm">MMK ↔ THB Exchange Calculator</p>
@@ -128,40 +131,24 @@
     <button id="btnSave2" type="button" class="btn mt-3">Save JPEG</button>
   </section>
 
-  <!-- 4) Save JPEG + Bank QR UI -->
+  <!-- 4) Save JPEG + Bank QR (ပုံ(၁) လို) -->
   <section class="box">
     <h2 class="text-lg font-semibold mb-1">Save JPEG + Bank QR</h2>
-    <p class="sub">QR / Bank Info / မပါ — တစ်ခုတည်းပဲရွေးနိုင်</p>
+    <p class="sub">QR / Bank Info / မပါ — တစ်ခုတည်းရွေးနိုင်</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
 
-      <!-- Left -->
+      <!-- LEFT -->
       <div class="card">
         <p class="font-semibold mb-2">QR Select</p>
         <select id="qrSelect" class="w-full border rounded p-2"></select>
-        <p id="qrStatus" class="muted mt-2"></p>
+
+        <div class="mt-2" id="qrStatus"></div>
 
         <hr class="my-3">
 
         <p class="font-semibold mb-2">Bank Info Select</p>
         <select id="bankSelect" class="w-full border rounded p-2"></select>
-
-        <div id="bankInfoBox" class="mt-3 border rounded-xl p-3 bg-white hidden">
-          <div class="flex items-center gap-3">
-            <img id="bankLogo" alt="logo" class="rounded-md border bg-white" style="width:44px;height:44px;object-fit:cover;">
-            <div>
-              <p id="bankNameText" class="font-bold"></p>
-              <p class="text-xs text-slate-500">Selected Bank</p>
-            </div>
-          </div>
-
-          <div class="mt-3 text-sm text-slate-700">
-            <div>ဘဏ်အကောင့်နာမည်: <span id="bankAccName" class="font-semibold"></span></div>
-            <div class="mt-1">ဘဏ်အကောင့်နံပါတ်: <span id="bankAccNo" class="font-semibold font-mono"></span></div>
-          </div>
-        </div>
-
-        <p id="bankInfoStatus" class="muted mt-2"></p>
 
         <hr class="my-3">
 
@@ -171,32 +158,38 @@
           <input type="radio" name="saveMode" value="none" checked>
           <span>မပါ (Default)</span>
         </label>
+
         <label class="flex items-center gap-2 mt-1">
-          <input type="radio" name="saveMode" value="bank">
-          <span>Bank Info ပဲပါ</span>
-        </label>
-        <label class="flex items-center gap-2 mt-1">
-          <input type="radio" name="saveMode" value="qr">
-          <span>QR ပဲပါ</span>
+          <input type="radio" name="saveMode" value="bankinfo">
+          <span>Bank Info ပဲ</span>
         </label>
 
-        <p class="text-xs text-slate-500 mt-2">
-          Note: Radio သုံးထားလို့ တစ်ခုတည်းပဲရွေးနိုင်ပါတယ် (နှစ်ခုလုံးမပါ / နှစ်ခုလုံးပါ မဖြစ်)
+        <label class="flex items-center gap-2 mt-1">
+          <input type="radio" name="saveMode" value="qr">
+          <span>QR ပဲ</span>
+        </label>
+
+        <p class="text-xs text-slate-500 mt-3">
+          Note: QR `_big` မရှိရင် ERROR မပြပါဘူး။ ရိုးရိုးပုံကိုပဲ အသုံးပြုပါတယ်။
         </p>
       </div>
 
-      <!-- Right Preview -->
-      <div class="card text-center">
-        <p class="font-semibold">QR Preview</p>
-        <img id="qrPreview" alt="QR Preview" class="mx-auto mt-2 rounded-xl border bg-white"
-             style="width:220px; height:220px; object-fit:contain;">
-        <p id="qrPreviewName" class="font-semibold mt-2"></p>
+      <!-- RIGHT -->
+      <div class="card">
+        <p class="font-semibold text-center">QR Preview</p>
 
-        <div class="mt-4 border-t pt-3 text-left">
-          <p class="font-semibold text-center">Bank Info Preview</p>
-          <div id="bankPreviewMini" class="text-sm text-slate-700 mt-2">
-            ဘဏ်မရွေးထားသေးပါ။
-          </div>
+        <div class="mt-3 border rounded-2xl p-3 bg-white">
+          <img id="qrPreviewImg" alt="QR Preview"
+               class="mx-auto rounded-xl border bg-white"
+               style="width:260px;height:260px;object-fit:contain;">
+        </div>
+        <p id="qrPreviewLabel" class="text-center font-semibold mt-2"></p>
+
+        <hr class="my-4">
+
+        <p class="font-semibold text-center">Bank Info Preview</p>
+        <div id="bankPreviewMini" class="text-sm text-slate-700 mt-2 text-center">
+          ဘဏ်မရွေးထားသေးပါ။
         </div>
       </div>
 
@@ -219,6 +212,7 @@ const parseNum = v => {
 };
 const fmt0ceil = n => new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.ceil(n));
 const fmt6 = n => new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:6}).format(n);
+const cacheBust = () => '?v=' + Date.now();
 
 /* ================= calculator ================= */
 function getRate(){
@@ -268,164 +262,273 @@ $('#rate100k').value = '820';
 syncFrom100k();
 recalc();
 
-/* ================= QR setup ================= */
-const QR_BASE = 'assets/qr/'; // ✅ new hosting (relative)
-const QR_FILES = [
-  "hba.jpg","hbq.jpg","hkqr.jpg","ht7.jpg","tkpayq.jpg",
-  "yba.jpg","ybq.jpg","yka.jpg","ykpayq.jpg","ykq.jpg",
-  "yktba.jpg","yktbq.jpg","ysa.jpg","yt7.jpg","ytq.jpg","ywaveq.jpg"
-].sort((a,b)=>{
-  const ay=a.startsWith('y');
-  const by=b.startsWith('y');
-  if(ay && !by) return -1;
-  if(!ay && by) return 1;
-  return a.localeCompare(b);
-});
+/* ================= DATA ================= */
+const QR_BASE = 'assets/qr/';
+const LOGO_BASE = 'assets/logo/';
 
-const qrSelect = document.getElementById('qrSelect');
-for(const f of QR_FILES){
-  const o=document.createElement('option');
-  o.value=f;
-  o.textContent=f.replace(/\.[^.]+$/,'');
-  qrSelect.appendChild(o);
-}
+/* ✅ QR file names (lowercase) */
+const QR_LIST = [
+  "hba","hbq","hkq","ht7","tkpayq",
+  "yba","ybq","yka","ykpayq","ykq",
+  "yktba","yktbq","ysa","yt7","ytq","ywaveq"
+];
 
-let CURRENT_QR_URL = null;
-let CURRENT_QR_LABEL = '';
-
-function refreshQrPreview(){
-  const file = qrSelect.value;
-  const label = qrSelect.options[qrSelect.selectedIndex].text;
-  CURRENT_QR_LABEL = label;
-
-  document.getElementById('qrPreviewName').textContent = label;
-
-  const url = new URL(QR_BASE + file, window.location.href).href;
-  CURRENT_QR_URL = url;
-
-  const img = document.getElementById('qrPreview');
-  document.getElementById('qrStatus').textContent = 'QR တင်နေပါတယ်...';
-
-  img.onload = () => document.getElementById('qrStatus').textContent = 'OK ✅ Found';
-  img.onerror = () => document.getElementById('qrStatus').textContent = `မတွေ့ ❌ (${QR_BASE}${file})`;
-
-  img.src = url + (url.includes('?')?'&':'?') + 'v=' + Date.now();
-}
-qrSelect.addEventListener('change', refreshQrPreview);
-refreshQrPreview();
-
-/* ================= BANK INFO (your data) ================= */
+/* ✅ Bank Info (your latest) */
 const BANK_INFO = {
-  KTB: {
-    name: "Krungthai Bank",
-    logo: "assets/logo/krungthai.jpg",
-    accName: "YE LYNN HTUN",
-    accNo: "4970619778"
-  },
-  BBL: {
-    name: "Bangkok Bank",
-    logo: "assets/logo/bangkok.jpg",
-    accName: "YE LYNN HTUN",
-    accNo: "229-4-266305"
-  },
-  KBZ: {
-    name: "KBZ Bank",
-    logo: "assets/logo/kbz.jpg",
-    accName: "YE LYNN HTUN",
-    accNo: "1911 3720 2003 6190 1"
-  },
-  KPAY_YLH: {
-    name: "KPay - YLH",
-    logo: "assets/logo/kpay.jpg",
-    accName: "YE LYNN HTUN",
-    accNo: "09262712854"
-  },
-  KPAY_TDW: {
-    name: "KPay - TDW",
-    logo: "assets/logo/kpay.jpg",
-    accName: "THIDAR WIN",
-    accNo: "09452341813"
-  },
-  KPAY_HSA: {
-    name: "KPay - HSA",
-    logo: "assets/logo/kpay.jpg",
-    accName: "HEIN SET AUNG",
-    accNo: "09264947944"
-  },
-  KPLUS: {
-    name: "Karsikorn - ကာစီကွန်ဘဏ်",
-    logo: "assets/logo/kplus.jpg",
-    accName: "YE LYNN HTUN",
-    accNo: "186-1-85075-3"
-  },
-  WAVE: {
-    name: "Wave Money",
-    logo: "assets/logo/wave.jpg",
-    accName: "YE' LIN TUN",
-    accNo: "09262712854"
-  }
+  KTB: { name:"Krungthai Bank", logo:"krungthai.jpg", accName:"YE LYNN HTUN", accNo:"4970619778" },
+  BBL: { name:"Bangkok Bank",   logo:"bangkok.jpg",   accName:"YE LYNN HTUN", accNo:"229-4-266305" },
+  KBZ: { name:"KBZ Bank",       logo:"kbz.jpg",       accName:"YE LYNN HTUN", accNo:"1911 3720 2003 6190 1" },
+  KPAY_YLH: { name:"KPay YLH",  logo:"kpay.jpg",      accName:"YE LYNN HTUN", accNo:"09262712854" },
+  KPAY_TDW: { name:"KPay TDW",  logo:"kpay.jpg",      accName:"THIDAR WIN",   accNo:"09452341813" },
+  KPAY_HSA: { name:"KPay HSA",  logo:"kpay.jpg",      accName:"HEIN SET AUNG",accNo:"09264947944" },
+  KPLUS: { name:"Karsikorn - ကာစီကွန်ဘဏ်", logo:"kplus.jpg", accName:"YE LYNN HTUN", accNo:"186-1-85075-3" },
+  WAVE:  { name:"Wave Money",   logo:"wave.jpg",      accName:"YE' LIN TUN",  accNo:"09262712854" }
 };
 
-// Dropdown build (keep order)
+/* ================= Build Dropdowns ================= */
+const qrSelect = document.getElementById('qrSelect');
 const bankSelect = document.getElementById('bankSelect');
-const bankOrder = ["KTB","BBL","KBZ","KPLUS","KPAY_YLH","KPAY_TDW","KPAY_HSA","WAVE"];
-const bankLabel = k => BANK_INFO[k]?.name || k;
 
-(function buildBankDropdown(){
+function buildQRDropdown(){
+  qrSelect.innerHTML = "";
   const opt0=document.createElement('option');
-  opt0.value='';
-  opt0.textContent='— ဘဏ်ရွေးပါ —';
+  opt0.value="";
+  opt0.textContent="— QR ရွေးပါ —";
+  qrSelect.appendChild(opt0);
+
+  // Y starts first
+  const ys = QR_LIST.filter(x => x.toLowerCase().startsWith('y'));
+  const hs = QR_LIST.filter(x => !x.toLowerCase().startsWith('y'));
+  const final = [...ys, ...hs];
+
+  for(const code of final){
+    const o=document.createElement('option');
+    o.value=code;
+    o.textContent=code;
+    qrSelect.appendChild(o);
+  }
+}
+
+function buildBankDropdown(){
+  bankSelect.innerHTML = "";
+  const opt0=document.createElement('option');
+  opt0.value="";
+  opt0.textContent="— ဘဏ်ရွေးပါ —";
   bankSelect.appendChild(opt0);
 
-  for(const key of bankOrder){
-    if(!BANK_INFO[key]) continue;
+  const order = ["KTB","BBL","KBZ","KPLUS","KPAY_YLH","KPAY_TDW","KPAY_HSA","WAVE"];
+  for(const key of order){
+    const b = BANK_INFO[key];
+    if(!b) continue;
     const o=document.createElement('option');
     o.value=key;
-    o.textContent=bankLabel(key);
+    o.textContent=b.name;
     bankSelect.appendChild(o);
   }
-})();
+}
 
-function refreshBankInfo(){
-  const key = bankSelect.value;
-  const box = document.getElementById('bankInfoBox');
-  const mini = document.getElementById('bankPreviewMini');
-  const status = document.getElementById('bankInfoStatus');
+buildQRDropdown();
+buildBankDropdown();
 
-  if(!key || !BANK_INFO[key]){
-    box.classList.add('hidden');
-    mini.textContent = 'ဘဏ်မရွေးထားသေးပါ။';
-    status.textContent = '';
+/* ================= Preview logic ================= */
+function getSaveMode(){
+  return (document.querySelector('input[name="saveMode"]:checked') || {}).value || "none";
+}
+
+/* Big fallback: use {code}_big.jpg if exists, else {code}.jpg */
+async function resolveQRUrl(code){
+  if(!code) return null;
+
+  const normal = new URL(`${QR_BASE}${code}.jpg`, window.location.href).href;
+  const big = new URL(`${QR_BASE}${code}_big.jpg`, window.location.href).href;
+
+  const bigExists = await new Promise(resolve=>{
+    const t = new Image();
+    t.onload = () => resolve(true);
+    t.onerror = () => resolve(false);
+    t.src = big + cacheBust();
+  });
+
+  return (bigExists ? big : normal);
+}
+
+async function refreshQRPreview(){
+  const code = qrSelect.value;
+  const img = document.getElementById('qrPreviewImg');
+  const label = document.getElementById('qrPreviewLabel');
+  const st = document.getElementById('qrStatus');
+
+  if(!code){
+    img.src = "";
+    label.textContent = "";
+    st.innerHTML = `<span class="muted">QR မရွေးထားသေးပါ။</span>`;
     return;
   }
 
-  const info = BANK_INFO[key];
+  const normalUrl = new URL(`${QR_BASE}${code}.jpg`, window.location.href).href;
 
-  document.getElementById('bankLogo').src = info.logo + '?v=' + Date.now();
-  document.getElementById('bankNameText').textContent = info.name;
-  document.getElementById('bankAccName').textContent = info.accName;
-  document.getElementById('bankAccNo').textContent = info.accNo;
+  // first check normal exists (because your QR list uses normal files)
+  const ok = await new Promise(resolve=>{
+    const t = new Image();
+    t.onload = () => resolve(true);
+    t.onerror = () => resolve(false);
+    t.src = normalUrl + cacheBust();
+  });
 
-  box.classList.remove('hidden');
+  if(!ok){
+    img.src = "";
+    label.textContent = code;
+    st.innerHTML = `<span class="bad"><span class="x">✕</span> Not Found</span>`;
+    return;
+  }
+
+  const best = await resolveQRUrl(code);
+  img.src = best + cacheBust();
+  label.textContent = code;
+
+  st.innerHTML = `<span class="ok"><span class="tick">✓</span> Found</span>`;
+}
+
+function refreshBankPreview(){
+  const key = bankSelect.value;
+  const mini = document.getElementById('bankPreviewMini');
+  if(!key || !BANK_INFO[key]){
+    mini.textContent = "ဘဏ်မရွေးထားသေးပါ။";
+    return;
+  }
+  const b = BANK_INFO[key];
+  const logoUrl = new URL(`${LOGO_BASE}${b.logo}`, window.location.href).href;
+
   mini.innerHTML = `
-    <div class="font-semibold flex items-center gap-2">
-      <img src="${info.logo}?v=${Date.now()}" style="width:22px;height:22px;border-radius:6px;border:1px solid #e5e7eb;object-fit:cover;" />
-      <span>${info.name}</span>
+    <div class="font-semibold flex items-center justify-center gap-2">
+      <img src="${logoUrl}${cacheBust()}"
+           style="width:22px;height:22px;border-radius:6px;border:1px solid #e5e7eb;object-fit:cover;" />
+      <span>${b.name}</span>
     </div>
-    <div class="mt-1">အကောင့်နာမည်: <span class="font-semibold">${info.accName}</span></div>
-    <div class="mt-1">အကောင့်နံပါတ်: <span class="font-mono font-semibold">${info.accNo}</span></div>
+    <div class="mt-1">အကောင့်နာမည်: <span class="font-semibold">${b.accName}</span></div>
+    <div class="mt-1">အကောင့်နံပါတ်: <span class="font-mono font-semibold">${b.accNo}</span></div>
   `;
-  status.textContent = 'OK ✅ Bank info loaded';
 }
-bankSelect.addEventListener('change', refreshBankInfo);
 
-/* ================= Save options (ONE only) ================= */
-function getSaveMode(){
-  const el = document.querySelector('input[name="saveMode"]:checked');
-  return el ? el.value : 'none';
-}
+qrSelect.addEventListener('change', refreshQRPreview);
+bankSelect.addEventListener('change', refreshBankPreview);
 
 /* ================= Save JPEG ================= */
+async function appendBankInfoBlock(clone){
+  const key = bankSelect.value;
+  if(!key || !BANK_INFO[key]) return;
+
+  const b = BANK_INFO[key];
+  const logoUrl = new URL(`${LOGO_BASE}${b.logo}`, window.location.href).href;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'export-block';
+
+  const title = document.createElement('p');
+  title.className = 'text-slate-800 font-semibold';
+  title.textContent = 'ငွေလွှဲရန် ဘဏ်အချက်အလက်';
+
+  const box = document.createElement('div');
+  box.style.maxWidth = '560px';
+  box.style.margin = '10px auto 0';
+  box.style.border = '1px solid #e5e7eb';
+  box.style.borderRadius = '14px';
+  box.style.padding = '12px';
+  box.style.background = '#fff';
+  box.style.textAlign = 'left';
+
+  const headerRow = document.createElement('div');
+  headerRow.style.display = 'flex';
+  headerRow.style.alignItems = 'center';
+  headerRow.style.gap = '10px';
+  headerRow.style.marginBottom = '8px';
+
+  const logo = document.createElement('img');
+  logo.src = logoUrl + cacheBust();
+  logo.alt = 'Bank Logo';
+  logo.style.width = '44px';
+  logo.style.height = '44px';
+  logo.style.borderRadius = '10px';
+  logo.style.border = '1px solid #e5e7eb';
+  logo.style.objectFit = 'cover';
+
+  const h = document.createElement('div');
+  h.innerHTML = `<div style="font-weight:900;font-size:16px">${b.name}</div>
+                 <div style="color:#64748b;font-size:12px">Bank Information</div>`;
+
+  headerRow.appendChild(logo);
+  headerRow.appendChild(h);
+
+  const body = document.createElement('div');
+  body.innerHTML = `
+    <div style="margin-top:6px;color:#475569;font-size:14px;">
+      ဘဏ်အကောင့်နာမည်: <span style="font-weight:900;color:#0f172a">${b.accName}</span>
+    </div>
+    <div style="margin-top:4px;color:#475569;font-size:14px;">
+      ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;color:#0f172a;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${b.accNo}</span>
+    </div>
+  `;
+
+  box.appendChild(headerRow);
+  box.appendChild(body);
+  wrap.appendChild(title);
+  wrap.appendChild(box);
+
+  clone.appendChild(wrap);
+
+  await new Promise(res=>{
+    if(logo.complete) return res();
+    logo.onload = () => res();
+    logo.onerror = () => res();
+  });
+}
+
+async function appendQRBlock(clone){
+  const code = qrSelect.value;
+  if(!code) return;
+
+  const normalUrl = new URL(`${QR_BASE}${code}.jpg`, window.location.href).href;
+
+  // ensure normal exists; if not exist => do nothing (no error)
+  const ok = await new Promise(resolve=>{
+    const t = new Image();
+    t.onload = () => resolve(true);
+    t.onerror = () => resolve(false);
+    t.src = normalUrl + cacheBust();
+  });
+  if(!ok) return;
+
+  const best = await resolveQRUrl(code);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'export-block';
+
+  const title = document.createElement('p');
+  title.className = 'text-slate-800 font-semibold';
+  title.textContent = 'ငွေလွှဲရန် ဘဏ် QR';
+
+  const img = document.createElement('img');
+  img.alt = 'QR';
+  img.style.margin = '10px auto 0';
+  img.style.border = '1px solid #e5e7eb';
+  img.style.borderRadius = '14px';
+  img.style.padding = '8px';
+  img.style.background = '#fff';
+  img.style.display = 'block';
+  img.style.width = '340px';
+  img.src = best + cacheBust();
+
+  wrap.appendChild(title);
+  wrap.appendChild(img);
+  clone.appendChild(wrap);
+
+  await new Promise(res=>{
+    if(img.complete) return res();
+    img.onload = () => res();
+    img.onerror = () => res();
+  });
+}
+
 async function saveSectionAsJpeg(sectionId, filename){
   await document.fonts?.ready;
 
@@ -434,113 +537,10 @@ async function saveSectionAsJpeg(sectionId, filename){
   clone.querySelectorAll('button').forEach(b=>b.remove());
 
   const mode = getSaveMode();
+  if(mode === 'bankinfo') await appendBankInfoBlock(clone);
+  if(mode === 'qr') await appendQRBlock(clone);
 
-  // --- append bank or qr (only one) ---
-  if(mode === 'qr' && CURRENT_QR_URL){
-    const wrap = document.createElement('div');
-    wrap.className = 'export-block';
-
-    const title = document.createElement('p');
-    title.className = 'text-slate-800 font-semibold';
-    title.textContent = 'ငွေလွှဲရန်ဘဏ် QR';
-
-    const img = document.createElement('img');
-    img.alt = 'Bank QR';
-    img.style.width = '260px';
-    img.style.margin = '10px auto 0';
-    img.style.border = '1px solid #e5e7eb';
-    img.style.borderRadius = '14px';
-    img.style.padding = '8px';
-    img.style.background = '#fff';
-    img.style.display = 'block';
-    img.src = CURRENT_QR_URL + (CURRENT_QR_URL.includes('?')?'&':'?') + 'v=' + Date.now();
-
-    const name = document.createElement('p');
-    name.className = 'font-semibold mt-2';
-    name.textContent = CURRENT_QR_LABEL;
-
-    wrap.appendChild(title);
-    wrap.appendChild(img);
-    wrap.appendChild(name);
-    clone.appendChild(wrap);
-
-    await new Promise(res=>{
-      if(img.complete) return res();
-      img.onload = () => res();
-      img.onerror = () => res();
-    });
-  }
-
-  if(mode === 'bank'){
-    const key = bankSelect.value;
-    if(key && BANK_INFO[key]){
-      const info = BANK_INFO[key];
-
-      const wrap = document.createElement('div');
-      wrap.className = 'export-block';
-
-      const title = document.createElement('p');
-      title.className = 'text-slate-800 font-semibold';
-      title.textContent = 'ငွေလွှဲရန် ဘဏ်အချက်အလက်';
-
-      const box = document.createElement('div');
-      box.style.maxWidth = '560px';
-      box.style.margin = '10px auto 0';
-      box.style.border = '1px solid #e5e7eb';
-      box.style.borderRadius = '14px';
-      box.style.padding = '12px';
-      box.style.background = '#fff';
-      box.style.textAlign = 'left';
-
-      const logo = document.createElement('img');
-      logo.src = info.logo + '?v=' + Date.now();
-      logo.alt = 'Bank Logo';
-      logo.style.width = '44px';
-      logo.style.height = '44px';
-      logo.style.borderRadius = '10px';
-      logo.style.border = '1px solid #e5e7eb';
-      logo.style.objectFit = 'cover';
-
-      const headerRow = document.createElement('div');
-      headerRow.style.display = 'flex';
-      headerRow.style.alignItems = 'center';
-      headerRow.style.gap = '10px';
-      headerRow.style.marginBottom = '8px';
-
-      const h = document.createElement('div');
-      h.innerHTML = `<div style="font-weight:800;font-size:16px">${info.name}</div>
-                     <div style="color:#64748b;font-size:12px">Bank Information</div>`;
-
-      headerRow.appendChild(logo);
-      headerRow.appendChild(h);
-
-      const body = document.createElement('div');
-      body.innerHTML = `
-        <div style="margin-top:6px;color:#475569;font-size:14px;">
-          ဘဏ်အကောင့်နာမည်: <span style="font-weight:800;color:#0f172a">${info.accName}</span>
-        </div>
-        <div style="margin-top:4px;color:#475569;font-size:14px;">
-          ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:800;color:#0f172a;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span>
-        </div>
-      `;
-
-      box.appendChild(headerRow);
-      box.appendChild(body);
-
-      wrap.appendChild(title);
-      wrap.appendChild(box);
-      clone.appendChild(wrap);
-
-      // ensure logo is loaded
-      await new Promise(res=>{
-        if(logo.complete) return res();
-        logo.onload = () => res();
-        logo.onerror = () => res();
-      });
-    }
-  }
-
-  // --- offscreen render ---
+  // offscreen render
   clone.style.position='fixed';
   clone.style.left='-99999px';
   clone.style.top='0';
@@ -561,7 +561,7 @@ async function saveSectionAsJpeg(sectionId, filename){
 
   document.body.removeChild(clone);
 
-  // --- title on top ---
+  // title on top
   const margin=20, titleHeight=28;
   const out=document.createElement('canvas');
   out.width = canvas.width + margin*2;
@@ -584,6 +584,10 @@ async function saveSectionAsJpeg(sectionId, filename){
 
 document.getElementById('btnSave1').addEventListener('click', ()=>saveSectionAsJpeg('box-thb2mmk','thb-to-mmk.jpg'));
 document.getElementById('btnSave2').addEventListener('click', ()=>saveSectionAsJpeg('box-mmk2thb','mmk-to-thb.jpg'));
+
+// init previews
+refreshQRPreview();
+refreshBankPreview();
 </script>
 
 </body>
