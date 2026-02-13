@@ -12,18 +12,58 @@
     body { background:#f0f4f8; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
     header { background:linear-gradient(to right,#2563eb,#10b981); color:white; padding:1.2rem; text-align:center; border-radius:0.7rem; margin-bottom:1rem; }
     .box { background:white; border-radius:1rem; box-shadow:0 2px 8px rgba(0,0,0,0.1); padding:1.25rem; margin-bottom:1.25rem; }
-    .label { font-size:1.1rem; font-weight:700; display:inline-flex; align-items:center; gap:.5rem; }
-    input, output, select { font-size:1.1rem; font-weight:600; }
+
+    .label { font-size:1.1rem; font-weight:800; display:inline-flex; align-items:center; gap:.5rem; }
+    input, output, select { font-size:1.05rem; font-weight:600; }
+
     .sub { font-size:0.85rem; color:#4b5563; margin-bottom:0.3rem; }
-    .rate-note { font-size:0.9rem; color:#6b7280; margin-top:0.4rem; font-weight:700; }
-    .thanks { color:#059669; font-size:0.85rem; margin-top:0.6rem; }
-    .btn { border-radius:0.75rem; border:none; background:#1f2937; color:white; padding:0.55rem 0.9rem; font-size:0.9rem; cursor:pointer; transition:background .2s, transform .05s; }
+    .rate-note { font-size:0.95rem; color:#64748b; margin-top:0.6rem; font-weight:900; }
+    .thanks { color:#059669; font-size:0.9rem; margin-top:0.6rem; font-weight:800; }
+
+    .btn { border-radius:0.85rem; border:none; background:#111827; color:white; padding:0.65rem 1rem; font-size:0.95rem; cursor:pointer; transition:background .2s, transform .05s; }
     .btn:hover { background:#0f172a; } .btn:active { transform:translateY(1px); }
+
     .flag { width:20px; height:auto; border-radius:2px; display:inline-block; }
     .card { border:1px solid #e5e7eb; border-radius:16px; padding:14px; background:#fff; }
     .export-block { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #cbd5e1; text-align:center; }
     .muted { color:#64748b; font-size:0.9rem; }
     .qrFrame { border:1px solid #e5e7eb; border-radius:16px; background:#fff; padding:12px; }
+
+    /* ✅ INPUT/OUTPUT (Clear / no color) */
+    .amt-input{
+      font-size: 1.35rem !important;
+      font-weight: 800 !important;
+      color: #111827 !important;
+      background: #ffffff !important;
+      border: 2px solid #e5e7eb !important;   /* clear border */
+      border-radius: 14px !important;
+      padding: 14px 16px !important;
+      line-height: 1.2 !important;
+      letter-spacing: .3px !important;
+      font-variant-numeric: tabular-nums !important;
+      box-shadow: none !important;            /* clear */
+    }
+    .amt-input::placeholder{
+      color: #9ca3af !important;
+      font-weight: 600 !important;
+    }
+    .amt-input:focus{
+      outline: none !important;
+      border-color: #111827 !important;       /* no blue ring */
+      box-shadow: none !important;
+    }
+    .amt-output{
+      font-size: 1.35rem !important;
+      font-weight: 800 !important;
+      color: #111827 !important;
+      border: 2px solid #e5e7eb !important;
+      border-radius: 14px !important;
+      padding: 14px 16px !important;
+      background: #ffffff !important;         /* clear */
+      font-variant-numeric: tabular-nums !important;
+      min-height: 54px;
+      box-shadow: none !important;
+    }
   </style>
 </head>
 
@@ -45,7 +85,7 @@
           <span>မြန်မာငွေ ၁ သိန်း အတွက် ဘတ် (THB)</span>
         </label>
         <p class="sub">THB per 100,000 MMK</p>
-        <input id="rate100k" class="w-full border rounded p-2" type="text" placeholder="820" inputmode="decimal">
+        <input id="rate100k" class="amt-input w-full" type="text" placeholder="820" inputmode="decimal">
       </div>
 
       <div>
@@ -54,9 +94,11 @@
           <span>၁ ဘတ် အတွက် မြန်မာကျပ်</span>
         </label>
         <p class="sub">MMK per 1 THB</p>
-        <input id="ratePerThb" class="w-full border rounded p-2" type="text" placeholder="121.95" inputmode="decimal">
+        <input id="ratePerThb" class="amt-input w-full" type="text" placeholder="121.95" inputmode="decimal">
       </div>
     </div>
+
+    <p class="rate-note mt-3" id="rateNoteTop"></p>
   </section>
 
   <!-- 2) THB → MMK -->
@@ -71,7 +113,7 @@
           <span>ဘတ်ငွေ</span>
         </label>
         <p class="sub">Input THB</p>
-        <input id="thbIn" class="w-full border rounded p-2" type="text" placeholder="6500" inputmode="numeric">
+        <input id="thbIn" class="amt-input w-full" type="text" placeholder="6500" inputmode="numeric">
       </div>
 
       <div>
@@ -80,18 +122,18 @@
           <span>မြန်မာကျပ်</span>
         </label>
         <p class="sub">Result MMK</p>
-        <output id="mmkOut" class="block w-full rounded border bg-gray-50 p-2 min-h-[42px]"></output>
+        <output id="mmkOut" class="amt-output block w-full"></output>
       </div>
     </div>
 
-    <div class="text-center mt-3">
+    <div class="text-center mt-4">
       <p class="rate-note" id="rateNote1"></p>
       <p class="text-red-600 font-semibold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
       <p class="text-red-600 font-semibold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
       <p class="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
     </div>
 
-    <button id="btnSave1" type="button" class="btn mt-3">Save JPEG</button>
+    <button id="btnSave1" type="button" class="btn mt-4">Save JPEG</button>
   </section>
 
   <!-- 3) MMK → THB -->
@@ -106,7 +148,7 @@
           <span>မြန်မာကျပ်</span>
         </label>
         <p class="sub">Input MMK</p>
-        <input id="mmkIn" class="w-full border rounded p-2" type="text" placeholder="1000000" inputmode="numeric">
+        <input id="mmkIn" class="amt-input w-full" type="text" placeholder="1000000" inputmode="numeric">
       </div>
 
       <div>
@@ -115,18 +157,18 @@
           <span>ဘတ်ငွေ</span>
         </label>
         <p class="sub">Result THB</p>
-        <output id="thbOut" class="block w-full rounded border bg-gray-50 p-2 min-h-[42px]"></output>
+        <output id="thbOut" class="amt-output block w-full"></output>
       </div>
     </div>
 
-    <div class="text-center mt-3">
+    <div class="text-center mt-4">
       <p class="rate-note" id="rateNote2"></p>
       <p class="text-red-600 font-semibold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
       <p class="text-red-600 font-semibold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
       <p class="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
     </div>
 
-    <button id="btnSave2" type="button" class="btn mt-3">Save JPEG</button>
+    <button id="btnSave2" type="button" class="btn mt-4">Save JPEG</button>
   </section>
 
   <!-- 4) Save JPEG + Bank UI -->
@@ -139,7 +181,7 @@
       <!-- Left -->
       <div class="card">
         <p class="font-semibold mb-2">QR Select (Normal / Big auto)</p>
-        <select id="qrSelect" class="w-full border rounded p-2"></select>
+        <select id="qrSelect" class="w-full border rounded-xl p-3 font-semibold"></select>
 
         <p class="muted mt-2">Normal: <span class="font-mono" id="qrPathNormal"></span></p>
         <p class="muted mt-1">Big: <span class="font-mono" id="qrPathBig"></span></p>
@@ -147,7 +189,7 @@
         <hr class="my-3">
 
         <p class="font-semibold mb-2">Bank Info Select</p>
-        <select id="bankSelect" class="w-full border rounded p-2"></select>
+        <select id="bankSelect" class="w-full border rounded-xl p-3 font-semibold"></select>
 
         <div id="bankInfoBox" class="mt-3 border rounded-xl p-3 bg-white hidden">
           <div class="flex items-center gap-3">
@@ -220,8 +262,8 @@
         </div>
 
         <!-- ✅ FILE NAME မပြတော့ဘူး -->
-        <p id="qrOwnerName" class="text-center text-slate-700 mt-3">
-          အကောင့်ရှင်အမည်: <span class="font-semibold" id="qrOwnerValue">—</span>
+        <p id="qrOwnerName" class="text-center text-slate-700 mt-3 text-lg">
+          အကောင့်ရှင်အမည်: <span class="font-extrabold" id="qrOwnerValue">—</span>
         </p>
 
         <div class="mt-4 border-t pt-3 text-left">
@@ -264,11 +306,14 @@ function refreshRateNote(){
   const r = getRate();
   if(Number.isFinite(r) && r>0){
     const inv = 100000 / r;
-    $('#rateNote1').textContent = `မြန်မာငွေ ၁ သိန်း = ${fmt6(r)} ဘတ် | ၁ ဘတ် = ${fmt6(inv)} ကျပ်`;
-    $('#rateNote2').textContent = `မြန်မာငွေ ၁ သိန်း = ${fmt6(r)} ဘတ် | ၁ ဘတ် = ${fmt6(inv)} ကျပ်`;
+    const msg = `မြန်မာငွေ ၁ သိန်း = ${fmt6(r)} ဘတ် | ၁ ဘတ် = ${fmt6(inv)} ကျပ်`;
+    $('#rateNote1').textContent = msg;
+    $('#rateNote2').textContent = msg;
+    $('#rateNoteTop').textContent = msg;
   }else{
     $('#rateNote1').textContent = '';
     $('#rateNote2').textContent = '';
+    $('#rateNoteTop').textContent = '';
   }
 }
 function recalc(){
@@ -296,18 +341,16 @@ function syncFromPerThb(){
 });
 $('#rate100k').addEventListener('input', syncFrom100k);
 $('#ratePerThb').addEventListener('input', syncFromPerThb);
+
+/* defaults */
 $('#rate100k').value = '820';
 syncFrom100k();
 recalc();
 
-/* ================= QR setup =================
-   Normal QR: assets/qr/xxx.jpg
-   Big QR:    assets/qr_big/xxx_big.jpg   (optional)
-*/
+/* ================= QR setup ================= */
 const QR_BASE_NORMAL = 'assets/qr/';
 const QR_BASE_BIG    = 'assets/qr_big/';
 
-/* ✅ ဒီ list ကို မင်း repo ဖိုင်နာမည်တွေနဲ့ တိတိကျကျညှိချင်ရင် ဒီနေရာပဲပြင် */
 const QR_FILES = [
   "hba.jpg","hbq.jpg","hkqr.jpg","ht7.jpg","tkpayq.jpg",
   "yba.jpg","ybq.jpg","yka.jpg","ykpayq.jpg","ykq.jpg",
@@ -332,16 +375,11 @@ const qrSelect = document.getElementById('qrSelect');
 for(const f of QR_FILES){
   const o=document.createElement('option');
   o.value=f;
-  o.textContent=f.replace(/\.[^.]+$/,''); // no ext
+  o.textContent=f.replace(/\.[^.]+$/,'');
   qrSelect.appendChild(o);
 }
 
-let CURRENT_QR = {
-  owner: '',
-  urlNormal: null,
-  urlBig: null,
-  hasBig: false
-};
+let CURRENT_QR = { owner:'', urlNormal:null, urlBig:null, hasBig:false };
 
 function probeImage(url){
   return new Promise(resolve=>{
@@ -354,11 +392,10 @@ function probeImage(url){
 
 async function refreshQrPreview(){
   const file = qrSelect.value;
-  const labelNoExt = qrSelect.options[qrSelect.selectedIndex].text; // no ext
+  const labelNoExt = qrSelect.options[qrSelect.selectedIndex].text;
   const normalUrl = new URL(QR_BASE_NORMAL + file, window.location.href).href;
 
-  // big filename: xxx_big.jpg
-  const baseName = file.replace(/\.[^.]+$/,''); // xxx
+  const baseName = file.replace(/\.[^.]+$/,'');
   const bigFile = baseName + '_big.jpg';
   const bigUrl = new URL(QR_BASE_BIG + bigFile, window.location.href).href;
 
@@ -368,7 +405,6 @@ async function refreshQrPreview(){
   document.getElementById('qrPathBig').textContent = QR_BASE_BIG + bigFile;
 
   const hasBig = await probeImage(bigUrl);
-
   CURRENT_QR = { owner, urlNormal: normalUrl, urlBig: bigUrl, hasBig };
 
   document.getElementById('qrOwnerValue').textContent = owner;
@@ -379,18 +415,12 @@ async function refreshQrPreview(){
   if(hasBig){
     previewTwo.classList.remove('hidden');
     previewOne.classList.add('hidden');
-
-    const n = document.getElementById('qrPreviewNormal');
-    const b = document.getElementById('qrPreviewBig');
-
-    n.src = normalUrl + (normalUrl.includes('?')?'&':'?') + 'v=' + Date.now();
-    b.src = bigUrl + (bigUrl.includes('?')?'&':'?') + 'v=' + Date.now();
+    document.getElementById('qrPreviewNormal').src = normalUrl + (normalUrl.includes('?')?'&':'?') + 'v=' + Date.now();
+    document.getElementById('qrPreviewBig').src = bigUrl + (bigUrl.includes('?')?'&':'?') + 'v=' + Date.now();
   }else{
     previewTwo.classList.add('hidden');
     previewOne.classList.remove('hidden');
-
-    const s = document.getElementById('qrPreviewSolo');
-    s.src = normalUrl + (normalUrl.includes('?')?'&':'?') + 'v=' + Date.now();
+    document.getElementById('qrPreviewSolo').src = normalUrl + (normalUrl.includes('?')?'&':'?') + 'v=' + Date.now();
   }
 }
 qrSelect.addEventListener('change', refreshQrPreview);
@@ -398,54 +428,14 @@ refreshQrPreview();
 
 /* ================= BANK INFO ================= */
 const BANK_INFO = {
-  KTB: {
-    name: "Krungthai Bank",
-    logo: "assets/logo/krungthai.jpg",
-    accName: "YE LYNN HTUN",
-    accNo: "4970619778"
-  },
-  BBL: {
-    name: "Bangkok Bank",
-    logo: "assets/logo/bangkok.jpg",
-    accName: "YE LYNN HTUN",
-    accNo: "229-4-266305"
-  },
-  KBZ: {
-    name: "KBZ Bank",
-    logo: "assets/logo/kbz.jpg",
-    accName: "YE LYNN HTUN",
-    accNo: "1911 3720 2003 6190 1"
-  },
-  KPAY_YLH: {
-    name: "KPay - YLH",
-    logo: "assets/logo/kpay.jpg",
-    accName: "YE LYNN HTUN",
-    accNo: "09262712854"
-  },
-  KPAY_TDW: {
-    name: "KPay - TDW",
-    logo: "assets/logo/kpay.jpg",
-    accName: "THIDAR WIN",
-    accNo: "09452341813"
-  },
-  KPAY_HSA: {
-    name: "KPay - HSA",
-    logo: "assets/logo/kpay.jpg",
-    accName: "HEIN SET AUNG",
-    accNo: "09264947944"
-  },
-  KPLUS: {
-    name: "Karsikorn - ကာစီကွန်ဘဏ်",
-    logo: "assets/logo/kplus.jpg",
-    accName: "YE LYNN HTUN",
-    accNo: "186-1-85075-3"
-  },
-  WAVE: {
-    name: "Wave Money",
-    logo: "assets/logo/wave.jpg",
-    accName: "YE' LIN TUN",
-    accNo: "09262712854"
-  }
+  KTB: { name: "Krungthai Bank", logo: "assets/logo/krungthai.jpg", accName: "YE LYNN HTUN", accNo: "4970619778" },
+  BBL: { name: "Bangkok Bank",  logo: "assets/logo/bangkok.jpg",   accName: "YE LYNN HTUN", accNo: "229-4-266305" },
+  KBZ: { name: "KBZ Bank",      logo: "assets/logo/kbz.jpg",      accName: "YE LYNN HTUN", accNo: "1911 3720 2003 6190 1" },
+  KPAY_YLH: { name: "KPay - YLH", logo: "assets/logo/kpay.jpg", accName: "YE LYNN HTUN", accNo: "09262712854" },
+  KPAY_TDW: { name: "KPay - TDW", logo: "assets/logo/kpay.jpg", accName: "THIDAR WIN",  accNo: "09452341813" },
+  KPAY_HSA: { name: "KPay - HSA", logo: "assets/logo/kpay.jpg", accName: "HEIN SET AUNG", accNo: "09264947944" },
+  KPLUS: { name: "Karsikorn - ကာစီကွန်ဘဏ်", logo: "assets/logo/kplus.jpg", accName: "YE LYNN HTUN", accNo: "186-1-85075-3" },
+  WAVE: { name: "Wave Money", logo: "assets/logo/wave.jpg", accName: "YE' LIN TUN", accNo: "09262712854" }
 };
 
 const bankSelect = document.getElementById('bankSelect');
@@ -456,7 +446,6 @@ const bankOrder = ["KTB","BBL","KBZ","KPLUS","KPAY_YLH","KPAY_TDW","KPAY_HSA","W
   opt0.value='';
   opt0.textContent='— ဘဏ်ရွေးပါ —';
   bankSelect.appendChild(opt0);
-
   for(const key of bankOrder){
     if(!BANK_INFO[key]) continue;
     const o=document.createElement('option');
@@ -485,13 +474,17 @@ function refreshBankInfo(){
   document.getElementById('bankAccNo').textContent = info.accNo;
 
   box.classList.remove('hidden');
+
+  /* ✅ Preview ကို Center */
   mini.innerHTML = `
-    <div class="font-semibold flex items-center gap-2">
-      <img src="${info.logo}?v=${Date.now()}" style="width:22px;height:22px;border-radius:6px;border:1px solid #e5e7eb;object-fit:cover;" />
-      <span>${info.name}</span>
+    <div style="text-align:center">
+      <div style="display:flex;justify-content:center;align-items:center;gap:8px;font-weight:900">
+        <img src="${info.logo}?v=${Date.now()}" style="width:22px;height:22px;border-radius:6px;border:1px solid #e5e7eb;object-fit:cover;" />
+        <span style="font-weight:900">${info.name}</span>
+      </div>
+      <div style="margin-top:6px">အကောင့်နာမည်: <span style="font-weight:900">${info.accName}</span></div>
+      <div style="margin-top:4px">အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>
     </div>
-    <div class="mt-1">အကောင့်နာမည်: <span class="font-semibold">${info.accName}</span></div>
-    <div class="mt-1">အကောင့်နံပါတ်: <span class="font-mono font-semibold">${info.accNo}</span></div>
   `;
 }
 bankSelect.addEventListener('change', refreshBankInfo);
@@ -510,6 +503,11 @@ async function saveSectionAsJpeg(sectionId, filename){
   const clone = original.cloneNode(true);
   clone.querySelectorAll('button').forEach(b=>b.remove());
 
+  /* ✅ remove grey shadow/background look in JPEG */
+  clone.style.boxShadow = 'none';
+  clone.style.border = '1px solid #e5e7eb';
+  clone.style.background = '#fff';
+
   const mode = getSaveMode();
 
   // QR block (use Big if exists, else Normal) + Owner Name
@@ -519,7 +517,7 @@ async function saveSectionAsJpeg(sectionId, filename){
 
     const title = document.createElement('p');
     title.className = 'text-slate-800 font-semibold';
-    title.textContent = 'ငွေလွှဲရန်ဘဏ် QR';
+    title.textContent = 'ငွေလွှဲရန်ဘဏ် (သို့) QR';
 
     const img = document.createElement('img');
     img.alt = 'Bank QR';
@@ -537,7 +535,7 @@ async function saveSectionAsJpeg(sectionId, filename){
 
     const owner = document.createElement('p');
     owner.className = 'mt-3 text-slate-700';
-    owner.innerHTML = `အကောင့်ရှင်အမည်: <span style="font-weight:800">${CURRENT_QR.owner}</span>`;
+    owner.innerHTML = `အကောင့်အမည်(ACCOUNT NAME): <span style="font-weight:900">${CURRENT_QR.owner}</span>`;
 
     wrap.appendChild(title);
     wrap.appendChild(img);
@@ -551,7 +549,7 @@ async function saveSectionAsJpeg(sectionId, filename){
     });
   }
 
-  // Bank info block
+  // ✅ Bank info block (CENTER + BOLD labels + WHITE BACKGROUND)
   if(mode === 'bank'){
     const key = bankSelect.value;
     if(key && BANK_INFO[key]){
@@ -566,42 +564,54 @@ async function saveSectionAsJpeg(sectionId, filename){
 
       const box = document.createElement('div');
       box.style.maxWidth = '560px';
-      box.style.margin = '10px auto 0';
+      box.style.margin = '12px auto 0';
       box.style.border = '1px solid #e5e7eb';
-      box.style.borderRadius = '14px';
-      box.style.padding = '12px';
+      box.style.borderRadius = '16px';
+      box.style.padding = '16px';
       box.style.background = '#fff';
-      box.style.textAlign = 'left';
+      box.style.textAlign = 'center';
 
       const logo = document.createElement('img');
       logo.src = info.logo + '?v=' + Date.now();
       logo.alt = 'Bank Logo';
-      logo.style.width = '44px';
-      logo.style.height = '44px';
-      logo.style.borderRadius = '10px';
+      logo.style.width = '64px';
+      logo.style.height = '64px';
+      logo.style.borderRadius = '18px';
       logo.style.border = '1px solid #e5e7eb';
       logo.style.objectFit = 'cover';
 
       const headerRow = document.createElement('div');
       headerRow.style.display = 'flex';
+      headerRow.style.flexDirection = 'column';
       headerRow.style.alignItems = 'center';
-      headerRow.style.gap = '10px';
-      headerRow.style.marginBottom = '8px';
+      headerRow.style.justifyContent = 'center';
+      headerRow.style.gap = '8px';
+      headerRow.style.marginBottom = '10px';
 
       const h = document.createElement('div');
-      h.innerHTML = `<div style="font-weight:800;font-size:16px">${info.name}</div>
-                     <div style="color:#64748b;font-size:12px">Bank Information</div>`;
+      h.style.textAlign = 'center';
+      h.innerHTML = `
+        <div style="font-weight:900;font-size:18px;line-height:1.2">${info.name}</div>
+        <div style="color:#64748b;font-size:12px;margin-top:2px">Bank Information</div>
+      `;
 
       headerRow.appendChild(logo);
       headerRow.appendChild(h);
 
       const body = document.createElement('div');
+      body.style.textAlign = 'center';
       body.innerHTML = `
-        <div style="margin-top:6px;color:#475569;font-size:14px;">
-          ဘဏ်အကောင့်နာမည်: <span style="font-weight:800;color:#0f172a">${info.accName}</span>
+        <div style="margin-top:10px;color:#111827;font-size:15px;">
+          <span style="font-weight:900">ဘဏ်အကောင့်နာမည်:</span>
+          <span style="font-weight:900;color:#111827">${info.accName}</span>
         </div>
-        <div style="margin-top:4px;color:#475569;font-size:14px;">
-          ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:800;color:#0f172a;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span>
+
+        <div style="margin-top:10px;color:#111827;font-size:15px;">
+          <span style="font-weight:900">ဘဏ်အကောင့်နံပါတ်:</span>
+          <span style="font-weight:900;color:#111827;
+                      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">
+            ${info.accNo}
+          </span>
         </div>
       `;
 
@@ -633,7 +643,7 @@ async function saveSectionAsJpeg(sectionId, filename){
 
   const canvas = await html2canvas(clone,{
     backgroundColor:'#ffffff',
-    scale: Math.min(2, window.devicePixelRatio*1.5),
+    scale: Math.min(2, window.devicePixelRatio*1.6),
     useCORS:true,
     allowTaint:false,
     logging:false
