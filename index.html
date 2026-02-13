@@ -435,8 +435,8 @@ const BANK_INFO = {
   KPAY_TDW: { name: "KPay - TDW", logo: "assets/logo/kpay.jpg", accName: "THIDAR WIN",  accNo: "09-452-341-813" },
   KPAY_HSA: { name: "KPay - HSA", logo: "assets/logo/kpay.jpg", accName: "HEIN SET AUNG", accNo: "09-264-947-944" },
   KPLUS: { name: "Karsikorn - ကာစီကွန်ဘဏ်", logo: "assets/logo/kplus.jpg", accName: "YE LYNN HTUN", accNo: "186-1-85075-3" },
-  WAVE: { name: "Wave Money - YLH", logo: "assets/logo/wave.jpg", accName: "YE' LIN TUN", accNo: "09-262-712-854" },
-  WAVE: { name: "Wave Money - HSA", logo: "assets/logo/wave.jpg", accName: "HEIN SET AUNG", accNo: "09-264-947-944" }
+  WAVE_YLH: { name: "Wave Money - YLH", logo: "assets/logo/wave.jpg", accName: "YE' LIN TUN", accNo: "09-262-712-854" },
+  WAVE_HSA: { name: "Wave Money - HSA", logo: "assets/logo/wave.jpg", accName: "HEIN SET AUNG", accNo: "09-264-947-944" }
 };
 
 const bankSelect = document.getElementById('bankSelect');
@@ -593,7 +593,7 @@ async function saveSectionAsJpeg(sectionId, filename){
       h.style.textAlign = 'center';
       h.innerHTML = `
         <div style="font-weight:900;font-size:18px;line-height:1.2">${info.name}</div>
-        <div style="color:#64748b;font-size:12px;margin-top:2px">Bank Information</div>
+        <div style="color:#64748b;font-size:12px;margin-top:2px">ဘဏ်အချက်အလက်</div>
       `;
 
       headerRow.appendChild(logo);
