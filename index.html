@@ -430,17 +430,27 @@ refreshQrPreview();
 const BANK_INFO = {
   KTB: { name: "Krungthai Bank - ကုံထိုင်းဘဏ်", logo: "assets/logo/krungthai.jpg", accName: "YE LYNN HTUN", accNo: "497-061-977-8" },
   BBL: { name: "Bangkok Bank - ဘန်ကောက်ဘဏ်",  logo: "assets/logo/bangkok.jpg",   accName: "YE LYNN HTUN", accNo: "229-4-266-305" },
+  KPLUS: { name: "Karsikorn - ကာစီကွန်ဘဏ်", logo: "assets/logo/kplus.jpg", accName: "YE LYNN HTUN", accNo: "186-1-85075-3" },
   KBZ: { name: "KBZ Bank (Special)",      logo: "assets/logo/kbz.jpg",      accName: "YE LYNN HTUN", accNo: "1911 3720 2003 6190 1" },
   KPAY_YLH: { name: "KPay - YLH", logo: "assets/logo/kpay.jpg", accName: "YE LYNN HTUN", accNo: "09-262-712-854" },
   KPAY_TDW: { name: "KPay - TDW", logo: "assets/logo/kpay.jpg", accName: "THIDAR WIN",  accNo: "09-452-341-813" },
   KPAY_HSA: { name: "KPay - HSA", logo: "assets/logo/kpay.jpg", accName: "HEIN SET AUNG", accNo: "09-264-947-944" },
-  KPLUS: { name: "Karsikorn - ကာစီကွန်ဘဏ်", logo: "assets/logo/kplus.jpg", accName: "YE LYNN HTUN", accNo: "186-1-85075-3" },
   WAVE_YLH: { name: "Wave Money - YLH", logo: "assets/logo/wave.jpg", accName: "YE' LIN TUN", accNo: "09-262-712-854" },
   WAVE_HSA: { name: "Wave Money - HSA", logo: "assets/logo/wave.jpg", accName: "HEIN SET AUNG", accNo: "09-264-947-944" }
 };
 
 const bankSelect = document.getElementById('bankSelect');
-const bankOrder = ["KTB","BBL","KBZ","KPLUS","KPAY_YLH","KPAY_TDW","KPAY_HSA","WAVE"];
+const bankOrder = [
+  "KTB",
+  "BBL",
+  "KBZ",
+  "KPLUS",
+  "KPAY_YLH",
+  "KPAY_TDW",
+  "KPAY_HSA",
+  "WAVE_YLH",
+  "WAVE_HSA"
+];
 
 (function buildBankDropdown(){
   const opt0=document.createElement('option');
