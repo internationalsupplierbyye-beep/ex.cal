@@ -9,7 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    /* ====== Compact UI (height မမြင့်အောင်) ====== */
+    /* ====== Compact UI (screen UI = Burmese) ====== */
     body{ background:#f3f6f9; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
     header{
       background:linear-gradient(to right,#2563eb,#10b981);
@@ -71,7 +71,7 @@
       font-variant-numeric: tabular-nums !important;
     }
 
-    /* ====== Radio row (အဝိုင်းကြီး + မကပ်အောင်) ====== */
+    /* ====== Radio row (big circle + spacing) ====== */
     .radio-row{
       display:flex; align-items:center; gap:12px;
       padding:10px 12px;
@@ -86,20 +86,11 @@
     .radio-row span{ font-weight:900; font-size:.95rem; cursor:pointer; line-height:1.25; }
 
     .compact select{ padding:.65rem .75rem !important; border-radius:14px !important; font-weight:900 !important; }
-
-    /* Header inline language controls (small) */
-    .lang-inline{
-      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
-      font-size:12px; font-weight:900;
-      padding:6px 10px; border:1px solid #e5e7eb; border-radius:999px;
-      background:#fff;
-    }
-    .lang-inline label{ display:flex; gap:6px; align-items:center; cursor:pointer; }
-    .lang-inline input[type="radio"]{ width:18px; height:18px; }
   </style>
 </head>
 
 <body class="p-3">
+
 <header>
   <h1 class="text-xl sm:text-2xl font-black">MMK ↔ THB ငွေလဲတွက်ချက်ခြင်း</h1>
   <p class="text-xs sm:text-sm opacity-90">MMK ↔ THB Exchange Calculator</p>
@@ -158,9 +149,9 @@
 
     <div class="text-center mt-3">
       <p class="rate-note" id="rateNote1"></p>
-      <p class="text-red-600 font-extrabold mt-2" data-i18n="warn1">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
-      <p class="text-red-600 font-extrabold mt-2" data-i18n="warn2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
-      <p class="thanks" data-i18n="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
+      <p class="text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
+      <p class="text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
+      <p class="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
     </div>
 
     <button id="btnSave1" type="button" class="btn mt-3">Save JPEG</button>
@@ -193,9 +184,9 @@
 
     <div class="text-center mt-3">
       <p class="rate-note" id="rateNote2"></p>
-      <p class="text-red-600 font-extrabold mt-2" data-i18n="warn1">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
-      <p class="text-red-600 font-extrabold mt-2" data-i18n="warn2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
-      <p class="thanks" data-i18n="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
+      <p class="text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
+      <p class="text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
+      <p class="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
     </div>
 
     <button id="btnSave2" type="button" class="btn mt-3">Save JPEG</button>
@@ -203,17 +194,20 @@
 
   <!-- 4) Save JPEG + Bank UI -->
   <section class="box compact">
-    <!-- Title + Lang inline (beside) -->
-    <div class="flex items-center justify-between gap-3 flex-wrap">
+    <div class="flex items-center justify-between gap-3">
       <div>
-        <h2 class="text-lg font-black mb-0">Save JPEG + Bank QR</h2>
-        <p class="sub mt-1">QR / Bank Info / မပါ — တစ်ခုတည်းပဲရွေးနိုင် (ERROR message မထုတ်)</p>
+        <h2 class="text-lg font-black leading-tight">Save JPEG + Bank QR</h2>
+        <p class="sub">QR / Bank Info / မပါ — တစ်ခုတည်းပဲရွေးနိုင် (ERROR message မထုတ်)</p>
       </div>
 
-      <div class="lang-inline" title="Save JPEG Language">
-        <label><input type="radio" name="langMode" value="orig" checked>Default</label>
-        <label><input type="radio" name="langMode" value="en">ENG</label>
-        <label><input type="radio" name="langMode" value="th">TH</label>
+      <!-- ✅ Language selector (screen UI stays Burmese; affects SAVE ONLY) -->
+      <div class="text-right">
+        <div class="text-xs font-black text-slate-700 mb-1">Save JPEG Language</div>
+        <select id="saveLangSelect" class="border rounded-xl px-3 py-2 font-black text-sm">
+          <option value="orig" selected>မူလ</option>
+          <option value="en">ENG</option>
+          <option value="th">TH</option>
+        </select>
       </div>
     </div>
 
@@ -237,13 +231,13 @@
             <img id="bankLogo" alt="logo" class="rounded-xl border bg-white" style="width:54px;height:54px;object-fit:cover;">
             <div>
               <p id="bankNameText" class="font-black text-base"></p>
-              <p class="text-xs text-slate-500" id="bankInfoLabel">ဘဏ်အချက်အလက်</p>
+              <p class="text-xs text-slate-500">ဘဏ်အချက်အလက်</p>
             </div>
           </div>
 
           <div class="mt-3 text-sm text-slate-700 text-center">
-            <div><span id="lblAccName">ဘဏ်အကောင့်နာမည်</span>: <span id="bankAccName" class="font-black"></span></div>
-            <div class="mt-1"><span id="lblAccNo">ဘဏ်အကောင့်နံပါတ်</span>: <span id="bankAccNo" class="font-black font-mono"></span></div>
+            <div>ဘဏ်အကောင့်နာမည်: <span id="bankAccName" class="font-black"></span></div>
+            <div class="mt-1">ဘဏ်အကောင့်နံပါတ်: <span id="bankAccNo" class="font-black font-mono"></span></div>
           </div>
         </div>
 
@@ -263,11 +257,11 @@
 
         <label class="radio-row">
           <input type="radio" name="saveMode" value="qr">
-          <span>QR ပဲပါ (BIG ရှိရင် BIG သုံး)</span>
+          <span>QR ပဲပါ (Big ရှိရင် Big သုံး)</span>
         </label>
 
         <p class="text-xs text-slate-500 mt-2 leading-snug">
-          Note: BIG မရှိရင် Normal တစ်ပုံတည်းကို ကြီးကြီးပြပြီး၊ ERROR / message မထုတ်ပါ။
+          Note: Big မရှိရင် Normal တစ်ပုံတည်းကို ကြီးကြီးပြပြီး၊ ERROR / message မထုတ်ပါ။
         </p>
       </div>
 
@@ -275,14 +269,29 @@
       <div class="card">
         <p class="font-black text-center">Preview</p>
 
-        <div class="mt-3">
+        <!-- ✅ show BIG when exists -->
+        <div id="previewTwo" class="mt-3 hidden">
+          <div class="grid grid-cols-2 gap-3">
+            <div class="text-center">
+              <div class="text-xs text-slate-500 font-black mb-1">Normal</div>
+              <div class="qrFrame">
+                <img id="qrPreviewNormal" alt="QR Normal" class="mx-auto" style="width:180px;height:180px;object-fit:contain;">
+              </div>
+            </div>
+            <div class="text-center">
+              <div class="text-xs text-slate-500 font-black mb-1">Big</div>
+              <div class="qrFrame">
+                <img id="qrPreviewBig" alt="QR Big" class="mx-auto" style="width:210px;height:210px;object-fit:contain;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="previewOne" class="mt-3">
           <div class="text-center">
             <div class="qrFrame">
-              <!-- Solo preview (auto BIG if exists) -->
-              <img id="qrPreviewSolo" alt="QR" class="mx-auto"
-                style="width:280px;height:280px;object-fit:contain;">
+              <img id="qrPreviewSolo" alt="QR" class="mx-auto" style="width:280px;height:280px;object-fit:contain;">
             </div>
-            <div class="text-xs font-black text-slate-500 mt-2" id="qrWhichText">—</div>
           </div>
         </div>
 
@@ -318,16 +327,25 @@ const parseNum = v => {
 const fmt0ceil = n => new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.ceil(n));
 const fmt6 = n => new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:6}).format(n);
 
-/* ================= Save language ================= */
-function getLang(){
-  const el=document.querySelector('input[name="langMode"]:checked');
-  return el?el.value:'orig';
+/* ================= Save language (SAVE ONLY) ================= */
+function getSaveLang(){
+  return ($('#saveLangSelect')?.value) || 'orig';
 }
-
 const I18N = {
   en: {
-    warn1: "Always request the bank account before every transfer.",
-    warn2: "We are not responsible for any transfer made without requesting and confirming the bank account.",
+    titleTop: "Thailand Guide - Supplier By Ye",
+    h_thb2mmk:"THB → MMK",
+    h_mmk2thb:"MMK → THB",
+    sub_thb2mmk:"Thai Baht to Myanmar Kyat",
+    sub_mmk2thb:"Myanmar Kyat to Thai Baht",
+    lbl_thb:"Amount (THB)",
+    lbl_mmk:"Amount (MMK)",
+    in_thb:"Input THB",
+    in_mmk:"Input MMK",
+    out_mmk:"Result MMK",
+    out_thb:"Result THB",
+    warn1:"Always request the bank account before every transfer.",
+    warn2:"We are not responsible for any transfer made without requesting and confirming the bank account.",
     thanks:"Thank you for trusting and using Thailand Guide - Supplier By Ye.",
     bankTitle:"Transfer Bank Information",
     bankLabel:"Bank Information",
@@ -338,6 +356,17 @@ const I18N = {
     rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK"
   },
   th: {
+    titleTop: "Thailand Guide - Supplier By Ye",
+    h_thb2mmk:"บาท → จ๊าด",
+    h_mmk2thb:"จ๊าด → บาท",
+    sub_thb2mmk:"แปลงเงินบาทไทยเป็นจ๊าดเมียนมา",
+    sub_mmk2thb:"แปลงจ๊าดเมียนมาเป็นเงินบาทไทย",
+    lbl_thb:"จำนวนเงิน (THB)",
+    lbl_mmk:"จำนวนเงิน (MMK)",
+    in_thb:"กรอกจำนวนบาท",
+    in_mmk:"กรอกจำนวนจ๊าด",
+    out_mmk:"ผลลัพธ์ (MMK)",
+    out_thb:"ผลลัพธ์ (THB)",
     warn1:"โอนเงินทุกครั้งกรุณาขอเลขบัญชีที่ต้องถามก่อน",
     warn2:"หากโอนโดยไม่ยืนยันเลขบัญชี ทางเพจขอไม่รับผิดชอบ",
     thanks:"ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye",
@@ -352,6 +381,7 @@ const I18N = {
 };
 
 let LAST_RATE = { r:null, inv:null };
+
 function buildRateMsg(lang){
   if(!LAST_RATE.r || !LAST_RATE.inv) return "";
   const r=fmt6(LAST_RATE.r);
@@ -361,19 +391,47 @@ function buildRateMsg(lang){
   return `မြန်မာငွေ ၁ သိန်း = ${r} ဘတ် | ၁ ဘတ် = ${inv} ကျပ်`;
 }
 
-/* Apply language to Save blocks only (clone time) */
 function applyLangToClone(clone, lang){
   if(lang==='orig') return;
   const T=I18N[lang]; if(!T) return;
 
-  // warnings + thanks
-  clone.querySelectorAll('[data-i18n="warn1"]').forEach(x=>x.textContent=T.warn1);
-  clone.querySelectorAll('[data-i18n="warn2"]').forEach(x=>x.textContent=T.warn2);
-  clone.querySelectorAll('[data-i18n="thanks"]').forEach(x=>x.textContent=T.thanks);
+  // section title + top sub
+  const h2=clone.querySelector('h2');
+  const subTop=clone.querySelector('p.sub');
+  if(clone.id==='box-thb2mmk'){
+    if(h2) h2.textContent=T.h_thb2mmk;
+    if(subTop) subTop.textContent=T.sub_thb2mmk;
+  }
+  if(clone.id==='box-mmk2thb'){
+    if(h2) h2.textContent=T.h_mmk2thb;
+    if(subTop) subTop.textContent=T.sub_mmk2thb;
+  }
 
-  // rate note (use latest)
+  // labels (2 spans)
+  const spans=clone.querySelectorAll('label.label span');
+  if(spans.length>=2){
+    if(clone.id==='box-thb2mmk'){ spans[0].textContent=T.lbl_thb; spans[1].textContent=T.lbl_mmk; }
+    if(clone.id==='box-mmk2thb'){ spans[0].textContent=T.lbl_mmk; spans[1].textContent=T.lbl_thb; }
+  }
+
+  // input/output sub labels (2)
+  const subs=clone.querySelectorAll('.grid .sub');
+  if(subs.length>=2){
+    if(clone.id==='box-thb2mmk'){ subs[0].textContent=T.in_thb; subs[1].textContent=T.out_mmk; }
+    if(clone.id==='box-mmk2thb'){ subs[0].textContent=T.in_mmk; subs[1].textContent=T.out_thb; }
+  }
+
+  // rate note
   const rateP=clone.querySelector('.rate-note');
   if(rateP) rateP.textContent = buildRateMsg(lang);
+
+  // warnings
+  const reds=clone.querySelectorAll('.text-red-600');
+  if(reds.length>=2){ reds[0].textContent=T.warn1; reds[1].textContent=T.warn2; }
+
+  // thanks
+  const thanks=clone.querySelector('.thanks');
+  if(thanks) thanks.textContent=T.thanks;
 }
 
 /* ================= calculator ================= */
@@ -430,16 +488,8 @@ $('#rate100k').value='820';
 syncFrom100k();
 recalc();
 
-/* ================= QR setup =================
-   ✅ IMPORTANT: Your BIG files are inside SAME folder (qr)
-   Example:
-   assets/qr/hba.jpg
-   assets/qr/hba_big.jpg
-*/
-const QR_BASE_NORMAL='assets/qr/';
-const QR_BASE_BIG='assets/qr/';  // ✅ same folder
-
-/* dropdown only normal files (no _big) */
+/* ================= QR setup (assets/qr + _big in SAME folder) ================= */
+const QR_BASE='assets/qr/';
 const QR_FILES=[
   "hba.jpg","hbq.jpg","hkqr.jpg","ht7.jpg","tkpayq.jpg",
   "yba.jpg","ybq.jpg","yka.jpg","ykpayq.jpg","ykq.jpg",
@@ -459,16 +509,13 @@ function getOwnerFromKey(keyNoExt){
 }
 
 const qrSelect=document.getElementById('qrSelect');
-const qrPreviewSolo=document.getElementById('qrPreviewSolo');
-const qrWhichText=document.getElementById('qrWhichText');
-
 for(const f of QR_FILES){
   const o=document.createElement('option');
   o.value=f; o.textContent=f.replace(/\.[^.]+$/,'');
   qrSelect.appendChild(o);
 }
 
-let CURRENT_QR={ owner:'', urlNormal:null, urlBig:null, hasBig:false };
+let CURRENT_QR={ owner:'', normal:null, big:null, hasBig:false };
 
 function probeImage(url){
   return new Promise(resolve=>{
@@ -481,33 +528,39 @@ function probeImage(url){
 
 async function refreshQrPreview(){
   const file=qrSelect.value;
-  if(!file) return;
-
   const labelNoExt=qrSelect.options[qrSelect.selectedIndex].text;
 
-  const normalUrl = new URL(QR_BASE_NORMAL + file, window.location.href).href;
-  const baseName = file.replace(/\.[^.]+$/,'');
-  const bigFile  = baseName + '_big.jpg';
-  const bigUrl   = new URL(QR_BASE_BIG + bigFile, window.location.href).href;
+  const normalUrl=new URL(QR_BASE + file, window.location.href).href;
+
+  const baseName=file.replace(/\.[^.]+$/,'');
+  const bigFile=baseName + '_big.jpg';
+  const bigUrl=new URL(QR_BASE + bigFile, window.location.href).href;
 
   const owner=getOwnerFromKey(labelNoExt);
 
-  document.getElementById('qrPathNormal').textContent = QR_BASE_NORMAL + file;
-  document.getElementById('qrPathBig').textContent    = QR_BASE_BIG + bigFile;
+  $('#qrPathNormal').textContent = QR_BASE + file;
+  $('#qrPathBig').textContent = QR_BASE + bigFile;
 
   const hasBig = await probeImage(bigUrl);
 
-  CURRENT_QR = { owner, urlNormal: normalUrl, urlBig: bigUrl, hasBig };
+  CURRENT_QR = { owner, normal: normalUrl, big: bigUrl, hasBig };
 
-  document.getElementById('qrOwnerValue').textContent = owner;
+  $('#qrOwnerValue').textContent = owner;
 
-  // ✅ BIG exists -> show BIG, else show normal
+  const previewTwo=$('#previewTwo');
+  const previewOne=$('#previewOne');
+
   if(hasBig){
-    qrPreviewSolo.src = bigUrl + (bigUrl.includes('?')?'&':'?') + 'v=' + Date.now();
-    qrWhichText.textContent = 'BIG QR (auto)';
+    previewTwo.classList.remove('hidden');
+    previewOne.classList.add('hidden');
+
+    $('#qrPreviewNormal').src = normalUrl + (normalUrl.includes('?')?'&':'?') + 'v=' + Date.now();
+    $('#qrPreviewBig').src = bigUrl + (bigUrl.includes('?')?'&':'?') + 'v=' + Date.now();
   }else{
-    qrPreviewSolo.src = normalUrl + (normalUrl.includes('?')?'&':'?') + 'v=' + Date.now();
-    qrWhichText.textContent = 'Normal QR';
+    previewTwo.classList.add('hidden');
+    previewOne.classList.remove('hidden');
+
+    $('#qrPreviewSolo').src = normalUrl + (normalUrl.includes('?')?'&':'?') + 'v=' + Date.now();
   }
 }
 qrSelect.addEventListener('change', refreshQrPreview);
@@ -548,18 +601,16 @@ function refreshBankInfo(){
   const key=bankSelect.value;
   const box=document.getElementById('bankInfoBox');
   const mini=document.getElementById('bankPreviewMini');
-
   if(!key || !BANK_INFO[key]){
     box.classList.add('hidden');
     mini.textContent='ဘဏ်မရွေးထားသေးပါ။';
     return;
   }
-
   const info=BANK_INFO[key];
-  document.getElementById('bankLogo').src = info.logo + '?v=' + Date.now();
-  document.getElementById('bankNameText').textContent = info.name;
-  document.getElementById('bankAccName').textContent = info.accName;
-  document.getElementById('bankAccNo').textContent = info.accNo;
+  $('#bankLogo').src = info.logo + '?v=' + Date.now();
+  $('#bankNameText').textContent = info.name;
+  $('#bankAccName').textContent = info.accName;
+  $('#bankAccNo').textContent = info.accNo;
   box.classList.remove('hidden');
 
   mini.innerHTML = `
@@ -568,21 +619,10 @@ function refreshBankInfo(){
         <img src="${info.logo}?v=${Date.now()}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" />
         <span>${info.name}</span>
       </div>
-      <div style="margin-top:8px"><span id="miniAccName">ဘဏ်အကောင့်နာမည်</span>: <span style="font-weight:900">${info.accName}</span></div>
-      <div style="margin-top:4px"><span id="miniAccNo">ဘဏ်အကောင့်နံပါတ်</span>: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>
+      <div style="margin-top:8px">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName}</span></div>
+      <div style="margin-top:4px">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>
     </div>
   `;
-
-  // update mini labels by selected language (preview UI only)
-  const lang=getLang();
-  if(lang==='en'){
-    const a=mini.querySelector('#miniAccName'); if(a) a.textContent='Account Name';
-    const b=mini.querySelector('#miniAccNo'); if(b) b.textContent='Account Number';
-  }
-  if(lang==='th'){
-    const a=mini.querySelector('#miniAccName'); if(a) a.textContent='ชื่อบัญชี';
-    const b=mini.querySelector('#miniAccNo'); if(b) b.textContent='เลขบัญชี';
-  }
 }
 bankSelect.addEventListener('change', refreshBankInfo);
 
@@ -596,20 +636,22 @@ function getSaveMode(){
 async function saveSectionAsJpeg(sectionId, filename){
   await document.fonts?.ready;
 
-  recalc(); // ensure latest output
-  const lang=getLang();
-  const T=(lang==='orig')?null:(I18N[lang]||null);
+  // make sure outputs are updated
+  recalc();
+
+  const lang = getSaveLang();         // ✅ affects SAVE ONLY
+  const T = I18N[lang] || null;
 
   const original=document.getElementById(sectionId);
   const clone=original.cloneNode(true);
 
-  // remove buttons
+  // remove buttons in clone
   clone.querySelectorAll('button').forEach(b=>b.remove());
 
-  // translate clone only (en/th)
+  // translate clone only
   applyLangToClone(clone, lang);
 
-  /* ✅ FIX: input/output baseline cut => replace with div */
+  // ✅ Fix: input/output baseline cut => replace with div
   clone.querySelectorAll('input, output').forEach(el=>{
     const tag=el.tagName.toLowerCase();
     const div=document.createElement('div');
@@ -621,20 +663,24 @@ async function saveSectionAsJpeg(sectionId, filename){
     div.style.alignItems='center';
     div.style.lineHeight='1.35';
     div.style.minHeight='52px';
+    div.style.height='52px';
+    div.style.paddingTop='13px';
+    div.style.paddingBottom='13px';
+
     const val=(tag==='input') ? (el.value || '') : (el.textContent || '');
     div.textContent=val;
     el.replaceWith(div);
   });
 
-  // clean background
+  // clean background in JPEG
   clone.style.boxShadow='none';
   clone.style.border='1px solid #e5e7eb';
   clone.style.background='#fff';
 
   const mode=getSaveMode();
 
-  // QR add (✅ BIG exists -> use BIG)
-  if(mode==='qr' && CURRENT_QR.urlNormal){
+  // ===== QR block =====
+  if(mode==='qr' && CURRENT_QR.normal){
     const wrap=document.createElement('div');
     wrap.className='export-block';
 
@@ -653,7 +699,8 @@ async function saveSectionAsJpeg(sectionId, filename){
     img.style.background='#fff';
     img.style.display='block';
 
-    const useUrl = (CURRENT_QR.hasBig && CURRENT_QR.urlBig) ? CURRENT_QR.urlBig : CURRENT_QR.urlNormal;
+    // ✅ Use BIG if exists
+    const useUrl = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
     img.src = useUrl + (useUrl.includes('?')?'&':'?') + 'v=' + Date.now();
 
     const owner=document.createElement('p');
@@ -675,7 +722,7 @@ async function saveSectionAsJpeg(sectionId, filename){
     });
   }
 
-  // Bank add
+  // ===== Bank block =====
   if(mode==='bank'){
     const key=bankSelect.value;
     if(key && BANK_INFO[key]){
@@ -783,7 +830,10 @@ async function saveSectionAsJpeg(sectionId, filename){
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,out.width,out.height);
   ctx.fillStyle='#000'; ctx.font='bold 34px system-ui, sans-serif';
   ctx.textAlign='center'; ctx.textBaseline='top';
-  ctx.fillText('Thailand Guide - Supplier By Ye', out.width/2, margin);
+
+  const topTitle = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
+  ctx.fillText(topTitle, out.width/2, margin);
+
   ctx.drawImage(canvas, margin, margin*2 + titleHeight);
 
   const a=document.createElement('a');
@@ -796,28 +846,6 @@ async function saveSectionAsJpeg(sectionId, filename){
 
 document.getElementById('btnSave1').addEventListener('click', ()=>saveSectionAsJpeg('box-thb2mmk','thb-to-mmk.jpg'));
 document.getElementById('btnSave2').addEventListener('click', ()=>saveSectionAsJpeg('box-mmk2thb','mmk-to-thb.jpg'));
-
-/* Update Bank labels in UI when language radio changes (preview only) */
-document.querySelectorAll('input[name="langMode"]').forEach(r=>{
-  r.addEventListener('change', ()=>{
-    const lang=getLang();
-    if(lang==='en'){
-      $('#bankInfoLabel').textContent='Bank Information';
-      $('#lblAccName').textContent='Account Name';
-      $('#lblAccNo').textContent='Account Number';
-    }else if(lang==='th'){
-      $('#bankInfoLabel').textContent='ข้อมูลบัญชีธนาคาร';
-      $('#lblAccName').textContent='ชื่อบัญชี';
-      $('#lblAccNo').textContent='เลขบัญชี';
-    }else{
-      $('#bankInfoLabel').textContent='ဘဏ်အချက်အလက်';
-      $('#lblAccName').textContent='ဘဏ်အကောင့်နာမည်';
-      $('#lblAccNo').textContent='ဘဏ်အကောင့်နံပါတ်';
-    }
-    // refresh mini preview labels
-    refreshBankInfo();
-  });
-});
 </script>
 
 </body>
