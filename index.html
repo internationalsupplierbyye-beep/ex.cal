@@ -3,13 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MMK ↔ THB Calculator + Bank QR + Save JPEG</title>
+  <title>MMK ↔ THB Calculator + Bank QR + Save PNG/JPEG</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <style>
-    /* ====== Compact UI (screen UI = Burmese) ====== */
     body{ background:#f3f6f9; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
     header{
       background:linear-gradient(to right,#2563eb,#10b981);
@@ -25,6 +24,7 @@
     .sub{ font-size:.82rem; color:#6b7280; margin-bottom:.25rem; line-height:1.2; }
     .rate-note{ font-size:.92rem; color:#64748b; margin-top:.45rem; font-weight:900; line-height:1.25; }
     .thanks{ color:#059669; font-size:.88rem; margin-top:.45rem; font-weight:800; line-height:1.25; }
+
     .btn{
       border-radius:.85rem; border:none; background:#111827; color:white;
       padding:.58rem .95rem; font-size:.95rem; font-weight:900; cursor:pointer;
@@ -32,13 +32,21 @@
     }
     .btn:hover{ background:#0f172a; }
     .btn:active{ transform:translateY(1px); }
+
+    .btn2{
+      border-radius:.85rem; border:2px solid #111827; background:white; color:#111827;
+      padding:.52rem .9rem; font-size:.92rem; font-weight:900; cursor:pointer;
+      transition:background .2s, transform .05s;
+    }
+    .btn2:hover{ background:#f1f5f9; }
+    .btn2:active{ transform:translateY(1px); }
+
     .flag{ width:20px; height:auto; border-radius:2px; display:inline-block; }
     .card{ border:1px solid #e5e7eb; border-radius:16px; padding:12px; background:#fff; }
     .export-block{ margin-top:12px; padding-top:10px; border-top:1px dashed #cbd5e1; text-align:center; }
     .muted{ color:#64748b; font-size:.82rem; line-height:1.25; }
     .qrFrame{ border:1px solid #e5e7eb; border-radius:14px; background:#fff; padding:8px; }
 
-    /* ====== INPUT/OUTPUT (Clear) ====== */
     .amt-input{
       font-size:1.25rem !important;
       font-weight:900 !important;
@@ -63,15 +71,16 @@
       font-weight:900 !important;
       color:#0f172a !important;
       background:#ffffff !important;
-      border:2px solid #cbd5e1 !important;
+      border:2px solid #cbd5e7eb !important;
       border-radius:14px !important;
       padding:13px 14px !important;
       min-height:52px !important;
       display:flex; align-items:center;
       font-variant-numeric: tabular-nums !important;
     }
+    /* fix typo border color (keep same as original) */
+    .amt-output{ border-color:#cbd5e1 !important; }
 
-    /* ====== Radio row (big circle + spacing) ====== */
     .radio-row{
       display:flex; align-items:center; gap:12px;
       padding:10px 12px;
@@ -154,7 +163,11 @@
       <p class="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
     </div>
 
-    <button id="btnSave1" type="button" class="btn mt-3">Save JPEG</button>
+    <!-- ✅ You said these buttons are OK -->
+    <div class="flex flex-wrap gap-2 mt-3">
+      <button id="btnSave1PNG" type="button" class="btn">Save PNG</button>
+      <button id="btnSave1JPG" type="button" class="btn2">Save JPEG</button>
+    </div>
   </section>
 
   <!-- 3) MMK → THB -->
@@ -189,20 +202,23 @@
       <p class="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
     </div>
 
-    <button id="btnSave2" type="button" class="btn mt-3">Save JPEG</button>
+    <div class="flex flex-wrap gap-2 mt-3">
+      <button id="btnSave2PNG" type="button" class="btn">Save PNG</button>
+      <button id="btnSave2JPG" type="button" class="btn2">Save JPEG</button>
+    </div>
   </section>
 
-  <!-- 4) Save JPEG + Bank UI -->
+  <!-- 4) Save + Bank UI -->
   <section class="box compact">
     <div class="flex items-center justify-between gap-3">
       <div>
-        <h2 class="text-lg font-black leading-tight">Save JPEG + Bank QR</h2>
-        <p class="sub">QR / Bank Info / မပါ — တစ်ခုတည်းပဲရွေးနိုင် (ERROR message မထုတ်)</p>
+        <h2 class="text-lg font-black leading-tight">Save PNG/JPEG + Bank QR</h2>
+        <p class="sub">QR / Bank Info / မပါ — တစ်ခုတည်းပဲရွေးနိုင်</p>
       </div>
 
-      <!-- ✅ Language selector (screen UI stays Burmese; affects SAVE ONLY) -->
+      <!-- Language selector (screen UI stays Burmese; affects SAVE ONLY) -->
       <div class="text-right">
-        <div class="text-xs font-black text-slate-700 mb-1">Save JPEG Language</div>
+        <div class="text-xs font-black text-slate-700 mb-1">Save Export Language</div>
         <select id="saveLangSelect" class="border rounded-xl px-3 py-2 font-black text-sm">
           <option value="orig" selected>မူလ</option>
           <option value="en">ENG</option>
@@ -210,6 +226,8 @@
         </select>
       </div>
     </div>
+
+    <!-- ✅ Export Format UI removed -->
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start mt-3">
 
@@ -224,6 +242,8 @@
         <hr class="my-3">
 
         <p class="font-black mb-2">Bank Info Select</p>
+
+        <!-- ✅ Bank search box removed -->
         <select id="bankSelect" class="w-full border p-3"></select>
 
         <div id="bankInfoBox" class="mt-3 border rounded-xl p-3 bg-white hidden">
@@ -243,7 +263,7 @@
 
         <hr class="my-3">
 
-        <p class="font-black mb-1">Save JPEG ထဲ ဘာထည့်မလဲ (တစ်ခုတည်းရွေး)</p>
+        <p class="font-black mb-1">Export ထဲ ဘာထည့်မလဲ (တစ်ခုတည်းရွေး)</p>
 
         <label class="radio-row">
           <input type="radio" name="saveMode" value="none" checked>
@@ -269,7 +289,6 @@
       <div class="card">
         <p class="font-black text-center">Preview</p>
 
-        <!-- ✅ show BIG when exists -->
         <div id="previewTwo" class="mt-3 hidden">
           <div class="grid grid-cols-2 gap-3">
             <div class="text-center">
@@ -327,10 +346,56 @@ const parseNum = v => {
 const fmt0ceil = n => new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.ceil(n));
 const fmt6 = n => new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:6}).format(n);
 
-/* ================= Save language (SAVE ONLY) ================= */
-function getSaveLang(){
-  return ($('#saveLangSelect')?.value) || 'orig';
+/* ================= Auto thousands separator (with caret) ================= */
+function formatInputThousands(el, allowDecimal){
+  const start = el.selectionStart ?? el.value.length;
+  const before = el.value;
+
+  let v = normalizeDigits(before);
+
+  if(allowDecimal){
+    v = v.replace(/[^\d.]/g,'');
+    const parts = v.split('.');
+    if(parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+  }else{
+    v = v.replace(/[^\d]/g,'');
+  }
+
+  if(v === ''){
+    el.value = '';
+    return;
+  }
+
+  let out = '';
+  if(allowDecimal && v.includes('.')){
+    const [a,b] = v.split('.');
+    const aFmt = a ? Number(a).toLocaleString('en-US') : '';
+    out = aFmt + '.' + (b ?? '');
+  }else{
+    out = Number(v).toLocaleString('en-US');
+  }
+
+  const digitsBefore = normalizeDigits(before.slice(0,start)).replace(/[^\d]/g,'').length;
+  el.value = out;
+
+  let pos = 0, seen = 0;
+  while(pos < out.length){
+    if(/\d/.test(out[pos])) seen++;
+    pos++;
+    if(seen >= digitsBefore) break;
+  }
+  el.setSelectionRange(pos,pos);
 }
+
+function bindAutoSeparator(id, allowDecimal){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('input', ()=>formatInputThousands(el, allowDecimal));
+}
+
+/* ================= Save language (SAVE ONLY) ================= */
+function getSaveLang(){ return ($('#saveLangSelect')?.value) || 'orig'; }
+
 const I18N = {
   en: {
     titleTop: "Thailand Guide - Supplier By Ye",
@@ -395,7 +460,6 @@ function applyLangToClone(clone, lang){
   if(lang==='orig') return;
   const T=I18N[lang]; if(!T) return;
 
-  // section title + top sub
   const h2=clone.querySelector('h2');
   const subTop=clone.querySelector('p.sub');
   if(clone.id==='box-thb2mmk'){
@@ -407,29 +471,24 @@ function applyLangToClone(clone, lang){
     if(subTop) subTop.textContent=T.sub_mmk2thb;
   }
 
-  // labels (2 spans)
   const spans=clone.querySelectorAll('label.label span');
   if(spans.length>=2){
     if(clone.id==='box-thb2mmk'){ spans[0].textContent=T.lbl_thb; spans[1].textContent=T.lbl_mmk; }
     if(clone.id==='box-mmk2thb'){ spans[0].textContent=T.lbl_mmk; spans[1].textContent=T.lbl_thb; }
   }
 
-  // input/output sub labels (2)
   const subs=clone.querySelectorAll('.grid .sub');
   if(subs.length>=2){
     if(clone.id==='box-thb2mmk'){ subs[0].textContent=T.in_thb; subs[1].textContent=T.out_mmk; }
     if(clone.id==='box-mmk2thb'){ subs[0].textContent=T.in_mmk; subs[1].textContent=T.out_thb; }
   }
 
-  // rate note
   const rateP=clone.querySelector('.rate-note');
   if(rateP) rateP.textContent = buildRateMsg(lang);
 
-  // warnings
   const reds=clone.querySelectorAll('.text-red-600');
   if(reds.length>=2){ reds[0].textContent=T.warn1; reds[1].textContent=T.warn2; }
 
-  // thanks
   const thanks=clone.querySelector('.thanks');
   if(thanks) thanks.textContent=T.thanks;
 }
@@ -464,6 +523,7 @@ function recalc(){
   $('#mmkOut').textContent = (Number.isFinite(rate) && Number.isFinite(thb)) ? fmt0ceil(thb*100000/rate) + ' MMK' : '';
   $('#thbOut').textContent = (Number.isFinite(rate) && Number.isFinite(mmk)) ? fmt0ceil(mmk*rate/100000) + ' THB' : '';
 }
+
 let lock=false;
 function syncFrom100k(){
   if(lock) return; lock=true;
@@ -477,14 +537,23 @@ function syncFromPerThb(){
   if(Number.isFinite(inv) && inv>0) $('#rate100k').value = fmt6(100000 / inv);
   lock=false; refreshRateNote(); recalc();
 }
+
+/* Bind inputs (recalc) */
 ['rate100k','ratePerThb','thbIn','mmkIn'].forEach(id=>{
   document.getElementById(id).addEventListener('input', ()=>{ refreshRateNote(); recalc(); });
 });
 $('#rate100k').addEventListener('input', syncFrom100k);
 $('#ratePerThb').addEventListener('input', syncFromPerThb);
 
+/* Auto separator */
+bindAutoSeparator('thbIn', false);
+bindAutoSeparator('mmkIn', false);
+bindAutoSeparator('rate100k', true);
+bindAutoSeparator('ratePerThb', true);
+
 /* defaults */
 $('#rate100k').value='820';
+formatInputThousands($('#rate100k'), true);
 syncFrom100k();
 recalc();
 
@@ -570,10 +639,12 @@ refreshQrPreview();
 const BANK_INFO = {
   KTB:{ name:"Krungthai Bank - ကုံထိုင်းဘဏ်", logo:"assets/logo/krungthai.jpg", accName:"YE LYNN HTUN", accNo:"497-061-977-8" },
   BBL:{ name:"Bangkok Bank - ဘန်ကောက်ဘဏ်", logo:"assets/logo/bangkok.jpg", accName:"YE LYNN HTUN", accNo:"229-4-266-305" },
-  KPLUS:{ name:"Karsikorn - ကာစီကွန်ဘဏ်", logo:"assets/logo/kplus.jpg", accName:"YE LYNN HTUN", accNo:"186-1-85075-3" },
+
+  /* ✅ Fixed text */
+  KPLUS:{ name:"Kasikorn Bank - ကာစီကွန်ဘဏ်", logo:"assets/logo/kplus.jpg", accName:"YE LYNN HTUN", accNo:"186-1-85075-3" },
+
   KBZ:{ name:"KBZ Bank (Special)", logo:"assets/logo/kbz.jpg", accName:"YE LYNN HTUN", accNo:"1911 3720 2003 6190 1" },
 
-  /* ✅ KPay -> KBZ Pay */
   KPAY_YLH:{ name:"KBZ Pay - YLH", logo:"assets/logo/kpay.jpg", accName:"YE LYNN HTUN", accNo:"09-262-712-854" },
   KPAY_TDW:{ name:"KBZ Pay - TDW", logo:"assets/logo/kpay.jpg", accName:"THIDAR WIN", accNo:"09-452-341-813" },
   KPAY_HSA:{ name:"KBZ Pay - HSA", logo:"assets/logo/kpay.jpg", accName:"HEIN SET AUNG", accNo:"09-264-947-944" },
@@ -585,10 +656,12 @@ const BANK_INFO = {
 const bankSelect=document.getElementById('bankSelect');
 const bankOrder=["KTB","BBL","KPLUS","KBZ","KPAY_YLH","KPAY_TDW","KPAY_HSA","WAVE_YLH","WAVE_HSA"];
 
+/* Build bank dropdown (no search filter) */
 (function buildBankDropdown(){
   const opt0=document.createElement('option');
   opt0.value=''; opt0.textContent='— ဘဏ်ရွေးပါ —';
   bankSelect.appendChild(opt0);
+
   for(const key of bankOrder){
     if(!BANK_INFO[key]) continue;
     const o=document.createElement('option');
@@ -632,26 +705,24 @@ function getSaveMode(){
   return el?el.value:'none';
 }
 
-/* ================= Save JPEG ================= */
-async function saveSectionAsJpeg(sectionId, filename){
+/* ================= Save Export (PNG / JPEG) ================= */
+async function saveSection(sectionId, filenameBase, fmt){
   await document.fonts?.ready;
-
-  // make sure outputs are updated
   recalc();
 
-  const lang = getSaveLang();         // ✅ affects SAVE ONLY
+  const lang = getSaveLang();
   const T = I18N[lang] || null;
+
+  fmt = (fmt === 'jpg') ? 'jpg' : 'png';
 
   const original=document.getElementById(sectionId);
   const clone=original.cloneNode(true);
 
-  // remove buttons in clone
   clone.querySelectorAll('button').forEach(b=>b.remove());
 
-  // translate clone only
   applyLangToClone(clone, lang);
 
-  // ✅ Fix: input/output baseline cut => replace with div
+  // Fix input/output baseline cut => replace with div
   clone.querySelectorAll('input, output').forEach(el=>{
     const tag=el.tagName.toLowerCase();
     const div=document.createElement('div');
@@ -672,14 +743,13 @@ async function saveSectionAsJpeg(sectionId, filename){
     el.replaceWith(div);
   });
 
-  // clean background in JPEG
   clone.style.boxShadow='none';
   clone.style.border='1px solid #e5e7eb';
   clone.style.background='#fff';
 
   const mode=getSaveMode();
 
-  // ===== QR block =====
+  // QR block
   if(mode==='qr' && CURRENT_QR.normal){
     const wrap=document.createElement('div');
     wrap.className='export-block';
@@ -699,7 +769,6 @@ async function saveSectionAsJpeg(sectionId, filename){
     img.style.background='#fff';
     img.style.display='block';
 
-    // ✅ Use BIG if exists
     const useUrl = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
     img.src = useUrl + (useUrl.includes('?')?'&':'?') + 'v=' + Date.now();
 
@@ -722,7 +791,7 @@ async function saveSectionAsJpeg(sectionId, filename){
     });
   }
 
-  // ===== Bank block =====
+  // Bank block
   if(mode==='bank'){
     const key=bankSelect.value;
     if(key && BANK_INFO[key]){
@@ -837,15 +906,33 @@ async function saveSectionAsJpeg(sectionId, filename){
   ctx.drawImage(canvas, margin, margin*2 + titleHeight);
 
   const a=document.createElement('a');
-  a.href = out.toDataURL('image/jpeg',0.92);
-  a.download = filename;
+
+  if(fmt === 'jpg'){
+    a.href = out.toDataURL('image/jpeg',0.92);
+    a.download = filenameBase + '.jpg';
+  }else{
+    a.href = out.toDataURL('image/png');
+    a.download = filenameBase + '.png';
+  }
+
   document.body.appendChild(a);
   a.click();
   setTimeout(()=>document.body.removeChild(a),0);
 }
 
-document.getElementById('btnSave1').addEventListener('click', ()=>saveSectionAsJpeg('box-thb2mmk','thb-to-mmk.jpg'));
-document.getElementById('btnSave2').addEventListener('click', ()=>saveSectionAsJpeg('box-mmk2thb','mmk-to-thb.jpg'));
+/* Save buttons (no Export Format radio) */
+document.getElementById('btnSave1PNG').addEventListener('click', ()=>{
+  saveSection('box-thb2mmk','thb-to-mmk','png');
+});
+document.getElementById('btnSave1JPG').addEventListener('click', ()=>{
+  saveSection('box-thb2mmk','thb-to-mmk','jpg');
+});
+document.getElementById('btnSave2PNG').addEventListener('click', ()=>{
+  saveSection('box-mmk2thb','mmk-to-thb','png');
+});
+document.getElementById('btnSave2JPG').addEventListener('click', ()=>{
+  saveSection('box-mmk2thb','mmk-to-thb','jpg');
+});
 </script>
 
 </body>
