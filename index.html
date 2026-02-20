@@ -843,12 +843,20 @@ async function saveSection(sectionId, filenameBase, fmt){
         <div style="margin-top:10px;color:#475569;font-size:15px;">
           ${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a">${info.accName}</span>
         </div>
-        <div style="margin-top:8px;color:#475569;font-size:15px;">
-          ${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:
-          <span style="font-weight:900;color:#0f172a;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">
-            ${info.accNo}
-          </span>
-        </div>
+        <div style="margin-top:10px;color:#475569;font-size:15px;">
+  ${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:
+  <span style="
+    display:inline-block;
+    margin-left:6px;
+    font-weight:1200;
+    color:#0f172a;
+    font-size:22px;
+    letter-spacing:0.5px;
+    font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace
+  ">
+    ${info.accNo}
+  </span>
+</div>
       `;
 
       headerRow.appendChild(logo);
