@@ -227,8 +227,6 @@
       </div>
     </div>
 
-    <!-- ✅ Export Format UI removed -->
-
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start mt-3">
 
       <!-- Left -->
@@ -242,8 +240,6 @@
         <hr class="my-3">
 
         <p class="font-black mb-2">Bank Info Select</p>
-
-        <!-- ✅ Bank search box removed -->
         <select id="bankSelect" class="w-full border p-3"></select>
 
         <div id="bankInfoBox" class="mt-3 border rounded-xl p-3 bg-white hidden">
@@ -314,8 +310,9 @@
           </div>
         </div>
 
+        <!-- ✅ CHANGED: "အကောင့်ရှင်အမည်" -> "အကောင့်နာမည်" -->
         <p id="qrOwnerName" class="text-center text-slate-700 mt-3 text-base">
-          အကောင့်ရှင်အမည်: <span class="font-black" id="qrOwnerValue">—</span>
+          အကောင့်နာမည်: <span class="font-black" id="qrOwnerValue">—</span>
         </p>
 
         <div class="mt-3 border-t pt-3 text-left">
@@ -776,7 +773,7 @@ async function saveSection(sectionId, filenameBase, fmt){
     owner.className='mt-3 text-slate-700';
     owner.innerHTML = (T
       ? `${T.owner}: <span style="font-weight:900">${CURRENT_QR.owner}</span>`
-      : `အကောင့်ရှင်အမည်: <span style="font-weight:900">${CURRENT_QR.owner}</span>`
+      : `အကောင့်နာမည်: <span style="font-weight:900">${CURRENT_QR.owner}</span>`
     );
 
     wrap.appendChild(title);
@@ -844,19 +841,19 @@ async function saveSection(sectionId, filenameBase, fmt){
           ${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a">${info.accName}</span>
         </div>
         <div style="margin-top:10px;color:#475569;font-size:15px;">
-  ${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:
-  <span style="
-    display:inline-block;
-    margin-left:6px;
-    font-weight:1200;
-    color:#0f172a;
-    font-size:22px;
-    letter-spacing:0.5px;
-    font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace
-  ">
-    ${info.accNo}
-  </span>
-</div>
+          ${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:
+          <span style="
+            display:inline-block;
+            margin-left:6px;
+            font-weight:1200;
+            color:#0f172a;
+            font-size:22px;
+            letter-spacing:0.5px;
+            font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace
+          ">
+            ${info.accNo}
+          </span>
+        </div>
       `;
 
       headerRow.appendChild(logo);
