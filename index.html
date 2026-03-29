@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MMK ↔ THB Calculator + Bank QR + Save PNG/JPEG</title>
+  <title>MMK ↔ THB & VND Calculator + Bank QR + Save PNG/JPEG</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -71,15 +71,13 @@
       font-weight:900 !important;
       color:#0f172a !important;
       background:#ffffff !important;
-      border:2px solid #cbd5e7eb !important;
+      border:2px solid #cbd5e1 !important;
       border-radius:14px !important;
       padding:13px 14px !important;
       min-height:52px !important;
       display:flex; align-items:center;
       font-variant-numeric: tabular-nums !important;
     }
-    /* fix typo border color (keep same as original) */
-    .amt-output{ border-color:#cbd5e1 !important; }
 
     .radio-row{
       display:flex; align-items:center; gap:12px;
@@ -101,13 +99,12 @@
 <body class="p-3">
 
 <header>
-  <h1 class="text-xl sm:text-2xl font-black">MMK ↔ THB ငွေလဲတွက်ချက်ခြင်း</h1>
-  <p class="text-xs sm:text-sm opacity-90">MMK ↔ THB Exchange Calculator</p>
+  <h1 class="text-xl sm:text-2xl font-black">MMK ↔ THB & VND ငွေလဲတွက်ချက်ခြင်း</h1>
+  <p class="text-xs sm:text-sm opacity-90">MMK ↔ THB & VND Exchange Calculator</p>
 </header>
 
 <main class="max-w-2xl mx-auto">
 
-  <!-- 1) Rate Entry -->
   <section class="box">
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div>
@@ -116,7 +113,7 @@
           <span>မြန်မာငွေ ၁ သိန်း အတွက် ဘတ် (THB)</span>
         </label>
         <p class="sub">THB per 100,000 MMK</p>
-        <input id="rate100k" class="amt-input w-full" type="text" placeholder="820" inputmode="decimal">
+        <input id="rate100k" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ဥပမာ - 820">
       </div>
 
       <div>
@@ -125,15 +122,28 @@
           <span>၁ ဘတ် အတွက် မြန်မာကျပ်</span>
         </label>
         <p class="sub">MMK per 1 THB</p>
-        <input id="ratePerThb" class="amt-input w-full" type="text" placeholder="121.95" inputmode="decimal">
+        <input id="ratePerThb" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ဥပမာ - 121.95">
       </div>
     </div>
     <p class="rate-note mt-3" id="rateNoteTop"></p>
+
+    <hr class="my-4 border-slate-200">
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="label">
+          <img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag">
+          <span>၁ ကျပ် အတွက် ဗီယက်နမ်ဒေါင် (VND)</span>
+        </label>
+        <p class="sub">VND per 1 MMK</p>
+        <input id="rateVnd" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ဥပမာ - 6.5">
+      </div>
+    </div>
+    <p class="rate-note mt-3" id="rateNoteVndTop"></p>
   </section>
 
-  <!-- 2) THB → MMK -->
   <section id="box-thb2mmk" class="box capture-target">
-    <h2 class="text-lg font-black mb-1">ဘတ် → မြန်မာကျပ်</h2>
+    <h2 class="text-lg font-black mb-1 text-blue-700">ဘတ် → မြန်မာကျပ်</h2>
     <p class="sub">THB → MMK</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -143,7 +153,7 @@
           <span>ဘတ်ငွေ</span>
         </label>
         <p class="sub">Input THB</p>
-        <input id="thbIn" class="amt-input w-full" type="text" placeholder="6500" inputmode="numeric">
+        <input id="thbIn" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
       </div>
 
       <div>
@@ -158,21 +168,19 @@
 
     <div class="text-center mt-3">
       <p class="rate-note" id="rateNote1"></p>
-      <p class="text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
-      <p class="text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
-      <p class="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
+      <p class="lang-warn1 text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
+      <p class="lang-warn2 text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
+      <p class="lang-thanks thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
     </div>
 
-    <!-- ✅ You said these buttons are OK -->
     <div class="flex flex-wrap gap-2 mt-3">
       <button id="btnSave1PNG" type="button" class="btn">Save PNG</button>
       <button id="btnSave1JPG" type="button" class="btn2">Save JPEG</button>
     </div>
   </section>
 
-  <!-- 3) MMK → THB -->
   <section id="box-mmk2thb" class="box capture-target">
-    <h2 class="text-lg font-black mb-1">မြန်မာကျပ် → ဘတ်</h2>
+    <h2 class="text-lg font-black mb-1 text-blue-700">မြန်မာကျပ် → ဘတ်</h2>
     <p class="sub">MMK → THB</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -182,7 +190,7 @@
           <span>မြန်မာကျပ်</span>
         </label>
         <p class="sub">Input MMK</p>
-        <input id="mmkIn" class="amt-input w-full" type="text" placeholder="1000000" inputmode="numeric">
+        <input id="mmkIn" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
       </div>
 
       <div>
@@ -197,9 +205,9 @@
 
     <div class="text-center mt-3">
       <p class="rate-note" id="rateNote2"></p>
-      <p class="text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
-      <p class="text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
-      <p class="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
+      <p class="lang-warn1 text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
+      <p class="lang-warn2 text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
+      <p class="lang-thanks thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
     </div>
 
     <div class="flex flex-wrap gap-2 mt-3">
@@ -208,7 +216,6 @@
     </div>
   </section>
 
-  <!-- 4) Save + Bank UI -->
   <section class="box compact">
     <div class="flex items-center justify-between gap-3">
       <div>
@@ -216,7 +223,6 @@
         <p class="sub">QR / Bank Info / မပါ — တစ်ခုတည်းပဲရွေးနိုင်</p>
       </div>
 
-      <!-- Language selector (screen UI stays Burmese; affects SAVE ONLY) -->
       <div class="text-right">
         <div class="text-xs font-black text-slate-700 mb-1">Save Export Language</div>
         <select id="saveLangSelect" class="border rounded-xl px-3 py-2 font-black text-sm">
@@ -229,7 +235,6 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start mt-3">
 
-      <!-- Left -->
       <div class="card">
         <p class="font-black mb-2">QR Select (Normal / Big auto)</p>
         <select id="qrSelect" class="w-full border p-3"></select>
@@ -281,7 +286,6 @@
         </p>
       </div>
 
-      <!-- Right Preview -->
       <div class="card">
         <p class="font-black text-center">Preview</p>
 
@@ -310,7 +314,6 @@
           </div>
         </div>
 
-        <!-- ✅ CHANGED: "အကောင့်ရှင်အမည်" -> "အကောင့်နာမည်" -->
         <p id="qrOwnerName" class="text-center text-slate-700 mt-3 text-base">
           အကောင့်နာမည်: <span class="font-black" id="qrOwnerValue">—</span>
         </p>
@@ -323,6 +326,80 @@
         </div>
       </div>
 
+    </div>
+  </section>
+
+  <section id="box-vnd2mmk" class="box capture-target">
+    <h2 class="text-lg font-black mb-1 text-red-600">ဗီယက်နမ်ဒေါင် → မြန်မာကျပ်</h2>
+    <p class="sub">VND → MMK</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="label">
+          <img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag">
+          <span>ဒေါင်ငွေ</span>
+        </label>
+        <p class="sub">Input VND</p>
+        <input id="vndIn" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
+      </div>
+
+      <div>
+        <label class="label">
+          <img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag">
+          <span>မြန်မာကျပ်</span>
+        </label>
+        <p class="sub">Result MMK</p>
+        <output id="mmkOut2" class="amt-output w-full"></output>
+      </div>
+    </div>
+
+    <div class="text-center mt-3">
+      <p class="rate-note" id="rateNoteVnd1"></p>
+      <p class="lang-warn1 text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
+      <p class="lang-warn2 text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
+      <p class="lang-thanks thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mt-3">
+      <button id="btnSave3PNG" type="button" class="btn">Save PNG</button>
+      <button id="btnSave3JPG" type="button" class="btn2">Save JPEG</button>
+    </div>
+  </section>
+
+  <section id="box-mmk2vnd" class="box capture-target">
+    <h2 class="text-lg font-black mb-1 text-red-600">မြန်မာကျပ် → ဗီယက်နမ်ဒေါင်</h2>
+    <p class="sub">MMK → VND</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="label">
+          <img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag">
+          <span>မြန်မာကျပ်</span>
+        </label>
+        <p class="sub">Input MMK</p>
+        <input id="mmkIn2" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
+      </div>
+
+      <div>
+        <label class="label">
+          <img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag">
+          <span>ဒေါင်ငွေ</span>
+        </label>
+        <p class="sub">Result VND</p>
+        <output id="vndOut" class="amt-output w-full"></output>
+      </div>
+    </div>
+
+    <div class="text-center mt-3">
+      <p class="rate-note" id="rateNoteVnd2"></p>
+      <p class="lang-warn1 text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
+      <p class="lang-warn2 text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
+      <p class="lang-thanks thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mt-3">
+      <button id="btnSave4PNG" type="button" class="btn">Save PNG</button>
+      <button id="btnSave4JPG" type="button" class="btn2">Save JPEG</button>
     </div>
   </section>
 
@@ -343,7 +420,7 @@ const parseNum = v => {
 const fmt0ceil = n => new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.ceil(n));
 const fmt6 = n => new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:6}).format(n);
 
-/* ================= Auto thousands separator (with caret) ================= */
+/* ================= Auto thousands separator (Supports decimals) ================= */
 function formatInputThousands(el, allowDecimal){
   const start = el.selectionStart ?? el.value.length;
   const before = el.value;
@@ -365,21 +442,22 @@ function formatInputThousands(el, allowDecimal){
 
   let out = '';
   if(allowDecimal && v.includes('.')){
-    const [a,b] = v.split('.');
-    const aFmt = a ? Number(a).toLocaleString('en-US') : '';
-    out = aFmt + '.' + (b ?? '');
+    const parts = v.split('.');
+    const aFmt = parts[0] ? Number(parts[0]).toLocaleString('en-US') : '0';
+    out = aFmt + '.' + parts.slice(1).join('');
   }else{
     out = Number(v).toLocaleString('en-US');
   }
 
-  const digitsBefore = normalizeDigits(before.slice(0,start)).replace(/[^\d]/g,'').length;
+  const regex = allowDecimal ? /[^\d.]/g : /[^\d]/g;
+  const charsBefore = normalizeDigits(before.slice(0,start)).replace(regex,'').length;
   el.value = out;
 
   let pos = 0, seen = 0;
   while(pos < out.length){
-    if(/\d/.test(out[pos])) seen++;
+    if((allowDecimal ? /[\d.]/ : /\d/).test(out[pos])) seen++;
     pos++;
-    if(seen >= digitsBefore) break;
+    if(seen >= charsBefore) break;
   }
   el.setSelectionRange(pos,pos);
 }
@@ -398,14 +476,21 @@ const I18N = {
     titleTop: "Thailand Guide - Supplier By Ye",
     h_thb2mmk:"THB → MMK",
     h_mmk2thb:"MMK → THB",
+    h_vnd2mmk:"VND → MMK",
+    h_mmk2vnd:"MMK → VND",
     sub_thb2mmk:"Thai Baht to Myanmar Kyat",
     sub_mmk2thb:"Myanmar Kyat to Thai Baht",
+    sub_vnd2mmk:"Vietnamese Dong to Myanmar Kyat",
+    sub_mmk2vnd:"Myanmar Kyat to Vietnamese Dong",
     lbl_thb:"Amount (THB)",
     lbl_mmk:"Amount (MMK)",
+    lbl_vnd:"Amount (VND)",
     in_thb:"Input THB",
     in_mmk:"Input MMK",
+    in_vnd:"Input VND",
     out_mmk:"Result MMK",
     out_thb:"Result THB",
+    out_vnd:"Result VND",
     warn1:"Always request the bank account before every transfer.",
     warn2:"We are not responsible for any transfer made without requesting and confirming the bank account.",
     thanks:"Thank you for trusting and using Thailand Guide - Supplier By Ye.",
@@ -415,20 +500,28 @@ const I18N = {
     accNo:"Account Number",
     qrTitle:"Bank QR / Payment",
     owner:"Account Name",
-    rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK"
+    rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK",
+    rateVndTpl:"1 MMK = {v} VND"
   },
   th: {
     titleTop: "Thailand Guide - Supplier By Ye",
     h_thb2mmk:"บาท → จ๊าด",
     h_mmk2thb:"จ๊าด → บาท",
+    h_vnd2mmk:"ดอง → จ๊าด",
+    h_mmk2vnd:"จ๊าด → ดอง",
     sub_thb2mmk:"แปลงเงินบาทไทยเป็นจ๊าดเมียนมา",
     sub_mmk2thb:"แปลงจ๊าดเมียนมาเป็นเงินบาทไทย",
+    sub_vnd2mmk:"แปลงเงินดองเวียดนามเป็นจ๊าดเมียนมา",
+    sub_mmk2vnd:"แปลงจ๊าดเมียนมาเป็นเงินดองเวียดนาม",
     lbl_thb:"จำนวนเงิน (THB)",
     lbl_mmk:"จำนวนเงิน (MMK)",
+    lbl_vnd:"จำนวนเงิน (VND)",
     in_thb:"กรอกจำนวนบาท",
     in_mmk:"กรอกจำนวนจ๊าด",
+    in_vnd:"กรอกจำนวนดอง",
     out_mmk:"ผลลัพธ์ (MMK)",
     out_thb:"ผลลัพธ์ (THB)",
+    out_vnd:"ผลลัพธ์ (VND)",
     warn1:"โอนเงินทุกครั้งกรุณาขอเลขบัญชีที่ต้องถามก่อน",
     warn2:"หากโอนโดยไม่ยืนยันเลขบัญชี ทางเพจขอไม่รับผิดชอบ",
     thanks:"ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye",
@@ -438,11 +531,12 @@ const I18N = {
     accNo:"เลขบัญชี",
     qrTitle:"คิวอาร์ธนาคาร",
     owner:"ชื่อบัญชี",
-    rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK"
+    rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK",
+    rateVndTpl:"1 MMK = {v} VND"
   }
 };
 
-let LAST_RATE = { r:null, inv:null };
+let LAST_RATE = { r:null, inv:null, vnd:null };
 
 function buildRateMsg(lang){
   if(!LAST_RATE.r || !LAST_RATE.inv) return "";
@@ -453,44 +547,64 @@ function buildRateMsg(lang){
   return `မြန်မာငွေ ၁ သိန်း = ${r} ဘတ် | ၁ ဘတ် = ${inv} ကျပ်`;
 }
 
+function buildVndRateMsg(lang){
+  if(!LAST_RATE.vnd) return "";
+  const v = fmt6(LAST_RATE.vnd);
+  if(lang==='en') return I18N.en.rateVndTpl.replace('{v}',v);
+  if(lang==='th') return I18N.th.rateVndTpl.replace('{v}',v);
+  return `၁ ကျပ် = ${v} ဒေါင် (VND)`;
+}
+
 function applyLangToClone(clone, lang){
   if(lang==='orig') return;
   const T=I18N[lang]; if(!T) return;
 
   const h2=clone.querySelector('h2');
   const subTop=clone.querySelector('p.sub');
+  
   if(clone.id==='box-thb2mmk'){
     if(h2) h2.textContent=T.h_thb2mmk;
     if(subTop) subTop.textContent=T.sub_thb2mmk;
-  }
-  if(clone.id==='box-mmk2thb'){
+  } else if(clone.id==='box-mmk2thb'){
     if(h2) h2.textContent=T.h_mmk2thb;
     if(subTop) subTop.textContent=T.sub_mmk2thb;
+  } else if(clone.id==='box-vnd2mmk'){
+    if(h2) h2.textContent=T.h_vnd2mmk;
+    if(subTop) subTop.textContent=T.sub_vnd2mmk;
+  } else if(clone.id==='box-mmk2vnd'){
+    if(h2) h2.textContent=T.h_mmk2vnd;
+    if(subTop) subTop.textContent=T.sub_mmk2vnd;
   }
 
   const spans=clone.querySelectorAll('label.label span');
   if(spans.length>=2){
     if(clone.id==='box-thb2mmk'){ spans[0].textContent=T.lbl_thb; spans[1].textContent=T.lbl_mmk; }
     if(clone.id==='box-mmk2thb'){ spans[0].textContent=T.lbl_mmk; spans[1].textContent=T.lbl_thb; }
+    if(clone.id==='box-vnd2mmk'){ spans[0].textContent=T.lbl_vnd; spans[1].textContent=T.lbl_mmk; }
+    if(clone.id==='box-mmk2vnd'){ spans[0].textContent=T.lbl_mmk; spans[1].textContent=T.lbl_vnd; }
   }
 
   const subs=clone.querySelectorAll('.grid .sub');
   if(subs.length>=2){
     if(clone.id==='box-thb2mmk'){ subs[0].textContent=T.in_thb; subs[1].textContent=T.out_mmk; }
     if(clone.id==='box-mmk2thb'){ subs[0].textContent=T.in_mmk; subs[1].textContent=T.out_thb; }
+    if(clone.id==='box-vnd2mmk'){ subs[0].textContent=T.in_vnd; subs[1].textContent=T.out_mmk; }
+    if(clone.id==='box-mmk2vnd'){ subs[0].textContent=T.in_mmk; subs[1].textContent=T.out_vnd; }
   }
 
   const rateP=clone.querySelector('.rate-note');
-  if(rateP) rateP.textContent = buildRateMsg(lang);
+  if(rateP) {
+    if(clone.id==='box-thb2mmk' || clone.id==='box-mmk2thb') rateP.textContent = buildRateMsg(lang);
+    if(clone.id==='box-vnd2mmk' || clone.id==='box-mmk2vnd') rateP.textContent = buildVndRateMsg(lang);
+  }
 
-  const reds=clone.querySelectorAll('.text-red-600');
-  if(reds.length>=2){ reds[0].textContent=T.warn1; reds[1].textContent=T.warn2; }
-
-  const thanks=clone.querySelector('.thanks');
-  if(thanks) thanks.textContent=T.thanks;
+  const w1 = clone.querySelector('.lang-warn1'); if(w1) w1.textContent = T.warn1;
+  const w2 = clone.querySelector('.lang-warn2'); if(w2) w2.textContent = T.warn2;
+  const thx = clone.querySelector('.lang-thanks'); if(thx) thx.textContent = T.thanks;
 }
 
 /* ================= calculator ================= */
+// THB
 function getRate(){
   const a=parseNum($('#rate100k').value);
   const b=parseNum($('#ratePerThb').value);
@@ -525,40 +639,87 @@ let lock=false;
 function syncFrom100k(){
   if(lock) return; lock=true;
   const r=parseNum($('#rate100k').value);
-  if(Number.isFinite(r) && r>0) $('#ratePerThb').value = fmt6(100000 / r);
+  if(Number.isFinite(r) && r>0) {
+    $('#ratePerThb').value = fmt6(100000 / r);
+    formatInputThousands($('#ratePerThb'), true);
+  } else $('#ratePerThb').value = '';
   lock=false; refreshRateNote(); recalc();
 }
 function syncFromPerThb(){
   if(lock) return; lock=true;
   const inv=parseNum($('#ratePerThb').value);
-  if(Number.isFinite(inv) && inv>0) $('#rate100k').value = fmt6(100000 / inv);
+  if(Number.isFinite(inv) && inv>0) {
+    $('#rate100k').value = fmt6(100000 / inv);
+    formatInputThousands($('#rate100k'), true);
+  } else $('#rate100k').value = '';
   lock=false; refreshRateNote(); recalc();
 }
 
-/* Bind inputs (recalc) */
+// VND
+function getVndRate(){
+  const v = parseNum($('#rateVnd').value);
+  if(Number.isFinite(v) && v>0) return v;
+  return NaN;
+}
+function refreshVndRateNote(){
+  const r=getVndRate();
+  if(Number.isFinite(r) && r>0){
+    LAST_RATE.vnd = r;
+    const msg=`၁ ကျပ် = ${fmt6(r)} ဒေါင် (VND)`;
+    if($('#rateNoteVnd1')) $('#rateNoteVnd1').textContent = msg;
+    if($('#rateNoteVnd2')) $('#rateNoteVnd2').textContent = msg;
+    if($('#rateNoteVndTop')) $('#rateNoteVndTop').textContent = msg;
+  }else{
+    if($('#rateNoteVnd1')) $('#rateNoteVnd1').textContent='';
+    if($('#rateNoteVnd2')) $('#rateNoteVnd2').textContent='';
+    if($('#rateNoteVndTop')) $('#rateNoteVndTop').textContent='';
+  }
+}
+function recalcVND(){
+  const rate = getVndRate();
+  const mmk2 = parseNum($('#mmkIn2').value);
+  const vnd = parseNum($('#vndIn').value);
+  
+  if($('#vndOut')) $('#vndOut').textContent = (Number.isFinite(rate) && Number.isFinite(mmk2)) ? fmt0ceil(mmk2 * rate) + ' VND' : '';
+  if($('#mmkOut2')) $('#mmkOut2').textContent = (Number.isFinite(rate) && Number.isFinite(vnd)) ? fmt0ceil(vnd / rate) + ' MMK' : '';
+}
+
+/* Bind inputs (recalc THB) */
 ['rate100k','ratePerThb','thbIn','mmkIn'].forEach(id=>{
   document.getElementById(id).addEventListener('input', ()=>{ refreshRateNote(); recalc(); });
 });
 $('#rate100k').addEventListener('input', syncFrom100k);
 $('#ratePerThb').addEventListener('input', syncFromPerThb);
 
-/* Auto separator */
-bindAutoSeparator('thbIn', false);
-bindAutoSeparator('mmkIn', false);
+/* Bind inputs (recalc VND) */
+['rateVnd','mmkIn2','vndIn'].forEach(id=>{
+  if(document.getElementById(id)){
+    document.getElementById(id).addEventListener('input', ()=>{ refreshVndRateNote(); recalcVND(); });
+  }
+});
+
+/* Bind Input Formatters (Allows decimals for rates, no decimals for amounts typically) */
+bindAutoSeparator('thbIn', true);
+bindAutoSeparator('mmkIn', true);
+bindAutoSeparator('vndIn', true);
+bindAutoSeparator('mmkIn2', true);
 bindAutoSeparator('rate100k', true);
 bindAutoSeparator('ratePerThb', true);
+bindAutoSeparator('rateVnd', true);
 
-/* defaults */
-$('#rate100k').value='820';
-formatInputThousands($('#rate100k'), true);
-syncFrom100k();
+/* Ensure clean state on load */
+refreshRateNote();
 recalc();
+if($('#rateVnd')) {
+  refreshVndRateNote();
+  recalcVND();
+}
 
-/* ================= QR setup (assets/qr + _big in SAME folder) ================= */
+/* ================= QR setup ================= */
 const QR_BASE='assets/qr/';
 const QR_FILES=[
   "hba.jpg","hbq.jpg","hkqr.jpg","ht7.jpg","tkpayq.jpg",
-  "yba.jpg","ybq.jpg","yka.jpg","ykpayq.jpg","ykq.jpg",
+  "yba.jpg","ybq.jpg","ybidv.jpg","yka.jpg","ykpayq.jpg","ykq.jpg",
   "yktba.jpg","yktbq.jpg","ysa.jpg","yt7.jpg","ytq.jpg","ywaveq.jpg"
 ].sort((a,b)=>{
   const ay=a.toLowerCase().startsWith('y'), by=b.toLowerCase().startsWith('y');
@@ -636,16 +797,11 @@ refreshQrPreview();
 const BANK_INFO = {
   KTB:{ name:"Krungthai Bank - ကုံထိုင်းဘဏ်", logo:"assets/logo/krungthai.jpg", accName:"YE LYNN HTUN", accNo:"497-061-977-8" },
   BBL:{ name:"Bangkok Bank - ဘန်ကောက်ဘဏ်", logo:"assets/logo/bangkok.jpg", accName:"YE LYNN HTUN", accNo:"229-4-266-305" },
-
-  /* ✅ Fixed text */
   KPLUS:{ name:"Kasikorn Bank - ကာစီကွန်ဘဏ်", logo:"assets/logo/kplus.jpg", accName:"YE LYNN HTUN", accNo:"186-1-85075-3" },
-
   KBZ:{ name:"KBZ Bank (Special)", logo:"assets/logo/kbz.jpg", accName:"YE LYNN HTUN", accNo:"1911 3720 2003 6190 1" },
-
   KPAY_YLH:{ name:"KBZ Pay - YLH", logo:"assets/logo/kpay.jpg", accName:"YE LYNN HTUN", accNo:"09-262-712-854" },
   KPAY_TDW:{ name:"KBZ Pay - TDW", logo:"assets/logo/kpay.jpg", accName:"THIDAR WIN", accNo:"09-452-341-813" },
   KPAY_HSA:{ name:"KBZ Pay - HSA", logo:"assets/logo/kpay.jpg", accName:"HEIN SET AUNG", accNo:"09-264-947-944" },
-
   WAVE_YLH:{ name:"Wave Money - YLH", logo:"assets/logo/wave.jpg", accName:"YE' LIN TUN", accNo:"09-262-712-854" },
   WAVE_HSA:{ name:"Wave Money - HSA", logo:"assets/logo/wave.jpg", accName:"HEIN SET AUNG", accNo:"09-264-947-944" }
 };
@@ -653,7 +809,6 @@ const BANK_INFO = {
 const bankSelect=document.getElementById('bankSelect');
 const bankOrder=["KTB","BBL","KPLUS","KBZ","KPAY_YLH","KPAY_TDW","KPAY_HSA","WAVE_YLH","WAVE_HSA"];
 
-/* Build bank dropdown (no search filter) */
 (function buildBankDropdown(){
   const opt0=document.createElement('option');
   opt0.value=''; opt0.textContent='— ဘဏ်ရွေးပါ —';
@@ -706,6 +861,7 @@ function getSaveMode(){
 async function saveSection(sectionId, filenameBase, fmt){
   await document.fonts?.ready;
   recalc();
+  recalcVND();
 
   const lang = getSaveLang();
   const T = I18N[lang] || null;
@@ -735,7 +891,12 @@ async function saveSection(sectionId, filenameBase, fmt){
     div.style.paddingTop='13px';
     div.style.paddingBottom='13px';
 
-    const val=(tag==='input') ? (el.value || '') : (el.textContent || '');
+    let val = '';
+    if(tag === 'input'){
+        val = el.value || '';
+    } else {
+        val = el.textContent || '';
+    }
     div.textContent=val;
     el.replaceWith(div);
   });
@@ -925,19 +1086,16 @@ async function saveSection(sectionId, filenameBase, fmt){
   setTimeout(()=>document.body.removeChild(a),0);
 }
 
-/* Save buttons (no Export Format radio) */
-document.getElementById('btnSave1PNG').addEventListener('click', ()=>{
-  saveSection('box-thb2mmk','thb-to-mmk','png');
-});
-document.getElementById('btnSave1JPG').addEventListener('click', ()=>{
-  saveSection('box-thb2mmk','thb-to-mmk','jpg');
-});
-document.getElementById('btnSave2PNG').addEventListener('click', ()=>{
-  saveSection('box-mmk2thb','mmk-to-thb','png');
-});
-document.getElementById('btnSave2JPG').addEventListener('click', ()=>{
-  saveSection('box-mmk2thb','mmk-to-thb','jpg');
-});
+/* Save buttons */
+document.getElementById('btnSave1PNG').addEventListener('click', ()=>saveSection('box-thb2mmk','thb-to-mmk','png'));
+document.getElementById('btnSave1JPG').addEventListener('click', ()=>saveSection('box-thb2mmk','thb-to-mmk','jpg'));
+document.getElementById('btnSave2PNG').addEventListener('click', ()=>saveSection('box-mmk2thb','mmk-to-thb','png'));
+document.getElementById('btnSave2JPG').addEventListener('click', ()=>saveSection('box-mmk2thb','mmk-to-thb','jpg'));
+
+document.getElementById('btnSave3PNG').addEventListener('click', ()=>saveSection('box-vnd2mmk','vnd-to-mmk','png'));
+document.getElementById('btnSave3JPG').addEventListener('click', ()=>saveSection('box-vnd2mmk','vnd-to-mmk','jpg'));
+document.getElementById('btnSave4PNG').addEventListener('click', ()=>saveSection('box-mmk2vnd','mmk-to-vnd','png'));
+document.getElementById('btnSave4JPG').addEventListener('click', ()=>saveSection('box-mmk2vnd','mmk-to-vnd','jpg'));
 </script>
 
 </body>
