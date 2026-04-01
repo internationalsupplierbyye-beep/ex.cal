@@ -629,9 +629,6 @@
     }
   };
 
-  // Application Start
-  loadFirebaseData();
-
   /* ================= Initial Defaults Backup ================= */
   const DEFAULT_BANK_INFO = {
     KTB:{ name:"Krungthai Bank - ကုံထိုင်းဘဏ်", logo:"krungthai.jpg", accName:"YE LYNN HTUN", accNo:"497-061-977-8" },
@@ -730,9 +727,7 @@
     const bigUrl=new URL(QR_BASE + baseName + '_big.jpg', window.location.href).href;
     const owner=getOwnerFromKey(labelNoExt);
 
-    document.getElementById('qrPathNormal').textContent = QR_BASE + file;
-    document.getElementById('qrPathBig').textContent = QR_BASE + baseName + '_big.jpg';
-
+    // Completely removed qrPathNormal and qrPathBig to fix HTML rendering error
     const hasBig = await probeImage(bigUrl);
     window.CURRENT_QR = { owner, normal: normalUrl, big: bigUrl, hasBig };
     document.getElementById('qrOwnerValue').textContent = owner;
