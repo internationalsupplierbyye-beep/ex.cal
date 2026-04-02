@@ -422,9 +422,21 @@
 
   // Bind Calcs
   ['rate100k','ratePerThb','thbIn','mmkIn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshRateNote(); recalc(); }); });
-  if(document.getElementById('rate100k')) document.getElementById('rate100k').addEventListener('input', syncFrom100k); 
-  if(document.getElementById('ratePerThb')) document.getElementById('ratePerThb').addEventListener('input', syncFromPerThb);
-  ['rateVnd','mmkIn2','vndIn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshVndRateNote(); recalcVND(); }); });
+  
+  if(document.getElementById('rate100k')) {
+    document.getElementById('rate100k').addEventListener('input', syncFrom100k); 
+    document.getElementById('rate100k').addEventListener('input', saveRatesToFirebase); // Auto-save Rate
+  }
+  
+  if(document.getElementById('ratePerThb')) {
+    document.getElementById('ratePerThb').addEventListener('input', syncFromPerThb);
+    document.getElementById('ratePerThb').addEventListener('input', saveRatesToFirebase); // Auto-save Rate
+  }
+
+  ['rateVnd','mmkIn2','vndIn'].forEach(id=>{ 
+    const el=document.getElementById(id); 
+    if(el) el.addEventListener('input', ()=>{ refreshVndRateNote(); recalcVND(); saveRatesToFirebase(); /* Auto-save Rate */ }); 
+  });
 
   bindAutoSeparator('thbIn', true); bindAutoSeparator('mmkIn', true); bindAutoSeparator('vndIn', true); bindAutoSeparator('mmkIn2', true);
   bindAutoSeparator('rate100k', true); bindAutoSeparator('ratePerThb', true); bindAutoSeparator('rateVnd', true);
@@ -557,6 +569,23 @@
         FIREBASE_BANKS = data.banks || {};
         FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS);
         FIREBASE_QRS = data.qrs || [];
+        
+        // --- Rate များကို ပြန်လည်ဆွဲယူခြင်း ---
+        if (data.lastRates) {
+          if (data.lastRates.rate100k) {
+            document.getElementById('rate100k').value = data.lastRates.rate100k;
+            formatInputThousands(document.getElementById('rate100k'), true);
+            syncFrom100k();
+          }
+          if (data.lastRates.rateVnd) {
+            document.getElementById('rateVnd').value = data.lastRates.rateVnd;
+            formatInputThousands(document.getElementById('rateVnd'), true);
+            refreshVndRateNote();
+            recalcVND();
+          }
+        }
+        // ------------------------------------
+
         initDropdowns(); // Apply online data
       }
     }).catch(e => { console.warn("Firebase Fetch Skipped. Using Local Defaults."); });
@@ -569,6 +598,31 @@
       try { await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS }, { merge: true }); } 
       catch(err) { alert("Firebase သို့ သိမ်း၍မရပါ။ (အင်တာနက် သို့မဟုတ် Rules ကိုစစ်ဆေးပါ)"); }
     }
+  }
+
+  /* --- Rate အော်တိုသိမ်းမယ့် Function --- */
+  let rateSaveTimer;
+  function saveRatesToFirebase() {
+    clearTimeout(rateSaveTimer);
+    rateSaveTimer = setTimeout(async () => {
+      if (!dbRef) return;
+      
+      const r100k = parseNum(document.getElementById('rate100k').value);
+      const rVnd = parseNum(document.getElementById('rateVnd').value);
+      
+      let ratesToSave = {};
+      if (Number.isFinite(r100k) && r100k > 0) ratesToSave.rate100k = r100k;
+      if (Number.isFinite(rVnd) && rVnd > 0) ratesToSave.rateVnd = rVnd;
+      
+      if (Object.keys(ratesToSave).length > 0) {
+        try {
+          await dbRef.set({ lastRates: ratesToSave }, { merge: true });
+          console.log("Rates saved automatically:", ratesToSave);
+        } catch (err) {
+          console.warn("Failed to auto-save rates.");
+        }
+      }
+    }, 1500); // Rate ရိုက်ထည့်ပြီး ၁.၅ စက္ကန့်အကြာမှ သိမ်းပါမည်
   }
 
   /* ========================================================================
