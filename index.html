@@ -307,7 +307,7 @@
       🚀 မူလဒေတာများကို Firebase သို့ အလွယ်ထည့်မည် (တစ်ခါသာနှိပ်ရန်)
     </button>
 
-    <h3 class="font-bold text-lg text-blue-700 mb-2 mt-4 border-t pt-4 pb-1">🏦 ဘဏ်အသစ် ထည့်ရန်</h3>
+    <h3 class="font-bold text-lg text-blue-700 mb-2 mt-4 border-t pt-4 pb-1">🏦 ဘဏ်အချက်အလက် ထည့်ရန် / ပြင်ရန်</h3>
     <input id="newBankId" class="admin-input" placeholder="Bank Code (ဥပမာ - NEWBANK)">
     <input id="newBankName" class="admin-input" placeholder="Bank Name (ဥပမာ - New Bank - မြန်မာလို)">
     <input id="newBankAccName" class="admin-input" placeholder="Account Name (ဥပမာ - U BA)">
@@ -660,7 +660,16 @@
     } else {
       FIREBASE_BANK_ORDER.forEach((id, index) => {
         const bank = FIREBASE_BANKS[id]; if(!bank) return;
-        bankListDiv.innerHTML += `<div class="list-item" draggable="true" data-index="${index}" data-type="bank" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate"><span class="font-bold text-sm">${bank.name}</span> <span class="text-xs text-gray-500">(${id})</span></div></div><div class="action-btns flex-shrink-0"><button onclick="deleteBank('${id}')" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
+        bankListDiv.innerHTML += `<div class="list-item" draggable="true" data-index="${index}" data-type="bank" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
+          <div class="flex items-center truncate mr-2 w-full">
+            <span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span>
+            <div class="truncate"><span class="font-bold text-sm">${bank.name}</span> <span class="text-xs text-gray-500">(${id})</span></div>
+          </div>
+          <div class="action-btns flex-shrink-0">
+            <button onclick="editBank('${id}')" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button>
+            <button onclick="deleteBank('${id}')" title="ဖျက်မည်" class="btn-delete">✕</button>
+          </div>
+        </div>`;
       });
     }
 
@@ -674,6 +683,76 @@
     }
   }
 
+  function editBank(id) {
+    const bank = FIREBASE_BANKS[id];
+    if(!bank) return;
+    
+    // ရှိပြီးသား Data များကို Input Box များထဲသို့ ပြန်ထည့်ပေးခြင်း
+    const idInput = document.getElementById('newBankId');
+    idInput.value = id;
+    idInput.disabled = true; // Code ကိုတော့ ပြင်ခွင့်မပြုပါ
+    idInput.style.backgroundColor = "#e5e7eb"; 
+    
+    document.getElementById('newBankName').value = bank.name || "";
+    document.getElementById('newBankAccName').value = bank.accName || "";
+    document.getElementById('newBankAccNo').value = bank.accNo || "";
+    document.getElementById('newBankLogo').value = bank.logo || "";
+    
+    // ခလုတ်အရောင်နှင့် စာသားပြောင်းခြင်း
+    const btn = document.getElementById('btnBankSave');
+    btn.textContent = "ဘဏ်အချက်အလက် Update လုပ်မည်";
+    btn.classList.remove('bg-blue-600');
+    btn.classList.add('bg-green-600');
+    
+    // Input Box များဆီသို့ Auto Scroll လုပ်ပေးခြင်း
+    idInput.scrollIntoView({behavior: 'smooth', block: 'center'});
+  }
+
+  async function addCustomBank() {
+    const idInput = document.getElementById('newBankId');
+    const id = idInput.value.trim().toUpperCase(); 
+    if(!id) return alert("Bank Code ထည့်ပါ။");
+    
+    const btn = document.getElementById('btnBankSave'); 
+    btn.textContent = "သိမ်းနေသည်..."; 
+    btn.disabled = true;
+    
+    try {
+      FIREBASE_BANKS[id] = { 
+        name: document.getElementById('newBankName').value.trim(), 
+        accName: document.getElementById('newBankAccName').value.trim(), 
+        accNo: document.getElementById('newBankAccNo').value.trim(), 
+        logo: document.getElementById('newBankLogo').value.trim() 
+      };
+      if(!FIREBASE_BANK_ORDER.includes(id)) FIREBASE_BANK_ORDER.push(id);
+      await updateFirebase();
+      
+      // Save ပြီးနောက် Input များ ပြန်လည်ရှင်းထုတ်ခြင်း
+      idInput.value = ""; 
+      idInput.disabled = false; // Disable ကိုပြန်ဖြုတ်ပေးသည်
+      idInput.style.backgroundColor = "";
+      document.getElementById('newBankName').value = ""; 
+      document.getElementById('newBankAccName').value = ""; 
+      document.getElementById('newBankAccNo').value = ""; 
+      document.getElementById('newBankLogo').value = "";
+      
+      initDropdowns(); 
+      renderAdminLists();
+    } catch (e) { 
+      alert("Error: " + e.message); 
+    } finally { 
+      // Button ကို မူလအခြေအနေ ပြန်ထားခြင်း
+      btn.textContent = "ဘဏ်အသစ် သိမ်းမည်"; 
+      btn.classList.remove('bg-green-600');
+      btn.classList.add('bg-blue-600');
+      btn.disabled = false; 
+    }
+  }
+
+  async function deleteBank(id) {
+    if(confirm("ဤဘဏ်ကို ဖျက်ရန် သေချာပါသလား?")) { delete FIREBASE_BANKS[id]; FIREBASE_BANK_ORDER = FIREBASE_BANK_ORDER.filter(item => item !== id); initDropdowns(); renderAdminLists(); await updateFirebase(); }
+  }
+
   async function migrateDefaultsToFirebase() {
     if(!confirm("မူလရှိပြီးသား ဘဏ်များနှင့် QR အားလုံးကို Firebase ထဲသို့ ထည့်သွင်းမှာ သေချာပါသလား?")) return;
     const btn = document.getElementById('btnMigrate'); if(btn) { btn.textContent = "ထည့်သွင်းနေသည်... ကျေးဇူးပြု၍ စောင့်ပါ..."; btn.disabled = true; }
@@ -684,22 +763,6 @@
       await updateFirebase(); alert("Firebase သို့ အောင်မြင်စွာ ပြောင်းရွှေ့ထည့်သွင်းပြီးပါပြီ။");
       initDropdowns(); if(document.getElementById('adminModal').style.display === 'block'){ renderAdminLists(); }
     } catch (e) { alert("Error: " + e.message); } finally { if(btn) { btn.innerHTML = "🚀 မူလဒေတာများကို Firebase သို့ အလွယ်ထည့်မည် (တစ်ခါသာနှိပ်ရန်)"; btn.disabled = false; } }
-  }
-
-  async function addCustomBank() {
-    const id = document.getElementById('newBankId').value.trim().toUpperCase(); if(!id) return alert("Bank Code ထည့်ပါ။");
-    const btn = document.getElementById('btnBankSave'); btn.textContent = "သိမ်းနေသည်..."; btn.disabled = true;
-    try {
-      FIREBASE_BANKS[id] = { name: document.getElementById('newBankName').value.trim(), accName: document.getElementById('newBankAccName').value.trim(), accNo: document.getElementById('newBankAccNo').value.trim(), logo: document.getElementById('newBankLogo').value.trim() };
-      if(!FIREBASE_BANK_ORDER.includes(id)) FIREBASE_BANK_ORDER.push(id);
-      await updateFirebase();
-      document.getElementById('newBankId').value = ""; document.getElementById('newBankName').value = ""; document.getElementById('newBankAccName').value = ""; document.getElementById('newBankAccNo').value = ""; document.getElementById('newBankLogo').value = "";
-      initDropdowns(); renderAdminLists();
-    } catch (e) { alert("Error: " + e.message); } finally { btn.textContent = "ဘဏ်အသစ် သိမ်းမည်"; btn.disabled = false; }
-  }
-
-  async function deleteBank(id) {
-    if(confirm("ဤဘဏ်ကို ဖျက်ရန် သေချာပါသလား?")) { delete FIREBASE_BANKS[id]; FIREBASE_BANK_ORDER = FIREBASE_BANK_ORDER.filter(item => item !== id); initDropdowns(); renderAdminLists(); await updateFirebase(); }
   }
 
   async function addCustomQR() {
