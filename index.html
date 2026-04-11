@@ -240,7 +240,9 @@
         <div id="previewOne" class="mt-3">
           <div class="text-center"><div class="qrFrame"><img id="qrPreviewSolo" class="mx-auto" style="max-width:280px; max-height:280px; object-fit:contain;" alt="QR မရှိပါ"></div></div>
         </div>
+        
         <p id="qrOwnerName" class="text-center text-slate-700 mt-3 text-base pb-1">အကောင့်နာမည်: <span class="font-black" id="qrOwnerValue">—</span></p>
+        
         <div class="mt-3 border-t pt-3 text-left">
           <p class="font-black text-center pb-2">Bank Info Preview</p>
           <div id="bankPreviewMini" class="text-sm text-slate-700 mt-2 text-center pb-1">ဘဏ်မရွေးထားသေးပါ။</div>
@@ -353,7 +355,7 @@
   let ACTIVE_BANK_INFO = {};
   let CURRENT_QR = { owner:'', normal:null, big:null, hasBig:false };
   let LAST_RATE = { r:null, inv:null, vnd:null };
-  let ADMIN_TIMEZONE = 'Asia/Bangkok'; // မူလအားဖြင့် ထိုင်းအချိန်
+  let ADMIN_TIMEZONE = 'Asia/Bangkok'; 
   let lock = false;
 
   const DEFAULT_BANK_INFO = {
@@ -434,24 +436,24 @@
   
   if(document.getElementById('rate100k')) {
     document.getElementById('rate100k').addEventListener('input', syncFrom100k); 
-    document.getElementById('rate100k').addEventListener('input', saveRatesToFirebase); // Auto-save Rate
+    document.getElementById('rate100k').addEventListener('input', saveRatesToFirebase);
   }
   
   if(document.getElementById('ratePerThb')) {
     document.getElementById('ratePerThb').addEventListener('input', syncFromPerThb);
-    document.getElementById('ratePerThb').addEventListener('input', saveRatesToFirebase); // Auto-save Rate
+    document.getElementById('ratePerThb').addEventListener('input', saveRatesToFirebase);
   }
 
   ['rateVnd','mmkIn2','vndIn'].forEach(id=>{ 
     const el=document.getElementById(id); 
-    if(el) el.addEventListener('input', ()=>{ refreshVndRateNote(); recalcVND(); saveRatesToFirebase(); /* Auto-save Rate */ }); 
+    if(el) el.addEventListener('input', ()=>{ refreshVndRateNote(); recalcVND(); saveRatesToFirebase(); }); 
   });
 
   bindAutoSeparator('thbIn', true); bindAutoSeparator('mmkIn', true); bindAutoSeparator('vndIn', true); bindAutoSeparator('mmkIn2', true);
   bindAutoSeparator('rate100k', true); bindAutoSeparator('ratePerThb', true); bindAutoSeparator('rateVnd', true);
 
   /* ========================================================================
-     အပိုင်း (၃): UI Initialize
+     အပိုင်း (၃): UI Initialize (System UI တွင် မူလ Size သာသုံးထားပါသည်)
      ======================================================================== */
   function initDropdowns() {
     const useFirebaseBanks = FIREBASE_BANK_ORDER.length > 0;
@@ -498,6 +500,7 @@
     document.getElementById('bankAccNo').textContent = info.accNo;
     box.classList.remove('hidden');
 
+    // System (UI) တွင် ကြည့်ပါက မူလ Size လေးအတိုင်းသာ ပေါ်စေပါမည်
     mini.innerHTML = `
       <div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff">
         <div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;">
@@ -579,14 +582,12 @@
         FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS);
         FIREBASE_QRS = data.qrs || [];
         
-        // --- Admin သတ်မှတ်ထားသော Timezone ပြန်လည်ဆွဲယူခြင်း ---
         if (data.adminTimezone) {
           ADMIN_TIMEZONE = data.adminTimezone;
           const tzSelect = document.getElementById('adminTimezoneSelect');
           if (tzSelect) tzSelect.value = ADMIN_TIMEZONE;
         }
 
-        // --- Rate များကို ပြန်လည်ဆွဲယူခြင်း ---
         if (data.lastRates) {
           if (data.lastRates.rate100k) {
             document.getElementById('rate100k').value = data.lastRates.rate100k;
@@ -600,9 +601,7 @@
             recalcVND();
           }
         }
-        // ------------------------------------
-
-        initDropdowns(); // Apply online data
+        initDropdowns(); 
       }
     }).catch(e => { console.warn("Firebase Fetch Skipped. Using Local Defaults."); });
   } catch (err) {
@@ -622,23 +621,15 @@
     clearTimeout(rateSaveTimer);
     rateSaveTimer = setTimeout(async () => {
       if (!dbRef) return;
-      
       const r100k = parseNum(document.getElementById('rate100k').value);
       const rVnd = parseNum(document.getElementById('rateVnd').value);
-      
       let ratesToSave = {};
       if (Number.isFinite(r100k) && r100k > 0) ratesToSave.rate100k = r100k;
       if (Number.isFinite(rVnd) && rVnd > 0) ratesToSave.rateVnd = rVnd;
-      
       if (Object.keys(ratesToSave).length > 0) {
-        try {
-          await dbRef.set({ lastRates: ratesToSave }, { merge: true });
-          console.log("Rates saved automatically:", ratesToSave);
-        } catch (err) {
-          console.warn("Failed to auto-save rates.");
-        }
+        try { await dbRef.set({ lastRates: ratesToSave }, { merge: true }); } catch (err) { }
       }
-    }, 1500); // Rate ရိုက်ထည့်ပြီး ၁.၅ စက္ကန့်အကြာမှ သိမ်းပါမည်
+    }, 1500); 
   }
 
   /* ========================================================================
@@ -703,19 +694,14 @@
   async function updateTimezone() {
     const tzSelect = document.getElementById('adminTimezoneSelect');
     if (!tzSelect) return;
-    
     const newTz = tzSelect.value;
     ADMIN_TIMEZONE = newTz;
-    
     const btn = document.getElementById('btnTzSave');
     if (btn) { btn.textContent = "သိမ်းနေသည်..."; btn.disabled = true; }
-    
     try {
       if (dbRef) await dbRef.set({ adminTimezone: newTz }, { merge: true });
       alert("အချိန်ဇုန် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ။ နောက်ထပ် Save လုပ်မည့်ပုံများတွင် " + newTz.split('/')[1] + " အချိန်ဖြင့် ပေါ်မည်ဖြစ်ပါသည်။");
-    } catch (e) {
-      alert("Error: " + e.message);
-    } finally {
+    } catch (e) { alert("Error: " + e.message); } finally {
       if (btn) { btn.textContent = "အချိန်ဇုန် သိမ်းမည်"; btn.disabled = false; }
     }
   }
@@ -723,25 +709,16 @@
   function editBank(id) {
     const bank = FIREBASE_BANKS[id];
     if(!bank) return;
-    
-    // ရှိပြီးသား Data များကို Input Box များထဲသို့ ပြန်ထည့်ပေးခြင်း
     const idInput = document.getElementById('newBankId');
-    idInput.value = id;
-    idInput.disabled = true; // Code ကိုတော့ ပြင်ခွင့်မပြုပါ
-    idInput.style.backgroundColor = "#e5e7eb"; 
-    
+    idInput.value = id; idInput.disabled = true; idInput.style.backgroundColor = "#e5e7eb"; 
     document.getElementById('newBankName').value = bank.name || "";
     document.getElementById('newBankAccName').value = bank.accName || "";
     document.getElementById('newBankAccNo').value = bank.accNo || "";
     document.getElementById('newBankLogo').value = bank.logo || "";
     
-    // ခလုတ်အရောင်နှင့် စာသားပြောင်းခြင်း
     const btn = document.getElementById('btnBankSave');
     btn.textContent = "ဘဏ်အချက်အလက် Update လုပ်မည်";
-    btn.classList.remove('bg-blue-600');
-    btn.classList.add('bg-green-600');
-    
-    // Input Box များဆီသို့ Auto Scroll လုပ်ပေးခြင်း
+    btn.classList.remove('bg-blue-600'); btn.classList.add('bg-green-600');
     idInput.scrollIntoView({behavior: 'smooth', block: 'center'});
   }
 
@@ -749,11 +726,8 @@
     const idInput = document.getElementById('newBankId');
     const id = idInput.value.trim().toUpperCase(); 
     if(!id) return alert("Bank Code ထည့်ပါ။");
-    
     const btn = document.getElementById('btnBankSave'); 
-    btn.textContent = "သိမ်းနေသည်..."; 
-    btn.disabled = true;
-    
+    btn.textContent = "သိမ်းနေသည်..."; btn.disabled = true;
     try {
       FIREBASE_BANKS[id] = { 
         name: document.getElementById('newBankName').value.trim(), 
@@ -764,25 +738,11 @@
       if(!FIREBASE_BANK_ORDER.includes(id)) FIREBASE_BANK_ORDER.push(id);
       await updateFirebase();
       
-      // Save ပြီးနောက် Input များ ပြန်လည်ရှင်းထုတ်ခြင်း
-      idInput.value = ""; 
-      idInput.disabled = false; // Disable ကိုပြန်ဖြုတ်ပေးသည်
-      idInput.style.backgroundColor = "";
-      document.getElementById('newBankName').value = ""; 
-      document.getElementById('newBankAccName').value = ""; 
-      document.getElementById('newBankAccNo').value = ""; 
-      document.getElementById('newBankLogo').value = "";
-      
-      initDropdowns(); 
-      renderAdminLists();
-    } catch (e) { 
-      alert("Error: " + e.message); 
-    } finally { 
-      // Button ကို မူလအခြေအနေ ပြန်ထားခြင်း
-      btn.textContent = "ဘဏ်အသစ် သိမ်းမည်"; 
-      btn.classList.remove('bg-green-600');
-      btn.classList.add('bg-blue-600');
-      btn.disabled = false; 
+      idInput.value = ""; idInput.disabled = false; idInput.style.backgroundColor = "";
+      document.getElementById('newBankName').value = ""; document.getElementById('newBankAccName').value = ""; document.getElementById('newBankAccNo').value = ""; document.getElementById('newBankLogo').value = "";
+      initDropdowns(); renderAdminLists();
+    } catch (e) { alert("Error: " + e.message); } finally { 
+      btn.textContent = "ဘဏ်အသစ် သိမ်းမည်"; btn.classList.remove('bg-green-600'); btn.classList.add('bg-blue-600'); btn.disabled = false; 
     }
   }
 
@@ -826,7 +786,7 @@
   }
 
   /* ========================================================================
-     အပိုင်း (၆): Export Image Logic & Dynamic Time
+     အပိုင်း (၆): Export Image Logic (Save Image တွင်သာ ကြီးကြီးပြရန်)
      ======================================================================== */
   const I18N = {
     en: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"THB → MMK", h_mmk2thb:"MMK → THB", h_vnd2mmk:"VND → MMK", h_mmk2vnd:"MMK → VND", sub_thb2mmk:"Thai Baht to Myanmar Kyat", sub_mmk2thb:"Myanmar Kyat to Thai Baht", sub_vnd2mmk:"Vietnamese Dong to Myanmar Kyat", sub_mmk2vnd:"Myanmar Kyat to Vietnamese Dong", lbl_thb:"Amount (THB)", lbl_mmk:"Amount (MMK)", lbl_vnd:"Amount (VND)", in_thb:"Input THB", in_mmk:"Input MMK", in_vnd:"Input VND", out_mmk:"Result MMK", out_thb:"Result THB", out_vnd:"Result VND", warn1:"Always request the bank account before every transfer.", warn2:"We are not responsible for any transfer made without requesting and confirming the bank account.", thanks:"Thank you for trusting and using Thailand Guide - Supplier By Ye.", bankTitle:"Transfer Bank Information", bankLabel:"Bank Information", accName:"Account Name", accNo:"Account Number", qrTitle:"Bank QR / Payment", owner:"Account Name", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" },
@@ -835,18 +795,14 @@
   
   function getExportTimeStr(lang) {
     const d = new Date();
-    // Admin သတ်မှတ်ထားသော Timezone ကို ယူသုံးပါမည်
     const tz = ADMIN_TIMEZONE || 'Asia/Bangkok';
 
-    // 해당 Timezone ဖြင့် အချိန်နှင့်ရက်စွဲ တွက်ချက်ခြင်း
     const formatterDate = new Intl.DateTimeFormat('en-GB', { timeZone: tz, day: '2-digit', month: 'short', year: 'numeric' });
     const formatterTime = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true });
     
     const datePart = formatterDate.format(d);
-    // Remove spaces between time and AM/PM
     const timePart = formatterTime.format(d).replace(/[\s\u202f]+/g, '');
 
-    // ဘာသာစကားနှင့် နိုင်ငံအလိုက် စာသားပြောင်းလဲခြင်း
     let tzLabel = "";
     if (tz === 'Asia/Yangon') {
         tzLabel = (lang === 'en') ? 'Myanmar Time' : (lang === 'th' ? 'เวลาพม่า' : 'မြန်မာအချိန်');
@@ -919,8 +875,13 @@
       const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
       const img=document.createElement('img'); img.style.width='420px'; img.style.maxWidth='95%'; img.style.margin='10px auto 0'; img.style.border='1px solid #e5e7eb'; img.style.borderRadius='16px'; img.style.padding='10px'; img.style.background='#fff'; img.style.display='block';
       img.src = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
+      
       const owner=document.createElement('p'); owner.className='mt-3 text-slate-700'; owner.style.paddingBottom = '4px';
-      owner.innerHTML = (T ? `${T.owner}: <span style="font-weight:900">${CURRENT_QR.owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900">${CURRENT_QR.owner}</span>`);
+      
+      // Save တွင်သာ QR Owner Name ကို ကြီးအောင် ပြင်ဆင်ထားသည်
+      owner.style.fontSize = '20px'; 
+      owner.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>`);
+      
       wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(owner); clone.appendChild(wrap);
       await new Promise(res=>{ if(img.complete) return res(); img.onload=()=>res(); img.onerror=()=>res(); });
     }
@@ -934,28 +895,25 @@
         const box=document.createElement('div'); box.style.maxWidth='560px'; box.style.margin='12px auto 0'; box.style.border='1px solid #e5e7eb'; box.style.borderRadius='16px'; box.style.padding='16px'; box.style.background='#fff'; box.style.textAlign='center';
         const logo=document.createElement('img'); logo.src="assets/logo/"+info.logo; logo.style.width='72px'; logo.style.height='72px'; logo.style.borderRadius='18px'; logo.style.border='1px solid #e5e7eb'; logo.style.objectFit='cover';
         const headerRow=document.createElement('div'); headerRow.style.display='flex'; headerRow.style.flexDirection='column'; headerRow.style.alignItems='center'; headerRow.style.justifyContent='center'; headerRow.style.gap='8px'; headerRow.style.marginBottom='10px';
-        const h=document.createElement('div'); h.style.textAlign='center'; h.innerHTML = `<div style="font-weight:900;font-size:18px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:12px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
+        
+        // Save တွင်သာ Bank အချက်အလက်များကို ကြီးအောင် ပြင်ဆင်ထားသည်
+        const h=document.createElement('div'); h.style.textAlign='center'; 
+        h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
+        
         const body=document.createElement('div'); body.style.textAlign='center';
-        body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:15px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:15px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:22px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
+        body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
+        
         headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
         wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
         await new Promise(res=>{ if(logo.complete) return res(); logo.onload=()=>res(); logo.onerror=()=>res(); });
       }
     }
 
-    // --- Admin ရွေးထားသည့် အချိန်နှင့် ရက်စွဲ ထည့်သွင်းခြင်း ---
     const timeDiv = document.createElement('div');
-    timeDiv.style.textAlign = 'center';
-    timeDiv.style.marginTop = '12px';
-    timeDiv.style.paddingTop = '12px';
-    timeDiv.style.borderTop = '1px dashed #cbd5e1';
-    timeDiv.style.fontSize = '14px';
-    timeDiv.style.fontWeight = '900';
-    timeDiv.style.color = '#64748b';
-    timeDiv.style.paddingBottom = '8px';
+    timeDiv.style.textAlign = 'center'; timeDiv.style.marginTop = '12px'; timeDiv.style.paddingTop = '12px'; timeDiv.style.borderTop = '1px dashed #cbd5e1';
+    timeDiv.style.fontSize = '14px'; timeDiv.style.fontWeight = '900'; timeDiv.style.color = '#64748b'; timeDiv.style.paddingBottom = '8px';
     timeDiv.textContent = getExportTimeStr(lang);
     clone.appendChild(timeDiv);
-    // ------------------------------------
 
     clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
     document.body.appendChild(clone);
