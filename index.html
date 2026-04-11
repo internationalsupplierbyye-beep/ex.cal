@@ -307,6 +307,14 @@
       🚀 မူလဒေတာများကို Firebase သို့ အလွယ်ထည့်မည် (တစ်ခါသာနှိပ်ရန်)
     </button>
 
+    <h3 class="font-bold text-lg text-orange-700 mb-2 mt-4 border-t pt-4 pb-1">⏱ Export တွင်ပြသမည့် နိုင်ငံအချိန်</h3>
+    <select id="adminTimezoneSelect" class="admin-input mb-2">
+      <option value="Asia/Bangkok">🇹🇭 ထိုင်းစံတော်ချိန် (Thailand Time)</option>
+      <option value="Asia/Yangon">🇲🇲 မြန်မာစံတော်ချိန် (Myanmar Time)</option>
+      <option value="Asia/Ho_Chi_Minh">🇻🇳 ဗီယက်နမ်စံတော်ချိန် (Vietnam Time)</option>
+    </select>
+    <button onclick="updateTimezone()" id="btnTzSave" class="btn w-full mb-6 bg-orange-600">အချိန်ဇုန် သိမ်းမည်</button>
+
     <h3 class="font-bold text-lg text-blue-700 mb-2 mt-4 border-t pt-4 pb-1">🏦 ဘဏ်အချက်အလက် ထည့်ရန် / ပြင်ရန်</h3>
     <input id="newBankId" class="admin-input" placeholder="Bank Code (ဥပမာ - NEWBANK)">
     <input id="newBankName" class="admin-input" placeholder="Bank Name (ဥပမာ - New Bank - မြန်မာလို)">
@@ -345,6 +353,7 @@
   let ACTIVE_BANK_INFO = {};
   let CURRENT_QR = { owner:'', normal:null, big:null, hasBig:false };
   let LAST_RATE = { r:null, inv:null, vnd:null };
+  let ADMIN_TIMEZONE = 'Asia/Bangkok'; // မူလအားဖြင့် ထိုင်းအချိန်
   let lock = false;
 
   const DEFAULT_BANK_INFO = {
@@ -570,6 +579,13 @@
         FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS);
         FIREBASE_QRS = data.qrs || [];
         
+        // --- Admin သတ်မှတ်ထားသော Timezone ပြန်လည်ဆွဲယူခြင်း ---
+        if (data.adminTimezone) {
+          ADMIN_TIMEZONE = data.adminTimezone;
+          const tzSelect = document.getElementById('adminTimezoneSelect');
+          if (tzSelect) tzSelect.value = ADMIN_TIMEZONE;
+        }
+
         // --- Rate များကို ပြန်လည်ဆွဲယူခြင်း ---
         if (data.lastRates) {
           if (data.lastRates.rate100k) {
@@ -595,7 +611,7 @@
 
   async function updateFirebase() {
     if(dbRef) {
-      try { await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS }, { merge: true }); } 
+      try { await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, adminTimezone: ADMIN_TIMEZONE }, { merge: true }); } 
       catch(err) { alert("Firebase သို့ သိမ်း၍မရပါ။ (အင်တာနက် သို့မဟုတ် Rules ကိုစစ်ဆေးပါ)"); }
     }
   }
@@ -680,6 +696,27 @@
       FIREBASE_QRS.forEach((file, index) => {
         qrListDiv.innerHTML += `<div class="list-item" draggable="true" data-index="${index}" data-type="qr" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="font-bold text-sm truncate">${file}</div></div><div class="action-btns flex-shrink-0"><button onclick="deleteQR(${index})" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
       });
+    }
+  }
+
+  /* --- Timezone သိမ်းမည့် Function --- */
+  async function updateTimezone() {
+    const tzSelect = document.getElementById('adminTimezoneSelect');
+    if (!tzSelect) return;
+    
+    const newTz = tzSelect.value;
+    ADMIN_TIMEZONE = newTz;
+    
+    const btn = document.getElementById('btnTzSave');
+    if (btn) { btn.textContent = "သိမ်းနေသည်..."; btn.disabled = true; }
+    
+    try {
+      if (dbRef) await dbRef.set({ adminTimezone: newTz }, { merge: true });
+      alert("အချိန်ဇုန် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ။ နောက်ထပ် Save လုပ်မည့်ပုံများတွင် " + newTz.split('/')[1] + " အချိန်ဖြင့် ပေါ်မည်ဖြစ်ပါသည်။");
+    } catch (e) {
+      alert("Error: " + e.message);
+    } finally {
+      if (btn) { btn.textContent = "အချိန်ဇုန် သိမ်းမည်"; btn.disabled = false; }
     }
   }
 
@@ -789,13 +826,45 @@
   }
 
   /* ========================================================================
-     အပိုင်း (၆): Export Image Logic
+     အပိုင်း (၆): Export Image Logic & Dynamic Time
      ======================================================================== */
   const I18N = {
     en: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"THB → MMK", h_mmk2thb:"MMK → THB", h_vnd2mmk:"VND → MMK", h_mmk2vnd:"MMK → VND", sub_thb2mmk:"Thai Baht to Myanmar Kyat", sub_mmk2thb:"Myanmar Kyat to Thai Baht", sub_vnd2mmk:"Vietnamese Dong to Myanmar Kyat", sub_mmk2vnd:"Myanmar Kyat to Vietnamese Dong", lbl_thb:"Amount (THB)", lbl_mmk:"Amount (MMK)", lbl_vnd:"Amount (VND)", in_thb:"Input THB", in_mmk:"Input MMK", in_vnd:"Input VND", out_mmk:"Result MMK", out_thb:"Result THB", out_vnd:"Result VND", warn1:"Always request the bank account before every transfer.", warn2:"We are not responsible for any transfer made without requesting and confirming the bank account.", thanks:"Thank you for trusting and using Thailand Guide - Supplier By Ye.", bankTitle:"Transfer Bank Information", bankLabel:"Bank Information", accName:"Account Name", accNo:"Account Number", qrTitle:"Bank QR / Payment", owner:"Account Name", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" },
     th: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"บาท → จ๊าด", h_mmk2thb:"จ๊าด → บาท", h_vnd2mmk:"ดอง → จ๊าด", h_mmk2vnd:"จ๊าด → ดอง", sub_thb2mmk:"แปลงเงินบาทไทยเป็นจ๊าดเมียนมา", sub_mmk2thb:"แปลงจ๊าดเมียนมาเป็นเงินบาทไทย", sub_vnd2mmk:"แปลงเงินดองเวียดนามเป็นจ๊าดเมียนมา", sub_mmk2vnd:"แปลงจ๊าดเมียนมาเป็นเงินดองเวียดนาม", lbl_thb:"จำนวนเงิน (THB)", lbl_mmk:"จำนวนเงิน (MMK)", lbl_vnd:"จำนวนเงิน (VND)", in_thb:"กรอกจำนวนบาท", in_mmk:"กรอกจำนวนจ๊าด", in_vnd:"กรอกจำนวนดอง", out_mmk:"ผลลัพธ์ (MMK)", out_thb:"ผลลัพธ์ (THB)", out_vnd:"ผลลัพธ์ (VND)", warn1:"โอนเงินทุกครั้งกรุณาขอเลขบัญชีที่ต้องถามก่อน", warn2:"หากโอนโดยไม่ยืนยันเลขบัญชี ทางเพจขอไม่รับผิดชอบ", thanks:"ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye", bankTitle:"ข้อมูลบัญชีสำหรับโอน", bankLabel:"ข้อมูลบัญชีธนาคาร", accName:"ชื่อบัญชี", accNo:"เลขบัญชี", qrTitle:"คิวอาร์ธนาคาร", owner:"ชื่อบัญชี", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" }
   };
   
+  function getExportTimeStr(lang) {
+    const d = new Date();
+    // Admin သတ်မှတ်ထားသော Timezone ကို ယူသုံးပါမည်
+    const tz = ADMIN_TIMEZONE || 'Asia/Bangkok';
+
+    // 해당 Timezone ဖြင့် အချိန်နှင့်ရက်စွဲ တွက်ချက်ခြင်း
+    const formatterDate = new Intl.DateTimeFormat('en-GB', { timeZone: tz, day: '2-digit', month: 'short', year: 'numeric' });
+    const formatterTime = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true });
+    
+    const datePart = formatterDate.format(d);
+    // Remove spaces between time and AM/PM
+    const timePart = formatterTime.format(d).replace(/[\s\u202f]+/g, '');
+
+    // ဘာသာစကားနှင့် နိုင်ငံအလိုက် စာသားပြောင်းလဲခြင်း
+    let tzLabel = "";
+    if (tz === 'Asia/Yangon') {
+        tzLabel = (lang === 'en') ? 'Myanmar Time' : (lang === 'th' ? 'เวลาพม่า' : 'မြန်မာအချိန်');
+    } else if (tz === 'Asia/Ho_Chi_Minh') {
+        tzLabel = (lang === 'en') ? 'Vietnam Time' : (lang === 'th' ? 'เวลาเวียดนาม' : 'ဗီယက်နမ်အချိန်');
+    } else {
+        tzLabel = (lang === 'en') ? 'Thai Time' : (lang === 'th' ? 'เวลาไทย' : 'ထိုင်းအချိန်');
+    }
+
+    if (lang === 'en') {
+      return `Date : ${datePart} (${timePart}) (${tzLabel})`;
+    } else if (lang === 'th') {
+      return `วันที่ : ${datePart} (${timePart}) (${tzLabel})`;
+    } else {
+      return `Date : ${datePart} (${timePart}) (${tzLabel})`;
+    }
+  }
+
   function applyLangToClone(clone, lang){
     if(lang==='orig') return; const T=I18N[lang]; if(!T) return;
     const h2=clone.querySelector('h2'); const subTop=clone.querySelector('p.sub');
@@ -873,6 +942,20 @@
         await new Promise(res=>{ if(logo.complete) return res(); logo.onload=()=>res(); logo.onerror=()=>res(); });
       }
     }
+
+    // --- Admin ရွေးထားသည့် အချိန်နှင့် ရက်စွဲ ထည့်သွင်းခြင်း ---
+    const timeDiv = document.createElement('div');
+    timeDiv.style.textAlign = 'center';
+    timeDiv.style.marginTop = '12px';
+    timeDiv.style.paddingTop = '12px';
+    timeDiv.style.borderTop = '1px dashed #cbd5e1';
+    timeDiv.style.fontSize = '14px';
+    timeDiv.style.fontWeight = '900';
+    timeDiv.style.color = '#64748b';
+    timeDiv.style.paddingBottom = '8px';
+    timeDiv.textContent = getExportTimeStr(lang);
+    clone.appendChild(timeDiv);
+    // ------------------------------------
 
     clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
     document.body.appendChild(clone);
