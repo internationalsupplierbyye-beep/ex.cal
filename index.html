@@ -12,7 +12,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
 
   <style>
-    /* Font & Line-Height ပြင်ဆင်ချက် */
     @import url('https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap');
     body{ background:#f3f6f9; font-family: 'Padauk', "Pyidaungsu", system-ui, -apple-system, sans-serif; }
     
@@ -54,7 +53,6 @@
     .muted{ color:#64748b; font-size:.82rem; line-height:1.4; padding-bottom: 2px;}
     .qrFrame{ border:1px solid #e5e7eb; border-radius:14px; background:#fff; padding:8px; min-height: 200px; display: flex; align-items: center; justify-content: center;}
 
-    /* Input & Output Styles */
     .amt-input, .amt-output{
       font-size:1.25rem !important; font-weight:900 !important; color:#0f172a !important;
       background:#ffffff !important; border:2px solid #cbd5e1 !important;
@@ -71,16 +69,20 @@
     .radio-row span{ font-weight:900; font-size:.95rem; cursor:pointer; line-height:1.5; padding-bottom: 2px;}
     .compact select{ padding:.75rem .75rem !important; border-radius:14px !important; font-weight:900 !important; width: 100%; }
 
-    /* Modal Styles */
     #adminModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; padding: 20px; overflow-y: auto; }
-    .admin-content { background: white; max-width: 600px; margin: 0 auto; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-    .admin-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px; font-weight: bold; box-sizing: border-box;}
+    .admin-content { background: white; max-width: 800px; margin: 0 auto; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .admin-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: bold; box-sizing: border-box;}
     
     #loginModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 60; align-items: center; justify-content: center; }
     .login-box { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
 
-    /* Drag and Drop List Styles */
-    .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; background: #f8fafc; transition: background 0.2s; }
+    .tab-btn { padding: 10px 16px; font-weight: bold; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .tab-btn:hover { color: #111827; background: #f1f5f9; }
+    .tab-btn.active { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
+    .tab-pane { display: none; padding-top: 16px; }
+    .tab-pane.active { display: block; }
+
+    .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; background: #f8fafc; transition: background 0.2s; }
     .list-item.dragging { opacity: 0.5; background: #e2e8f0; border: 2px dashed #94a3b8; }
     .list-item.drag-over { border-top: 2px solid #2563eb; }
     .drag-handle { cursor: grab; padding-right: 12px; color: #94a3b8; font-size: 1.2rem; user-select: none; }
@@ -98,7 +100,7 @@
 <div id="loginModal">
   <div class="login-box">
     <h3 class="text-xl font-black mb-4 text-blue-700 pb-2">🔒 Admin Login</h3>
-    <input type="password" id="adminPassInput" class="admin-input text-center text-lg tracking-widest" placeholder="စကားဝှက်ထည့်ပါ">
+    <input type="password" id="adminPassInput" class="admin-input text-center text-lg tracking-widest mb-2" placeholder="စကားဝှက်ထည့်ပါ">
     <div class="flex gap-2 mt-2">
       <button onclick="closeLogin()" class="btn2 w-1/2">ပိတ်မည်</button>
       <button onclick="checkLogin()" class="btn w-1/2 bg-blue-600">ဝင်မည်</button>
@@ -302,53 +304,107 @@
 
 <div id="adminModal">
   <div class="admin-content relative">
-    <button onclick="closeAdmin()" class="absolute top-4 right-4 text-gray-500 hover:text-black font-bold text-xl">✕</button>
-    <h2 class="text-2xl font-black mb-4 pb-2">⚙️ Firebase Admin Settings</h2>
+    <button onclick="closeAdmin()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl z-10">✕</button>
+    <h2 class="text-xl font-black mb-4 flex items-center gap-2">⚙️ Firebase Admin Settings</h2>
     
-    <button onclick="migrateDefaultsToFirebase()" id="btnMigrate" class="w-full text-white bg-purple-600 font-bold p-3 rounded-lg mb-6 hover:bg-purple-700 shadow-md">
-      🚀 မူလဒေတာများကို Firebase သို့ အလွယ်ထည့်မည် (တစ်ခါသာနှိပ်ရန်)
-    </button>
+    <div class="flex border-b mb-4 overflow-x-auto">
+      <button class="tab-btn active" onclick="switchTab('tab-general', this)">အထွေထွေ</button>
+      <button class="tab-btn" onclick="switchTab('tab-banks', this)">ဘဏ်များ</button>
+      <button class="tab-btn" onclick="switchTab('tab-qrs', this)">QR များ</button>
+      <button class="tab-btn" onclick="switchTab('tab-history', this)" id="btnTabHistory">မှတ်တမ်းများ</button>
+    </div>
 
-    <h3 class="font-bold text-lg text-orange-700 mb-2 mt-4 border-t pt-4 pb-1">⏱ Export တွင်ပြသမည့် နိုင်ငံအချိန်</h3>
-    <select id="adminTimezoneSelect" class="admin-input mb-2">
-      <option value="Asia/Bangkok">🇹🇭 ထိုင်းစံတော်ချိန် (Thailand Time)</option>
-      <option value="Asia/Yangon">🇲🇲 မြန်မာစံတော်ချိန် (Myanmar Time)</option>
-      <option value="Asia/Ho_Chi_Minh">🇻🇳 ဗီယက်နမ်စံတော်ချိန် (Vietnam Time)</option>
-    </select>
-    <button onclick="updateTimezone()" id="btnTzSave" class="btn w-full mb-6 bg-orange-600">အချိန်ဇုန် သိမ်းမည်</button>
+    <div id="tab-general" class="tab-pane active">
+      <div class="bg-orange-50 border border-orange-200 p-4 rounded-xl mb-4">
+        <h3 class="font-bold text-orange-800 mb-2">⏱ Export တွင်ပြသမည့် နိုင်ငံအချိန်</h3>
+        <select id="adminTimezoneSelect" class="admin-input mb-3 bg-white">
+          <optgroup label="Popular Regions">
+            <option value="Asia/Yangon">🇲🇲 မြန်မာစံတော်ချိန် (Myanmar Time)</option>
+            <option value="Asia/Bangkok">🇹🇭 ထိုင်းစံတော်ချိန် (Thailand Time)</option>
+            <option value="Asia/Ho_Chi_Minh">🇻🇳 ဗီယက်နမ်စံတော်ချိန် (Vietnam Time)</option>
+            <option value="Asia/Singapore">🇸🇬 စင်ကာပူစံတော်ချိန် (Singapore Time)</option>
+            <option value="Asia/Seoul">🇰🇷 ကိုရီးယားစံတော်ချိန် (Korea Time)</option>
+            <option value="Asia/Tokyo">🇯🇵 ဂျပန်စံတော်ချိန် (Japan Time)</option>
+            <option value="Asia/Dubai">🇦🇪 ဒူဘိုင်းစံတော်ချိန် (Dubai Time)</option>
+            <option value="Europe/London">🇬🇧 လန်ဒန်စံတော်ချိန် (London Time)</option>
+          </optgroup>
+          <optgroup label="All Countries / Timezones" id="allTimezonesGroup">
+          </optgroup>
+        </select>
+        <button onclick="updateTimezone()" id="btnTzSave" class="btn bg-orange-600 hover:bg-orange-700 w-full">အချိန်ဇုန် သိမ်းမည်</button>
+      </div>
 
-    <h3 class="font-bold text-lg text-blue-700 mb-2 mt-4 border-t pt-4 pb-1">🏦 ဘဏ်အချက်အလက် ထည့်ရန် / ပြင်ရန်</h3>
-    <input id="newBankId" class="admin-input" placeholder="Bank Code (ဥပမာ - NEWBANK)">
-    <input id="newBankName" class="admin-input" placeholder="Bank Name (ဥပမာ - New Bank - မြန်မာလို)">
-    <input id="newBankAccName" class="admin-input" placeholder="Account Name (ဥပမာ - U BA)">
-    <input id="newBankAccNo" class="admin-input" placeholder="Account No (ဥပမာ - 123-456-789)">
-    <input id="newBankLogo" class="admin-input" placeholder="Logo ပုံနာမည် (ဥပမာ - newbank.jpg)">
-    <button onclick="addCustomBank()" id="btnBankSave" class="btn w-full mb-4 bg-blue-600">ဘဏ်အသစ် သိမ်းမည်</button>
+      <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl mb-4">
+        <h3 class="font-bold text-gray-800 mb-2">🚀 System Data Management</h3>
+        <button onclick="migrateDefaultsToFirebase()" id="btnMigrate" class="w-full text-white bg-purple-600 font-bold py-2 px-4 rounded mb-2 hover:bg-purple-700">
+          မူလဒေတာများကို Firebase သို့ အလွယ်ထည့်မည်
+        </button>
+        <button onclick="clearCustomData()" id="btnClearData" class="w-full text-red-500 font-bold border border-red-500 py-2 px-4 rounded hover:bg-red-50">
+          Firebase မှ ဒေတာအားလုံးကို ဖျက်မည်
+        </button>
+      </div>
+    </div>
 
-    <h3 class="font-bold text-md text-gray-700 mb-2 flex items-center justify-between pb-1">
-      📋 ထည့်သွင်းထားသော ဘဏ်များ <span class="text-xs text-gray-500 font-normal ml-2">(အစင်းသုံးကြောင်းကိုဖိ၍ ဆွဲရွှေ့ပါ)</span>
-    </h3>
-    <div id="adminBankList" class="mb-6"></div>
+    <div id="tab-banks" class="tab-pane">
+      <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-4">
+        <h3 class="font-bold text-blue-800 mb-3">🏦 ဘဏ်အချက်အလက် ထည့်ရန် / ပြင်ရန်</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <input id="newBankId" class="admin-input" placeholder="Bank Code (ဥပမာ - KTB)">
+          <input id="newBankName" class="admin-input" placeholder="Bank Name (ဥပမာ - Krungthai)">
+          <input id="newBankAccName" class="admin-input" placeholder="Account Name (ဥပမာ - U BA)">
+          <input id="newBankAccNo" class="admin-input" placeholder="Account No (ဥပမာ - 123-456-789)">
+          <input id="newBankLogo" class="admin-input sm:col-span-2" placeholder="Logo ပုံနာမည် (ဥပမာ - ktb.jpg)">
+        </div>
+        <button onclick="addCustomBank()" id="btnBankSave" class="btn bg-blue-600 hover:bg-blue-700 w-full">ဘဏ်အသစ် သိမ်းမည်</button>
+      </div>
+      <h3 class="font-bold text-sm text-gray-600 mb-2">📋 ထည့်သွင်းထားသော ဘဏ်များ (ဆွဲရွှေ့ပါ)</h3>
+      <div id="adminBankList" class="max-h-60 overflow-y-auto border rounded-xl p-2 bg-gray-50"></div>
+    </div>
 
-    <h3 class="font-bold text-lg text-green-700 mb-2 border-t pt-4 pb-1">🔲 QR အသစ် ထည့်ရန်</h3>
-    <input id="newQrFile" class="admin-input" placeholder="QR ပုံနာမည် (ဥပမာ - newqr.jpg)">
-    <button onclick="addCustomQR()" id="btnQRSave" class="btn w-full mb-4 bg-green-600">QR အသစ် သိမ်းမည်</button>
+    <div id="tab-qrs" class="tab-pane">
+      <div class="bg-green-50 border border-green-200 p-4 rounded-xl mb-4">
+        <h3 class="font-bold text-green-800 mb-3">🔲 QR အသစ် ထည့်ရန်</h3>
+        <div class="flex gap-2 mb-3">
+          <input id="newQrFile" class="admin-input flex-1" placeholder="QR ပုံနာမည် (ဥပမာ - newqr.jpg)">
+          <button onclick="addCustomQR()" id="btnQRSave" class="btn bg-green-600 hover:bg-green-700 whitespace-nowrap">QR သိမ်းမည်</button>
+        </div>
+      </div>
+      <h3 class="font-bold text-sm text-gray-600 mb-2">📋 ထည့်သွင်းထားသော QR များ (ဆွဲရွှေ့ပါ)</h3>
+      <div id="adminQRList" class="max-h-60 overflow-y-auto border rounded-xl p-2 bg-gray-50"></div>
+    </div>
 
-    <h3 class="font-bold text-md text-gray-700 mb-2 flex items-center justify-between pb-1">
-      📋 ထည့်သွင်းထားသော QR များ <span class="text-xs text-gray-500 font-normal ml-2">(အစင်းသုံးကြောင်းကိုဖိ၍ ဆွဲရွှေ့ပါ)</span>
-    </h3>
-    <div id="adminQRList" class="mb-6"></div>
-
-    <button onclick="clearCustomData()" id="btnClearData" class="w-full text-red-500 font-bold border border-red-500 p-2 rounded hover:bg-red-50 mt-4">Firebase ထဲက ဒေတာများအားလုံးကို ပြန်ဖျက်မည်</button>
+    <div id="tab-history" class="tab-pane">
+      <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+        <h3 class="font-bold text-gray-800">📜 ငွေလွှဲမှတ်တမ်းများ</h3>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <input type="text" id="searchInvId" class="admin-input !mb-0 !py-1 text-sm flex-1 sm:w-48" placeholder="ID ဖြင့်ရှာရန် (ဥပမာ-5542)" oninput="searchHistoryLocally()">
+          <button onclick="searchHistoryLocally()" class="btn bg-blue-600 !py-1 !px-3 !text-sm">🔍</button>
+          <button onclick="loadHistory()" class="btn2 !py-1 !px-3 !text-sm">🔄 Refresh</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto border rounded-xl bg-white shadow-sm max-h-80">
+        <table class="w-full text-left text-sm whitespace-nowrap">
+          <thead class="bg-gray-100 text-gray-600 sticky top-0">
+            <tr>
+              <th class="p-3 border-b">Invoice ID</th>
+              <th class="p-3 border-b">ရက်စွဲ/အချိန်</th>
+              <th class="p-3 border-b">အမျိုးအစား</th>
+              <th class="p-3 border-b">လွှဲငွေ ➔ ရငွေ</th>
+              <th class="p-3 border-b">နည်းလမ်း</th>
+            </tr>
+          </thead>
+          <tbody id="adminHistoryList">
+            <tr><td colspan="5" class="p-4 text-center text-gray-500">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
   const ADMIN_PASSWORD = "158062"; 
 
-  /* ========================================================================
-     အပိုင်း (၁): Global State & Constants
-     ======================================================================== */
   let FIREBASE_BANKS = {};
   let FIREBASE_BANK_ORDER = []; 
   let FIREBASE_QRS = []; 
@@ -357,6 +413,7 @@
   let LAST_RATE = { r:null, inv:null, vnd:null };
   let ADMIN_TIMEZONE = 'Asia/Bangkok'; 
   let lock = false;
+  let allLoadedHistory = [];
 
   const DEFAULT_BANK_INFO = {
     KTB:{ name:"Krungthai Bank - ကုံထိုင်းဘဏ်", logo:"krungthai.jpg", accName:"YE LYNN HTUN", accNo:"497-061-977-8" },
@@ -370,15 +427,8 @@
     WAVE_HSA:{ name:"Wave Money - HSA", logo:"wave.jpg", accName:"HEIN SET AUNG", accNo:"09-264-947-944" }
   };
   const DEFAULT_BANK_ORDER = ["KTB","BBL","KPLUS","KBZ","KPAY_YLH","KPAY_TDW","KPAY_HSA","WAVE_YLH","WAVE_HSA"];
-  const DEFAULT_QR_FILES = [
-    "hba.jpg","hbq.jpg","hkqr.jpg","ht7.jpg","tkpayq.jpg",
-    "yba.jpg","ybq.jpg","ybidv.jpg","yka.jpg","ykpayq.jpg","ykq.jpg",
-    "yktba.jpg","yktbq.jpg","ysa.jpg","yt7.jpg","ytq.jpg","ywaveq.jpg"
-  ];
+  const DEFAULT_QR_FILES = ["hba.jpg","hbq.jpg","hkqr.jpg","ht7.jpg","tkpayq.jpg","yba.jpg","ybq.jpg","ybidv.jpg","yka.jpg","ykpayq.jpg","ykq.jpg","yktba.jpg","yktbq.jpg","ysa.jpg","yt7.jpg","ytq.jpg","ywaveq.jpg"];
 
-  /* ========================================================================
-     အပိုင်း (၂): Calculator Logic
-     ======================================================================== */
   function normalizeDigits(v){ const map={'၀':'0','၁':'1','၂':'2','၃':'3','၄':'4','၅':'5','၆':'6','၇':'7','၈':'8','၉':'9'}; return (v||'').replace(/[၀၁၂၃၄၅၆၇၈၉]/g, d=>map[d]??d); }
   function parseNum(v){ v = normalizeDigits(String(v).trim()); const n = Number(v.replace(/,/g,'')); return Number.isFinite(n) ? n : NaN; }
   function fmt0ceil(n){ return new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.ceil(n)); }
@@ -431,34 +481,31 @@
     document.getElementById('mmkOut2').textContent = (Number.isFinite(rate) && Number.isFinite(vnd)) ? fmt0ceil(vnd / rate) + ' MMK' : '';
   }
 
-  // Bind Calcs
   ['rate100k','ratePerThb','thbIn','mmkIn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshRateNote(); recalc(); }); });
-  
-  if(document.getElementById('rate100k')) {
-    document.getElementById('rate100k').addEventListener('input', syncFrom100k); 
-    document.getElementById('rate100k').addEventListener('input', saveRatesToFirebase);
-  }
-  
-  if(document.getElementById('ratePerThb')) {
-    document.getElementById('ratePerThb').addEventListener('input', syncFromPerThb);
-    document.getElementById('ratePerThb').addEventListener('input', saveRatesToFirebase);
-  }
-
-  ['rateVnd','mmkIn2','vndIn'].forEach(id=>{ 
-    const el=document.getElementById(id); 
-    if(el) el.addEventListener('input', ()=>{ refreshVndRateNote(); recalcVND(); saveRatesToFirebase(); }); 
-  });
+  if(document.getElementById('rate100k')) document.getElementById('rate100k').addEventListener('input', syncFrom100k); 
+  if(document.getElementById('ratePerThb')) document.getElementById('ratePerThb').addEventListener('input', syncFromPerThb);
+  ['rateVnd','mmkIn2','vndIn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshVndRateNote(); recalcVND(); }); });
 
   bindAutoSeparator('thbIn', true); bindAutoSeparator('mmkIn', true); bindAutoSeparator('vndIn', true); bindAutoSeparator('mmkIn2', true);
   bindAutoSeparator('rate100k', true); bindAutoSeparator('ratePerThb', true); bindAutoSeparator('rateVnd', true);
 
-  /* ========================================================================
-     အပိုင်း (၃): UI Initialize (System UI တွင် မူလ Size သာသုံးထားပါသည်)
-     ======================================================================== */
+  function populateAllTimezones() {
+    const group = document.getElementById('allTimezonesGroup');
+    if (!group) return;
+    try {
+      const allTz = Intl.supportedValuesOf('timeZone');
+      allTz.forEach(tz => {
+        const opt = document.createElement('option');
+        opt.value = tz;
+        opt.textContent = tz.replace(/_/g, ' ');
+        group.appendChild(opt);
+      });
+    } catch(e) { console.warn("Intl.supportedValuesOf not supported"); }
+  }
+
   function initDropdowns() {
     const useFirebaseBanks = FIREBASE_BANK_ORDER.length > 0;
     const useFirebaseQRs = FIREBASE_QRS.length > 0;
-
     ACTIVE_BANK_INFO = useFirebaseBanks ? FIREBASE_BANKS : DEFAULT_BANK_INFO;
     const finalBankOrder = useFirebaseBanks ? FIREBASE_BANK_ORDER : DEFAULT_BANK_ORDER;
     const finalQRs = useFirebaseQRs ? FIREBASE_QRS : DEFAULT_QR_FILES;
@@ -480,7 +527,6 @@
         const o = document.createElement('option'); o.value = f; o.textContent = f.replace(/\.[^.]+$/,''); qrSelect.appendChild(o);
       });
     }
-    
     refreshBankInfo();
     refreshQrPreview();
   }
@@ -493,24 +539,13 @@
     }
     const info=ACTIVE_BANK_INFO[key];
     const logoUrl = "assets/logo/" + info.logo;
-    
     document.getElementById('bankLogo').src = logoUrl;
     document.getElementById('bankNameText').textContent = info.name;
     document.getElementById('bankAccName').textContent = info.accName;
     document.getElementById('bankAccNo').textContent = info.accNo;
     box.classList.remove('hidden');
 
-    // System (UI) တွင် ကြည့်ပါက မူလ Size လေးအတိုင်းသာ ပေါ်စေပါမည်
-    mini.innerHTML = `
-      <div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff">
-        <div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;">
-          <img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" />
-          <span>${info.name}</span>
-        </div>
-        <div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName}</span></div>
-        <div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>
-      </div>
-    `;
+    mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div></div>`;
   }
   if(document.getElementById('bankSelect')) document.getElementById('bankSelect').addEventListener('change', refreshBankInfo);
 
@@ -539,10 +574,8 @@
 
     CURRENT_QR = { owner, normal: normalUrl, big: bigUrl, hasBig: false };
     document.getElementById('qrOwnerValue').textContent = owner;
-
     const hasBig = await probeImage(bigUrl);
     CURRENT_QR.hasBig = hasBig; 
-
     if(hasBig){
       document.getElementById('previewTwo').classList.remove('hidden'); document.getElementById('previewOne').classList.add('hidden');
       document.getElementById('qrPreviewNormal').src = normalUrl; document.getElementById('qrPreviewBig').src = bigUrl;
@@ -553,97 +586,81 @@
   }
   if(document.getElementById('qrSelect')) document.getElementById('qrSelect').addEventListener('change', refreshQrPreview);
 
-  // Initialize UI instantly
-  initDropdowns();
-  syncFrom100k(); refreshVndRateNote(); recalcVND();
+  window.addEventListener('DOMContentLoaded', () => {
+    populateAllTimezones();
+    initDropdowns();
+    syncFrom100k(); refreshVndRateNote(); recalcVND();
+  });
 
-  /* ========================================================================
-     အပိုင်း (၄): Firebase Background Connection
-     ======================================================================== */
   let dbRef = null;
   try {
-    const firebaseConfig = {
-      apiKey: "AIzaSyDr4ada9hQah9C2ZX0xFBfxYDdXUQl3oa4",
-      authDomain: "excal-570ed.firebaseapp.com",
-      projectId: "excal-570ed",
-      storageBucket: "excal-570ed.firebasestorage.app",
-      messagingSenderId: "84544400626",
-      appId: "1:84544400626:web:3393a4e339d3f41a60f46b",
-      measurementId: "G-4KLYMEPPGT"
-    };
-
+    const firebaseConfig = { apiKey: "AIzaSyDr4ada9hQah9C2ZX0xFBfxYDdXUQl3oa4", authDomain: "excal-570ed.firebaseapp.com", projectId: "excal-570ed", storageBucket: "excal-570ed.firebasestorage.app", messagingSenderId: "84544400626", appId: "1:84544400626:web:3393a4e339d3f41a60f46b", measurementId: "G-4KLYMEPPGT" };
     firebase.initializeApp(firebaseConfig);
     dbRef = firebase.firestore().collection("exchange_app").doc("admin_data");
-
     dbRef.get().then((docSnap) => {
       if (docSnap.exists) {
         const data = docSnap.data();
         FIREBASE_BANKS = data.banks || {};
         FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS);
         FIREBASE_QRS = data.qrs || [];
-        
         if (data.adminTimezone) {
           ADMIN_TIMEZONE = data.adminTimezone;
           const tzSelect = document.getElementById('adminTimezoneSelect');
           if (tzSelect) tzSelect.value = ADMIN_TIMEZONE;
         }
-
         if (data.lastRates) {
-          if (data.lastRates.rate100k) {
-            document.getElementById('rate100k').value = data.lastRates.rate100k;
-            formatInputThousands(document.getElementById('rate100k'), true);
-            syncFrom100k();
-          }
-          if (data.lastRates.rateVnd) {
-            document.getElementById('rateVnd').value = data.lastRates.rateVnd;
-            formatInputThousands(document.getElementById('rateVnd'), true);
-            refreshVndRateNote();
-            recalcVND();
-          }
+          if (data.lastRates.rate100k) { document.getElementById('rate100k').value = data.lastRates.rate100k; formatInputThousands(document.getElementById('rate100k'), true); syncFrom100k(); }
+          if (data.lastRates.rateVnd) { document.getElementById('rateVnd').value = data.lastRates.rateVnd; formatInputThousands(document.getElementById('rateVnd'), true); refreshVndRateNote(); recalcVND(); }
         }
         initDropdowns(); 
       }
-    }).catch(e => { console.warn("Firebase Fetch Skipped. Using Local Defaults."); });
-  } catch (err) {
-    console.warn("Firebase Init Skipped (Running fully local).");
-  }
+    });
+  } catch (err) { console.warn("Firebase Init Skipped."); }
 
   async function updateFirebase() {
     if(dbRef) {
       try { await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, adminTimezone: ADMIN_TIMEZONE }, { merge: true }); } 
-      catch(err) { alert("Firebase သို့ သိမ်း၍မရပါ။ (အင်တာနက် သို့မဟုတ် Rules ကိုစစ်ဆေးပါ)"); }
+      catch(err) { alert("Firebase သိမ်း၍မရပါ။"); }
     }
   }
 
-  /* --- Rate အော်တိုသိမ်းမယ့် Function --- */
   let rateSaveTimer;
-  function saveRatesToFirebase() {
-    clearTimeout(rateSaveTimer);
-    rateSaveTimer = setTimeout(async () => {
-      if (!dbRef) return;
-      const r100k = parseNum(document.getElementById('rate100k').value);
-      const rVnd = parseNum(document.getElementById('rateVnd').value);
-      let ratesToSave = {};
-      if (Number.isFinite(r100k) && r100k > 0) ratesToSave.rate100k = r100k;
-      if (Number.isFinite(rVnd) && rVnd > 0) ratesToSave.rateVnd = rVnd;
-      if (Object.keys(ratesToSave).length > 0) {
-        try { await dbRef.set({ lastRates: ratesToSave }, { merge: true }); } catch (err) { }
+  ['rate100k','ratePerThb','rateVnd'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) {
+          el.addEventListener('input', () => {
+              clearTimeout(rateSaveTimer);
+              rateSaveTimer = setTimeout(async () => {
+                  if (!dbRef) return;
+                  const r100k = parseNum(document.getElementById('rate100k').value);
+                  const rVnd = parseNum(document.getElementById('rateVnd').value);
+                  let ratesToSave = {};
+                  if (Number.isFinite(r100k) && r100k > 0) ratesToSave.rate100k = r100k;
+                  if (Number.isFinite(rVnd) && rVnd > 0) ratesToSave.rateVnd = rVnd;
+                  if (Object.keys(ratesToSave).length > 0) { try { await dbRef.set({ lastRates: ratesToSave }, { merge: true }); } catch (err) { } }
+              }, 1500); 
+          });
       }
-    }, 1500); 
-  }
+  });
 
-  /* ========================================================================
-     အပိုင်း (၅): Admin Modal & Drag/Drop
-     ======================================================================== */
   function openAdmin() { document.getElementById('loginModal').style.display = 'flex'; document.getElementById('adminPassInput').value = ''; document.getElementById('adminPassInput').focus(); }
   function closeLogin() { document.getElementById('loginModal').style.display = 'none'; }
   function checkLogin() {
     if(document.getElementById('adminPassInput').value === ADMIN_PASSWORD) {
-      closeLogin(); document.getElementById('adminModal').style.display = 'block'; renderAdminLists();
+      closeLogin(); document.getElementById('adminModal').style.display = 'block'; 
+      renderAdminLists(); switchTab('tab-general', document.querySelector('.tab-btn'));
     } else { alert("စကားဝှက် မှားယွင်းနေပါသည်။"); }
   }
   if(document.getElementById('adminPassInput')) document.getElementById('adminPassInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkLogin(); });
   function closeAdmin() { document.getElementById('adminModal').style.display = 'none'; }
+
+  function switchTab(tabId, btnElement) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    if (btnElement) btnElement.classList.add('active');
+    if (tabId === 'tab-history') loadHistory();
+  }
 
   let dragStartIndex = null; let dragType = null;
   function handleDragStart(e) { dragStartIndex = parseInt(e.currentTarget.getAttribute('data-index')); dragType = e.currentTarget.getAttribute('data-type'); e.dataTransfer.effectAllowed = 'move'; e.currentTarget.classList.add('dragging'); }
@@ -653,7 +670,6 @@
     e.preventDefault(); e.currentTarget.classList.remove('drag-over');
     const dragEndIndex = parseInt(e.currentTarget.getAttribute('data-index')); const dropType = e.currentTarget.getAttribute('data-type');
     if (dragType !== dropType || dragStartIndex === dragEndIndex) return;
-
     if (dragType === 'bank') { const item = FIREBASE_BANK_ORDER.splice(dragStartIndex, 1)[0]; FIREBASE_BANK_ORDER.splice(dragEndIndex, 0, item); } 
     else if (dragType === 'qr') { const item = FIREBASE_QRS.splice(dragStartIndex, 1)[0]; FIREBASE_QRS.splice(dragEndIndex, 0, item); }
     initDropdowns(); renderAdminLists(); await updateFirebase();
@@ -662,35 +678,60 @@
 
   function renderAdminLists() {
     const bankListDiv = document.getElementById('adminBankList'); bankListDiv.innerHTML = '';
-    if(FIREBASE_BANK_ORDER.length === 0) {
-      bankListDiv.innerHTML = '<p class="text-sm text-gray-400 p-2 text-center border rounded">Firebase တွင် ထည့်သွင်းထားခြင်း မရှိသေးပါ</p>';
-    } else {
+    if(FIREBASE_BANK_ORDER.length === 0) { bankListDiv.innerHTML = '<p class="text-sm text-gray-400 p-2 text-center border rounded bg-white">ထည့်သွင်းထားခြင်း မရှိသေးပါ</p>'; } 
+    else {
       FIREBASE_BANK_ORDER.forEach((id, index) => {
         const bank = FIREBASE_BANKS[id]; if(!bank) return;
-        bankListDiv.innerHTML += `<div class="list-item" draggable="true" data-index="${index}" data-type="bank" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
-          <div class="flex items-center truncate mr-2 w-full">
-            <span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span>
-            <div class="truncate"><span class="font-bold text-sm">${bank.name}</span> <span class="text-xs text-gray-500">(${id})</span></div>
-          </div>
-          <div class="action-btns flex-shrink-0">
-            <button onclick="editBank('${id}')" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button>
-            <button onclick="deleteBank('${id}')" title="ဖျက်မည်" class="btn-delete">✕</button>
-          </div>
-        </div>`;
+        bankListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="bank" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate"><span class="font-bold text-sm">${bank.name}</span> <span class="text-xs text-gray-500">(${id})</span></div></div><div class="action-btns flex-shrink-0"><button onclick="editBank('${id}')" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteBank('${id}')" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
       });
     }
-
     const qrListDiv = document.getElementById('adminQRList'); qrListDiv.innerHTML = '';
-    if(FIREBASE_QRS.length === 0) {
-      qrListDiv.innerHTML = '<p class="text-sm text-gray-400 p-2 text-center border rounded">Firebase တွင် ထည့်သွင်းထားခြင်း မရှိသေးပါ</p>';
-    } else {
+    if(FIREBASE_QRS.length === 0) { qrListDiv.innerHTML = '<p class="text-sm text-gray-400 p-2 text-center border rounded bg-white">ထည့်သွင်းထားခြင်း မရှိသေးပါ</p>'; } 
+    else {
       FIREBASE_QRS.forEach((file, index) => {
-        qrListDiv.innerHTML += `<div class="list-item" draggable="true" data-index="${index}" data-type="qr" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="font-bold text-sm truncate">${file}</div></div><div class="action-btns flex-shrink-0"><button onclick="deleteQR(${index})" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
+        qrListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="qr" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="font-bold text-sm truncate">${file}</div></div><div class="action-btns flex-shrink-0"><button onclick="deleteQR(${index})" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
       });
     }
   }
 
-  /* --- Timezone သိမ်းမည့် Function --- */
+  function renderHistoryRows(dataArray) {
+      const list = document.getElementById('adminHistoryList');
+      if(dataArray.length === 0) { list.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">ရှာဖွေထားသော မှတ်တမ်း မတွေ့ပါ</td></tr>'; return; }
+      let html = '';
+      dataArray.forEach(d => {
+        let dateObj = new Date(d.timestamp);
+        let dateStr = dateObj.toLocaleString('en-GB', { timeZone: d.tz || 'Asia/Bangkok', hour12: true });
+        html += `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-mono text-xs text-gray-600">${d.id}</td><td class="p-3 text-xs">${dateStr}</td><td class="p-3 font-bold text-blue-700 text-xs">${d.type}</td><td class="p-3 text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</td><td class="p-3 text-xs">${d.method}</td></tr>`;
+      });
+      list.innerHTML = html;
+  }
+
+  async function loadHistory() {
+    const list = document.getElementById('adminHistoryList');
+    list.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>';
+    document.getElementById('searchInvId').value = '';
+    try {
+      const snap = await firebase.firestore().collection("exchange_history").orderBy("timestamp", "desc").limit(1500).get();
+      if(snap.empty) { list.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">မှတ်တမ်းမရှိသေးပါ</td></tr>'; return; }
+      allLoadedHistory = []; snap.forEach(doc => allLoadedHistory.push(doc.data()));
+      renderHistoryRows(allLoadedHistory);
+    } catch(e) { list.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading history</td></tr>'; }
+  }
+
+  async function searchHistoryLocally() {
+      const searchVal = document.getElementById('searchInvId').value.trim().toLowerCase();
+      if(!searchVal) { renderHistoryRows(allLoadedHistory); return; }
+      const filtered = allLoadedHistory.filter(d => d.id.toLowerCase().includes(searchVal));
+      if(filtered.length === 0 && searchVal.startsWith('inv')) {
+         const list = document.getElementById('adminHistoryList');
+         list.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-blue-600 font-bold">🔍 Database တွင် ရှာဖွေနေပါသည်...</td></tr>';
+         try {
+             const docRef = await firebase.firestore().collection("exchange_history").doc(searchVal.toUpperCase()).get();
+             if(docRef.exists) { renderHistoryRows([docRef.data()]); } else { renderHistoryRows([]); }
+         } catch(e) { renderHistoryRows([]); }
+      } else { renderHistoryRows(filtered); }
+  }
+
   async function updateTimezone() {
     const tzSelect = document.getElementById('adminTimezoneSelect');
     if (!tzSelect) return;
@@ -700,94 +741,67 @@
     if (btn) { btn.textContent = "သိမ်းနေသည်..."; btn.disabled = true; }
     try {
       if (dbRef) await dbRef.set({ adminTimezone: newTz }, { merge: true });
-      alert("အချိန်ဇုန် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ။ နောက်ထပ် Save လုပ်မည့်ပုံများတွင် " + newTz.split('/')[1] + " အချိန်ဖြင့် ပေါ်မည်ဖြစ်ပါသည်။");
-    } catch (e) { alert("Error: " + e.message); } finally {
-      if (btn) { btn.textContent = "အချိန်ဇုန် သိမ်းမည်"; btn.disabled = false; }
-    }
+      alert("အချိန်ဇုန် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ။ (" + newTz.split('/').pop().replace(/_/g, ' ') + ")");
+    } catch (e) { alert("Error: " + e.message); } finally { if (btn) { btn.textContent = "အချိန်ဇုန် သိမ်းမည်"; btn.disabled = false; } }
   }
 
   function editBank(id) {
-    const bank = FIREBASE_BANKS[id];
-    if(!bank) return;
+    const bank = FIREBASE_BANKS[id]; if(!bank) return;
     const idInput = document.getElementById('newBankId');
     idInput.value = id; idInput.disabled = true; idInput.style.backgroundColor = "#e5e7eb"; 
     document.getElementById('newBankName').value = bank.name || "";
     document.getElementById('newBankAccName').value = bank.accName || "";
     document.getElementById('newBankAccNo').value = bank.accNo || "";
     document.getElementById('newBankLogo').value = bank.logo || "";
-    
-    const btn = document.getElementById('btnBankSave');
-    btn.textContent = "ဘဏ်အချက်အလက် Update လုပ်မည်";
-    btn.classList.remove('bg-blue-600'); btn.classList.add('bg-green-600');
-    idInput.scrollIntoView({behavior: 'smooth', block: 'center'});
+    const btn = document.getElementById('btnBankSave'); btn.textContent = "ဘဏ် Update လုပ်မည်"; btn.classList.remove('bg-blue-600'); btn.classList.add('bg-green-600');
   }
 
   async function addCustomBank() {
     const idInput = document.getElementById('newBankId');
     const id = idInput.value.trim().toUpperCase(); 
     if(!id) return alert("Bank Code ထည့်ပါ။");
-    const btn = document.getElementById('btnBankSave'); 
-    btn.textContent = "သိမ်းနေသည်..."; btn.disabled = true;
+    const btn = document.getElementById('btnBankSave'); btn.textContent = "သိမ်းနေသည်..."; btn.disabled = true;
     try {
-      FIREBASE_BANKS[id] = { 
-        name: document.getElementById('newBankName').value.trim(), 
-        accName: document.getElementById('newBankAccName').value.trim(), 
-        accNo: document.getElementById('newBankAccNo').value.trim(), 
-        logo: document.getElementById('newBankLogo').value.trim() 
-      };
+      FIREBASE_BANKS[id] = { name: document.getElementById('newBankName').value.trim(), accName: document.getElementById('newBankAccName').value.trim(), accNo: document.getElementById('newBankAccNo').value.trim(), logo: document.getElementById('newBankLogo').value.trim() };
       if(!FIREBASE_BANK_ORDER.includes(id)) FIREBASE_BANK_ORDER.push(id);
       await updateFirebase();
-      
       idInput.value = ""; idInput.disabled = false; idInput.style.backgroundColor = "";
       document.getElementById('newBankName').value = ""; document.getElementById('newBankAccName').value = ""; document.getElementById('newBankAccNo').value = ""; document.getElementById('newBankLogo').value = "";
       initDropdowns(); renderAdminLists();
-    } catch (e) { alert("Error: " + e.message); } finally { 
-      btn.textContent = "ဘဏ်အသစ် သိမ်းမည်"; btn.classList.remove('bg-green-600'); btn.classList.add('bg-blue-600'); btn.disabled = false; 
-    }
+    } catch (e) { alert("Error: " + e.message); } finally { btn.textContent = "ဘဏ်အသစ် သိမ်းမည်"; btn.classList.remove('bg-green-600'); btn.classList.add('bg-blue-600'); btn.disabled = false; }
   }
 
-  async function deleteBank(id) {
-    if(confirm("ဤဘဏ်ကို ဖျက်ရန် သေချာပါသလား?")) { delete FIREBASE_BANKS[id]; FIREBASE_BANK_ORDER = FIREBASE_BANK_ORDER.filter(item => item !== id); initDropdowns(); renderAdminLists(); await updateFirebase(); }
-  }
+  async function deleteBank(id) { if(confirm("ဤဘဏ်ကို ဖျက်ရန် သေချာပါသလား?")) { delete FIREBASE_BANKS[id]; FIREBASE_BANK_ORDER = FIREBASE_BANK_ORDER.filter(item => item !== id); initDropdowns(); renderAdminLists(); await updateFirebase(); } }
 
   async function migrateDefaultsToFirebase() {
     if(!confirm("မူလရှိပြီးသား ဘဏ်များနှင့် QR အားလုံးကို Firebase ထဲသို့ ထည့်သွင်းမှာ သေချာပါသလား?")) return;
-    const btn = document.getElementById('btnMigrate'); if(btn) { btn.textContent = "ထည့်သွင်းနေသည်... ကျေးဇူးပြု၍ စောင့်ပါ..."; btn.disabled = true; }
+    const btn = document.getElementById('btnMigrate'); if(btn) { btn.textContent = "ထည့်သွင်းနေသည်..."; btn.disabled = true; }
     try {
       FIREBASE_BANKS = { ...DEFAULT_BANK_INFO, ...FIREBASE_BANKS };
       FIREBASE_BANK_ORDER = [...new Set([...DEFAULT_BANK_ORDER, ...FIREBASE_BANK_ORDER])];
       FIREBASE_QRS = [...new Set([...DEFAULT_QR_FILES, ...FIREBASE_QRS])];
-      await updateFirebase(); alert("Firebase သို့ အောင်မြင်စွာ ပြောင်းရွှေ့ထည့်သွင်းပြီးပါပြီ။");
+      await updateFirebase(); alert("ပြောင်းရွှေ့ထည့်သွင်းပြီးပါပြီ။");
       initDropdowns(); if(document.getElementById('adminModal').style.display === 'block'){ renderAdminLists(); }
-    } catch (e) { alert("Error: " + e.message); } finally { if(btn) { btn.innerHTML = "🚀 မူလဒေတာများကို Firebase သို့ အလွယ်ထည့်မည် (တစ်ခါသာနှိပ်ရန်)"; btn.disabled = false; } }
+    } catch (e) { alert("Error: " + e.message); } finally { if(btn) { btn.innerHTML = "မူလဒေတာများကို Firebase သို့ အလွယ်ထည့်မည်"; btn.disabled = false; } }
   }
 
   async function addCustomQR() {
     let file = document.getElementById('newQrFile').value.trim(); if(!file) return alert("QR နာမည်ထည့်ပါ။"); if(!file.includes('.')) file += '.jpg';
     const btn = document.getElementById('btnQRSave'); btn.textContent = "သိမ်းနေသည်..."; btn.disabled = true;
-    try {
-      if(!FIREBASE_QRS.includes(file)) FIREBASE_QRS.push(file);
-      await updateFirebase(); document.getElementById('newQrFile').value = ""; initDropdowns(); renderAdminLists();
-    } catch (e) { alert("Error: " + e.message); } finally { btn.textContent = "QR အသစ် သိမ်းမည်"; btn.disabled = false; }
+    try { if(!FIREBASE_QRS.includes(file)) FIREBASE_QRS.push(file); await updateFirebase(); document.getElementById('newQrFile').value = ""; initDropdowns(); renderAdminLists(); } 
+    catch (e) { alert("Error: " + e.message); } finally { btn.textContent = "QR သိမ်းမည်"; btn.disabled = false; }
   }
 
-  async function deleteQR(index) {
-    if(confirm("ဤ QR ကို ဖျက်ရန် သေချာပါသလား?")) { FIREBASE_QRS.splice(index, 1); initDropdowns(); renderAdminLists(); await updateFirebase(); }
-  }
+  async function deleteQR(index) { if(confirm("ဤ QR ကို ဖျက်ရန် သေချာပါသလား?")) { FIREBASE_QRS.splice(index, 1); initDropdowns(); renderAdminLists(); await updateFirebase(); } }
 
   async function clearCustomData() {
     if(confirm("Firebase ပေါ်တွင် သီးသန့်ထည့်ထားသော Data အသစ်များ အားလုံးပျက်သွားပါမည်။ သေချာပါသလား?")) {
       const btn = document.getElementById('btnClearData'); btn.textContent = "ဖျက်နေသည်..."; btn.disabled = true;
-      try {
-        FIREBASE_BANKS = {}; FIREBASE_BANK_ORDER = []; FIREBASE_QRS = [];
-        await updateFirebase(); alert("ဖျက်သိမ်းပြီးပါပြီ။"); closeAdmin(); initDropdowns();
-      } catch (e) { alert("Error - " + e.message); } finally { btn.textContent = "Firebase ထဲက ဒေတာများအားလုံးကို ပြန်ဖျက်မည်"; btn.disabled = false; }
+      try { FIREBASE_BANKS = {}; FIREBASE_BANK_ORDER = []; FIREBASE_QRS = []; await updateFirebase(); alert("ဖျက်သိမ်းပြီးပါပြီ။"); closeAdmin(); initDropdowns(); } 
+      catch (e) { alert("Error - " + e.message); } finally { btn.textContent = "Firebase မှ ဒေတာအားလုံးကို ဖျက်မည်"; btn.disabled = false; }
     }
   }
 
-  /* ========================================================================
-     အပိုင်း (၆): Export Image Logic (Save Image တွင်သာ ကြီးကြီးပြရန်)
-     ======================================================================== */
   const I18N = {
     en: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"THB → MMK", h_mmk2thb:"MMK → THB", h_vnd2mmk:"VND → MMK", h_mmk2vnd:"MMK → VND", sub_thb2mmk:"Thai Baht to Myanmar Kyat", sub_mmk2thb:"Myanmar Kyat to Thai Baht", sub_vnd2mmk:"Vietnamese Dong to Myanmar Kyat", sub_mmk2vnd:"Myanmar Kyat to Vietnamese Dong", lbl_thb:"Amount (THB)", lbl_mmk:"Amount (MMK)", lbl_vnd:"Amount (VND)", in_thb:"Input THB", in_mmk:"Input MMK", in_vnd:"Input VND", out_mmk:"Result MMK", out_thb:"Result THB", out_vnd:"Result VND", warn1:"Always request the bank account before every transfer.", warn2:"We are not responsible for any transfer made without requesting and confirming the bank account.", thanks:"Thank you for trusting and using Thailand Guide - Supplier By Ye.", bankTitle:"Transfer Bank Information", bankLabel:"Bank Information", accName:"Account Name", accNo:"Account Number", qrTitle:"Bank QR / Payment", owner:"Account Name", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" },
     th: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"บาท → จ๊าด", h_mmk2thb:"จ๊าด → บาท", h_vnd2mmk:"ดอง → จ๊าด", h_mmk2vnd:"จ๊าด → ดอง", sub_thb2mmk:"แปลงเงินบาทไทยเป็นจ๊าดเมียนมา", sub_mmk2thb:"แปลงจ๊าดเมียนมาเป็นเงินบาทไทย", sub_vnd2mmk:"แปลงเงินดองเวียดนามเป็นจ๊าดเมียนมา", sub_mmk2vnd:"แปลงจ๊าดเมียนมาเป็นเงินดองเวียดนาม", lbl_thb:"จำนวนเงิน (THB)", lbl_mmk:"จำนวนเงิน (MMK)", lbl_vnd:"จำนวนเงิน (VND)", in_thb:"กรอกจำนวนบาท", in_mmk:"กรอกจำนวนจ๊าด", in_vnd:"กรอกจำนวนดอง", out_mmk:"ผลลัพธ์ (MMK)", out_thb:"ผลลัพธ์ (THB)", out_vnd:"ผลลัพธ์ (VND)", warn1:"โอนเงินทุกครั้งกรุณาขอเลขบัญชีที่ต้องถามก่อน", warn2:"หากโอนโดยไม่ยืนยันเลขบัญชี ทางเพจขอไม่รับผิดชอบ", thanks:"ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye", bankTitle:"ข้อมูลบัญชีสำหรับโอน", bankLabel:"ข้อมูลบัญชีธนาคาร", accName:"ชื่อบัญชี", accNo:"เลขบัญชี", qrTitle:"คิวอาร์ธนาคาร", owner:"ชื่อบัญชี", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" }
@@ -796,29 +810,16 @@
   function getExportTimeStr(lang) {
     const d = new Date();
     const tz = ADMIN_TIMEZONE || 'Asia/Bangkok';
-
     const formatterDate = new Intl.DateTimeFormat('en-GB', { timeZone: tz, day: '2-digit', month: 'short', year: 'numeric' });
     const formatterTime = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true });
-    
     const datePart = formatterDate.format(d);
     const timePart = formatterTime.format(d).replace(/[\s\u202f]+/g, '');
-
-    let tzLabel = "";
-    if (tz === 'Asia/Yangon') {
-        tzLabel = (lang === 'en') ? 'Myanmar Time' : (lang === 'th' ? 'เวลาพม่า' : 'မြန်မာအချိန်');
-    } else if (tz === 'Asia/Ho_Chi_Minh') {
-        tzLabel = (lang === 'en') ? 'Vietnam Time' : (lang === 'th' ? 'เวลาเวียดนาม' : 'ဗီယက်နမ်အချိန်');
-    } else {
-        tzLabel = (lang === 'en') ? 'Thai Time' : (lang === 'th' ? 'เวลาไทย' : 'ထိုင်းအချိန်');
-    }
-
-    if (lang === 'en') {
-      return `Date : ${datePart} (${timePart}) (${tzLabel})`;
-    } else if (lang === 'th') {
-      return `วันที่ : ${datePart} (${timePart}) (${tzLabel})`;
-    } else {
-      return `Date : ${datePart} (${timePart}) (${tzLabel})`;
-    }
+    
+    let tzLabel = tz.split('/').pop().replace(/_/g, ' ') + " Time";
+    if (tz === 'Asia/Yangon') tzLabel = (lang === 'en') ? 'Myanmar Time' : (lang === 'th' ? 'เวลาพม่า' : 'မြန်မာအချိန်');
+    else if (tz === 'Asia/Bangkok') tzLabel = (lang === 'en') ? 'Thai Time' : (lang === 'th' ? 'เวลาไทย' : 'ထိုင်းအချိန်');
+    else if (tz === 'Asia/Ho_Chi_Minh') tzLabel = (lang === 'en') ? 'Vietnam Time' : (lang === 'th' ? 'เวลาเวียดนาม' : 'ဗီယက်နမ်အချိန်');
+    return `Date : ${datePart} (${timePart}) (${tzLabel})`;
   }
 
   function applyLangToClone(clone, lang){
@@ -859,79 +860,82 @@
     const original=document.getElementById(sectionId); const clone=original.cloneNode(true);
     clone.querySelectorAll('button').forEach(b=>b.remove());
     applyLangToClone(clone, lang);
-
+    let inValueStr = '', outValueStr = '';
     clone.querySelectorAll('input, output').forEach(el=>{
       const div=document.createElement('div');
       div.className=el.className || ''; div.style.whiteSpace='nowrap'; div.style.overflow='hidden'; div.style.textOverflow='ellipsis'; div.style.display='flex'; div.style.alignItems='center'; div.style.lineHeight='1.5'; div.style.minHeight='56px'; div.style.height='56px'; div.style.paddingTop='12px'; div.style.paddingBottom='14px';
-      div.textContent = (el.tagName.toLowerCase() === 'input') ? (el.value || '') : (el.textContent || '');
+      const val = (el.tagName.toLowerCase() === 'input') ? (el.value || '') : (el.textContent || '');
+      div.textContent = val;
+      if (el.tagName.toLowerCase() === 'input') inValueStr = val; else outValueStr = val;
       el.replaceWith(div);
     });
-
     clone.style.boxShadow='none'; clone.style.border='1px solid #e5e7eb'; clone.style.background='#fff';
     const mode = document.querySelector('input[name="saveMode"]:checked')?.value || 'none';
-
+    let paymentMethodName = "မပါ (None)";
     if(mode==='qr' && CURRENT_QR && CURRENT_QR.normal){
+      paymentMethodName = `QR (${CURRENT_QR.owner})`;
       const wrap=document.createElement('div'); wrap.className='export-block';
       const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
       const img=document.createElement('img'); img.style.width='420px'; img.style.maxWidth='95%'; img.style.margin='10px auto 0'; img.style.border='1px solid #e5e7eb'; img.style.borderRadius='16px'; img.style.padding='10px'; img.style.background='#fff'; img.style.display='block';
       img.src = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
-      
-      const owner=document.createElement('p'); owner.className='mt-3 text-slate-700'; owner.style.paddingBottom = '4px';
-      
-      // Save တွင်သာ QR Owner Name ကို ကြီးအောင် ပြင်ဆင်ထားသည်
-      owner.style.fontSize = '20px'; 
+      const owner=document.createElement('p'); owner.className='mt-3 text-slate-700'; owner.style.paddingBottom = '4px'; owner.style.fontSize = '20px'; 
       owner.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>`);
-      
       wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(owner); clone.appendChild(wrap);
       await new Promise(res=>{ if(img.complete) return res(); img.onload=()=>res(); img.onerror=()=>res(); });
     }
-
     if(mode==='bank'){
       const key=document.getElementById('bankSelect').value;
       if(key && ACTIVE_BANK_INFO && ACTIVE_BANK_INFO[key]){
         const info=ACTIVE_BANK_INFO[key];
+        paymentMethodName = `Bank (${info.name})`;
         const wrap=document.createElement('div'); wrap.className='export-block';
         const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.bankTitle : 'ငွေလွှဲရန် ဘဏ်အချက်အလက်');
         const box=document.createElement('div'); box.style.maxWidth='560px'; box.style.margin='12px auto 0'; box.style.border='1px solid #e5e7eb'; box.style.borderRadius='16px'; box.style.padding='16px'; box.style.background='#fff'; box.style.textAlign='center';
         const logo=document.createElement('img'); logo.src="assets/logo/"+info.logo; logo.style.width='72px'; logo.style.height='72px'; logo.style.borderRadius='18px'; logo.style.border='1px solid #e5e7eb'; logo.style.objectFit='cover';
         const headerRow=document.createElement('div'); headerRow.style.display='flex'; headerRow.style.flexDirection='column'; headerRow.style.alignItems='center'; headerRow.style.justifyContent='center'; headerRow.style.gap='8px'; headerRow.style.marginBottom='10px';
-        
-        // Save တွင်သာ Bank အချက်အလက်များကို ကြီးအောင် ပြင်ဆင်ထားသည်
         const h=document.createElement('div'); h.style.textAlign='center'; 
         h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
-        
         const body=document.createElement('div'); body.style.textAlign='center';
         body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
-        
         headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
         wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
         await new Promise(res=>{ if(logo.complete) return res(); logo.onload=()=>res(); logo.onerror=()=>res(); });
       }
     }
-
     const timeDiv = document.createElement('div');
     timeDiv.style.textAlign = 'center'; timeDiv.style.marginTop = '12px'; timeDiv.style.paddingTop = '12px'; timeDiv.style.borderTop = '1px dashed #cbd5e1';
     timeDiv.style.fontSize = '14px'; timeDiv.style.fontWeight = '900'; timeDiv.style.color = '#64748b'; timeDiv.style.paddingBottom = '8px';
     timeDiv.textContent = getExportTimeStr(lang);
     clone.appendChild(timeDiv);
-
     clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
     document.body.appendChild(clone);
     await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
     const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
     document.body.removeChild(clone);
-
     const margin=18, titleHeight=30; const out=document.createElement('canvas'); out.width = canvas.width + margin*2; out.height = canvas.height + margin*3 + titleHeight;
-    const ctx = out.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,out.width,out.height); ctx.fillStyle='#000'; ctx.font='bold 34px system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='top';
+    const ctx = out.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,out.width,out.height); 
+    const dDate = new Date();
+    const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
+    const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
+    ctx.fillStyle = '#64748b'; ctx.font = 'bold 18px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.fillText("ID: " + invId, out.width - margin, margin + 4);
+    ctx.fillStyle='#000'; ctx.font='bold 34px system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='top';
     const topTitle = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
-    ctx.fillText(topTitle, out.width/2, margin); ctx.drawImage(canvas, margin, margin*2 + titleHeight);
+    ctx.fillText(topTitle, out.width/2, margin); 
+    ctx.drawImage(canvas, margin, margin*2 + titleHeight);
 
+    let recType = "";
+    if(sectionId==='box-thb2mmk') recType = "THB ➔ MMK";
+    else if(sectionId==='box-mmk2thb') recType = "MMK ➔ THB";
+    else if(sectionId==='box-vnd2mmk') recType = "VND ➔ MMK";
+    else if(sectionId==='box-mmk2vnd') recType = "MMK ➔ VND";
+    const historyRecord = { id: invId, type: recType, inAmt: inValueStr, outAmt: outValueStr, method: paymentMethodName, timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE };
+    try { firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); } catch(e) {}
     const a=document.createElement('a');
-    if(fmt === 'jpg'){ a.href = out.toDataURL('image/jpeg',0.92); a.download = filenameBase + '.jpg'; }
-    else{ a.href = out.toDataURL('image/png'); a.download = filenameBase + '.png'; }
+    if(fmt === 'jpg'){ a.href = out.toDataURL('image/jpeg',0.92); a.download = filenameBase + '_' + invId + '.jpg'; }
+    else{ a.href = out.toDataURL('image/png'); a.download = filenameBase + '_' + invId + '.png'; }
     document.body.appendChild(a); a.click(); setTimeout(()=>document.body.removeChild(a),0);
   }
 </script>
-
 </body>
 </html>
