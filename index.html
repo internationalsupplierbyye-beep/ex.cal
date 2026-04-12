@@ -533,7 +533,7 @@
   }
   function bindAutoSeparator(id, allowDecimal){ const el = document.getElementById(id); if(el) el.addEventListener('input', ()=>formatInputThousands(el, allowDecimal)); }
 
-  // --- Calc Logic ---
+  // --- Calc Logic (THB & VND) ---
   function getRate() { const a=parseNum(document.getElementById('rate100k').value), b=parseNum(document.getElementById('ratePerThb').value); if(Number.isFinite(a) && a>0) return a; if(Number.isFinite(b) && b>0) return 100000/b; return NaN; }
   function refreshRateNote() {
     const r=getRate();
@@ -546,9 +546,12 @@
     document.getElementById('mmkOut').textContent = (Number.isFinite(rate) && Number.isFinite(thb)) ? fmt0ceil(thb*100000/rate) + ' MMK' : '';
     document.getElementById('thbOut').textContent = (Number.isFinite(rate) && Number.isFinite(mmk)) ? fmt0ceil(mmk*rate/100000) + ' THB' : '';
   }
-  function syncFrom100k() { if(lock) return; lock=true; const r=parseNum(document.getElementById('rate100k').value); if(Number.isFinite(r) && r>0){ document.getElementById('ratePerThb').value = fmt6(100000/inv); formatInputThousands(document.getElementById('ratePerThb'),true); }else document.getElementById('ratePerThb').value=''; lock=false; refreshRateNote(); recalc(); }
+
+  // FIXED: Typo inv -> r
+  function syncFrom100k() { if(lock) return; lock=true; const r=parseNum(document.getElementById('rate100k').value); if(Number.isFinite(r) && r>0){ document.getElementById('ratePerThb').value = fmt6(100000/r); formatInputThousands(document.getElementById('ratePerThb'),true); }else document.getElementById('ratePerThb').value=''; lock=false; refreshRateNote(); recalc(); }
   function syncFromPerThb() { if(lock) return; lock=true; const inv=parseNum(document.getElementById('ratePerThb').value); if(Number.isFinite(inv) && inv>0){ document.getElementById('rate100k').value = fmt6(100000/inv); formatInputThousands(document.getElementById('rate100k'),true); }else document.getElementById('rate100k').value=''; lock=false; refreshRateNote(); recalc(); }
 
+  // VND Logic
   function getVndRate() { const v = parseNum(document.getElementById('rateVnd').value); return (Number.isFinite(v) && v>0) ? v : NaN; }
   function refreshVndRateNote() {
     const r=getVndRate();
@@ -562,124 +565,34 @@
     document.getElementById('mmkOut2').textContent = (Number.isFinite(rate) && Number.isFinite(vnd)) ? fmt0ceil(vnd / rate) + ' MMK' : '';
   }
 
+  // Bind Events for Calculations
   ['rate100k','ratePerThb','thbIn','mmkIn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshRateNote(); recalc(); }); });
   if(document.getElementById('rate100k')) document.getElementById('rate100k').addEventListener('input', syncFrom100k); 
   if(document.getElementById('ratePerThb')) document.getElementById('ratePerThb').addEventListener('input', syncFromPerThb);
+  
   ['rateVnd','mmkIn2','vndIn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshVndRateNote(); recalcVND(); }); });
 
   bindAutoSeparator('thbIn', true); bindAutoSeparator('mmkIn', true); bindAutoSeparator('vndIn', true); bindAutoSeparator('mmkIn2', true);
   bindAutoSeparator('rate100k', true); bindAutoSeparator('ratePerThb', true); bindAutoSeparator('rateVnd', true);
 
-  // --- Misc UI & Dropdowns ---
-  function populateAllTimezones() {
-    const group = document.getElementById('allTimezonesGroup');
-    if (!group) return;
-    try {
-      const allTz = Intl.supportedValuesOf('timeZone');
-      allTz.forEach(tz => {
-        const opt = document.createElement('option'); opt.value = tz; opt.textContent = tz.replace(/_/g, ' '); group.appendChild(opt);
-      });
-    } catch(e) {}
-  }
 
-  function initDropdowns() {
-    const useFirebaseBanks = FIREBASE_BANK_ORDER.length > 0;
-    const useFirebaseQRs = FIREBASE_QRS.length > 0;
-    ACTIVE_BANK_INFO = useFirebaseBanks ? FIREBASE_BANKS : DEFAULT_BANK_INFO;
-    const finalBankOrder = useFirebaseBanks ? FIREBASE_BANK_ORDER : DEFAULT_BANK_ORDER;
-    const finalQRs = useFirebaseQRs ? FIREBASE_QRS : DEFAULT_QR_FILES;
-    
-    const bankSelect = document.getElementById('bankSelect');
-    if(bankSelect) {
-      bankSelect.innerHTML = '<option value="">— ဘဏ်ရွေးပါ —</option>';
-      finalBankOrder.forEach(key => {
-        if(ACTIVE_BANK_INFO[key]) {
-          const o = document.createElement('option'); o.value = key; o.textContent = ACTIVE_BANK_INFO[key].name; bankSelect.appendChild(o);
-        }
-      });
-    }
-
-    const qrSelect = document.getElementById('qrSelect');
-    if(qrSelect) {
-      qrSelect.innerHTML = '';
-      finalQRs.forEach(f => {
-        const o = document.createElement('option'); o.value = f; o.textContent = f.replace(/\.[^.]+$/,''); qrSelect.appendChild(o);
-      });
-    }
-    refreshBankInfo();
-    refreshQrPreview();
-  }
-
-  function refreshBankInfo() {
-    const bankSelect = document.getElementById('bankSelect'); if(!bankSelect) return;
-    const key = bankSelect.value; const box = document.getElementById('bankInfoBox'); const mini = document.getElementById('bankPreviewMini');
-    if(!key || !ACTIVE_BANK_INFO[key]){
-      if(box) box.classList.add('hidden'); if(mini) mini.textContent='ဘဏ်မရွေးထားသေးပါ။'; return;
-    }
-    const info=ACTIVE_BANK_INFO[key]; const logoUrl = "assets/logo/" + info.logo;
-    document.getElementById('bankLogo').src = logoUrl; document.getElementById('bankNameText').textContent = info.name;
-    document.getElementById('bankAccName').textContent = info.accName; document.getElementById('bankAccNo').textContent = info.accNo;
-    box.classList.remove('hidden');
-
-    mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div></div>`;
-  }
-  if(document.getElementById('bankSelect')) document.getElementById('bankSelect').addEventListener('change', refreshBankInfo);
-
-  function getOwnerFromKey(keyNoExt){
-    const c=(keyNoExt||'').trim().toLowerCase()[0];
-    if(c==='y') return 'YE LYNN HTUN'; if(c==='h') return 'HEIN SET AUNG'; if(c==='t') return 'THIDAR WIN'; return '—';
-  }
-  
-  function probeImage(url) {
-    return new Promise(resolve => {
-        const img = new Image(); let timer = setTimeout(() => { resolve(false); }, 1500); 
-        img.onload = () => { clearTimeout(timer); resolve(true); }; img.onerror = () => { clearTimeout(timer); resolve(false); }; img.src = url; 
-    });
-  }
-
-  async function refreshQrPreview() {
-    const qrSelect = document.getElementById('qrSelect');
-    if(!qrSelect || qrSelect.options.length === 0 || qrSelect.selectedIndex === -1) {
-       document.getElementById('qrPreviewSolo').src = ''; document.getElementById('qrOwnerValue').textContent = '—'; return;
-    }
-    const file = qrSelect.value; const labelNoExt = qrSelect.options[qrSelect.selectedIndex].text;
-    const QR_BASE = 'assets/qr/'; const normalUrl = QR_BASE + file; const baseName = file.replace(/\.[^.]+$/,''); const bigUrl = QR_BASE + baseName + '_big.jpg'; const owner = getOwnerFromKey(labelNoExt);
-
-    CURRENT_QR = { owner, normal: normalUrl, big: bigUrl, hasBig: false };
-    document.getElementById('qrOwnerValue').textContent = owner;
-    const hasBig = await probeImage(bigUrl);
-    CURRENT_QR.hasBig = hasBig; 
-    if(hasBig){
-      document.getElementById('previewTwo').classList.remove('hidden'); document.getElementById('previewOne').classList.add('hidden');
-      document.getElementById('qrPreviewNormal').src = normalUrl; document.getElementById('qrPreviewBig').src = bigUrl;
-    }else{
-      document.getElementById('previewTwo').classList.add('hidden'); document.getElementById('previewOne').classList.remove('hidden');
-      document.getElementById('qrPreviewSolo').src = normalUrl;
-    }
-  }
-  if(document.getElementById('qrSelect')) document.getElementById('qrSelect').addEventListener('change', refreshQrPreview);
-
-  // --- Initializing ---
-  window.addEventListener('DOMContentLoaded', () => {
-    populateAllTimezones();
-    let sysDeviceId = localStorage.getItem('sys_device_id');
-    if (!sysDeviceId) { sysDeviceId = "DEV-" + Math.floor(1000 + Math.random() * 9000); localStorage.setItem('sys_device_id', sysDeviceId); }
-    document.getElementById('displayDeviceId').textContent = sysDeviceId;
-    initDropdowns(); syncFrom100k(); refreshVndRateNote(); recalcVND();
-  });
-
-  // --- Firebase Connection ---
+  // --- Firebase Initialization (Clean & Safe) ---
   const firebaseConfig = { apiKey: "AIzaSyDr4ada9hQah9C2ZX0xFBfxYDdXUQl3oa4", authDomain: "excal-570ed.firebaseapp.com", projectId: "excal-570ed", storageBucket: "excal-570ed.firebasestorage.app", messagingSenderId: "84544400626", appId: "1:84544400626:web:3393a4e339d3f41a60f46b", measurementId: "G-4KLYMEPPGT" };
-  let dbRef = null;
+  if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+  }
+  let dbRef = firebase.firestore().collection("exchange_app").doc("admin_data");
+
+  // Load Saved Admin Data & Rates on Start
   try {
-    firebase.initializeApp(firebaseConfig);
-    dbRef = firebase.firestore().collection("exchange_app").doc("admin_data");
     dbRef.get().then((docSnap) => {
       if (docSnap.exists) {
         const data = docSnap.data();
         FIREBASE_BANKS = data.banks || {}; FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS); FIREBASE_QRS = data.qrs || [];
         FIREBASE_DEVICE_NAMES = data.deviceNames || {}; FIREBASE_HIDDEN_DEVICES = data.hiddenDevices || []; 
         if (data.adminTimezone) { ADMIN_TIMEZONE = data.adminTimezone; const tzSelect = document.getElementById('adminTimezoneSelect'); if (tzSelect) tzSelect.value = ADMIN_TIMEZONE; }
+        
+        // Load Saved Rates
         if (data.lastRates) {
           if (data.lastRates.rate100k) { document.getElementById('rate100k').value = data.lastRates.rate100k; formatInputThousands(document.getElementById('rate100k'), true); syncFrom100k(); }
           if (data.lastRates.rateVnd) { document.getElementById('rateVnd').value = data.lastRates.rateVnd; formatInputThousands(document.getElementById('rateVnd'), true); refreshVndRateNote(); recalcVND(); }
@@ -687,7 +600,33 @@
         initDropdowns(); 
       }
     });
-  } catch (err) {}
+  } catch (err) { console.error("Firebase load error", err); }
+
+  // Auto-Save Rates Functionality (Including VND)
+  async function saveRatesToFirebase() {
+      if (!dbRef) return;
+      const r100k = parseNum(document.getElementById('rate100k').value); 
+      const rVnd = parseNum(document.getElementById('rateVnd').value);
+      let ratesToSave = {};
+      if (Number.isFinite(r100k) && r100k > 0) ratesToSave.rate100k = r100k; 
+      if (Number.isFinite(rVnd) && rVnd > 0) ratesToSave.rateVnd = rVnd;
+      
+      if (Object.keys(ratesToSave).length > 0) { 
+          try { await dbRef.set({ lastRates: ratesToSave }, { merge: true }); } catch (err) { console.error(err); } 
+      }
+  }
+
+  let rateSaveTimer;
+  function triggerRateSave() {
+      clearTimeout(rateSaveTimer);
+      rateSaveTimer = setTimeout(saveRatesToFirebase, 1500);
+  }
+
+  // Attach auto-save to all 3 rate inputs
+  ['rate100k', 'ratePerThb', 'rateVnd'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.addEventListener('input', triggerRateSave);
+  });
 
   async function updateFirebase() {
     if(dbRef) {
@@ -697,22 +636,60 @@
     }
   }
 
-  let rateSaveTimer;
-  ['rate100k','ratePerThb','rateVnd'].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) {
-          el.addEventListener('input', () => {
-              clearTimeout(rateSaveTimer);
-              rateSaveTimer = setTimeout(async () => {
-                  if (!dbRef) return;
-                  const r100k = parseNum(document.getElementById('rate100k').value); const rVnd = parseNum(document.getElementById('rateVnd').value);
-                  let ratesToSave = {};
-                  if (Number.isFinite(r100k) && r100k > 0) ratesToSave.rate100k = r100k; if (Number.isFinite(rVnd) && rVnd > 0) ratesToSave.rateVnd = rVnd;
-                  if (Object.keys(ratesToSave).length > 0) { try { await dbRef.set({ lastRates: ratesToSave }, { merge: true }); } catch (err) { } }
-              }, 1500); 
-          });
-      }
+  // --- Initializing App ---
+  window.addEventListener('DOMContentLoaded', () => {
+    populateAllTimezones();
+    let sysDeviceId = localStorage.getItem('sys_device_id');
+    if (!sysDeviceId) { sysDeviceId = "DEV-" + Math.floor(1000 + Math.random() * 9000); localStorage.setItem('sys_device_id', sysDeviceId); }
+    document.getElementById('displayDeviceId').textContent = sysDeviceId;
+    initDropdowns(); syncFrom100k(); refreshVndRateNote(); recalcVND();
   });
+
+  // --- Misc UI & Dropdowns ---
+  function populateAllTimezones() {
+    const group = document.getElementById('allTimezonesGroup'); if (!group) return;
+    try { Intl.supportedValuesOf('timeZone').forEach(tz => { const opt = document.createElement('option'); opt.value = tz; opt.textContent = tz.replace(/_/g, ' '); group.appendChild(opt); }); } catch(e) {}
+  }
+  
+  function initDropdowns() {
+    const useFirebaseBanks = FIREBASE_BANK_ORDER.length > 0; const useFirebaseQRs = FIREBASE_QRS.length > 0;
+    ACTIVE_BANK_INFO = useFirebaseBanks ? FIREBASE_BANKS : DEFAULT_BANK_INFO;
+    const finalBankOrder = useFirebaseBanks ? FIREBASE_BANK_ORDER : DEFAULT_BANK_ORDER;
+    const finalQRs = useFirebaseQRs ? FIREBASE_QRS : DEFAULT_QR_FILES;
+    
+    const bankSelect = document.getElementById('bankSelect');
+    if(bankSelect) { bankSelect.innerHTML = '<option value="">— ဘဏ်ရွေးပါ —</option>'; finalBankOrder.forEach(key => { if(ACTIVE_BANK_INFO[key]) { const o = document.createElement('option'); o.value = key; o.textContent = ACTIVE_BANK_INFO[key].name; bankSelect.appendChild(o); } }); }
+    
+    const qrSelect = document.getElementById('qrSelect');
+    if(qrSelect) { qrSelect.innerHTML = ''; finalQRs.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f.replace(/\.[^.]+$/,''); qrSelect.appendChild(o); }); }
+    
+    refreshBankInfo(); refreshQrPreview();
+  }
+
+  function refreshBankInfo() {
+    const bankSelect = document.getElementById('bankSelect'); if(!bankSelect) return;
+    const key = bankSelect.value; const box = document.getElementById('bankInfoBox'); const mini = document.getElementById('bankPreviewMini');
+    if(!key || !ACTIVE_BANK_INFO[key]){ if(box) box.classList.add('hidden'); if(mini) mini.textContent='ဘဏ်မရွေးထားသေးပါ။'; return; }
+    const info=ACTIVE_BANK_INFO[key]; const logoUrl = "assets/logo/" + info.logo;
+    document.getElementById('bankLogo').src = logoUrl; document.getElementById('bankNameText').textContent = info.name; document.getElementById('bankAccName').textContent = info.accName; document.getElementById('bankAccNo').textContent = info.accNo;
+    box.classList.remove('hidden');
+    mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div></div>`;
+  }
+  if(document.getElementById('bankSelect')) document.getElementById('bankSelect').addEventListener('change', refreshBankInfo);
+
+  function getOwnerFromKey(keyNoExt){ const c=(keyNoExt||'').trim().toLowerCase()[0]; if(c==='y') return 'YE LYNN HTUN'; if(c==='h') return 'HEIN SET AUNG'; if(c==='t') return 'THIDAR WIN'; return '—'; }
+  function probeImage(url) { return new Promise(resolve => { const img = new Image(); let timer = setTimeout(() => { resolve(false); }, 1500); img.onload = () => { clearTimeout(timer); resolve(true); }; img.onerror = () => { clearTimeout(timer); resolve(false); }; img.src = url; }); }
+  
+  async function refreshQrPreview() {
+    const qrSelect = document.getElementById('qrSelect');
+    if(!qrSelect || qrSelect.options.length === 0 || qrSelect.selectedIndex === -1) { document.getElementById('qrPreviewSolo').src = ''; document.getElementById('qrOwnerValue').textContent = '—'; return; }
+    const file = qrSelect.value; const labelNoExt = qrSelect.options[qrSelect.selectedIndex].text;
+    const QR_BASE = 'assets/qr/'; const normalUrl = QR_BASE + file; const baseName = file.replace(/\.[^.]+$/,''); const bigUrl = QR_BASE + baseName + '_big.jpg'; const owner = getOwnerFromKey(labelNoExt);
+    CURRENT_QR = { owner, normal: normalUrl, big: bigUrl, hasBig: false }; document.getElementById('qrOwnerValue').textContent = owner;
+    const hasBig = await probeImage(bigUrl); CURRENT_QR.hasBig = hasBig; 
+    if(hasBig){ document.getElementById('previewTwo').classList.remove('hidden'); document.getElementById('previewOne').classList.add('hidden'); document.getElementById('qrPreviewNormal').src = normalUrl; document.getElementById('qrPreviewBig').src = bigUrl; }else{ document.getElementById('previewTwo').classList.add('hidden'); document.getElementById('previewOne').classList.remove('hidden'); document.getElementById('qrPreviewSolo').src = normalUrl; }
+  }
+  if(document.getElementById('qrSelect')) document.getElementById('qrSelect').addEventListener('change', refreshQrPreview);
 
   // --- Role Based Login & First Time Setup ---
   function openAdmin() { 
@@ -723,7 +700,6 @@
   }
   function closeLogin() { document.getElementById('loginModal').style.display = 'none'; }
   
-  // NEW: First Time Setup (Master Admin Auto Creation)
   async function setupFirstAdmin() {
     const inputEmail = document.getElementById('adminEmailInput').value.trim();
     const inputPass = document.getElementById('adminPassInput').value;
@@ -732,43 +708,31 @@
     if(inputPass.length < 6) { alert("Password သည် အနည်းဆုံး စာလုံး ၆ လုံး ရှိရပါမည်။"); return; }
 
     try {
-      // ၁။ စနစ်မှာ Admin အကောင့် တစ်ခုမှ မရှိသေးဘူးဆိုတာ သေချာအောင် အရင်စစ်မည်
       const snap = await firebase.firestore().collection("user_roles").limit(1).get();
       if (!snap.empty) {
           alert("စနစ်တွင် Master Admin အကောင့် ဖွင့်ပြီးသား ဖြစ်ပါသည်။ ဤခလုတ်ကို ထပ်သုံး၍မရပါ။ \n\nကျေးဇူးပြု၍ 'ဝင်မည် (Login)' ကိုသာ နှိပ်ပါ။");
           return;
       }
-
-      // ၂။ အကောင့်သစ်ဖွင့်မည်
       const userCredential = await firebase.auth().createUserWithEmailAndPassword(inputEmail, inputPass);
       const user = userCredential.user;
-
-      // ၃။ Database ထဲမှာ admin အဖြစ် မှတ်မည်
       await firebase.firestore().collection("user_roles").doc(user.email).set({ role: 'admin', isMaster: true });
-
       alert("🎉 ပထမဆုံး Master Admin အကောင့် အောင်မြင်စွာ ဖွင့်ပြီးပါပြီ။ Login ဝင်နေပါသည်...");
-      checkLogin(); // ဖွင့်ပြီးတာနဲ့ တန်းဝင်မည်
-
+      checkLogin(); 
     } catch (error) {
       console.error(error);
-      if(error.code === 'auth/email-already-in-use') {
-           alert("ဤ Email ဖြင့် အကောင့်ဖွင့်ထားပြီးသား ဖြစ်နေပါသည်။ 'ဝင်မည် (Login)' ကိုသာ နှိပ်ပါ။");
-      } else {
-           alert("အမှားအယွင်း ရှိနေပါသည်။ (Error: " + error.message + ")");
-      }
+      if(error.code === 'auth/email-already-in-use') { alert("ဤ Email ဖြင့် အကောင့်ဖွင့်ထားပြီးသား ဖြစ်နေပါသည်။ 'ဝင်မည် (Login)' ကိုသာ နှိပ်ပါ။"); } 
+      else { alert("အမှားအယွင်း ရှိနေပါသည်။ (Error: " + error.message + ")"); }
     }
   }
 
   async function checkLogin() {
     const inputEmail = document.getElementById('adminEmailInput').value.trim();
     const inputPass = document.getElementById('adminPassInput').value;
-    
     if(!inputEmail || !inputPass) { alert("Email နှင့် Password အားလုံး ထည့်ပါ။"); return; }
 
     try {
       const userCredential = await firebase.auth().signInWithEmailAndPassword(inputEmail, inputPass);
       const user = userCredential.user;
-
       const roleDoc = await firebase.firestore().collection("user_roles").doc(user.email).get();
 
       if (roleDoc.exists) {
@@ -792,18 +756,9 @@
               document.getElementById('btnExportCSV').style.display = 'none';
               switchTab('tab-history', document.getElementById('btnTabHistory')); 
               loadHistory();
-          } else {
-              alert("သင့်အကောင့်အတွက် Role သတ်မှတ်ထားခြင်း မရှိသေးပါ။");
-              firebase.auth().signOut();
-          }
-      } else {
-          alert("Database တွင် သင့်အကောင့် အချက်အလက် မတွေ့ပါ။ Admin ကို ဆက်သွယ်ပါ။");
-          firebase.auth().signOut();
-      }
-    } catch (error) {
-      console.error(error);
-      alert("အကောင့် သို့မဟုတ် စကားဝှက် မှားယွင်းနေပါသည်။");
-    }
+          } else { alert("သင့်အကောင့်အတွက် Role သတ်မှတ်ထားခြင်း မရှိသေးပါ။"); firebase.auth().signOut(); }
+      } else { alert("Database တွင် သင့်အကောင့် အချက်အလက် မတွေ့ပါ။ Admin ကို ဆက်သွယ်ပါ။"); firebase.auth().signOut(); }
+    } catch (error) { console.error(error); alert("အကောင့် သို့မဟုတ် စကားဝှက် မှားယွင်းနေပါသည်။"); }
   }
   
   if(document.getElementById('adminPassInput')) document.getElementById('adminPassInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkLogin(); });
@@ -826,35 +781,22 @@
     if(!email || !pass) { alert("Email နှင့် Password အားလုံး ထည့်ပါ။"); return; }
     if(pass.length < 6) { alert("Password သည် အနည်းဆုံး စာလုံး ၆ လုံး ရှိရပါမည်။"); return; }
 
-    const btn = event.target;
-    const originalText = btn.textContent;
-    btn.textContent = "ဖွင့်နေပါသည်...";
-    btn.disabled = true;
+    const btn = event.target; const originalText = btn.textContent; btn.textContent = "ဖွင့်နေပါသည်..."; btn.disabled = true;
 
     try {
       const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryAppCreator");
       await secondaryApp.auth().createUserWithEmailAndPassword(email, pass);
       await secondaryApp.auth().signOut();
       await secondaryApp.delete();
-
       await firebase.firestore().collection("user_roles").doc(email).set({ role: role });
-
       alert("အကောင့်အသစ် အောင်မြင်စွာ ဖွင့်ပြီးပါပြီ။ (" + role + " Role ဖြင့်)");
-      
-      document.getElementById('newAccEmail').value = '';
-      document.getElementById('newAccPass').value = '';
-      loadUserRoles(); // Refresh the list
+      document.getElementById('newAccEmail').value = ''; document.getElementById('newAccPass').value = '';
+      loadUserRoles(); 
     } catch (error) {
       console.error(error);
-      if(error.code === 'auth/email-already-in-use') {
-          alert("ဤ Email ဖြင့် အကောင့်ဖွင့်ထားပြီးသား ဖြစ်နေပါသည်။");
-      } else {
-          alert("အကောင့်ဖွင့်ရာတွင် အမှားအယွင်း ရှိနေပါသည်။ (Error: " + error.message + ")");
-      }
-    } finally {
-      btn.textContent = originalText;
-      btn.disabled = false;
-    }
+      if(error.code === 'auth/email-already-in-use') { alert("ဤ Email ဖြင့် အကောင့်ဖွင့်ထားပြီးသား ဖြစ်နေပါသည်။"); } 
+      else { alert("အကောင့်ဖွင့်ရာတွင် အမှားအယွင်း ရှိနေပါသည်။ (Error: " + error.message + ")"); }
+    } finally { btn.textContent = originalText; btn.disabled = false; }
   }
 
   async function loadUserRoles() {
@@ -875,23 +817,16 @@
         </div>`;
       });
       list.innerHTML = html;
-    } catch (error) {
-      list.innerHTML = '<p class="text-center text-sm text-red-500 p-2">Error loading accounts.</p>'; console.error(error);
-    }
+    } catch (error) { list.innerHTML = '<p class="text-center text-sm text-red-500 p-2">Error loading accounts.</p>'; console.error(error); }
   }
 
   async function deleteUserRole(email) {
-    if (firebase.auth().currentUser && firebase.auth().currentUser.email === email) {
-        alert("မိမိလက်ရှိ အသုံးပြုနေသော အကောင့်ကို ဖျက်၍မရပါ။"); return;
-    }
+    if (firebase.auth().currentUser && firebase.auth().currentUser.email === email) { alert("မိမိလက်ရှိ အသုံးပြုနေသော အကောင့်ကို ဖျက်၍မရပါ။"); return; }
     if(!confirm(`"${email}" ကို စနစ်ထဲသို့ ဝင်ခွင့်ပိတ်ရန် သေချာပါသလား?\n\n(ဤသို့ပြုလုပ်ပါက ယင်းအကောင့်ဖြင့် Login ပြန်ဝင်၍ ရတော့မည် မဟုတ်ပါ။)`)) return;
     try {
       await firebase.firestore().collection("user_roles").doc(email).delete();
-      alert("အကောင့်ကို အောင်မြင်စွာ ပိတ်သိမ်း/ဖျက်ပစ် လိုက်ပါပြီ။");
-      loadUserRoles(); 
-    } catch (error) {
-      console.error(error); alert("ဖျက်ရာတွင် အမှားအယွင်းရှိနေပါသည်။");
-    }
+      alert("အကောင့်ကို အောင်မြင်စွာ ပိတ်သိမ်း/ဖျက်ပစ် လိုက်ပါပြီ။"); loadUserRoles(); 
+    } catch (error) { console.error(error); alert("ဖျက်ရာတွင် အမှားအယွင်းရှိနေပါသည်။"); }
   }
 
   // --- Drag & Drop (Banks/QRs) ---
@@ -1144,9 +1079,7 @@
       });
       list.innerHTML = html;
       
-      if(CURRENT_ROLE === 'admin') {
-          updateDashboard(dataArray);
-      }
+      if(CURRENT_ROLE === 'admin') { updateDashboard(dataArray); }
   }
 
   async function loadHistory() {
@@ -1320,6 +1253,7 @@
     ctx.fillText(topTitle, out.width/2, margin); 
     ctx.drawImage(canvas, margin, margin*2 + titleHeight);
 
+    // --- Firebase သို့ မှတ်တမ်းအော်တိုသိမ်းခြင်း (Rate အပါအဝင်) ---
     let recType = ""; let savedRate = "";
     if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
     else if(sectionId==='box-mmk2thb') { recType = "MMK ➔ THB"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
