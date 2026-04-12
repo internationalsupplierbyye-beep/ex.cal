@@ -319,34 +319,56 @@
     </div>
 
     <div id="tab-dashboard" class="tab-pane active">
-      <h3 class="font-bold text-gray-800 mb-3">ယနေ့ ငွေလွှဲပမာဏ (Daily Volume)</h3>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-3">
+        <div>
+          <h3 class="font-bold text-gray-800">📊 ငွေလွှဲပမာဏ (Daily & Historical Volume)</h3>
+          <p class="text-xs text-blue-600 font-bold mt-1" id="dash_title_period">ယနေ့ အချက်အလက်များ</p>
+        </div>
+        
+        <div class="flex flex-wrap gap-2 items-center bg-gray-50 p-2 rounded-xl border border-gray-200">
+           <select id="dashFilterSelect" class="admin-input !mb-0 !py-1.5 text-sm w-auto cursor-pointer" onchange="applyDashboardFilter()">
+               <option value="today" selected>ယနေ့ (Today)</option>
+               <option value="week">ယခုတစ်ပတ် (This Week)</option>
+               <option value="month">ယခုလ (This Month)</option>
+               <option value="custom">ရက်စွဲရွေးရန် (Custom Date)</option>
+           </select>
+           
+           <div id="customDateWrap" class="hidden items-center gap-2">
+               <input type="date" id="dashStartDate" class="admin-input !mb-0 !py-1 text-sm w-auto">
+               <span class="text-xs text-gray-500 font-bold">မှ</span>
+               <input type="date" id="dashEndDate" class="admin-input !mb-0 !py-1 text-sm w-auto">
+               <button onclick="applyDashboardFilter()" class="btn bg-blue-600 !py-1 !px-3 !text-sm">ရှာမည်</button>
+           </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 mt-2">
           <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center shadow-sm">
-              <p class="text-sm text-blue-600 font-bold">ယနေ့ THB အဝင် (ဝယ်)</p>
+              <p class="text-sm text-blue-600 font-bold">THB အဝင် (ဝယ်)</p>
               <p id="dash_today_thb_in" class="text-xl font-bold text-blue-700 mt-1">0 THB</p>
           </div>
           <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center shadow-sm">
-              <p class="text-sm text-blue-600 font-bold">ယနေ့ THB အထွက် (ရောင်း)</p>
+              <p class="text-sm text-blue-600 font-bold">THB အထွက် (ရောင်း)</p>
               <p id="dash_today_thb_out" class="text-xl font-bold text-blue-700 mt-1">0 THB</p>
           </div>
           <div class="bg-green-50 border border-green-200 p-4 rounded-xl text-center shadow-sm">
-              <p class="text-sm text-green-600 font-bold">ယနေ့ MMK အဝင်</p>
+              <p class="text-sm text-green-600 font-bold">MMK အဝင်</p>
               <p id="dash_today_mmk_in" class="text-xl font-bold text-green-700 mt-1">0 MMK</p>
           </div>
           <div class="bg-green-50 border border-green-200 p-4 rounded-xl text-center shadow-sm">
-              <p class="text-sm text-green-600 font-bold">ယနေ့ MMK အထွက်</p>
+              <p class="text-sm text-green-600 font-bold">MMK အထွက်</p>
               <p id="dash_today_mmk_out" class="text-xl font-bold text-green-700 mt-1">0 MMK</p>
           </div>
           <div class="bg-orange-50 border border-orange-200 p-4 rounded-xl text-center shadow-sm">
-              <p class="text-sm text-orange-600 font-bold">ယနေ့ VND အဝင် (ဝယ်)</p>
+              <p class="text-sm text-orange-600 font-bold">VND အဝင် (ဝယ်)</p>
               <p id="dash_today_vnd_in" class="text-xl font-bold text-orange-700 mt-1">0 VND</p>
           </div>
           <div class="bg-orange-50 border border-orange-200 p-4 rounded-xl text-center shadow-sm">
-              <p class="text-sm text-orange-600 font-bold">ယနေ့ VND အထွက် (ရောင်း)</p>
+              <p class="text-sm text-orange-600 font-bold">VND အထွက် (ရောင်း)</p>
               <p id="dash_today_vnd_out" class="text-xl font-bold text-orange-700 mt-1">0 VND</p>
           </div>
       </div>
-      <p class="text-xs text-gray-500 mb-2">မှတ်ချက်: Status <span class="font-bold text-green-600">Success</span> ဖြစ်နေသော မှတ်တမ်းများကိုသာ အလိုအလျောက် ပေါင်းပြပေးပါသည်။</p>
+      <p class="text-xs text-gray-500 mb-2">မှတ်ချက်: Status <span class="font-bold text-green-600">Success</span> ဖြစ်နေသော မှတ်တမ်းများကိုသာ အလိုအလျောက် ပေါင်းပြပေးပါသည်။ ဒေတာများကို လက်ရှိဆွဲယူထားသော မှတ်တမ်းအခု (၁၅၀၀) အတွင်းမှသာ စစ်ထုတ်ပေးမည်ဖြစ်ပါသည်။</p>
     </div>
 
     <div id="tab-history" class="tab-pane">
@@ -549,18 +571,127 @@
   bindAutoSeparator('thbIn', true); bindAutoSeparator('mmkIn', true); bindAutoSeparator('vndIn', true); bindAutoSeparator('mmkIn2', true);
   bindAutoSeparator('rate100k', true); bindAutoSeparator('ratePerThb', true); bindAutoSeparator('rateVnd', true);
 
-  // --- Misc UI & Dropdowns ---
-  function populateAllTimezones() {
-    const group = document.getElementById('allTimezonesGroup');
-    if (!group) return;
-    try {
-      const allTz = Intl.supportedValuesOf('timeZone');
-      allTz.forEach(tz => {
-        const opt = document.createElement('option'); opt.value = tz; opt.textContent = tz.replace(/_/g, ' '); group.appendChild(opt);
-      });
-    } catch(e) {}
+  // --- NEW DASHBOARD FUNCTIONS ---
+  function applyDashboardFilter() {
+      const filter = document.getElementById('dashFilterSelect').value;
+      const customWrap = document.getElementById('customDateWrap');
+      
+      // Custom Date ရွေးရင် Date Picker တွေကို ပြမည်
+      if (filter === 'custom') {
+          customWrap.classList.remove('hidden');
+          customWrap.classList.add('flex');
+      } else {
+          customWrap.classList.add('hidden');
+          customWrap.classList.remove('flex');
+      }
+      
+      // Filter ပြောင်းတိုင်း Dashboard ကို ပြန်တွက်မည်
+      updateDashboard(allLoadedHistory);
   }
 
+  // Date Object မှ YYYY-MM-DD ပုံစံပြောင်းပေးသော Helper Function
+  function toYYYYMMDD(d) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function updateDashboard(dataArray) {
+      const tz = ADMIN_TIMEZONE || 'Asia/Bangkok';
+      const filterSelect = document.getElementById('dashFilterSelect');
+      const filter = filterSelect ? filterSelect.value : 'today';
+      const periodTitle = document.getElementById('dash_title_period');
+      
+      // ယနေ့ရက်စွဲကို Admin ရွေးထားသော Timezone အတိုင်း ရယူခြင်း
+      const nowTz = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+      const todayTzStr = toYYYYMMDD(nowTz);
+      
+      let targetDates = [];
+      let currentDayOfWeek = nowTz.getDay() || 7; // Monday = 1, Sunday = 7
+      
+      if (filter === 'today') {
+          targetDates.push(todayTzStr);
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${todayTzStr} (ယနေ့)`;
+      } else if (filter === 'week') {
+          // တနင်္လာနေ့မှ ယနေ့အထိ ရက်စွဲများအားလုံးကို ယူမည်
+          for(let i = 0; i < currentDayOfWeek; i++) {
+              let d = new Date(nowTz);
+              d.setDate(nowTz.getDate() - i);
+              targetDates.push(toYYYYMMDD(d));
+          }
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${targetDates[targetDates.length-1]} မှ ${targetDates[0]} အထိ (ယခုတစ်ပတ်)`;
+      } else if (filter === 'month') {
+          const currentMonthStr = todayTzStr.substring(0, 7); // "YYYY-MM"
+          targetDates = currentMonthStr; 
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${currentMonthStr} (ယခုလ)`;
+      } else if (filter === 'custom') {
+          const sd = document.getElementById('dashStartDate').value || "0000-00-00";
+          const ed = document.getElementById('dashEndDate').value || "9999-99-99";
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${sd} မှ ${ed} အထိ`;
+      }
+
+      let thbIn = 0, thbOut = 0;
+      let vndIn = 0, vndOut = 0;
+      let mmkIn = 0, mmkOut = 0;
+
+      const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
+      
+      dataArray.forEach(d => {
+          if (d.status !== 'Success') return;
+
+          // မှတ်တမ်း၏ အချိန်ကို Target Timezone သို့ပြောင်း၍ YYYY-MM-DD ထုတ်ယူခြင်း
+          const recDateObj = new Date(new Date(d.timestamp).toLocaleString('en-US', { timeZone: tz }));
+          const recDateStr = toYYYYMMDD(recDateObj);
+          
+          let includeThisRecord = false;
+
+          if (filter === 'today') {
+              includeThisRecord = (recDateStr === todayTzStr);
+          } else if (filter === 'week') {
+              includeThisRecord = targetDates.includes(recDateStr);
+          } else if (filter === 'month') {
+              includeThisRecord = recDateStr.startsWith(targetDates); // YYYY-MM ဖြင့် စစ်ဆေးခြင်း
+          } else if (filter === 'custom') {
+              const sd = document.getElementById('dashStartDate').value || "0000-00-00";
+              const ed = document.getElementById('dashEndDate').value || "9999-99-99";
+              includeThisRecord = (recDateStr >= sd && recDateStr <= ed);
+          }
+
+          if (includeThisRecord) {
+              if (d.type === 'THB ➔ MMK') {
+                  thbIn += getCleanNum(d.inAmt);
+                  mmkOut += getCleanNum(d.outAmt);
+              }
+              else if (d.type === 'MMK ➔ THB') {
+                  mmkIn += getCleanNum(d.inAmt);
+                  thbOut += getCleanNum(d.outAmt);
+              }
+              else if (d.type === 'VND ➔ MMK') {
+                  vndIn += getCleanNum(d.inAmt);
+                  mmkOut += getCleanNum(d.outAmt);
+              }
+              else if (d.type === 'MMK ➔ VND') {
+                  mmkIn += getCleanNum(d.inAmt);
+                  vndOut += getCleanNum(d.outAmt);
+              }
+          }
+      });
+      
+      // Update DOM with localized numbers
+      if(document.getElementById('dash_today_thb_in')) {
+          document.getElementById('dash_today_thb_in').textContent = thbIn.toLocaleString() + " THB";
+          document.getElementById('dash_today_thb_out').textContent = thbOut.toLocaleString() + " THB";
+          
+          document.getElementById('dash_today_mmk_in').textContent = mmkIn.toLocaleString() + " MMK";
+          document.getElementById('dash_today_mmk_out').textContent = mmkOut.toLocaleString() + " MMK";
+          
+          document.getElementById('dash_today_vnd_in').textContent = vndIn.toLocaleString() + " VND";
+          document.getElementById('dash_today_vnd_out').textContent = vndOut.toLocaleString() + " VND";
+      }
+  }
+
+  // --- End Dashboard ---
+
+
+  // --- Misc UI & Dropdowns ---
   function initDropdowns() {
     const useFirebaseBanks = FIREBASE_BANK_ORDER.length > 0;
     const useFirebaseQRs = FIREBASE_QRS.length > 0;
@@ -701,34 +832,22 @@
     const inputPass = document.getElementById('adminPassInput').value;
     
     if(inputPass === ADMIN_PASSWORD) {
-      // ADMIN Login
-      CURRENT_ROLE = 'admin';
-      closeLogin(); 
+      CURRENT_ROLE = 'admin'; closeLogin(); 
       document.getElementById('adminModal').style.display = 'block'; 
       document.getElementById('adminModalTitle').innerHTML = "⚙️ Admin Settings";
       document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'inline-block');
       document.getElementById('btnExportCSV').style.display = 'inline-block';
       switchTab('tab-dashboard', document.querySelector('.tab-btn')); 
       renderAdminLists(); loadHistory();
-      
     } else if(inputPass === STAFF_PASSWORD) {
-      // STAFF Login
-      CURRENT_ROLE = 'staff';
-      closeLogin(); 
+      CURRENT_ROLE = 'staff'; closeLogin(); 
       document.getElementById('adminModal').style.display = 'block'; 
       document.getElementById('adminModalTitle').innerHTML = "📜 ငွေလွှဲမှတ်တမ်းများ (Staff View)";
-      
-      // Hide all tabs except History
       document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
       document.getElementById('btnTabHistory').style.display = 'inline-block';
-      document.getElementById('btnExportCSV').style.display = 'none'; // Staff cannot export Excel
-      
-      switchTab('tab-history', document.getElementById('btnTabHistory')); 
-      loadHistory();
-      
-    } else { 
-      alert("စကားဝှက် မှားယွင်းနေပါသည်။"); 
-    }
+      document.getElementById('btnExportCSV').style.display = 'none'; 
+      switchTab('tab-history', document.getElementById('btnTabHistory')); loadHistory();
+    } else { alert("စကားဝှက် မှားယွင်းနေပါသည်။"); }
   }
   
   if(document.getElementById('adminPassInput')) document.getElementById('adminPassInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkLogin(); });
@@ -865,7 +984,6 @@
       }
   }
 
-  // --- New Swap Amount Function ---
   window.swapTxAmounts = async function(invId) {
       const index = allLoadedHistory.findIndex(x => x.id === invId);
       if(index === -1) return;
@@ -885,52 +1003,6 @@
           renderHistoryRows(allLoadedHistory);
       } catch(e) {
           console.error(e); alert("ပမာဏ ပြောင်းလဲခြင်း မအောင်မြင်ပါ။");
-      }
-  }
-
-  function updateDashboard(dataArray) {
-      const todayDate = new Date();
-      const todayStr = todayDate.toLocaleDateString('en-GB', { timeZone: ADMIN_TIMEZONE || 'Asia/Bangkok' });
-      
-      let thbIn = 0, thbOut = 0;
-      let vndIn = 0, vndOut = 0;
-      let mmkIn = 0, mmkOut = 0;
-
-      const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
-      
-      dataArray.forEach(d => {
-          const rowDateObj = new Date(d.timestamp);
-          const rowDateStr = rowDateObj.toLocaleDateString('en-GB', { timeZone: ADMIN_TIMEZONE || 'Asia/Bangkok' });
-          
-          if (rowDateStr === todayStr && d.status === 'Success') {
-              if (d.type === 'THB ➔ MMK') {
-                  thbIn += getCleanNum(d.inAmt);
-                  mmkOut += getCleanNum(d.outAmt);
-              }
-              else if (d.type === 'MMK ➔ THB') {
-                  mmkIn += getCleanNum(d.inAmt);
-                  thbOut += getCleanNum(d.outAmt);
-              }
-              else if (d.type === 'VND ➔ MMK') {
-                  vndIn += getCleanNum(d.inAmt);
-                  mmkOut += getCleanNum(d.outAmt);
-              }
-              else if (d.type === 'MMK ➔ VND') {
-                  mmkIn += getCleanNum(d.inAmt);
-                  vndOut += getCleanNum(d.outAmt);
-              }
-          }
-      });
-      
-      if(document.getElementById('dash_today_thb_in')) {
-          document.getElementById('dash_today_thb_in').textContent = thbIn.toLocaleString() + " THB";
-          document.getElementById('dash_today_thb_out').textContent = thbOut.toLocaleString() + " THB";
-          
-          document.getElementById('dash_today_mmk_in').textContent = mmkIn.toLocaleString() + " MMK";
-          document.getElementById('dash_today_mmk_out').textContent = mmkOut.toLocaleString() + " MMK";
-          
-          document.getElementById('dash_today_vnd_in').textContent = vndIn.toLocaleString() + " VND";
-          document.getElementById('dash_today_vnd_out').textContent = vndOut.toLocaleString() + " VND";
       }
   }
 
@@ -954,7 +1026,6 @@
         let statusHtml = `<span class="border rounded px-2 py-1 text-xs font-bold bg-white ${statusColor}">${status}</span>`;
         let amountHtml = `<span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>`;
 
-        // Both Admin and Staff can Edit Type, Status, and Swap Amounts
         if(CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
            typeHtml = `
             <select onchange="window.updateTxType('${d.id}', this.value)" class="border rounded px-1 py-1 text-xs font-bold bg-white text-blue-700">
@@ -964,14 +1035,12 @@
               <option value="MMK ➔ VND" ${d.type === 'MMK ➔ VND' ? 'selected' : ''}>MMK ➔ VND</option>
             </select>
           `;
-          
           amountHtml = `
             <div class="flex items-center gap-2">
                 <span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>
                 <button onclick="window.swapTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏရှေ့နောက်လှည့်မည်">⇄</button>
             </div>
           `;
-          
           statusHtml = `
             <select onchange="window.updateTxStatus('${d.id}', this.value)" class="border rounded px-2 py-1 text-xs font-bold ${statusColor}">
                 <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
@@ -994,9 +1063,7 @@
       });
       list.innerHTML = html;
       
-      if(CURRENT_ROLE === 'admin') {
-          updateDashboard(dataArray);
-      }
+      if(CURRENT_ROLE === 'admin') { updateDashboard(dataArray); }
   }
 
   async function loadHistory() {
@@ -1047,48 +1114,12 @@
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
   }
 
-  // --- Misc UI Functions (Dropdowns, Timezone, Migrations, etc) ---
+  // --- Misc UI Functions ---
   function populateAllTimezones() {
     const group = document.getElementById('allTimezonesGroup'); if (!group) return;
     try { Intl.supportedValuesOf('timeZone').forEach(tz => { const opt = document.createElement('option'); opt.value = tz; opt.textContent = tz.replace(/_/g, ' '); group.appendChild(opt); }); } catch(e) {}
   }
-  function initDropdowns() {
-    const useFirebaseBanks = FIREBASE_BANK_ORDER.length > 0; const useFirebaseQRs = FIREBASE_QRS.length > 0;
-    ACTIVE_BANK_INFO = useFirebaseBanks ? FIREBASE_BANKS : DEFAULT_BANK_INFO;
-    const finalBankOrder = useFirebaseBanks ? FIREBASE_BANK_ORDER : DEFAULT_BANK_ORDER;
-    const finalQRs = useFirebaseQRs ? FIREBASE_QRS : DEFAULT_QR_FILES;
-    const bankSelect = document.getElementById('bankSelect');
-    if(bankSelect) { bankSelect.innerHTML = '<option value="">— ဘဏ်ရွေးပါ —</option>'; finalBankOrder.forEach(key => { if(ACTIVE_BANK_INFO[key]) { const o = document.createElement('option'); o.value = key; o.textContent = ACTIVE_BANK_INFO[key].name; bankSelect.appendChild(o); } }); }
-    const qrSelect = document.getElementById('qrSelect');
-    if(qrSelect) { qrSelect.innerHTML = ''; finalQRs.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f.replace(/\.[^.]+$/,''); qrSelect.appendChild(o); }); }
-    refreshBankInfo(); refreshQrPreview();
-  }
-  function refreshBankInfo() {
-    const bankSelect = document.getElementById('bankSelect'); if(!bankSelect) return;
-    const key = bankSelect.value; const box = document.getElementById('bankInfoBox'); const mini = document.getElementById('bankPreviewMini');
-    if(!key || !ACTIVE_BANK_INFO[key]){ if(box) box.classList.add('hidden'); if(mini) mini.textContent='ဘဏ်မရွေးထားသေးပါ။'; return; }
-    const info=ACTIVE_BANK_INFO[key]; const logoUrl = "assets/logo/" + info.logo;
-    document.getElementById('bankLogo').src = logoUrl; document.getElementById('bankNameText').textContent = info.name; document.getElementById('bankAccName').textContent = info.accName; document.getElementById('bankAccNo').textContent = info.accNo;
-    box.classList.remove('hidden');
-    mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div></div>`;
-  }
-  if(document.getElementById('bankSelect')) document.getElementById('bankSelect').addEventListener('change', refreshBankInfo);
 
-  function getOwnerFromKey(keyNoExt){ const c=(keyNoExt||'').trim().toLowerCase()[0]; if(c==='y') return 'YE LYNN HTUN'; if(c==='h') return 'HEIN SET AUNG'; if(c==='t') return 'THIDAR WIN'; return '—'; }
-  function probeImage(url) { return new Promise(resolve => { const img = new Image(); let timer = setTimeout(() => { resolve(false); }, 1500); img.onload = () => { clearTimeout(timer); resolve(true); }; img.onerror = () => { clearTimeout(timer); resolve(false); }; img.src = url; }); }
-  
-  async function refreshQrPreview() {
-    const qrSelect = document.getElementById('qrSelect');
-    if(!qrSelect || qrSelect.options.length === 0 || qrSelect.selectedIndex === -1) { document.getElementById('qrPreviewSolo').src = ''; document.getElementById('qrOwnerValue').textContent = '—'; return; }
-    const file = qrSelect.value; const labelNoExt = qrSelect.options[qrSelect.selectedIndex].text;
-    const QR_BASE = 'assets/qr/'; const normalUrl = QR_BASE + file; const baseName = file.replace(/\.[^.]+$/,''); const bigUrl = QR_BASE + baseName + '_big.jpg'; const owner = getOwnerFromKey(labelNoExt);
-    CURRENT_QR = { owner, normal: normalUrl, big: bigUrl, hasBig: false }; document.getElementById('qrOwnerValue').textContent = owner;
-    const hasBig = await probeImage(bigUrl); CURRENT_QR.hasBig = hasBig; 
-    if(hasBig){ document.getElementById('previewTwo').classList.remove('hidden'); document.getElementById('previewOne').classList.add('hidden'); document.getElementById('qrPreviewNormal').src = normalUrl; document.getElementById('qrPreviewBig').src = bigUrl; }else{ document.getElementById('previewTwo').classList.add('hidden'); document.getElementById('previewOne').classList.remove('hidden'); document.getElementById('qrPreviewSolo').src = normalUrl; }
-  }
-  if(document.getElementById('qrSelect')) document.getElementById('qrSelect').addEventListener('change', refreshQrPreview);
-
-  // Export Image SaveSection
   const I18N = {
     en: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"THB → MMK", h_mmk2thb:"MMK → THB", h_vnd2mmk:"VND → MMK", h_mmk2vnd:"MMK → VND", sub_thb2mmk:"Thai Baht to Myanmar Kyat", sub_mmk2thb:"Myanmar Kyat to Thai Baht", sub_vnd2mmk:"Vietnamese Dong to Myanmar Kyat", sub_mmk2vnd:"Myanmar Kyat to Vietnamese Dong", lbl_thb:"Amount (THB)", lbl_mmk:"Amount (MMK)", lbl_vnd:"Amount (VND)", in_thb:"Input THB", in_mmk:"Input MMK", in_vnd:"Input VND", out_mmk:"Result MMK", out_thb:"Result THB", out_vnd:"Result VND", warn1:"Always request the bank account before every transfer.", warn2:"We are not responsible for any transfer made without requesting and confirming the bank account.", thanks:"Thank you for trusting and using Thailand Guide - Supplier By Ye.", bankTitle:"Transfer Bank Information", bankLabel:"Bank Information", accName:"Account Name", accNo:"Account Number", qrTitle:"Bank QR / Payment", owner:"Account Name", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" },
     th: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"บาท → จ๊าด", h_mmk2thb:"จ๊าด → บาท", h_vnd2mmk:"ดอง → จ๊าด", h_mmk2vnd:"จ๊าด → ดอง", sub_thb2mmk:"แปลงเงินบาทไทยเป็นจ๊าดเมียนมา", sub_mmk2thb:"แปลงจ๊าดเมียนมาเป็นเงินบาทไทย", sub_vnd2mmk:"แปลงเงินดองเวียดนามเป็นจ๊าดเมียนมา", sub_mmk2vnd:"แปลงจ๊าดเมียนมาเป็นเงินดองเวียดนาม", lbl_thb:"จำนวนเงิน (THB)", lbl_mmk:"จำนวนเงิน (MMK)", lbl_vnd:"จำนวนเงิน (VND)", in_thb:"กรอกจำนวนบาท", in_mmk:"กรอกจำนวนจ๊าด", in_vnd:"กรอกจำนวนดอง", out_mmk:"ผลลัพธ์ (MMK)", out_thb:"ผลลัพธ์ (THB)", out_vnd:"ผลลัพธ์ (VND)", warn1:"โอนเงินทุกครั้งกรุณาขอเลขบัญชีที่ต้องถามก่อน", warn2:"หากโอนโดยไม่ยืนยันเลขบัญชี ทางเพจขอไม่รับผิดชอบ", thanks:"ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye", bankTitle:"ข้อมูลบัญชีสำหรับโอน", bankLabel:"ข้อมูลบัญชีธนาคาร", accName:"ชื่อบัญชี", accNo:"เลขบัญชี", qrTitle:"คิวอาร์ธนาคาร", owner:"ชื่อบัญชี", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" }
@@ -1211,7 +1242,6 @@
     ctx.fillText(topTitle, out.width/2, margin); 
     ctx.drawImage(canvas, margin, margin*2 + titleHeight);
 
-    // --- Firebase သို့ မှတ်တမ်းအော်တိုသိမ်းခြင်း (Rate အပါအဝင်) ---
     let recType = ""; let savedRate = "";
     if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
     else if(sectionId==='box-mmk2thb') { recType = "MMK ➔ THB"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
