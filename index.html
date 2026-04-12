@@ -7,8 +7,10 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap');
@@ -101,10 +103,17 @@
 <div id="loginModal">
   <div class="login-box">
     <h3 class="text-xl font-black mb-4 text-blue-700 pb-2">🔒 Login</h3>
+    <input type="email" id="adminEmailInput" class="admin-input text-center text-lg mb-2" placeholder="Email ထည့်ပါ">
     <input type="password" id="adminPassInput" class="admin-input text-center text-lg tracking-widest mb-2" placeholder="စကားဝှက်ထည့်ပါ">
-    <div class="flex gap-2 mt-2">
-      <button onclick="closeLogin()" class="btn2 w-1/2">ပိတ်မည်</button>
-      <button onclick="checkLogin()" class="btn w-1/2 bg-blue-600">ဝင်မည်</button>
+    
+    <div class="flex flex-col mt-3 gap-2">
+      <div class="flex gap-2">
+        <button onclick="closeLogin()" class="btn2 w-1/3 !text-sm">ပိတ်မည်</button>
+        <button onclick="checkLogin()" class="btn w-2/3 bg-blue-600 !text-sm">ဝင်မည် (Login)</button>
+      </div>
+      <button onclick="setupFirstAdmin()" class="btn2 w-full !text-xs !py-1.5 !text-red-500 !border-red-200 hover:!bg-red-50" title="စနစ်တွင် အကောင့်တစ်ခုမှ မရှိသေးပါက ဤခလုတ်ဖြင့် Master Admin စတင်ဖွင့်နိုင်ပါသည်။">
+        စနစ်စတင်ရန် ပထမဆုံး Admin ဖွင့်မည်
+      </button>
     </div>
   </div>
 </div>
@@ -381,6 +390,31 @@
     </div>
 
     <div id="tab-general" class="tab-pane">
+
+      <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl mb-4">
+        <div class="flex justify-between items-center mb-3">
+           <h3 class="font-bold text-gray-800">📋 ဖွင့်ထားသော အကောင့်များ စာရင်း</h3>
+           <button onclick="loadUserRoles()" class="btn2 !py-1 !px-3 !text-sm">🔄 Refresh</button>
+        </div>
+        <p class="text-xs text-gray-500 mb-2">အောက်ပါစာရင်းမှ အကောင့်ကို "ဖျက်မည်" နှိပ်လိုက်ပါက၊ ယင်းအကောင့်ဖြင့် စနစ်ထဲသို့ ဆက်လက်ဝင်ရောက်နိုင်တော့မည် မဟုတ်ပါ။</p>
+        <div id="adminAccountsList" class="max-h-60 overflow-y-auto border rounded bg-white p-2">
+          <p class="text-center text-sm text-gray-500 p-2">Loading...</p>
+        </div>
+      </div>
+
+      <div class="bg-teal-50 border border-teal-200 p-4 rounded-xl mb-4">
+        <h3 class="font-bold text-teal-800 mb-3">👤 အကောင့်အသစ် ဖွင့်ရန် (Admin Only)</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <input type="email" id="newAccEmail" class="admin-input" placeholder="Email (ဥပမာ - staff1@gmail.com)">
+          <input type="password" id="newAccPass" class="admin-input" placeholder="Password (အနည်းဆုံး ၆ လုံး)">
+          <select id="newAccRole" class="admin-input sm:col-span-2">
+            <option value="staff">Staff (ငွေလွှဲမှတ်တမ်းသာ ကြည့်ခွင့်ရှိမည်)</option>
+            <option value="admin">Admin (အကုန်ထိန်းချုပ်ခွင့် ရှိမည်)</option>
+          </select>
+        </div>
+        <button onclick="createNewAccountFromAdmin()" class="btn bg-teal-600 hover:bg-teal-700 w-full">အကောင့်သစ် ဖွင့်မည်</button>
+      </div>
+
       <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-4">
         <div class="flex justify-between items-center mb-2">
            <h3 class="font-bold text-indigo-800">📱 စနစ်ထဲဝင်ရောက်ထားသော Device များ</h3>
@@ -409,16 +443,6 @@
           </optgroup>
         </select>
         <button onclick="updateTimezone()" id="btnTzSave" class="btn bg-orange-600 hover:bg-orange-700 w-full">အချိန်ဇုန် သိမ်းမည်</button>
-      </div>
-
-      <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl mb-4">
-        <h3 class="font-bold text-gray-800 mb-2">🚀 System Data Management</h3>
-        <button onclick="migrateDefaultsToFirebase()" id="btnMigrate" class="w-full text-white bg-purple-600 font-bold py-2 px-4 rounded mb-2 hover:bg-purple-700">
-          မူလဒေတာများကို Firebase သို့ အလွယ်ထည့်မည်
-        </button>
-        <button onclick="clearCustomData()" id="btnClearData" class="w-full text-red-500 font-bold border border-red-500 py-2 px-4 rounded hover:bg-red-50">
-          Firebase မှ ဒေတာအားလုံးကို ဖျက်မည်
-        </button>
       </div>
     </div>
 
@@ -454,8 +478,6 @@
 </div>
 
 <script>
-  const ADMIN_PASSWORD = "158062"; 
-  const STAFF_PASSWORD = "staff"; // သတ်မှတ်လိုသော Staff Password ကို ဤနေရာတွင် ပြင်ဆင်နိုင်ပါသည်
   let CURRENT_ROLE = null; 
 
   // --- Global States ---
@@ -524,7 +546,7 @@
     document.getElementById('mmkOut').textContent = (Number.isFinite(rate) && Number.isFinite(thb)) ? fmt0ceil(thb*100000/rate) + ' MMK' : '';
     document.getElementById('thbOut').textContent = (Number.isFinite(rate) && Number.isFinite(mmk)) ? fmt0ceil(mmk*rate/100000) + ' THB' : '';
   }
-  function syncFrom100k() { if(lock) return; lock=true; const r=parseNum(document.getElementById('rate100k').value); if(Number.isFinite(r) && r>0){ document.getElementById('ratePerThb').value = fmt6(100000/r); formatInputThousands(document.getElementById('ratePerThb'),true); }else document.getElementById('ratePerThb').value=''; lock=false; refreshRateNote(); recalc(); }
+  function syncFrom100k() { if(lock) return; lock=true; const r=parseNum(document.getElementById('rate100k').value); if(Number.isFinite(r) && r>0){ document.getElementById('ratePerThb').value = fmt6(100000/inv); formatInputThousands(document.getElementById('ratePerThb'),true); }else document.getElementById('ratePerThb').value=''; lock=false; refreshRateNote(); recalc(); }
   function syncFromPerThb() { if(lock) return; lock=true; const inv=parseNum(document.getElementById('ratePerThb').value); if(Number.isFinite(inv) && inv>0){ document.getElementById('rate100k').value = fmt6(100000/inv); formatInputThousands(document.getElementById('rate100k'),true); }else document.getElementById('rate100k').value=''; lock=false; refreshRateNote(); recalc(); }
 
   function getVndRate() { const v = parseNum(document.getElementById('rateVnd').value); return (Number.isFinite(v) && v>0) ? v : NaN; }
@@ -540,7 +562,6 @@
     document.getElementById('mmkOut2').textContent = (Number.isFinite(rate) && Number.isFinite(vnd)) ? fmt0ceil(vnd / rate) + ' MMK' : '';
   }
 
-  // Bind Events
   ['rate100k','ratePerThb','thbIn','mmkIn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshRateNote(); recalc(); }); });
   if(document.getElementById('rate100k')) document.getElementById('rate100k').addEventListener('input', syncFrom100k); 
   if(document.getElementById('ratePerThb')) document.getElementById('ratePerThb').addEventListener('input', syncFromPerThb);
@@ -648,9 +669,9 @@
   });
 
   // --- Firebase Connection ---
+  const firebaseConfig = { apiKey: "AIzaSyDr4ada9hQah9C2ZX0xFBfxYDdXUQl3oa4", authDomain: "excal-570ed.firebaseapp.com", projectId: "excal-570ed", storageBucket: "excal-570ed.firebasestorage.app", messagingSenderId: "84544400626", appId: "1:84544400626:web:3393a4e339d3f41a60f46b", measurementId: "G-4KLYMEPPGT" };
   let dbRef = null;
   try {
-    const firebaseConfig = { apiKey: "AIzaSyDr4ada9hQah9C2ZX0xFBfxYDdXUQl3oa4", authDomain: "excal-570ed.firebaseapp.com", projectId: "excal-570ed", storageBucket: "excal-570ed.firebasestorage.app", messagingSenderId: "84544400626", appId: "1:84544400626:web:3393a4e339d3f41a60f46b", measurementId: "G-4KLYMEPPGT" };
     firebase.initializeApp(firebaseConfig);
     dbRef = firebase.firestore().collection("exchange_app").doc("admin_data");
     dbRef.get().then((docSnap) => {
@@ -693,41 +714,95 @@
       }
   });
 
-  // --- Role Based Login & Tabs ---
-  function openAdmin() { document.getElementById('loginModal').style.display = 'flex'; document.getElementById('adminPassInput').value = ''; document.getElementById('adminPassInput').focus(); }
+  // --- Role Based Login & First Time Setup ---
+  function openAdmin() { 
+      document.getElementById('loginModal').style.display = 'flex'; 
+      document.getElementById('adminEmailInput').value = ''; 
+      document.getElementById('adminPassInput').value = ''; 
+      document.getElementById('adminEmailInput').focus(); 
+  }
   function closeLogin() { document.getElementById('loginModal').style.display = 'none'; }
   
-  function checkLogin() {
+  // NEW: First Time Setup (Master Admin Auto Creation)
+  async function setupFirstAdmin() {
+    const inputEmail = document.getElementById('adminEmailInput').value.trim();
+    const inputPass = document.getElementById('adminPassInput').value;
+
+    if(!inputEmail || !inputPass) { alert("Email နှင့် Password အားလုံး ထည့်ပါ။"); return; }
+    if(inputPass.length < 6) { alert("Password သည် အနည်းဆုံး စာလုံး ၆ လုံး ရှိရပါမည်။"); return; }
+
+    try {
+      // ၁။ စနစ်မှာ Admin အကောင့် တစ်ခုမှ မရှိသေးဘူးဆိုတာ သေချာအောင် အရင်စစ်မည်
+      const snap = await firebase.firestore().collection("user_roles").limit(1).get();
+      if (!snap.empty) {
+          alert("စနစ်တွင် Master Admin အကောင့် ဖွင့်ပြီးသား ဖြစ်ပါသည်။ ဤခလုတ်ကို ထပ်သုံး၍မရပါ။ \n\nကျေးဇူးပြု၍ 'ဝင်မည် (Login)' ကိုသာ နှိပ်ပါ။");
+          return;
+      }
+
+      // ၂။ အကောင့်သစ်ဖွင့်မည်
+      const userCredential = await firebase.auth().createUserWithEmailAndPassword(inputEmail, inputPass);
+      const user = userCredential.user;
+
+      // ၃။ Database ထဲမှာ admin အဖြစ် မှတ်မည်
+      await firebase.firestore().collection("user_roles").doc(user.email).set({ role: 'admin', isMaster: true });
+
+      alert("🎉 ပထမဆုံး Master Admin အကောင့် အောင်မြင်စွာ ဖွင့်ပြီးပါပြီ။ Login ဝင်နေပါသည်...");
+      checkLogin(); // ဖွင့်ပြီးတာနဲ့ တန်းဝင်မည်
+
+    } catch (error) {
+      console.error(error);
+      if(error.code === 'auth/email-already-in-use') {
+           alert("ဤ Email ဖြင့် အကောင့်ဖွင့်ထားပြီးသား ဖြစ်နေပါသည်။ 'ဝင်မည် (Login)' ကိုသာ နှိပ်ပါ။");
+      } else {
+           alert("အမှားအယွင်း ရှိနေပါသည်။ (Error: " + error.message + ")");
+      }
+    }
+  }
+
+  async function checkLogin() {
+    const inputEmail = document.getElementById('adminEmailInput').value.trim();
     const inputPass = document.getElementById('adminPassInput').value;
     
-    if(inputPass === ADMIN_PASSWORD) {
-      // ADMIN Login
-      CURRENT_ROLE = 'admin';
-      closeLogin(); 
-      document.getElementById('adminModal').style.display = 'block'; 
-      document.getElementById('adminModalTitle').innerHTML = "⚙️ Admin Settings";
-      document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'inline-block');
-      document.getElementById('btnExportCSV').style.display = 'inline-block';
-      switchTab('tab-dashboard', document.querySelector('.tab-btn')); 
-      renderAdminLists(); loadHistory();
-      
-    } else if(inputPass === STAFF_PASSWORD) {
-      // STAFF Login
-      CURRENT_ROLE = 'staff';
-      closeLogin(); 
-      document.getElementById('adminModal').style.display = 'block'; 
-      document.getElementById('adminModalTitle').innerHTML = "📜 ငွေလွှဲမှတ်တမ်းများ (Staff View)";
-      
-      // Hide all tabs except History
-      document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
-      document.getElementById('btnTabHistory').style.display = 'inline-block';
-      document.getElementById('btnExportCSV').style.display = 'none'; // Staff cannot export Excel
-      
-      switchTab('tab-history', document.getElementById('btnTabHistory')); 
-      loadHistory();
-      
-    } else { 
-      alert("စကားဝှက် မှားယွင်းနေပါသည်။"); 
+    if(!inputEmail || !inputPass) { alert("Email နှင့် Password အားလုံး ထည့်ပါ။"); return; }
+
+    try {
+      const userCredential = await firebase.auth().signInWithEmailAndPassword(inputEmail, inputPass);
+      const user = userCredential.user;
+
+      const roleDoc = await firebase.firestore().collection("user_roles").doc(user.email).get();
+
+      if (roleDoc.exists) {
+          const userData = roleDoc.data();
+          if (userData.role === 'admin') {
+              CURRENT_ROLE = 'admin';
+              closeLogin(); 
+              document.getElementById('adminModal').style.display = 'block'; 
+              document.getElementById('adminModalTitle').innerHTML = "⚙️ Admin Settings";
+              document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'inline-block');
+              document.getElementById('btnExportCSV').style.display = 'inline-block';
+              switchTab('tab-dashboard', document.querySelector('.tab-btn')); 
+              renderAdminLists(); loadHistory();
+          } else if (userData.role === 'staff') {
+              CURRENT_ROLE = 'staff';
+              closeLogin(); 
+              document.getElementById('adminModal').style.display = 'block'; 
+              document.getElementById('adminModalTitle').innerHTML = "📜 ငွေလွှဲမှတ်တမ်းများ (Staff View)";
+              document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
+              document.getElementById('btnTabHistory').style.display = 'inline-block';
+              document.getElementById('btnExportCSV').style.display = 'none';
+              switchTab('tab-history', document.getElementById('btnTabHistory')); 
+              loadHistory();
+          } else {
+              alert("သင့်အကောင့်အတွက် Role သတ်မှတ်ထားခြင်း မရှိသေးပါ။");
+              firebase.auth().signOut();
+          }
+      } else {
+          alert("Database တွင် သင့်အကောင့် အချက်အလက် မတွေ့ပါ။ Admin ကို ဆက်သွယ်ပါ။");
+          firebase.auth().signOut();
+      }
+    } catch (error) {
+      console.error(error);
+      alert("အကောင့် သို့မဟုတ် စကားဝှက် မှားယွင်းနေပါသည်။");
     }
   }
   
@@ -739,7 +814,84 @@
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById(tabId).classList.add('active'); if (btnElement) btnElement.classList.add('active');
     if (tabId === 'tab-history' || tabId === 'tab-dashboard') loadHistory();
-    if (tabId === 'tab-general') loadAdminDevices(); 
+    if (tabId === 'tab-general') { loadAdminDevices(); loadUserRoles(); } 
+  }
+
+  // --- Admin Account Creation & Deletion ---
+  async function createNewAccountFromAdmin() {
+    const email = document.getElementById('newAccEmail').value.trim();
+    const pass = document.getElementById('newAccPass').value;
+    const role = document.getElementById('newAccRole').value;
+
+    if(!email || !pass) { alert("Email နှင့် Password အားလုံး ထည့်ပါ။"); return; }
+    if(pass.length < 6) { alert("Password သည် အနည်းဆုံး စာလုံး ၆ လုံး ရှိရပါမည်။"); return; }
+
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.textContent = "ဖွင့်နေပါသည်...";
+    btn.disabled = true;
+
+    try {
+      const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryAppCreator");
+      await secondaryApp.auth().createUserWithEmailAndPassword(email, pass);
+      await secondaryApp.auth().signOut();
+      await secondaryApp.delete();
+
+      await firebase.firestore().collection("user_roles").doc(email).set({ role: role });
+
+      alert("အကောင့်အသစ် အောင်မြင်စွာ ဖွင့်ပြီးပါပြီ။ (" + role + " Role ဖြင့်)");
+      
+      document.getElementById('newAccEmail').value = '';
+      document.getElementById('newAccPass').value = '';
+      loadUserRoles(); // Refresh the list
+    } catch (error) {
+      console.error(error);
+      if(error.code === 'auth/email-already-in-use') {
+          alert("ဤ Email ဖြင့် အကောင့်ဖွင့်ထားပြီးသား ဖြစ်နေပါသည်။");
+      } else {
+          alert("အကောင့်ဖွင့်ရာတွင် အမှားအယွင်း ရှိနေပါသည်။ (Error: " + error.message + ")");
+      }
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  async function loadUserRoles() {
+    const list = document.getElementById('adminAccountsList');
+    list.innerHTML = '<p class="text-center text-sm text-blue-500 p-2">အကောင့်များကို ရှာဖွေနေပါသည်...</p>';
+    try {
+      const snap = await firebase.firestore().collection("user_roles").get();
+      if(snap.empty) { list.innerHTML = '<p class="text-center text-sm text-gray-500 p-2">အကောင့်များ မရှိသေးပါ။</p>'; return; }
+      let html = '';
+      snap.forEach(doc => {
+        const email = doc.id; const role = doc.data().role;
+        const roleColor = role === 'admin' ? 'text-red-600 bg-red-100 border-red-200' : 'text-blue-600 bg-blue-100 border-blue-200';
+        html += `
+        <div class="flex justify-between items-center border-b pb-2 mb-2 last:border-0 last:mb-0 gap-2 p-2 hover:bg-gray-100 rounded transition-colors">
+          <div class="truncate flex-1 font-bold text-gray-700 text-sm">${email}</div>
+          <div class="px-2 py-1 rounded border text-xs font-bold ${roleColor} uppercase w-16 text-center">${role}</div>
+          <button onclick="deleteUserRole('${email}')" class="btn bg-red-500 hover:bg-red-600 !py-1 !px-3 !text-xs whitespace-nowrap" title="ဝင်ခွင့်ပိတ်မည်">✕ ဖျက်မည်</button>
+        </div>`;
+      });
+      list.innerHTML = html;
+    } catch (error) {
+      list.innerHTML = '<p class="text-center text-sm text-red-500 p-2">Error loading accounts.</p>'; console.error(error);
+    }
+  }
+
+  async function deleteUserRole(email) {
+    if (firebase.auth().currentUser && firebase.auth().currentUser.email === email) {
+        alert("မိမိလက်ရှိ အသုံးပြုနေသော အကောင့်ကို ဖျက်၍မရပါ။"); return;
+    }
+    if(!confirm(`"${email}" ကို စနစ်ထဲသို့ ဝင်ခွင့်ပိတ်ရန် သေချာပါသလား?\n\n(ဤသို့ပြုလုပ်ပါက ယင်းအကောင့်ဖြင့် Login ပြန်ဝင်၍ ရတော့မည် မဟုတ်ပါ။)`)) return;
+    try {
+      await firebase.firestore().collection("user_roles").doc(email).delete();
+      alert("အကောင့်ကို အောင်မြင်စွာ ပိတ်သိမ်း/ဖျက်ပစ် လိုက်ပါပြီ။");
+      loadUserRoles(); 
+    } catch (error) {
+      console.error(error); alert("ဖျက်ရာတွင် အမှားအယွင်းရှိနေပါသည်။");
+    }
   }
 
   // --- Drag & Drop (Banks/QRs) ---
@@ -865,7 +1017,6 @@
       }
   }
 
-  // --- New Swap Amount Function ---
   window.swapTxAmounts = async function(invId) {
       const index = allLoadedHistory.findIndex(x => x.id === invId);
       if(index === -1) return;
@@ -954,7 +1105,6 @@
         let statusHtml = `<span class="border rounded px-2 py-1 text-xs font-bold bg-white ${statusColor}">${status}</span>`;
         let amountHtml = `<span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>`;
 
-        // Both Admin and Staff can Edit Type, Status, and Swap Amounts
         if(CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
            typeHtml = `
             <select onchange="window.updateTxType('${d.id}', this.value)" class="border rounded px-1 py-1 text-xs font-bold bg-white text-blue-700">
@@ -1046,47 +1196,6 @@
       link.setAttribute("download", `Exchange_History_${dateString}.csv`);
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
   }
-
-  // --- Misc UI Functions (Dropdowns, Timezone, Migrations, etc) ---
-  function populateAllTimezones() {
-    const group = document.getElementById('allTimezonesGroup'); if (!group) return;
-    try { Intl.supportedValuesOf('timeZone').forEach(tz => { const opt = document.createElement('option'); opt.value = tz; opt.textContent = tz.replace(/_/g, ' '); group.appendChild(opt); }); } catch(e) {}
-  }
-  function initDropdowns() {
-    const useFirebaseBanks = FIREBASE_BANK_ORDER.length > 0; const useFirebaseQRs = FIREBASE_QRS.length > 0;
-    ACTIVE_BANK_INFO = useFirebaseBanks ? FIREBASE_BANKS : DEFAULT_BANK_INFO;
-    const finalBankOrder = useFirebaseBanks ? FIREBASE_BANK_ORDER : DEFAULT_BANK_ORDER;
-    const finalQRs = useFirebaseQRs ? FIREBASE_QRS : DEFAULT_QR_FILES;
-    const bankSelect = document.getElementById('bankSelect');
-    if(bankSelect) { bankSelect.innerHTML = '<option value="">— ဘဏ်ရွေးပါ —</option>'; finalBankOrder.forEach(key => { if(ACTIVE_BANK_INFO[key]) { const o = document.createElement('option'); o.value = key; o.textContent = ACTIVE_BANK_INFO[key].name; bankSelect.appendChild(o); } }); }
-    const qrSelect = document.getElementById('qrSelect');
-    if(qrSelect) { qrSelect.innerHTML = ''; finalQRs.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f.replace(/\.[^.]+$/,''); qrSelect.appendChild(o); }); }
-    refreshBankInfo(); refreshQrPreview();
-  }
-  function refreshBankInfo() {
-    const bankSelect = document.getElementById('bankSelect'); if(!bankSelect) return;
-    const key = bankSelect.value; const box = document.getElementById('bankInfoBox'); const mini = document.getElementById('bankPreviewMini');
-    if(!key || !ACTIVE_BANK_INFO[key]){ if(box) box.classList.add('hidden'); if(mini) mini.textContent='ဘဏ်မရွေးထားသေးပါ။'; return; }
-    const info=ACTIVE_BANK_INFO[key]; const logoUrl = "assets/logo/" + info.logo;
-    document.getElementById('bankLogo').src = logoUrl; document.getElementById('bankNameText').textContent = info.name; document.getElementById('bankAccName').textContent = info.accName; document.getElementById('bankAccNo').textContent = info.accNo;
-    box.classList.remove('hidden');
-    mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div></div>`;
-  }
-  if(document.getElementById('bankSelect')) document.getElementById('bankSelect').addEventListener('change', refreshBankInfo);
-
-  function getOwnerFromKey(keyNoExt){ const c=(keyNoExt||'').trim().toLowerCase()[0]; if(c==='y') return 'YE LYNN HTUN'; if(c==='h') return 'HEIN SET AUNG'; if(c==='t') return 'THIDAR WIN'; return '—'; }
-  function probeImage(url) { return new Promise(resolve => { const img = new Image(); let timer = setTimeout(() => { resolve(false); }, 1500); img.onload = () => { clearTimeout(timer); resolve(true); }; img.onerror = () => { clearTimeout(timer); resolve(false); }; img.src = url; }); }
-  
-  async function refreshQrPreview() {
-    const qrSelect = document.getElementById('qrSelect');
-    if(!qrSelect || qrSelect.options.length === 0 || qrSelect.selectedIndex === -1) { document.getElementById('qrPreviewSolo').src = ''; document.getElementById('qrOwnerValue').textContent = '—'; return; }
-    const file = qrSelect.value; const labelNoExt = qrSelect.options[qrSelect.selectedIndex].text;
-    const QR_BASE = 'assets/qr/'; const normalUrl = QR_BASE + file; const baseName = file.replace(/\.[^.]+$/,''); const bigUrl = QR_BASE + baseName + '_big.jpg'; const owner = getOwnerFromKey(labelNoExt);
-    CURRENT_QR = { owner, normal: normalUrl, big: bigUrl, hasBig: false }; document.getElementById('qrOwnerValue').textContent = owner;
-    const hasBig = await probeImage(bigUrl); CURRENT_QR.hasBig = hasBig; 
-    if(hasBig){ document.getElementById('previewTwo').classList.remove('hidden'); document.getElementById('previewOne').classList.add('hidden'); document.getElementById('qrPreviewNormal').src = normalUrl; document.getElementById('qrPreviewBig').src = bigUrl; }else{ document.getElementById('previewTwo').classList.add('hidden'); document.getElementById('previewOne').classList.remove('hidden'); document.getElementById('qrPreviewSolo').src = normalUrl; }
-  }
-  if(document.getElementById('qrSelect')) document.getElementById('qrSelect').addEventListener('change', refreshQrPreview);
 
   // Export Image SaveSection
   const I18N = {
@@ -1211,7 +1320,6 @@
     ctx.fillText(topTitle, out.width/2, margin); 
     ctx.drawImage(canvas, margin, margin*2 + titleHeight);
 
-    // --- Firebase သို့ မှတ်တမ်းအော်တိုသိမ်းခြင်း (Rate အပါအဝင်) ---
     let recType = ""; let savedRate = "";
     if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
     else if(sectionId==='box-mmk2thb') { recType = "MMK ➔ THB"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
