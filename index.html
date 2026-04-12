@@ -100,7 +100,7 @@
 
 <div id="loginModal">
   <div class="login-box">
-    <h3 class="text-xl font-black mb-4 text-blue-700 pb-2">🔒 Admin Login</h3>
+    <h3 class="text-xl font-black mb-4 text-blue-700 pb-2">🔒 Login</h3>
     <input type="password" id="adminPassInput" class="admin-input text-center text-lg tracking-widest mb-2" placeholder="စကားဝှက်ထည့်ပါ">
     <div class="flex gap-2 mt-2">
       <button onclick="closeLogin()" class="btn2 w-1/2">ပိတ်မည်</button>
@@ -112,7 +112,7 @@
 <header>
   <h1 class="text-xl sm:text-2xl font-black pb-1">MMK ↔ THB & VND ငွေလဲတွက်ချက်ခြင်း</h1>
   <p class="text-xs sm:text-sm opacity-90 pb-1">MMK ↔ THB & VND Exchange Calculator</p>
-  <button class="admin-btn" onclick="openAdmin()">⚙️ စနစ်ပြင်ဆင်ရန်</button>
+  <button class="admin-btn" onclick="openAdmin()">🔒 Admin / Staff</button>
 </header>
 
 <main class="max-w-2xl mx-auto">
@@ -308,9 +308,9 @@
 <div id="adminModal">
   <div class="admin-content relative">
     <button onclick="closeAdmin()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl z-10">✕</button>
-    <h2 class="text-xl font-black mb-4 flex items-center gap-2">⚙️ Firebase Admin Settings</h2>
+    <h2 id="adminModalTitle" class="text-xl font-black mb-4 flex items-center gap-2">⚙️ Admin Settings</h2>
     
-    <div class="flex border-b mb-4 overflow-x-auto">
+    <div class="flex border-b mb-4 overflow-x-auto" id="adminTabsHeader">
       <button class="tab-btn active" onclick="switchTab('tab-dashboard', this)">📊 Dashboard</button>
       <button class="tab-btn" onclick="switchTab('tab-history', this)" id="btnTabHistory">📜 မှတ်တမ်းများ</button>
       <button class="tab-btn" onclick="switchTab('tab-general', this)">အထွေထွေ</button>
@@ -356,7 +356,7 @@
           <input type="text" id="searchInvId" class="admin-input !mb-0 !py-1 text-sm flex-1 sm:w-40" placeholder="ID ဖြင့်ရှာရန်" oninput="searchHistoryLocally()">
           <button onclick="searchHistoryLocally()" class="btn bg-blue-600 !py-1 !px-3 !text-sm" title="ရှာရန်">🔍</button>
           <button onclick="loadHistory()" class="btn2 !py-1 !px-3 !text-sm" title="Refresh">🔄</button>
-          <button onclick="exportHistoryCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm" title="Excel ဖိုင်ထုတ်ရန်">📥 Export CSV</button>
+          <button id="btnExportCSV" onclick="exportHistoryCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm" title="Excel ဖိုင်ထုတ်ရန်">📥 Export CSV</button>
         </div>
       </div>
       <div class="overflow-x-auto border rounded-xl bg-white shadow-sm max-h-80">
@@ -455,6 +455,8 @@
 
 <script>
   const ADMIN_PASSWORD = "158062"; 
+  const STAFF_PASSWORD = "staff"; // သတ်မှတ်လိုသော Staff Password ကို ဤနေရာတွင် ပြင်ဆင်နိုင်ပါသည်
+  let CURRENT_ROLE = null; 
 
   // --- Global States ---
   let FIREBASE_BANKS = {};
@@ -691,15 +693,44 @@
       }
   });
 
-  // --- Admin Modal & Tabs ---
+  // --- Role Based Login & Tabs ---
   function openAdmin() { document.getElementById('loginModal').style.display = 'flex'; document.getElementById('adminPassInput').value = ''; document.getElementById('adminPassInput').focus(); }
   function closeLogin() { document.getElementById('loginModal').style.display = 'none'; }
+  
   function checkLogin() {
-    if(document.getElementById('adminPassInput').value === ADMIN_PASSWORD) {
-      closeLogin(); document.getElementById('adminModal').style.display = 'block'; 
-      switchTab('tab-dashboard', document.querySelector('.tab-btn')); renderAdminLists(); loadHistory();
-    } else { alert("စကားဝှက် မှားယွင်းနေပါသည်။"); }
+    const inputPass = document.getElementById('adminPassInput').value;
+    
+    if(inputPass === ADMIN_PASSWORD) {
+      // ADMIN Login
+      CURRENT_ROLE = 'admin';
+      closeLogin(); 
+      document.getElementById('adminModal').style.display = 'block'; 
+      document.getElementById('adminModalTitle').innerHTML = "⚙️ Admin Settings";
+      document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'inline-block');
+      document.getElementById('btnExportCSV').style.display = 'inline-block';
+      switchTab('tab-dashboard', document.querySelector('.tab-btn')); 
+      renderAdminLists(); loadHistory();
+      
+    } else if(inputPass === STAFF_PASSWORD) {
+      // STAFF Login
+      CURRENT_ROLE = 'staff';
+      closeLogin(); 
+      document.getElementById('adminModal').style.display = 'block'; 
+      document.getElementById('adminModalTitle').innerHTML = "📜 ငွေလွှဲမှတ်တမ်းများ (Staff View)";
+      
+      // Hide all tabs except History
+      document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
+      document.getElementById('btnTabHistory').style.display = 'inline-block';
+      document.getElementById('btnExportCSV').style.display = 'none'; // Staff cannot export Excel
+      
+      switchTab('tab-history', document.getElementById('btnTabHistory')); 
+      loadHistory();
+      
+    } else { 
+      alert("စကားဝှက် မှားယွင်းနေပါသည်။"); 
+    }
   }
+  
   if(document.getElementById('adminPassInput')) document.getElementById('adminPassInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkLogin(); });
   function closeAdmin() { document.getElementById('adminModal').style.display = 'none'; }
 
@@ -896,14 +927,27 @@
                           status === 'Success' ? 'bg-green-100 text-green-800 border-green-300' : 
                           'bg-red-100 text-red-800 border-red-300';
                           
-        let typeHtml = `
-          <select onchange="window.updateTxType('${d.id}', this.value)" class="border rounded px-1 py-1 text-xs font-bold bg-white text-blue-700">
-            <option value="THB ➔ MMK" ${d.type === 'THB ➔ MMK' ? 'selected' : ''}>THB ➔ MMK</option>
-            <option value="MMK ➔ THB" ${d.type === 'MMK ➔ THB' ? 'selected' : ''}>MMK ➔ THB</option>
-            <option value="VND ➔ MMK" ${d.type === 'VND ➔ MMK' ? 'selected' : ''}>VND ➔ MMK</option>
-            <option value="MMK ➔ VND" ${d.type === 'MMK ➔ VND' ? 'selected' : ''}>MMK ➔ VND</option>
-          </select>
-        `;
+        let typeHtml = `<span class="font-bold text-blue-700 text-xs">${d.type}</span>`;
+        let statusHtml = `<span class="border rounded px-2 py-1 text-xs font-bold bg-white ${statusColor}">${status}</span>`;
+
+        // Both Admin and Staff can Edit Type and Status
+        if(CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
+           typeHtml = `
+            <select onchange="window.updateTxType('${d.id}', this.value)" class="border rounded px-1 py-1 text-xs font-bold bg-white text-blue-700">
+              <option value="THB ➔ MMK" ${d.type === 'THB ➔ MMK' ? 'selected' : ''}>THB ➔ MMK</option>
+              <option value="MMK ➔ THB" ${d.type === 'MMK ➔ THB' ? 'selected' : ''}>MMK ➔ THB</option>
+              <option value="VND ➔ MMK" ${d.type === 'VND ➔ MMK' ? 'selected' : ''}>VND ➔ MMK</option>
+              <option value="MMK ➔ VND" ${d.type === 'MMK ➔ VND' ? 'selected' : ''}>MMK ➔ VND</option>
+            </select>
+          `;
+          statusHtml = `
+            <select onchange="window.updateTxStatus('${d.id}', this.value)" class="border rounded px-2 py-1 text-xs font-bold ${statusColor}">
+                <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
+                <option value="Success" ${status === 'Success' ? 'selected' : ''}>Success</option>
+                <option value="Cancelled" ${status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+          `;
+        }
         
         html += `<tr class="border-b hover:bg-gray-50">
           <td class="p-3 font-mono text-xs text-gray-600">${d.id}</td>
@@ -913,17 +957,14 @@
           <td class="p-3">${typeHtml}</td>
           <td class="p-3 text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</td>
           <td class="p-3 text-xs">${method}</td>
-          <td class="p-3 text-center">
-              <select onchange="window.updateTxStatus('${d.id}', this.value)" class="border rounded px-2 py-1 text-xs font-bold ${statusColor}">
-                  <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
-                  <option value="Success" ${status === 'Success' ? 'selected' : ''}>Success</option>
-                  <option value="Cancelled" ${status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-              </select>
-          </td>
+          <td class="p-3 text-center">${statusHtml}</td>
         </tr>`;
       });
       list.innerHTML = html;
-      updateDashboard(dataArray);
+      
+      if(CURRENT_ROLE === 'admin') {
+          updateDashboard(dataArray);
+      }
   }
 
   async function loadHistory() {
@@ -1071,18 +1112,15 @@
     clone.querySelectorAll('input, output').forEach(el=>{
       const div=document.createElement('div');
       div.className=el.className || ''; div.style.whiteSpace='nowrap'; div.style.overflow='hidden'; div.style.textOverflow='ellipsis'; div.style.display='flex'; div.style.alignItems='center'; div.style.lineHeight='1.5'; div.style.minHeight='56px'; div.style.height='56px'; div.style.paddingTop='12px'; div.style.paddingBottom='14px';
-      const val = (el.tagName.toLowerCase() === 'input') ? (el.value || '') : (el.textContent || '');
-      div.textContent = val;
-      if (el.tagName.toLowerCase() === 'input') inValueStr = val; else outValueStr = val;
-      el.replaceWith(div);
+      const val = (el.tagName.toLowerCase() === 'input') ? (el.value || '') : (el.textContent || ''); div.textContent = val;
+      if (el.tagName.toLowerCase() === 'input') inValueStr = val; else outValueStr = val; el.replaceWith(div);
     });
     clone.style.boxShadow='none'; clone.style.border='1px solid #e5e7eb'; clone.style.background='#fff';
     const mode = document.querySelector('input[name="saveMode"]:checked')?.value || 'none';
     let paymentMethodName = "မပါ (None)";
     
     if(mode==='qr' && CURRENT_QR && CURRENT_QR.normal){
-      paymentMethodName = `QR (${CURRENT_QR.owner})`;
-      const wrap=document.createElement('div'); wrap.className='export-block';
+      paymentMethodName = `QR (${CURRENT_QR.owner})`; const wrap=document.createElement('div'); wrap.className='export-block';
       const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
       const img=document.createElement('img'); img.style.width='420px'; img.style.maxWidth='95%'; img.style.margin='10px auto 0'; img.style.border='1px solid #e5e7eb'; img.style.borderRadius='16px'; img.style.padding='10px'; img.style.background='#fff'; img.style.display='block';
       img.src = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
@@ -1095,8 +1133,7 @@
     if(mode==='bank'){
       const key=document.getElementById('bankSelect').value;
       if(key && ACTIVE_BANK_INFO && ACTIVE_BANK_INFO[key]){
-        const info=ACTIVE_BANK_INFO[key];
-        paymentMethodName = `Bank (${info.name})`;
+        const info=ACTIVE_BANK_INFO[key]; paymentMethodName = `Bank (${info.name})`;
         const wrap=document.createElement('div'); wrap.className='export-block';
         const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.bankTitle : 'ငွေလွှဲရန် ဘဏ်အချက်အလက်');
         const box=document.createElement('div'); box.style.maxWidth='560px'; box.style.margin='12px auto 0'; box.style.border='1px solid #e5e7eb'; box.style.borderRadius='16px'; box.style.padding='16px'; box.style.background='#fff'; box.style.textAlign='center';
@@ -1106,64 +1143,30 @@
         h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
         const body=document.createElement('div'); body.style.textAlign='center';
         body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
-        headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
-        wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
+        headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body); wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
         await new Promise(res=>{ if(logo.complete) return res(); logo.onload=()=>res(); logo.onerror=()=>res(); });
       }
     }
     
-    const timeDiv = document.createElement('div');
-    timeDiv.style.textAlign = 'center'; timeDiv.style.marginTop = '12px'; timeDiv.style.paddingTop = '12px'; timeDiv.style.borderTop = '1px dashed #cbd5e1';
-    timeDiv.style.fontSize = '14px'; timeDiv.style.fontWeight = '900'; timeDiv.style.color = '#64748b'; timeDiv.style.paddingBottom = '8px';
-    timeDiv.textContent = getExportTimeStr(lang);
-    clone.appendChild(timeDiv);
-    
-    clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
-    document.body.appendChild(clone);
+    const timeDiv = document.createElement('div'); timeDiv.style.textAlign = 'center'; timeDiv.style.marginTop = '12px'; timeDiv.style.paddingTop = '12px'; timeDiv.style.borderTop = '1px dashed #cbd5e1'; timeDiv.style.fontSize = '14px'; timeDiv.style.fontWeight = '900'; timeDiv.style.color = '#64748b'; timeDiv.style.paddingBottom = '8px'; timeDiv.textContent = getExportTimeStr(lang); clone.appendChild(timeDiv);
+    clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff'; document.body.appendChild(clone);
     await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
-    const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
-    document.body.removeChild(clone);
-    
-    const margin=18, titleHeight=30; const out=document.createElement('canvas'); out.width = canvas.width + margin*2; out.height = canvas.height + margin*3 + titleHeight;
-    const ctx = out.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,out.width,out.height); 
-    
-    const dDate = new Date();
-    const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
-    const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
-    
-    ctx.fillStyle = '#64748b'; ctx.font = 'bold 18px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
-    ctx.fillText("ID: " + invId, out.width - margin, margin + 4);
-    ctx.fillStyle='#000'; ctx.font='bold 34px system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='top';
-    const topTitle = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
-    ctx.fillText(topTitle, out.width/2, margin); 
-    ctx.drawImage(canvas, margin, margin*2 + titleHeight);
+    const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false }); document.body.removeChild(clone);
+    const margin=18, titleHeight=30; const out=document.createElement('canvas'); out.width = canvas.width + margin*2; out.height = canvas.height + margin*3 + titleHeight; const ctx = out.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,out.width,out.height); 
+    const dDate = new Date(); const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0'); const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
+    ctx.fillStyle = '#64748b'; ctx.font = 'bold 18px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText("ID: " + invId, out.width - margin, margin + 4); ctx.fillStyle='#000'; ctx.font='bold 34px system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='top'; const topTitle = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye'; ctx.fillText(topTitle, out.width/2, margin); ctx.drawImage(canvas, margin, margin*2 + titleHeight);
 
-    // --- Firebase သို့ မှတ်တမ်းအော်တိုသိမ်းခြင်း (Rate အပါအဝင်) ---
+    // Creates Pending Record in Firebase
     let recType = ""; let savedRate = "";
     if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
     else if(sectionId==='box-mmk2thb') { recType = "MMK ➔ THB"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
     else if(sectionId==='box-vnd2mmk') { recType = "VND ➔ MMK"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
     else if(sectionId==='box-mmk2vnd') { recType = "MMK ➔ VND"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
     
-    const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
-
-    const historyRecord = { 
-      id: invId, 
-      type: recType, 
-      rate: savedRate, 
-      inAmt: inValueStr, 
-      outAmt: outValueStr, 
-      method: paymentMethodName, 
-      timestamp: new Date().toISOString(), 
-      tz: ADMIN_TIMEZONE,
-      deviceId: currentDeviceId
-    };
+    const historyRecord = { id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, method: paymentMethodName, timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: localStorage.getItem('sys_device_id') || "Unknown", status: 'Pending' };
     try { firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); } catch(e) {}
     
-    const a=document.createElement('a');
-    if(fmt === 'jpg'){ a.href = out.toDataURL('image/jpeg',0.92); a.download = filenameBase + '_' + invId + '.jpg'; }
-    else{ a.href = out.toDataURL('image/png'); a.download = filenameBase + '_' + invId + '.png'; }
-    document.body.appendChild(a); a.click(); setTimeout(()=>document.body.removeChild(a),0);
+    const a=document.createElement('a'); if(fmt === 'jpg'){ a.href = out.toDataURL('image/jpeg',0.92); a.download = filenameBase + '_' + invId + '.jpg'; } else{ a.href = out.toDataURL('image/png'); a.download = filenameBase + '_' + invId + '.png'; } document.body.appendChild(a); a.click(); setTimeout(()=>document.body.removeChild(a),0);
   }
 
   // Admin Generics (Devices, Banks, QRs, Drag and Drop)
