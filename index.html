@@ -52,25 +52,24 @@
     .muted{ color:#64748b; font-size:.82rem; line-height:1.4; padding-bottom: 2px;}
     .qrFrame{ border:1px solid #e5e7eb; border-radius:14px; background:#fff; padding:8px; min-height: 200px; display: flex; align-items: center; justify-content: center;}
 
-    .amt-input, .amt-output{
+    .amt-input {
       font-size:1.25rem !important; font-weight:900 !important; color:#0f172a !important;
       background:#ffffff !important; border:2px solid #cbd5e1 !important;
       border-radius:14px !important; padding:12px 14px 14px 14px !important; height:56px !important;
       line-height:1.5 !important; font-variant-numeric: tabular-nums !important; box-shadow:none !important;
       width: 100%; box-sizing: border-box;
     }
-    .amt-output{ display:flex; align-items:center; }
     .amt-input::placeholder{ color:#9aa4b2 !important; font-weight:700 !important; }
     .amt-input:focus{ outline:none !important; border-color:#111827 !important; box-shadow:0 0 0 4px rgba(17,24,39,.10) !important; }
 
-    .radio-row{ display:flex; align-items:center; gap:12px; padding:12px 12px; border:1px solid #e5e7eb; border-radius:14px; margin-top:10px; user-select:none; }
-    .radio-row input[type="radio"]{ width:24px; height:24px; accent-color:#111827; cursor:pointer; flex:0 0 auto; }
+    .radio-row{ display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid #e5e7eb; border-radius:14px; margin-top:8px; user-select:none; }
+    .radio-row input[type="radio"]{ width:20px; height:20px; accent-color:#111827; cursor:pointer; flex:0 0 auto; }
     .radio-row span{ font-weight:900; font-size:.95rem; cursor:pointer; line-height:1.5; padding-bottom: 2px;}
-    .compact select{ padding:.75rem .75rem !important; border-radius:14px !important; font-weight:900 !important; width: 100%; }
+    .compact select{ padding:.6rem .75rem !important; border-radius:14px !important; font-weight:900 !important; width: 100%; }
 
     #adminModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; padding: 20px; overflow-y: auto; }
     .admin-content { background: white; max-width: 1050px; margin: 0 auto; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-    .admin-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: bold; box-sizing: border-box;}
+    .admin-input-box { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: bold; box-sizing: border-box;}
     
     #loginModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 60; align-items: center; justify-content: center; }
     .login-box { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -101,7 +100,7 @@
 <div id="loginModal">
   <div class="login-box">
     <h3 class="text-xl font-black mb-4 text-blue-700 pb-2">🔒 Login</h3>
-    <input type="password" id="adminPassInput" class="admin-input text-center text-lg tracking-widest mb-2" placeholder="စကားဝှက်ထည့်ပါ">
+    <input type="password" id="adminPassInput" class="admin-input-box text-center text-lg tracking-widest mb-2" placeholder="စကားဝှက်ထည့်ပါ">
     <div class="flex gap-2 mt-2">
       <button onclick="closeLogin()" class="btn2 w-1/2">ပိတ်မည်</button>
       <button onclick="checkLogin()" class="btn w-1/2 bg-blue-600">ဝင်မည်</button>
@@ -150,7 +149,7 @@
       </div>
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span>မြန်မာကျပ်</span></label>
-        <output id="mmkOut" class="amt-output w-full mt-1"></output>
+        <input id="mmkOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
       </div>
     </div>
     <div class="text-center mt-3">
@@ -176,7 +175,7 @@
       </div>
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span>ဘတ်ငွေ</span></label>
-        <output id="thbOut" class="amt-output w-full mt-1"></output>
+        <input id="thbOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
       </div>
     </div>
     <div class="text-center mt-3">
@@ -207,50 +206,43 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start mt-3">
-      <div class="card">
-        <p class="font-black mb-2 pb-1">QR Select</p>
-        <select id="qrSelect" class="compact border p-3 rounded-lg w-full"></select>
-        <hr class="my-3">
-        <p class="font-black mb-2 pb-1">Bank Info Select</p>
-        <select id="bankSelect" class="compact border p-3 rounded-lg w-full"></select>
-
-        <div id="bankInfoBox" class="mt-3 border rounded-xl p-3 bg-white hidden">
-          <div class="flex items-center gap-3 justify-center text-center">
-            <img id="bankLogo" alt="logo" class="rounded-xl border bg-white" style="width:54px;height:54px;object-fit:cover;">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start mt-3">
+      <div class="card p-3">
+        <div class="grid grid-cols-2 gap-3 mb-2">
             <div>
-              <p id="bankNameText" class="font-black text-base pb-1"></p>
-              <p class="text-xs text-slate-500 pb-1">ဘဏ်အချက်အလက်</p>
+                <p class="font-black mb-1 pb-1 text-xs">QR Select</p>
+                <select id="qrSelect" class="compact border rounded-lg w-full text-sm" onchange="refreshQrPreview()"></select>
             </div>
-          </div>
-          <div class="mt-3 text-sm text-slate-700 text-center">
-            <div class="pb-1">ဘဏ်အကောင့်နာမည်: <span id="bankAccName" class="font-black"></span></div>
-            <div class="mt-1 pb-1">ဘဏ်အကောင့်နံပါတ်: <span id="bankAccNo" class="font-black font-mono"></span></div>
-          </div>
+            <div>
+                <p class="font-black mb-1 pb-1 text-xs">Bank Select</p>
+                <select id="bankSelect" class="compact border rounded-lg w-full text-sm" onchange="refreshBankInfo()"></select>
+            </div>
         </div>
 
-        <hr class="my-3">
-        <p class="font-black mb-1 pb-1">Export ထဲ ဘာထည့်မလဲ</p>
-        <label class="radio-row"><input type="radio" name="saveMode" value="none" checked><span>မပါ (Default)</span></label>
-        <label class="radio-row"><input type="radio" name="saveMode" value="bank"><span>Bank Info ပဲပါ</span></label>
-        <label class="radio-row"><input type="radio" name="saveMode" value="qr"><span>QR ပဲပါ</span></label>
+        <hr class="my-3 border-gray-200">
+        <p class="font-black mb-1 pb-1 text-sm">Export ထဲ ဘာထည့်မလဲ</p>
+        <div class="grid grid-cols-1 gap-1">
+            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="none" checked><span>မပါ (Default)</span></label>
+            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="qr"><span>QR ပဲပါ</span></label>
+            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="bank"><span>Bank Info ပဲပါ</span></label>
+        </div>
       </div>
 
-      <div class="card">
-        <p class="font-black text-center pb-2">Preview</p>
-        <div id="previewTwo" class="mt-3 hidden">
+      <div class="card p-3">
+        <p class="font-black text-center pb-2 text-sm">Preview</p>
+        <div id="previewTwo" class="mt-2 hidden">
           <div class="grid grid-cols-2 gap-3">
-            <div class="text-center"><div class="qrFrame"><img id="qrPreviewNormal" class="mx-auto" style="max-width:180px; max-height:180px; object-fit:contain;"></div></div>
-            <div class="text-center"><div class="qrFrame"><img id="qrPreviewBig" class="mx-auto" style="max-width:210px; max-height:210px; object-fit:contain;"></div></div>
+            <div class="text-center"><div class="qrFrame"><img id="qrPreviewNormal" class="mx-auto" style="max-width:140px; max-height:140px; object-fit:contain;"></div></div>
+            <div class="text-center"><div class="qrFrame"><img id="qrPreviewBig" class="mx-auto" style="max-width:180px; max-height:180px; object-fit:contain;"></div></div>
           </div>
         </div>
-        <div id="previewOne" class="mt-3">
-          <div class="text-center"><div class="qrFrame"><img id="qrPreviewSolo" class="mx-auto" style="max-width:280px; max-height:280px; object-fit:contain;" alt="QR မရှိပါ"></div></div>
+        <div id="previewOne" class="mt-2">
+          <div class="text-center"><div class="qrFrame"><img id="qrPreviewSolo" class="mx-auto" style="max-width:220px; max-height:220px; object-fit:contain;" alt="QR မရှိပါ"></div></div>
         </div>
-        <p id="qrOwnerName" class="text-center text-slate-700 mt-3 text-base pb-1">အကောင့်နာမည်: <span class="font-black" id="qrOwnerValue">—</span></p>
-        <div class="mt-3 border-t pt-3 text-left">
-          <p class="font-black text-center pb-2">Bank Info Preview</p>
-          <div id="bankPreviewMini" class="text-sm text-slate-700 mt-2 text-center pb-1">ဘဏ်မရွေးထားသေးပါ။</div>
+        <p id="qrOwnerName" class="text-center text-slate-700 mt-2 text-sm pb-1">အကောင့်နာမည်: <span class="font-black" id="qrOwnerValue">—</span></p>
+        <div class="mt-2 border-t pt-2 text-left">
+          <p class="font-black text-center pb-1 text-sm">Bank Info Preview</p>
+          <div id="bankPreviewMini" class="text-xs text-slate-700 mt-1 text-center pb-1">ဘဏ်မရွေးထားသေးပါ။</div>
         </div>
       </div>
     </div>
@@ -265,7 +257,7 @@
       </div>
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span>မြန်မာကျပ်</span></label>
-        <output id="mmkOut2" class="amt-output w-full mt-1"></output>
+        <input id="mmkOut2" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
       </div>
     </div>
     <div class="text-center mt-3">
@@ -291,7 +283,7 @@
       </div>
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span>ဒေါင်ငွေ</span></label>
-        <output id="vndOut" class="amt-output w-full mt-1"></output>
+        <input id="vndOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
       </div>
     </div>
     <div class="text-center mt-3">
@@ -334,7 +326,7 @@
         </div>
         
         <div class="flex flex-wrap gap-2 items-center bg-gray-50 p-2 rounded-xl border border-gray-200">
-           <select id="dashFilterSelect" class="admin-input !mb-0 !py-1.5 text-sm w-auto cursor-pointer" onchange="applyDashboardFilter()">
+           <select id="dashFilterSelect" class="admin-input-box !mb-0 !py-1.5 text-sm w-auto cursor-pointer" onchange="applyDashboardFilter()">
                <option value="today" selected>ယနေ့ (Today)</option>
                <option value="week">ယခုတစ်ပတ် (This Week)</option>
                <option value="month">ယခုလ (This Month)</option>
@@ -342,9 +334,9 @@
            </select>
            
            <div id="customDateWrap" class="hidden items-center gap-2">
-               <input type="date" id="dashStartDate" class="admin-input !mb-0 !py-1 text-sm w-auto">
+               <input type="date" id="dashStartDate" class="admin-input-box !mb-0 !py-1 text-sm w-auto">
                <span class="text-xs text-gray-500 font-bold">မှ</span>
-               <input type="date" id="dashEndDate" class="admin-input !mb-0 !py-1 text-sm w-auto">
+               <input type="date" id="dashEndDate" class="admin-input-box !mb-0 !py-1 text-sm w-auto">
                <button onclick="applyDashboardFilter()" class="btn bg-blue-600 !py-1 !px-3 !text-sm">ရှာမည်</button>
            </div>
         </div>
@@ -383,7 +375,7 @@
       <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
         <h3 class="font-bold text-gray-800">📜 ငွေလွှဲမှတ်တမ်းများ</h3>
         <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-          <input type="text" id="searchInvId" class="admin-input !mb-0 !py-1 text-sm flex-1 sm:w-40" placeholder="ID ဖြင့်ရှာရန်" oninput="searchHistoryLocally()">
+          <input type="text" id="searchInvId" class="admin-input-box !mb-0 !py-1 text-sm flex-1 sm:w-40" placeholder="ID ဖြင့်ရှာရန်" oninput="searchHistoryLocally()">
           <button onclick="searchHistoryLocally()" class="btn bg-blue-600 !py-1 !px-3 !text-sm" title="ရှာရန်">🔍</button>
           <button onclick="loadHistory()" class="btn2 !py-1 !px-3 !text-sm" title="Refresh">🔄</button>
           <button id="btnExportCSV" onclick="exportHistoryCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm" title="Excel ဖိုင်ထုတ်ရန်">📥 Export CSV</button>
@@ -425,14 +417,14 @@
 
       <div class="bg-orange-50 border border-orange-200 p-4 rounded-xl mb-4">
         <h3 class="font-bold text-orange-800 mb-2">⏱ Export တွင်ပြသမည့် နိုင်ငံအချိန်</h3>
-        <select id="adminTimezoneSelect" class="admin-input mb-3 bg-white">
+        <select id="adminTimezoneSelect" class="admin-input-box mb-3 bg-white">
           <optgroup label="Popular Regions">
             <option value="Asia/Yangon">🇲🇲 မြန်မာစံတော်ချိန် (Myanmar Time)</option>
             <option value="Asia/Bangkok">🇹🇭 ထိုင်းစံတော်ချိန် (Thailand Time)</option>
             <option value="Asia/Ho_Chi_Minh">🇻🇳 ဗီယက်နမ်စံတော်ချိန် (Vietnam Time)</option>
             <option value="Asia/Singapore">🇸🇬 စင်ကာပူစံတော်ချိန် (Singapore Time)</option>
             <option value="Asia/Seoul">🇰🇷 ကိုရီးယားစံတော်ချိန် (Korea Time)</option>
-            <option value="Asia/Tokyo">🇯🇵 ဂျပန်စံတော်ချိန် (Japan Time)</option>
+            <option value="Asia/Tokyo">🇯 ဂျပန်စံတော်ချိန် (Japan Time)</option>
             <option value="Asia/Dubai">🇦🇪 ဒူဘိုင်းစံတော်ချိန် (Dubai Time)</option>
             <option value="Europe/London">🇬🇧 လန်ဒန်စံတော်ချိန် (London Time)</option>
           </optgroup>
@@ -457,11 +449,11 @@
       <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-4">
         <h3 class="font-bold text-blue-800 mb-3">🏦 ဘဏ်အချက်အလက် ထည့်ရန် / ပြင်ရန်</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-          <input id="newBankId" class="admin-input" placeholder="Bank Code (ဥပမာ - KTB)">
-          <input id="newBankName" class="admin-input" placeholder="Bank Name (ဥပမာ - Krungthai)">
-          <input id="newBankAccName" class="admin-input" placeholder="Account Name (ဥပမာ - U BA)">
-          <input id="newBankAccNo" class="admin-input" placeholder="Account No (ဥပမာ - 123-456-789)">
-          <input id="newBankLogo" class="admin-input sm:col-span-2" placeholder="Logo ပုံနာမည် (ဥပမာ - ktb.jpg)">
+          <input id="newBankId" class="admin-input-box" placeholder="Bank Code (ဥပမာ - KTB)">
+          <input id="newBankName" class="admin-input-box" placeholder="Bank Name (ဥပမာ - Krungthai)">
+          <input id="newBankAccName" class="admin-input-box" placeholder="Account Name (ဥပမာ - U BA)">
+          <input id="newBankAccNo" class="admin-input-box" placeholder="Account No (ဥပမာ - 123-456-789)">
+          <input id="newBankLogo" class="admin-input-box sm:col-span-2" placeholder="Logo ပုံနာမည် (ဥပမာ - ktb.jpg)">
         </div>
         <button onclick="addCustomBank()" id="btnBankSave" class="btn bg-blue-600 hover:bg-blue-700 w-full">ဘဏ်အသစ် သိမ်းမည်</button>
       </div>
@@ -473,7 +465,7 @@
       <div class="bg-green-50 border border-green-200 p-4 rounded-xl mb-4">
         <h3 class="font-bold text-green-800 mb-3">🔲 QR အသစ် ထည့်ရန်</h3>
         <div class="flex gap-2 mb-3">
-          <input id="newQrFile" class="admin-input flex-1" placeholder="QR ပုံနာမည် (ဥပမာ - newqr.jpg)">
+          <input id="newQrFile" class="admin-input-box flex-1" placeholder="QR ပုံနာမည် (ဥပမာ - newqr.jpg)">
           <button onclick="addCustomQR()" id="btnQRSave" class="btn bg-green-600 hover:bg-green-700 whitespace-nowrap">QR သိမ်းမည်</button>
         </div>
       </div>
@@ -500,7 +492,7 @@
   let CURRENT_QR = { owner:'', normal:null, big:null, hasBig:false };
   let LAST_RATE = { r:null, inv:null, vnd:null };
   let ADMIN_TIMEZONE = 'Asia/Bangkok'; 
-  let lock = false;
+  let calcLock = false;
   let allLoadedHistory = [];
 
   const DEFAULT_BANK_INFO = {
@@ -519,7 +511,14 @@
 
   // --- Calculator Utility Functions ---
   function normalizeDigits(v){ const map={'၀':'0','၁':'1','၂':'2','၃':'3','၄':'4','၅':'5','၆':'6','၇':'7','၈':'8','၉':'9'}; return (v||'').replace(/[၀၁၂၃၄၅၆၇၈၉]/g, d=>map[d]??d); }
-  function parseNum(v){ v = normalizeDigits(String(v).trim()); const n = Number(v.replace(/,/g,'')); return Number.isFinite(n) ? n : NaN; }
+  function parseNum(v){ 
+      if(v === undefined || v === null) return NaN;
+      let str = String(v).trim();
+      if(str === '') return NaN;
+      str = normalizeDigits(str); 
+      const n = Number(str.replace(/,/g,'')); 
+      return Number.isFinite(n) ? n : NaN; 
+  }
   function fmt0ceil(n){ return new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.ceil(n)); }
   function fmt6(n){ return new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:6}).format(n); }
 
@@ -542,6 +541,17 @@
   }
   function bindAutoSeparator(id, allowDecimal){ const el = document.getElementById(id); if(el) el.addEventListener('input', ()=>formatInputThousands(el, allowDecimal)); }
 
+  function updateVal(id, val, allowDecimal) {
+      const el = document.getElementById(id);
+      if(!el) return;
+      if(Number.isFinite(val)) {
+          el.value = fmt0ceil(val); 
+          formatInputThousands(el, allowDecimal);
+      } else {
+          el.value = '';
+      }
+  }
+
   // --- Calc Logic ---
   function getRate() { const a=parseNum(document.getElementById('rate100k').value), b=parseNum(document.getElementById('ratePerThb').value); if(Number.isFinite(a) && a>0) return a; if(Number.isFinite(b) && b>0) return 100000/b; return NaN; }
   function refreshRateNote() {
@@ -550,13 +560,6 @@
       document.getElementById('rateNote1').textContent=msg; document.getElementById('rateNote2').textContent=msg; document.getElementById('rateNoteTop').textContent=msg;
     }else{ document.getElementById('rateNote1').textContent=''; document.getElementById('rateNote2').textContent=''; document.getElementById('rateNoteTop').textContent=''; LAST_RATE.r=null; LAST_RATE.inv=null; }
   }
-  function recalc() {
-    const rate=getRate(), thb=parseNum(document.getElementById('thbIn').value), mmk=parseNum(document.getElementById('mmkIn').value);
-    document.getElementById('mmkOut').textContent = (Number.isFinite(rate) && Number.isFinite(thb)) ? fmt0ceil(thb*100000/rate) + ' MMK' : '';
-    document.getElementById('thbOut').textContent = (Number.isFinite(rate) && Number.isFinite(mmk)) ? fmt0ceil(mmk*rate/100000) + ' THB' : '';
-  }
-  function syncFrom100k() { if(lock) return; lock=true; const r=parseNum(document.getElementById('rate100k').value); if(Number.isFinite(r) && r>0){ document.getElementById('ratePerThb').value = fmt6(100000/r); formatInputThousands(document.getElementById('ratePerThb'),true); }else document.getElementById('ratePerThb').value=''; lock=false; refreshRateNote(); recalc(); }
-  function syncFromPerThb() { if(lock) return; lock=true; const inv=parseNum(document.getElementById('ratePerThb').value); if(Number.isFinite(inv) && inv>0){ document.getElementById('rate100k').value = fmt6(100000/inv); formatInputThousands(document.getElementById('rate100k'),true); }else document.getElementById('rate100k').value=''; lock=false; refreshRateNote(); recalc(); }
 
   function getVndRate() { const v = parseNum(document.getElementById('rateVnd').value); return (Number.isFinite(v) && v>0) ? v : NaN; }
   function refreshVndRateNote() {
@@ -565,19 +568,109 @@
       document.getElementById('rateNoteVnd1').textContent = msg; document.getElementById('rateNoteVnd2').textContent = msg; document.getElementById('rateNoteVndTop').textContent = msg;
     }else{ document.getElementById('rateNoteVnd1').textContent=''; document.getElementById('rateNoteVnd2').textContent=''; document.getElementById('rateNoteVndTop').textContent=''; LAST_RATE.vnd=null;}
   }
+
+  function recalc() {
+    if(calcLock) return; calcLock = true;
+    const rate = getRate();
+    const thbIn = parseNum(document.getElementById('thbIn').value);
+    const mmkIn = parseNum(document.getElementById('mmkIn').value);
+    
+    if(Number.isFinite(rate) && Number.isFinite(thbIn)) updateVal('mmkOut', thbIn * 100000 / rate, false);
+    else document.getElementById('mmkOut').value = '';
+    
+    if(Number.isFinite(rate) && Number.isFinite(mmkIn)) updateVal('thbOut', mmkIn * rate / 100000, true);
+    else document.getElementById('thbOut').value = '';
+    
+    calcLock = false;
+  }
+  
   function recalcVND() {
-    const rate = getVndRate(), mmk2 = parseNum(document.getElementById('mmkIn2').value), vnd = parseNum(document.getElementById('vndIn').value);
-    document.getElementById('vndOut').textContent = (Number.isFinite(rate) && Number.isFinite(mmk2)) ? fmt0ceil(mmk2 * rate) + ' VND' : '';
-    document.getElementById('mmkOut2').textContent = (Number.isFinite(rate) && Number.isFinite(vnd)) ? fmt0ceil(vnd / rate) + ' MMK' : '';
+    if(calcLock) return; calcLock = true;
+    const rate = getVndRate();
+    const vndIn = parseNum(document.getElementById('vndIn').value);
+    const mmkIn2 = parseNum(document.getElementById('mmkIn2').value);
+    
+    if(Number.isFinite(rate) && Number.isFinite(vndIn)) updateVal('mmkOut2', vndIn / rate, false);
+    else document.getElementById('mmkOut2').value = '';
+    
+    if(Number.isFinite(rate) && Number.isFinite(mmkIn2)) updateVal('vndOut', mmkIn2 * rate, false);
+    else document.getElementById('vndOut').value = '';
+    
+    calcLock = false;
   }
 
-  // Bind Events
-  ['rate100k','ratePerThb','thbIn','mmkIn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshRateNote(); recalc(); }); });
+  function syncFrom100k() { if(calcLock) return; calcLock=true; const r=parseNum(document.getElementById('rate100k').value); if(Number.isFinite(r) && r>0){ document.getElementById('ratePerThb').value = fmt6(100000/r); formatInputThousands(document.getElementById('ratePerThb'),true); }else document.getElementById('ratePerThb').value=''; calcLock=false; refreshRateNote(); recalc(); }
+  function syncFromPerThb() { if(calcLock) return; calcLock=true; const inv=parseNum(document.getElementById('ratePerThb').value); if(Number.isFinite(inv) && inv>0){ document.getElementById('rate100k').value = fmt6(100000/inv); formatInputThousands(document.getElementById('rate100k'),true); }else document.getElementById('rate100k').value=''; calcLock=false; refreshRateNote(); recalc(); }
+
+  // Global Listeners
+  ['rate100k','ratePerThb'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshRateNote(); recalc(); }); });
   if(document.getElementById('rate100k')) document.getElementById('rate100k').addEventListener('input', syncFrom100k); 
   if(document.getElementById('ratePerThb')) document.getElementById('ratePerThb').addEventListener('input', syncFromPerThb);
-  ['rateVnd','mmkIn2','vndIn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshVndRateNote(); recalcVND(); }); });
+  ['rateVnd'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshVndRateNote(); recalcVND(); }); });
+
+  // BI-DIRECTIONAL INPUT LISTENERS
+  document.getElementById('thbIn').addEventListener('input', () => {
+      if(calcLock) return; calcLock = true;
+      const rate = getRate(); const v = parseNum(document.getElementById('thbIn').value);
+      if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('mmkOut', v * 100000 / rate, false);
+      else document.getElementById('mmkOut').value = '';
+      calcLock = false;
+  });
+  document.getElementById('mmkOut').addEventListener('input', () => {
+      if(calcLock) return; calcLock = true;
+      const rate = getRate(); const v = parseNum(document.getElementById('mmkOut').value);
+      if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('thbIn', v * rate / 100000, true);
+      else document.getElementById('thbIn').value = '';
+      calcLock = false;
+  });
+
+  document.getElementById('mmkIn').addEventListener('input', () => {
+      if(calcLock) return; calcLock = true;
+      const rate = getRate(); const v = parseNum(document.getElementById('mmkIn').value);
+      if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('thbOut', v * rate / 100000, true);
+      else document.getElementById('thbOut').value = '';
+      calcLock = false;
+  });
+  document.getElementById('thbOut').addEventListener('input', () => {
+      if(calcLock) return; calcLock = true;
+      const rate = getRate(); const v = parseNum(document.getElementById('thbOut').value);
+      if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('mmkIn', v * 100000 / rate, false);
+      else document.getElementById('mmkIn').value = '';
+      calcLock = false;
+  });
+
+  document.getElementById('vndIn').addEventListener('input', () => {
+      if(calcLock) return; calcLock = true;
+      const rate = getVndRate(); const v = parseNum(document.getElementById('vndIn').value);
+      if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('mmkOut2', v / rate, false);
+      else document.getElementById('mmkOut2').value = '';
+      calcLock = false;
+  });
+  document.getElementById('mmkOut2').addEventListener('input', () => {
+      if(calcLock) return; calcLock = true;
+      const rate = getVndRate(); const v = parseNum(document.getElementById('mmkOut2').value);
+      if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('vndIn', v * rate, false);
+      else document.getElementById('vndIn').value = '';
+      calcLock = false;
+  });
+
+  document.getElementById('mmkIn2').addEventListener('input', () => {
+      if(calcLock) return; calcLock = true;
+      const rate = getVndRate(); const v = parseNum(document.getElementById('mmkIn2').value);
+      if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('vndOut', v * rate, false);
+      else document.getElementById('vndOut').value = '';
+      calcLock = false;
+  });
+  document.getElementById('vndOut').addEventListener('input', () => {
+      if(calcLock) return; calcLock = true;
+      const rate = getVndRate(); const v = parseNum(document.getElementById('vndOut').value);
+      if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('mmkIn2', v / rate, false);
+      else document.getElementById('mmkIn2').value = '';
+      calcLock = false;
+  });
 
   bindAutoSeparator('thbIn', true); bindAutoSeparator('mmkIn', true); bindAutoSeparator('vndIn', true); bindAutoSeparator('mmkIn2', true);
+  bindAutoSeparator('mmkOut', false); bindAutoSeparator('thbOut', true); bindAutoSeparator('mmkOut2', false); bindAutoSeparator('vndOut', false);
   bindAutoSeparator('rate100k', true); bindAutoSeparator('ratePerThb', true); bindAutoSeparator('rateVnd', true);
 
   // --- DASHBOARD FUNCTIONS ---
@@ -704,29 +797,35 @@
 
     const qrSelect = document.getElementById('qrSelect');
     if(qrSelect) {
-      qrSelect.innerHTML = '';
+      qrSelect.innerHTML = '<option value="">— QR ရွေးပါ —</option>';
       finalQRs.forEach(f => {
         const o = document.createElement('option'); o.value = f; o.textContent = f.replace(/\.[^.]+$/,''); qrSelect.appendChild(o);
       });
     }
+    
+    // Initial refresh to clear out ghost data
     refreshBankInfo();
     refreshQrPreview();
   }
 
+  // UPDATED: Completely removed reference to 'bankInfoBox' to avoid duplicate preview
   function refreshBankInfo() {
     const bankSelect = document.getElementById('bankSelect'); if(!bankSelect) return;
-    const key = bankSelect.value; const box = document.getElementById('bankInfoBox'); const mini = document.getElementById('bankPreviewMini');
+    const key = bankSelect.value; 
+    const mini = document.getElementById('bankPreviewMini');
+    
     if(!key || !ACTIVE_BANK_INFO[key]){
-      if(box) box.classList.add('hidden'); if(mini) mini.textContent='ဘဏ်မရွေးထားသေးပါ။'; return;
+      if(mini) mini.textContent='ဘဏ်မရွေးထားသေးပါ။'; 
+      return;
     }
-    const info=ACTIVE_BANK_INFO[key]; const logoUrl = "assets/logo/" + info.logo;
-    document.getElementById('bankLogo').src = logoUrl; document.getElementById('bankNameText').textContent = info.name;
-    document.getElementById('bankAccName').textContent = info.accName; document.getElementById('bankAccNo').textContent = info.accNo;
-    box.classList.remove('hidden');
-
-    mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div></div>`;
+    
+    const info = ACTIVE_BANK_INFO[key]; 
+    const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
+    
+    if(mini) {
+        mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div></div>`;
+    }
   }
-  if(document.getElementById('bankSelect')) document.getElementById('bankSelect').addEventListener('change', refreshBankInfo);
 
   function getOwnerFromKey(keyNoExt){
     const c=(keyNoExt||'').trim().toLowerCase()[0];
@@ -742,16 +841,26 @@
 
   async function refreshQrPreview() {
     const qrSelect = document.getElementById('qrSelect');
-    if(!qrSelect || qrSelect.options.length === 0 || qrSelect.selectedIndex === -1) {
-       document.getElementById('qrPreviewSolo').src = ''; document.getElementById('qrOwnerValue').textContent = '—'; return;
+    if(!qrSelect || qrSelect.options.length === 0 || qrSelect.selectedIndex === -1 || !qrSelect.value) {
+       document.getElementById('qrPreviewSolo').src = ''; 
+       document.getElementById('qrOwnerValue').textContent = '—'; 
+       document.getElementById('previewTwo').classList.add('hidden');
+       document.getElementById('previewOne').classList.remove('hidden');
+       return;
     }
-    const file = qrSelect.value; const labelNoExt = qrSelect.options[qrSelect.selectedIndex].text;
-    const QR_BASE = 'assets/qr/'; const normalUrl = QR_BASE + file; const baseName = file.replace(/\.[^.]+$/,''); const bigUrl = QR_BASE + baseName + '_big.jpg'; const owner = getOwnerFromKey(labelNoExt);
+    const file = qrSelect.value; 
+    const labelNoExt = qrSelect.options[qrSelect.selectedIndex].text;
+    const normalUrl = file.includes('http') ? file : 'assets/qr/' + file; 
+    const baseName = file.replace(/\.[^.]+$/,''); 
+    const bigUrl = file.includes('http') ? file : 'assets/qr/' + baseName + '_big.jpg'; 
+    const owner = getOwnerFromKey(labelNoExt);
 
     CURRENT_QR = { owner, normal: normalUrl, big: bigUrl, hasBig: false };
     document.getElementById('qrOwnerValue').textContent = owner;
+    
     const hasBig = await probeImage(bigUrl);
     CURRENT_QR.hasBig = hasBig; 
+    
     if(hasBig){
       document.getElementById('previewTwo').classList.remove('hidden'); document.getElementById('previewOne').classList.add('hidden');
       document.getElementById('qrPreviewNormal').src = normalUrl; document.getElementById('qrPreviewBig').src = bigUrl;
@@ -760,7 +869,6 @@
       document.getElementById('qrPreviewSolo').src = normalUrl;
     }
   }
-  if(document.getElementById('qrSelect')) document.getElementById('qrSelect').addEventListener('change', refreshQrPreview);
 
   // --- Initializing ---
   window.addEventListener('DOMContentLoaded', () => {
@@ -904,9 +1012,9 @@
         html += `
         <div class="flex justify-between items-center border-b pb-2 mb-2 last:border-0 last:mb-0 gap-2">
           <div class="font-mono text-sm font-bold text-gray-700 w-1/4 truncate" title="${id}">${id}</div>
-          <input type="text" id="devname_${id}" class="admin-input !mb-0 !py-1 flex-1 text-sm" placeholder="အမည်ပေးရန်..." value="${currentName}">
+          <input type="text" id="devname_${id}" class="admin-input-box !mb-0 !py-1 flex-1 text-sm" placeholder="အမည်ပေးရန်..." value="${currentName}">
           <button onclick="saveSingleDeviceName('${id}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-sm whitespace-nowrap">Save</button>
-          <button onclick="hideDevice('${id}')" class="btn bg-red-500 hover:bg-red-600 !py-1 !px-3 !text-sm whitespace-nowrap" title="စာရင်းမှဖျက်မည်">🗑</button>
+          <button onclick="hideDevice('${id}')" class="btn bg-red-50 hover:bg-red-100 !py-1 !px-3 !text-sm whitespace-nowrap border border-red-500 text-red-600" title="စာရင်းမှဖျက်မည်">🗑</button>
         </div>`;
       });
       if(visibleCount === 0) list.innerHTML = '<p class="text-center text-sm text-gray-500 p-2">ငွေလွှဲမှတ်တမ်း ပြုလုပ်ထားသော Device များ မတွေ့ရှိသေးပါ။</p>';
@@ -1059,7 +1167,7 @@
         }
         
         if(CURRENT_ROLE === 'admin') {
-            actionHtml = `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-500 hover:bg-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑 ဖျက်မည်</button>`;
+            actionHtml = `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
         }
         
         html += `<tr class="border-b hover:bg-gray-50">
@@ -1127,6 +1235,7 @@
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
   }
 
+  // --- Export Image SaveSection & Web Share API ---
   const I18N = {
     en: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"THB → MMK", h_mmk2thb:"MMK → THB", h_vnd2mmk:"VND → MMK", h_mmk2vnd:"MMK → VND", sub_thb2mmk:"Thai Baht to Myanmar Kyat", sub_mmk2thb:"Myanmar Kyat to Thai Baht", sub_vnd2mmk:"Vietnamese Dong to Myanmar Kyat", sub_mmk2vnd:"Myanmar Kyat to Vietnamese Dong", lbl_thb:"Amount (THB)", lbl_mmk:"Amount (MMK)", lbl_vnd:"Amount (VND)", in_thb:"Input THB", in_mmk:"Input MMK", in_vnd:"Input VND", out_mmk:"Result MMK", out_thb:"Result THB", out_vnd:"Result VND", warn1:"Always request the bank account before every transfer.", warn2:"We are not responsible for any transfer made without requesting and confirming the bank account.", thanks:"Thank you for trusting and using Thailand Guide - Supplier By Ye.", bankTitle:"Transfer Bank Information", bankLabel:"Bank Information", accName:"Account Name", accNo:"Account Number", qrTitle:"Bank QR / Payment", owner:"Account Name", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" },
     th: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"บาท → จ๊าด", h_mmk2thb:"จ๊าด → บาท", h_vnd2mmk:"ดอง → จ๊าด", h_mmk2vnd:"จ๊าด → ดอง", sub_thb2mmk:"แปลงเงินบาทไทยเป็นจ๊าดเมียนมา", sub_mmk2thb:"แปลงจ๊าดเมียนมาเป็นเงินบาทไทย", sub_vnd2mmk:"แปลงเงินดองเวียดนามเป็นจ๊าดเมียนมา", sub_mmk2vnd:"แปลงจ๊าดเมียนมาเป็นเงินดองเวียดนาม", lbl_thb:"จำนวนเงิน (THB)", lbl_mmk:"จำนวนเงิน (MMK)", lbl_vnd:"จำนวนเงิน (VND)", in_thb:"กรอกจำนวนบาท", in_mmk:"กรอกจำนวนจ๊าด", in_vnd:"กรอกจำนวนดอง", out_mmk:"ผลลัพธ์ (MMK)", out_thb:"ผลลัพธ์ (THB)", out_vnd:"ผลลัพธ์ (VND)", warn1:"โอนเงินทุกครั้งกรุณาขอเลขบัญชีที่ต้องถามก่อน", warn2:"หากโอนโดยไม่ยืนยันเลขบัญชี ทางเพจขอไม่รับผิดชอบ", thanks:"ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye", bankTitle:"ข้อมูลบัญชีสำหรับโอน", bankLabel:"ข้อมูลบัญชีธนาคาร", accName:"ชื่อบัญชี", accNo:"เลขบัญชี", qrTitle:"คิวอาร์ธนาคาร", owner:"ชื่อบัญชี", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" }
@@ -1171,7 +1280,7 @@
     const thx = clone.querySelector('.lang-thanks'); if(thx) thx.textContent = T.thanks;
   }
 
-  // --- Copy Text Function (Localized) ---
+  // --- Copy Text Function (Localized & Formatted) ---
   async function copyText(sectionId, btnElement) {
     let title, inAmt, outAmt, rateTxt;
     
@@ -1180,32 +1289,32 @@
         inAmt = document.getElementById('thbIn').value;
         if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
         inAmt += " ဘတ်";
-        outAmt = document.getElementById('mmkOut').textContent.replace(' MMK', ' ကျပ်');
+        outAmt = document.getElementById('mmkOut').value + " ကျပ်";
         rateTxt = LAST_RATE.r ? `1 သိန်းကျပ် = ${fmt6(LAST_RATE.r)} ဘတ်` : "";
     } else if (sectionId === 'box-mmk2thb') {
         title = "မြန်မာကျပ် 🇲🇲 ➔ ထိုင်းဘတ် 🇹🇭";
         inAmt = document.getElementById('mmkIn').value;
         if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
         inAmt += " ကျပ်";
-        outAmt = document.getElementById('thbOut').textContent.replace(' THB', ' ဘတ်');
+        outAmt = document.getElementById('thbOut').value + " ဘတ်";
         rateTxt = LAST_RATE.r ? `1 သိန်းကျပ် = ${fmt6(LAST_RATE.r)} ဘတ်` : "";
     } else if (sectionId === 'box-vnd2mmk') {
         title = "ဗီယက်နမ်ဒေါင် 🇻🇳 ➔ မြန်မာကျပ် 🇲🇲";
         inAmt = document.getElementById('vndIn').value;
         if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
         inAmt += " ဒေါင်";
-        outAmt = document.getElementById('mmkOut2').textContent.replace(' MMK', ' ကျပ်');
-        rateTxt = LAST_RATE.vnd ? `1 ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : "";
+        outAmt = document.getElementById('mmkOut2').value + " ကျပ်";
+        rateTxt = LAST_RATE.vnd ? `၁ ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : "";
     } else if (sectionId === 'box-mmk2vnd') {
         title = "မြန်မာကျပ် 🇲🇲 ➔ ဗီယက်နမ်ဒေါင် 🇻🇳";
         inAmt = document.getElementById('mmkIn2').value;
         if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
         inAmt += " ကျပ်";
-        outAmt = document.getElementById('vndOut').textContent.replace(' VND', ' ဒေါင်');
-        rateTxt = LAST_RATE.vnd ? `1 ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : "";
+        outAmt = document.getElementById('vndOut').value + " ဒေါင်";
+        rateTxt = LAST_RATE.vnd ? `၁ ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : "";
     }
 
-    const textToCopy = `💸 [ ${title} ]\n\nလွှဲငွေ : ${inAmt}\nရငွေ : ${outAmt}\n\n(ငွေဈေး: ${rateTxt})\n\nငွေလွှဲမည်ဆိုပါက ပြန်ပြောပေးပါခင်ဗျ။ ငွေလွှဲရမည့်အကောင့်ပို့ပေးပါမယ်ခင်ဗျ။`;
+    const textToCopy = `💸 [ ${title} ]\n\nလွှဲငွေ : ${inAmt}\nရငွေ : ${outAmt}\n\n(ငွေဈေး: ${rateTxt})\n\nငွေလွှဲမည်ဆိုပါက ပြန်ပြောပေးပါ ငွေလွှဲရမည့်အကောင့်ပို့ပေးပါမည်။`;
 
     try {
         await navigator.clipboard.writeText(textToCopy);
@@ -1230,15 +1339,28 @@
     const original=document.getElementById(sectionId); const clone=original.cloneNode(true);
     clone.querySelectorAll('button').forEach(b=>b.remove());
     applyLangToClone(clone, lang);
+    
     let inValueStr = '', outValueStr = '';
-    clone.querySelectorAll('input, output').forEach(el=>{
+    clone.querySelectorAll('input').forEach(el=>{
+      if(!el.classList.contains('amt-input')) return;
+      
+      const isTarget = el.id.toLowerCase().includes('out');
+      let val = (el.value || '').trim();
+      
+      if(val === '') val = '0';
+      
+      if(el.id.toLowerCase().includes('mmk')) val += ' MMK';
+      else if(el.id.toLowerCase().includes('thb')) val += ' THB';
+      else if(el.id.toLowerCase().includes('vnd')) val += ' VND';
+
       const div=document.createElement('div');
       div.className=el.className || ''; div.style.whiteSpace='nowrap'; div.style.overflow='hidden'; div.style.textOverflow='ellipsis'; div.style.display='flex'; div.style.alignItems='center'; div.style.lineHeight='1.5'; div.style.minHeight='56px'; div.style.height='56px'; div.style.paddingTop='12px'; div.style.paddingBottom='14px';
-      const val = (el.tagName.toLowerCase() === 'input') ? (el.value || '') : (el.textContent || '');
+      
       div.textContent = val;
-      if (el.tagName.toLowerCase() === 'input') inValueStr = val; else outValueStr = val;
+      if (!isTarget) inValueStr = val; else outValueStr = val;
       el.replaceWith(div);
     });
+    
     clone.style.boxShadow='none'; clone.style.border='1px solid #e5e7eb'; clone.style.background='#fff';
     const mode = document.querySelector('input[name="saveMode"]:checked')?.value || 'none';
     let paymentMethodName = "မပါ (None)";
