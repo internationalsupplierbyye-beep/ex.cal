@@ -163,6 +163,7 @@
       <button id="btnSave1PNG" class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png')">Save PNG</button>
       <button id="btnSave1JPG" class="btn2" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg')">Save JPEG</button>
       <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'share')">📤 Share</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-thb2mmk', this)">📋 Copy Text</button>
     </div>
   </section>
 
@@ -188,6 +189,7 @@
       <button id="btnSave2PNG" class="btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','png')">Save PNG</button>
       <button id="btnSave2JPG" class="btn2" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg')">Save JPEG</button>
       <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'share')">📤 Share</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2thb', this)">📋 Copy Text</button>
     </div>
   </section>
 
@@ -276,6 +278,7 @@
       <button id="btnSave3PNG" class="btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png')">Save PNG</button>
       <button id="btnSave3JPG" class="btn2" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','jpg')">Save JPEG</button>
       <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'share')">📤 Share</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-vnd2mmk', this)">📋 Copy Text</button>
     </div>
   </section>
 
@@ -301,6 +304,7 @@
       <button id="btnSave4PNG" class="btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png')">Save PNG</button>
       <button id="btnSave4JPG" class="btn2" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','jpg')">Save JPEG</button>
       <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'share')">📤 Share</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2vnd', this)">📋 Copy Text</button>
     </div>
   </section>
 
@@ -995,7 +999,6 @@
       }
   }
   
-  // --- Delete History Record (Admin Only) ---
   window.deleteTxRecord = async function(invId) {
       if(CURRENT_ROLE !== 'admin') return;
       if(!confirm(`Invoice ID: ${invId} ကို ဖျက်ရန် သေချာပါသလား?\n(ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍ မရနိုင်ပါ။)`)) return;
@@ -1124,7 +1127,6 @@
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
   }
 
-  // --- Export Image SaveSection & Web Share API ---
   const I18N = {
     en: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"THB → MMK", h_mmk2thb:"MMK → THB", h_vnd2mmk:"VND → MMK", h_mmk2vnd:"MMK → VND", sub_thb2mmk:"Thai Baht to Myanmar Kyat", sub_mmk2thb:"Myanmar Kyat to Thai Baht", sub_vnd2mmk:"Vietnamese Dong to Myanmar Kyat", sub_mmk2vnd:"Myanmar Kyat to Vietnamese Dong", lbl_thb:"Amount (THB)", lbl_mmk:"Amount (MMK)", lbl_vnd:"Amount (VND)", in_thb:"Input THB", in_mmk:"Input MMK", in_vnd:"Input VND", out_mmk:"Result MMK", out_thb:"Result THB", out_vnd:"Result VND", warn1:"Always request the bank account before every transfer.", warn2:"We are not responsible for any transfer made without requesting and confirming the bank account.", thanks:"Thank you for trusting and using Thailand Guide - Supplier By Ye.", bankTitle:"Transfer Bank Information", bankLabel:"Bank Information", accName:"Account Name", accNo:"Account Number", qrTitle:"Bank QR / Payment", owner:"Account Name", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" },
     th: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"บาท → จ๊าด", h_mmk2thb:"จ๊าด → บาท", h_vnd2mmk:"ดอง → จ๊าด", h_mmk2vnd:"จ๊าด → ดอง", sub_thb2mmk:"แปลงเงินบาทไทยเป็นจ๊าดเมียนมา", sub_mmk2thb:"แปลงจ๊าดเมียนมาเป็นเงินบาทไทย", sub_vnd2mmk:"แปลงเงินดองเวียดนามเป็นจ๊าดเมียนมา", sub_mmk2vnd:"แปลงจ๊าดเมียนมาเป็นเงินดองเวียดนาม", lbl_thb:"จำนวนเงิน (THB)", lbl_mmk:"จำนวนเงิน (MMK)", lbl_vnd:"จำนวนเงิน (VND)", in_thb:"กรอกจำนวนบาท", in_mmk:"กรอกจำนวนจ๊าด", in_vnd:"กรอกจำนวนดอง", out_mmk:"ผลลัพธ์ (MMK)", out_thb:"ผลลัพธ์ (THB)", out_vnd:"ผลลัพธ์ (VND)", warn1:"โอนเงินทุกครั้งกรุณาขอเลขบัญชีที่ต้องถามก่อน", warn2:"หากโอนโดยไม่ยืนยันเลขบัญชี ทางเพจขอไม่รับผิดชอบ", thanks:"ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye", bankTitle:"ข้อมูลบัญชีสำหรับโอน", bankLabel:"ข้อมูลบัญชีธนาคาร", accName:"ชื่อบัญชี", accNo:"เลขบัญชี", qrTitle:"คิวอาร์ธนาคาร", owner:"ชื่อบัญชี", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" }
@@ -1167,6 +1169,57 @@
     const w1 = clone.querySelector('.lang-warn1'); if(w1) { w1.textContent = T.warn1; w1.innerHTML += '<br>'; }
     const w2 = clone.querySelector('.lang-warn2'); if(w2) { w2.textContent = T.warn2; w2.innerHTML += '<br>'; }
     const thx = clone.querySelector('.lang-thanks'); if(thx) thx.textContent = T.thanks;
+  }
+
+  // --- Copy Text Function (Localized) ---
+  async function copyText(sectionId, btnElement) {
+    let title, inAmt, outAmt, rateTxt;
+    
+    if (sectionId === 'box-thb2mmk') {
+        title = "ထိုင်းဘတ် 🇹🇭 ➔ မြန်မာကျပ် 🇲🇲";
+        inAmt = document.getElementById('thbIn').value;
+        if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
+        inAmt += " ဘတ်";
+        outAmt = document.getElementById('mmkOut').textContent.replace(' MMK', ' ကျပ်');
+        rateTxt = LAST_RATE.r ? `1 သိန်းကျပ် = ${fmt6(LAST_RATE.r)} ဘတ်` : "";
+    } else if (sectionId === 'box-mmk2thb') {
+        title = "မြန်မာကျပ် 🇲🇲 ➔ ထိုင်းဘတ် 🇹🇭";
+        inAmt = document.getElementById('mmkIn').value;
+        if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
+        inAmt += " ကျပ်";
+        outAmt = document.getElementById('thbOut').textContent.replace(' THB', ' ဘတ်');
+        rateTxt = LAST_RATE.r ? `1 သိန်းကျပ် = ${fmt6(LAST_RATE.r)} ဘတ်` : "";
+    } else if (sectionId === 'box-vnd2mmk') {
+        title = "ဗီယက်နမ်ဒေါင် 🇻🇳 ➔ မြန်မာကျပ် 🇲🇲";
+        inAmt = document.getElementById('vndIn').value;
+        if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
+        inAmt += " ဒေါင်";
+        outAmt = document.getElementById('mmkOut2').textContent.replace(' MMK', ' ကျပ်');
+        rateTxt = LAST_RATE.vnd ? `1 ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : "";
+    } else if (sectionId === 'box-mmk2vnd') {
+        title = "မြန်မာကျပ် 🇲🇲 ➔ ဗီယက်နမ်ဒေါင် 🇻🇳";
+        inAmt = document.getElementById('mmkIn2').value;
+        if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
+        inAmt += " ကျပ်";
+        outAmt = document.getElementById('vndOut').textContent.replace(' VND', ' ဒေါင်');
+        rateTxt = LAST_RATE.vnd ? `1 ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : "";
+    }
+
+    const textToCopy = `💸 [ ${title} ]\n\nလွှဲငွေ : ${inAmt}\nရငွေ : ${outAmt}\n\n(ငွေဈေး: ${rateTxt})\n\nငွေလွှဲမည်ဆိုပါက ပြန်ပြောပေးပါခင်ဗျ။ ငွေလွှဲရမည့်အကောင့်ပို့ပေးပါမယ်ခင်ဗျ။`;
+
+    try {
+        await navigator.clipboard.writeText(textToCopy);
+        const originalText = btnElement.innerHTML;
+        btnElement.innerHTML = "✅ Copied!";
+        btnElement.classList.replace('bg-gray-600', 'bg-green-600');
+        setTimeout(() => {
+            btnElement.innerHTML = originalText;
+            btnElement.classList.replace('bg-green-600', 'bg-gray-600');
+        }, 1500);
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+        alert("Copy ကူးခြင်း မအောင်မြင်ပါ။ သင့် Browser က ခွင့်မပြုတာ ဖြစ်နိုင်ပါတယ်။");
+    }
   }
 
   // --- Main Save/Share Logic ---
