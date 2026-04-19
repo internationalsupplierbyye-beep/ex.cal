@@ -463,11 +463,12 @@
 
     <div id="tab-qrs" class="tab-pane">
       <div class="bg-green-50 border border-green-200 p-4 rounded-xl mb-4">
-        <h3 class="font-bold text-green-800 mb-3">🔲 QR အသစ် ထည့်ရန်</h3>
-        <div class="flex gap-2 mb-3">
-          <input id="newQrFile" class="admin-input-box flex-1" placeholder="QR ပုံနာမည် (ဥပမာ - newqr.jpg)">
-          <button onclick="addCustomQR()" id="btnQRSave" class="btn bg-green-600 hover:bg-green-700 whitespace-nowrap">QR သိမ်းမည်</button>
+        <h3 class="font-bold text-green-800 mb-3">🔲 QR အသစ် ထည့်ရန် / ပြင်ရန်</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <input id="newQrName" class="admin-input-box" placeholder="QR အမည် (ဥပမာ - KPay YLH)">
+          <input id="newQrFile" class="admin-input-box" placeholder="QR ပုံနာမည် (ဥပမာ - newqr.jpg)">
         </div>
+        <button onclick="addCustomQR()" id="btnQRSave" class="btn bg-green-600 hover:bg-green-700 w-full">QR သိမ်းမည်</button>
       </div>
       <h3 class="font-bold text-sm text-gray-600 mb-2">📋 ထည့်သွင်းထားသော QR များ (ဆွဲရွှေ့ပါ)</h3>
       <div id="adminQRList" class="max-h-60 overflow-y-auto border rounded-xl p-2 bg-gray-50"></div>
@@ -783,7 +784,7 @@
     const useFirebaseQRs = FIREBASE_QRS.length > 0;
     ACTIVE_BANK_INFO = useFirebaseBanks ? FIREBASE_BANKS : DEFAULT_BANK_INFO;
     const finalBankOrder = useFirebaseBanks ? FIREBASE_BANK_ORDER : DEFAULT_BANK_ORDER;
-    const finalQRs = useFirebaseQRs ? FIREBASE_QRS : DEFAULT_QR_FILES;
+    const finalQRs = useFirebaseQRs ? FIREBASE_QRS : DEFAULT_QR_FILES.map(f => ({ file: f, name: f.replace(/\.[^.]+$/, '') }));
     
     const bankSelect = document.getElementById('bankSelect');
     if(bankSelect) {
@@ -798,8 +799,13 @@
     const qrSelect = document.getElementById('qrSelect');
     if(qrSelect) {
       qrSelect.innerHTML = '<option value="">— QR ရွေးပါ —</option>';
-      finalQRs.forEach(f => {
-        const o = document.createElement('option'); o.value = f; o.textContent = f.replace(/\.[^.]+$/,''); qrSelect.appendChild(o);
+      finalQRs.forEach(qr => {
+        const val = typeof qr === 'string' ? qr : qr.file;
+        const text = typeof qr === 'string' ? qr.replace(/\.[^.]+$/, '') : (qr.name || val.replace(/\.[^.]+$/, ''));
+        const o = document.createElement('option'); 
+        o.value = val; 
+        o.textContent = text; 
+        qrSelect.appendChild(o);
       });
     }
     
@@ -893,11 +899,10 @@
     }
 
     const file = qrSelect.value; 
-    const labelNoExt = qrSelect.options[qrSelect.selectedIndex].text;
     const normalUrl = file.includes('http') ? file : 'assets/qr/' + file; 
     const baseName = file.replace(/\.[^.]+$/,''); 
     const bigUrl = file.includes('http') ? file : 'assets/qr/' + baseName + '_big.jpg'; 
-    const owner = getOwnerFromKey(labelNoExt);
+    const owner = getOwnerFromKey(baseName); // Use base filename for accurate owner auto-detection
 
     CURRENT_QR = { owner, normal: normalUrl, big: bigUrl, hasBig: false };
     document.getElementById('qrOwnerValue').textContent = owner;
@@ -939,7 +944,15 @@
     dbRef.get().then((docSnap) => {
       if (docSnap.exists) {
         const data = docSnap.data();
-        FIREBASE_BANKS = data.banks || {}; FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS); FIREBASE_QRS = data.qrs || [];
+        FIREBASE_BANKS = data.banks || {}; FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS); 
+        
+        let loadedQrs = data.qrs || [];
+        // Support old format (array of strings) seamlessly upgrading to object
+        FIREBASE_QRS = loadedQrs.map(q => {
+            if (typeof q === 'string') return { file: q, name: q.replace(/\.[^.]+$/, '') };
+            return q;
+        });
+
         FIREBASE_DEVICE_NAMES = data.deviceNames || {}; FIREBASE_HIDDEN_DEVICES = data.hiddenDevices || []; 
         if (data.adminTimezone) { ADMIN_TIMEZONE = data.adminTimezone; const tzSelect = document.getElementById('adminTimezoneSelect'); if (tzSelect) tzSelect.value = ADMIN_TIMEZONE; }
         if (data.lastRates) {
@@ -984,7 +997,6 @@
     const inputPass = document.getElementById('adminPassInput').value;
     
     if(inputPass === ADMIN_PASSWORD) {
-      // ADMIN Login
       CURRENT_ROLE = 'admin';
       closeLogin(); 
       document.getElementById('adminModal').style.display = 'block'; 
@@ -995,16 +1007,14 @@
       renderAdminLists(); loadHistory();
       
     } else if(inputPass === STAFF_PASSWORD) {
-      // STAFF Login
       CURRENT_ROLE = 'staff';
       closeLogin(); 
       document.getElementById('adminModal').style.display = 'block'; 
       document.getElementById('adminModalTitle').innerHTML = "📜 ငွေလွှဲမှတ်တမ်းများ (Staff View)";
       
-      // Hide all tabs except History
       document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
       document.getElementById('btnTabHistory').style.display = 'inline-block';
-      document.getElementById('btnExportCSV').style.display = 'none'; // Staff cannot export Excel
+      document.getElementById('btnExportCSV').style.display = 'none'; 
       
       switchTab('tab-history', document.getElementById('btnTabHistory')); 
       loadHistory();
@@ -1049,14 +1059,173 @@
         bankListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="bank" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate"><span class="font-bold text-sm">${bank.name}</span> <span class="text-xs text-gray-500">(${id})</span></div></div><div class="action-btns flex-shrink-0"><button onclick="editBank('${id}')" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteBank('${id}')" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
       });
     }
+    
     const qrListDiv = document.getElementById('adminQRList'); qrListDiv.innerHTML = '';
     if(FIREBASE_QRS.length === 0) { qrListDiv.innerHTML = '<p class="text-sm text-gray-400 p-2 text-center border rounded bg-white">ထည့်သွင်းထားခြင်း မရှိသေးပါ</p>'; } 
     else {
-      FIREBASE_QRS.forEach((file, index) => {
-        qrListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="qr" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="font-bold text-sm truncate">${file}</div></div><div class="action-btns flex-shrink-0"><button onclick="deleteQR(${index})" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
+      FIREBASE_QRS.forEach((qr, index) => {
+        const file = typeof qr === 'string' ? qr : qr.file;
+        const name = typeof qr === 'string' ? qr.replace(/\.[^.]+$/, '') : (qr.name || file);
+        qrListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="qr" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate"><span class="font-bold text-sm">${name}</span> <span class="text-xs text-gray-500">(${file})</span></div></div><div class="action-btns flex-shrink-0"><button onclick="editQR(${index})" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteQR(${index})" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
       });
     }
   }
+
+  // ==========================================
+  // 🏦 ဘဏ် နှင့် QR များ စီမံရန် Functions များ (Bank & QR Management)
+  // ==========================================
+
+  async function addCustomBank() {
+      const id = document.getElementById('newBankId').value.trim();
+      const name = document.getElementById('newBankName').value.trim();
+      const accName = document.getElementById('newBankAccName').value.trim();
+      const accNo = document.getElementById('newBankAccNo').value.trim();
+      const logo = document.getElementById('newBankLogo').value.trim();
+
+      if(!id || !name || !accName || !accNo) {
+          alert("ကျေးဇူးပြု၍ ဘဏ်အချက်အလက် (Code, Name, Account Name, Account No) များကို ပြည့်စုံစွာထည့်ပါ။");
+          return;
+      }
+
+      const btn = document.getElementById('btnBankSave');
+      btn.disabled = true; btn.textContent = "သိမ်းဆည်းနေပါသည်...";
+
+      FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg" };
+      if(!FIREBASE_BANK_ORDER.includes(id)) {
+          FIREBASE_BANK_ORDER.push(id);
+      }
+
+      try {
+          await updateFirebase();
+          document.getElementById('newBankId').value = '';
+          document.getElementById('newBankName').value = '';
+          document.getElementById('newBankAccName').value = '';
+          document.getElementById('newBankAccNo').value = '';
+          document.getElementById('newBankLogo').value = '';
+          
+          initDropdowns();
+          renderAdminLists();
+          alert("ဘဏ်အချက်အလက် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+      } catch(e) {
+          alert("Error: " + e.message);
+      } finally {
+          btn.disabled = false; btn.textContent = "ဘဏ်အသစ် သိမ်းမည်";
+      }
+  }
+
+  function editBank(id) {
+      const bank = FIREBASE_BANKS[id];
+      if(!bank) return;
+      document.getElementById('newBankId').value = id;
+      document.getElementById('newBankName').value = bank.name || '';
+      document.getElementById('newBankAccName').value = bank.accName || '';
+      document.getElementById('newBankAccNo').value = bank.accNo || '';
+      document.getElementById('newBankLogo').value = bank.logo || '';
+      
+      document.getElementById('newBankId').focus();
+  }
+
+  async function deleteBank(id) {
+      if(!confirm(`'${id}' ဘဏ်ကို ဖျက်ရန် သေချာပါသလား?`)) return;
+      
+      delete FIREBASE_BANKS[id];
+      FIREBASE_BANK_ORDER = FIREBASE_BANK_ORDER.filter(item => item !== id);
+      
+      try {
+          await updateFirebase();
+          initDropdowns();
+          renderAdminLists();
+      } catch(e) {
+          alert("Error deleting bank.");
+      }
+  }
+
+  async function addCustomQR() {
+      const name = document.getElementById('newQrName').value.trim();
+      const file = document.getElementById('newQrFile').value.trim();
+      
+      if(!file || !name) { alert("ကျေးဇူးပြု၍ QR အမည် နှင့် ပုံနာမည် နှစ်ခုလုံး ထည့်ပါ။"); return; }
+      
+      const btn = document.getElementById('btnQRSave');
+      btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
+
+      const existingIndex = FIREBASE_QRS.findIndex(q => (typeof q === 'string' ? q : q.file) === file);
+      if (existingIndex > -1) {
+          FIREBASE_QRS[existingIndex] = { file, name };
+      } else {
+          FIREBASE_QRS.push({ file, name });
+      }
+
+      try {
+          await updateFirebase();
+          document.getElementById('newQrName').value = '';
+          document.getElementById('newQrFile').value = '';
+          initDropdowns();
+          renderAdminLists();
+          alert("QR အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+      } catch(e) {
+          alert("Error: " + e.message);
+      } finally {
+          btn.disabled = false; btn.textContent = "QR သိမ်းမည်";
+      }
+  }
+
+  function editQR(index) {
+      const qr = FIREBASE_QRS[index];
+      if(!qr) return;
+      const file = typeof qr === 'string' ? qr : qr.file;
+      const name = typeof qr === 'string' ? qr.replace(/\.[^.]+$/, '') : (qr.name || file);
+      
+      document.getElementById('newQrName').value = name;
+      document.getElementById('newQrFile').value = file;
+      document.getElementById('newQrName').focus();
+  }
+
+  async function deleteQR(index) {
+      if(!confirm("ဤ QR ကို ဖျက်ရန် သေချာပါသလား?")) return;
+      
+      FIREBASE_QRS.splice(index, 1);
+      try {
+          await updateFirebase();
+          initDropdowns();
+          renderAdminLists();
+      } catch(e) {
+          alert("Error deleting QR.");
+      }
+  }
+
+  async function migrateDefaultsToFirebase() {
+      if(!confirm("မူလ Data များကို Firebase ပေါ်သို့ အစားထိုး ထည့်သွင်းမည်။ သေချာပါသလား?")) return;
+      FIREBASE_BANKS = JSON.parse(JSON.stringify(DEFAULT_BANK_INFO));
+      FIREBASE_BANK_ORDER = [...DEFAULT_BANK_ORDER];
+      FIREBASE_QRS = DEFAULT_QR_FILES.map(f => ({ file: f, name: f.replace(/\.[^.]+$/, '') }));
+      
+      try {
+          await updateFirebase();
+          initDropdowns();
+          renderAdminLists();
+          alert("Data များ အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ!");
+      } catch(e) {
+          alert("Error: " + e.message);
+      }
+  }
+
+  async function clearCustomData() {
+      if(!confirm("Firebase မှ Data များအားလုံး ဖျက်ပစ်ပါမည်။ သေချာပါသလား?")) return;
+      FIREBASE_BANKS = {};
+      FIREBASE_BANK_ORDER = [];
+      FIREBASE_QRS = [];
+      
+      try {
+          await updateFirebase();
+          initDropdowns();
+          renderAdminLists();
+          alert("Data အားလုံး ရှင်းလင်းပြီးပါပြီ!");
+      } catch(e) {
+          alert("Error: " + e.message);
+      }
+  }
+  // ==========================================
 
   // --- Admin General: Devices & Timezone ---
   async function loadAdminDevices() {
@@ -1240,8 +1409,8 @@
           <td class="p-3 text-xs font-bold text-purple-600">${displayRate}</td>
           <td class="p-3">${typeHtml}</td>
           <td class="p-3">${amountHtml}</td>
-          <td class="p-3 text-xs">${method}</td>
           <td class="p-3 text-center">${statusHtml}</td>
+          <td class="p-3 text-xs">${method}</td>
           <td class="p-3 text-center">${actionHtml}</td>
         </tr>`;
       });
@@ -1431,9 +1600,9 @@
     let paymentMethodName = "မပါ (None)";
     
     if(mode==='qr' && CURRENT_QR && CURRENT_QR.normal){
-      const selectedQrFile = document.getElementById('qrSelect').value; 
-      const qrNameOnly = selectedQrFile.replace(/\.[^.]+$/, ''); 
-      paymentMethodName = `QR (${qrNameOnly})`; 
+      const selectedQrEl = document.getElementById('qrSelect');
+      const selectedQrText = selectedQrEl.options[selectedQrEl.selectedIndex].text;
+      paymentMethodName = `QR (${selectedQrText})`; 
       
       const wrap=document.createElement('div'); wrap.className='export-block';
       const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
