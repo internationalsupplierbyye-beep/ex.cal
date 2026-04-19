@@ -155,9 +155,9 @@
     </div>
     <div class="text-center mt-3">
       <div class="rate-note" id="rateNote1"></div><br>
-      <div class="lang-warn1 text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</div><br>
-      <div class="lang-warn2 text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</div><br>
-      <div class="lang-thanks thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</div>
+      <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div><br>
+      <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div><br>
+      <div class="lang-thanks thanks"></div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
       <button id="btnSave1PNG" class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png')">Save PNG</button>
@@ -181,9 +181,9 @@
     </div>
     <div class="text-center mt-3">
       <div class="rate-note" id="rateNote2"></div><br>
-      <div class="lang-warn1 text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</div><br>
-      <div class="lang-warn2 text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</div><br>
-      <div class="lang-thanks thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</div>
+      <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div><br>
+      <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div><br>
+      <div class="lang-thanks thanks"></div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
       <button id="btnSave2PNG" class="btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','png')">Save PNG</button>
@@ -263,9 +263,9 @@
     </div>
     <div class="text-center mt-3">
       <div class="rate-note" id="rateNoteVnd1"></div><br>
-      <div class="lang-warn1 text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</div><br>
-      <div class="lang-warn2 text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</div><br>
-      <div class="lang-thanks thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</div>
+      <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div><br>
+      <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div><br>
+      <div class="lang-thanks thanks"></div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
       <button id="btnSave3PNG" class="btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png')">Save PNG</button>
@@ -289,9 +289,9 @@
     </div>
     <div class="text-center mt-3">
       <div class="rate-note" id="rateNoteVnd2"></div><br>
-      <div class="lang-warn1 text-red-600 font-extrabold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</div><br>
-      <div class="lang-warn2 text-red-600 font-extrabold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</div><br>
-      <div class="lang-thanks thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</div>
+      <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div><br>
+      <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div><br>
+      <div class="lang-thanks thanks"></div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
       <button id="btnSave4PNG" class="btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png')">Save PNG</button>
@@ -407,7 +407,14 @@
     <div id="tab-general" class="tab-pane">
       
       <div class="bg-pink-50 border border-pink-200 p-4 rounded-xl mb-4">
-        <h3 class="font-bold text-pink-800 mb-3">📝 ပြေစာအောက်ခြေ စာသားများ ပြင်ရန်</h3>
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold text-pink-800">📝 ပြေစာအောက်ခြေ စာသားများ ပြင်ရန်</h3>
+            <select id="adminReceiptLang" class="border border-pink-300 rounded px-2 py-1 text-sm font-bold text-pink-800 bg-white" onchange="loadReceiptTextsToInputs()">
+                <option value="orig" selected>မြန်မာစာ (Default)</option>
+                <option value="en">English (ENG)</option>
+                <option value="th">Thai (TH)</option>
+            </select>
+        </div>
         <div class="mb-2">
           <label class="text-xs font-bold text-gray-600">သတိပေးချက် ၁ (Warning 1)</label>
           <input type="text" id="adminWarn1" class="admin-input-box text-sm">
@@ -511,9 +518,21 @@
   let FIREBASE_HIDDEN_DEVICES = []; 
 
   let FIREBASE_RECEIPT_TEXTS = {
-      warn1: "ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။",
-      warn2: "ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။",
-      thanks: "Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။"
+      orig: {
+          warn1: "ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။",
+          warn2: "ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။",
+          thanks: "Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။"
+      },
+      en: {
+          warn1: "Always request the bank account before every transfer.",
+          warn2: "We are not responsible for any transfer made without requesting and confirming the bank account.",
+          thanks: "Thank you for trusting and using Thailand Guide - Supplier By Ye."
+      },
+      th: {
+          warn1: "โอนเงินทุกครั้งกรุณาขอเลขบัญชีที่ต้องถามก่อน",
+          warn2: "หากโอนโดยไม่ยืนยันเลขบัญชี ทางเพจขอไม่รับผิดชอบ",
+          thanks: "ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye"
+      }
   };
 
   let CURRENT_QR = { owner:'', normal:null, big:null, hasBig:false };
@@ -954,14 +973,19 @@
   }
 
   // --- Dynamic Receipt Texts UI Update ---
-  function updateReceiptUI() {
-      if(document.getElementById('adminWarn1')) document.getElementById('adminWarn1').value = FIREBASE_RECEIPT_TEXTS.warn1;
-      if(document.getElementById('adminWarn2')) document.getElementById('adminWarn2').value = FIREBASE_RECEIPT_TEXTS.warn2;
-      if(document.getElementById('adminThanks')) document.getElementById('adminThanks').value = FIREBASE_RECEIPT_TEXTS.thanks;
+  function loadReceiptTextsToInputs() {
+      const lang = document.getElementById('adminReceiptLang').value;
+      const texts = FIREBASE_RECEIPT_TEXTS[lang];
+      document.getElementById('adminWarn1').value = texts.warn1 || '';
+      document.getElementById('adminWarn2').value = texts.warn2 || '';
+      document.getElementById('adminThanks').value = texts.thanks || '';
+  }
 
-      document.querySelectorAll('.lang-warn1').forEach(el => el.textContent = FIREBASE_RECEIPT_TEXTS.warn1);
-      document.querySelectorAll('.lang-warn2').forEach(el => el.textContent = FIREBASE_RECEIPT_TEXTS.warn2);
-      document.querySelectorAll('.lang-thanks').forEach(el => el.textContent = FIREBASE_RECEIPT_TEXTS.thanks);
+  function updateReceiptUI() {
+      const texts = FIREBASE_RECEIPT_TEXTS['orig'];
+      document.querySelectorAll('.lang-warn1').forEach(el => el.textContent = texts.warn1);
+      document.querySelectorAll('.lang-warn2').forEach(el => el.textContent = texts.warn2);
+      document.querySelectorAll('.lang-thanks').forEach(el => el.textContent = texts.thanks);
   }
 
   // --- Initializing ---
@@ -998,7 +1022,17 @@
             return q;
         });
 
-        if (data.receiptTexts) FIREBASE_RECEIPT_TEXTS = { ...FIREBASE_RECEIPT_TEXTS, ...data.receiptTexts };
+        if (data.receiptTexts) {
+            // Check for old structure migration
+            if (data.receiptTexts.warn1 !== undefined) {
+                FIREBASE_RECEIPT_TEXTS.orig = { ...FIREBASE_RECEIPT_TEXTS.orig, warn1: data.receiptTexts.warn1, warn2: data.receiptTexts.warn2, thanks: data.receiptTexts.thanks };
+            } else {
+                if (data.receiptTexts.orig) FIREBASE_RECEIPT_TEXTS.orig = { ...FIREBASE_RECEIPT_TEXTS.orig, ...data.receiptTexts.orig };
+                if (data.receiptTexts.en) FIREBASE_RECEIPT_TEXTS.en = { ...FIREBASE_RECEIPT_TEXTS.en, ...data.receiptTexts.en };
+                if (data.receiptTexts.th) FIREBASE_RECEIPT_TEXTS.th = { ...FIREBASE_RECEIPT_TEXTS.th, ...data.receiptTexts.th };
+            }
+        }
+        
         FIREBASE_DEVICE_NAMES = data.deviceNames || {}; FIREBASE_HIDDEN_DEVICES = data.hiddenDevices || []; 
         
         if (data.adminTimezone) { ADMIN_TIMEZONE = data.adminTimezone; const tzSelect = document.getElementById('adminTimezoneSelect'); if (tzSelect) tzSelect.value = ADMIN_TIMEZONE; }
@@ -1007,6 +1041,7 @@
           if (data.lastRates.rateVnd) { document.getElementById('rateVnd').value = data.lastRates.rateVnd; formatInputThousands(document.getElementById('rateVnd'), true); refreshVndRateNote(); recalcVND(); }
         }
         
+        loadReceiptTextsToInputs();
         updateReceiptUI();
         initDropdowns(); 
       }
@@ -1282,6 +1317,7 @@
 
   // --- Admin General: Save Receipt Texts ---
   async function saveReceiptTexts() {
+      const lang = document.getElementById('adminReceiptLang').value;
       const w1 = document.getElementById('adminWarn1').value.trim();
       const w2 = document.getElementById('adminWarn2').value.trim();
       const thx = document.getElementById('adminThanks').value.trim();
@@ -1289,11 +1325,13 @@
       const btn = document.getElementById('btnReceiptTextSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
-      FIREBASE_RECEIPT_TEXTS = { warn1: w1, warn2: w2, thanks: thx };
+      FIREBASE_RECEIPT_TEXTS[lang] = { warn1: w1, warn2: w2, thanks: thx };
 
       try {
           await updateFirebase();
-          updateReceiptUI();
+          if(lang === 'orig') {
+              updateReceiptUI();
+          }
           alert("ပြေစာ စာသားများ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) {
           alert("Error: " + e.message);
@@ -1549,6 +1587,7 @@
     en: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"THB → MMK", h_mmk2thb:"MMK → THB", h_vnd2mmk:"VND → MMK", h_mmk2vnd:"MMK → VND", sub_thb2mmk:"Thai Baht to Myanmar Kyat", sub_mmk2thb:"Myanmar Kyat to Thai Baht", sub_vnd2mmk:"Vietnamese Dong to Myanmar Kyat", sub_mmk2vnd:"Myanmar Kyat to Vietnamese Dong", lbl_thb:"Amount (THB)", lbl_mmk:"Amount (MMK)", lbl_vnd:"Amount (VND)", in_thb:"Input THB", in_mmk:"Input MMK", in_vnd:"Input VND", out_mmk:"Result MMK", out_thb:"Result THB", out_vnd:"Result VND", bankTitle:"Transfer Bank Information", bankLabel:"Bank Information", accName:"Account Name", accNo:"Account Number", qrTitle:"Bank QR / Payment", owner:"Account Name", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" },
     th: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"บาท → จ๊าด", h_mmk2thb:"จ๊าด → บาท", h_vnd2mmk:"ดอง → จ๊าด", h_mmk2vnd:"จ๊าด → ดอง", sub_thb2mmk:"แปลงเงินบาทไทยเป็นจ๊าดเมียนมา", sub_mmk2thb:"แปลงจ๊าดเมียนมาเป็นเงินบาทไทย", sub_vnd2mmk:"แปลงเงินดองเวียดนามเป็นจ๊าดเมียนมา", sub_mmk2vnd:"แปลงจ๊าดเมียนมาเป็นเงินดองเวียดนาม", lbl_thb:"จำนวนเงิน (THB)", lbl_mmk:"จำนวนเงิน (MMK)", lbl_vnd:"จำนวนเงิน (VND)", in_thb:"กรอกจำนวนบาท", in_mmk:"กรอกจำนวนจ๊าด", in_vnd:"กรอกจำนวนดอง", out_mmk:"ผลลัพธ์ (MMK)", out_thb:"ผลลัพธ์ (THB)", out_vnd:"ผลลัพธ์ (VND)", bankTitle:"ข้อมูลบัญชีสำหรับโอน", bankLabel:"ข้อมูลบัญชีธนาคาร", accName:"ชื่อบัญชี", accNo:"เลขบัญชี", qrTitle:"คิวอาร์ธนาคาร", owner:"ชื่อบัญชี", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" }
   };
+  
   function getExportTimeStr(lang) {
     const d = new Date(); const tz = ADMIN_TIMEZONE || 'Asia/Bangkok';
     const formatterDate = new Intl.DateTimeFormat('en-GB', { timeZone: tz, day: '2-digit', month: 'short', year: 'numeric' });
@@ -1558,8 +1597,18 @@
     else if (tz === 'Asia/Bangkok') tzLabel = (lang === 'en') ? 'Thai Time' : (lang === 'th' ? 'เวลาไทย' : 'ထိုင်းအချိန်');
     return `Date : ${formatterDate.format(d)} (${formatterTime.format(d).replace(/[\s\u202f]+/g, '')}) (${tzLabel})`;
   }
+  
   function applyLangToClone(clone, lang){
-    if(lang==='orig') return; const T=I18N[lang]; if(!T) return;
+    const customTexts = FIREBASE_RECEIPT_TEXTS[lang] || FIREBASE_RECEIPT_TEXTS['orig'];
+    
+    if(lang==='orig') {
+        const w1 = clone.querySelector('.lang-warn1'); if(w1 && customTexts.warn1) { w1.textContent = customTexts.warn1; }
+        const w2 = clone.querySelector('.lang-warn2'); if(w2 && customTexts.warn2) { w2.textContent = customTexts.warn2; }
+        const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = customTexts.thanks; }
+        return;
+    }
+    
+    const T=I18N[lang]; if(!T) return;
     const h2=clone.querySelector('h2'); const subTop=clone.querySelector('p.sub');
     if(clone.id==='box-thb2mmk'){ if(h2) h2.textContent=T.h_thb2mmk; if(subTop) subTop.textContent=T.sub_thb2mmk; }
     else if(clone.id==='box-mmk2thb'){ if(h2) h2.textContent=T.h_mmk2thb; if(subTop) subTop.textContent=T.sub_mmk2thb; }
@@ -1584,10 +1633,10 @@
       if(clone.id==='box-thb2mmk' || clone.id==='box-mmk2thb'){ rateP.textContent = T.rateTpl.replace('{r}',fmt6(LAST_RATE.r)).replace('{inv}',fmt6(LAST_RATE.inv)); rateP.innerHTML += '<br>'; }
       if(clone.id==='box-vnd2mmk' || clone.id==='box-mmk2vnd'){ rateP.textContent = T.rateVndTpl.replace('{v}',fmt6(LAST_RATE.vnd)); rateP.innerHTML += '<br>'; }
     }
-    // Translation fallback (if available) or keep custom text
-    const w1 = clone.querySelector('.lang-warn1'); if(w1 && T.warn1) { w1.textContent = T.warn1; }
-    const w2 = clone.querySelector('.lang-warn2'); if(w2 && T.warn2) { w2.textContent = T.warn2; }
-    const thx = clone.querySelector('.lang-thanks'); if(thx && T.thanks) { thx.textContent = T.thanks; }
+
+    const w1 = clone.querySelector('.lang-warn1'); if(w1 && customTexts.warn1) { w1.textContent = customTexts.warn1; }
+    const w2 = clone.querySelector('.lang-warn2'); if(w2 && customTexts.warn2) { w2.textContent = customTexts.warn2; }
+    const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = customTexts.thanks; }
   }
 
   // --- Copy Text Function (Localized & Formatted) ---
@@ -1722,7 +1771,6 @@
     const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
     document.body.removeChild(clone);
     
-    // ပုံမှန် Title အတိုင်း ပြန်ထားခြင်း
     const margin=18, titleHeight=30; 
     const out=document.createElement('canvas'); 
     out.width = canvas.width + margin*2; 
