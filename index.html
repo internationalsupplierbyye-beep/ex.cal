@@ -211,11 +211,11 @@
         <div class="grid grid-cols-2 gap-3 mb-2">
             <div>
                 <p class="font-black mb-1 pb-1 text-xs">QR Select</p>
-                <select id="qrSelect" class="compact border rounded-lg w-full text-sm" onchange="refreshQrPreview()"></select>
+                <select id="qrSelect" class="compact border rounded-lg w-full text-sm"></select>
             </div>
             <div>
                 <p class="font-black mb-1 pb-1 text-xs">Bank Select</p>
-                <select id="bankSelect" class="compact border rounded-lg w-full text-sm" onchange="refreshBankInfo()"></select>
+                <select id="bankSelect" class="compact border rounded-lg w-full text-sm"></select>
             </div>
         </div>
 
@@ -803,22 +803,44 @@
       });
     }
     
-    // Initial refresh to clear out ghost data
     refreshBankInfo();
     refreshQrPreview();
   }
 
-  // UPDATED: Completely removed reference to 'bankInfoBox' to avoid duplicate preview
-  function refreshBankInfo() {
+  // --- AUTO/MANUAL RADIO LOGIC ---
+  let isAutoChanging = false;
+
+  function refreshBankInfo(skipRadioUpdate = false) {
     const bankSelect = document.getElementById('bankSelect'); if(!bankSelect) return;
     const key = bankSelect.value; 
     const mini = document.getElementById('bankPreviewMini');
     
     if(!key || !ACTIVE_BANK_INFO[key]){
       if(mini) mini.textContent='ဘဏ်မရွေးထားသေးပါ။'; 
+      
+      if(skipRadioUpdate !== true && !isAutoChanging) {
+          const qrSelect = document.getElementById('qrSelect');
+          if(!qrSelect || !qrSelect.value) {
+              const r = document.querySelector('input[name="saveMode"][value="none"]');
+              if(r) r.checked = true;
+          }
+      }
       return;
     }
     
+    if(skipRadioUpdate !== true && !isAutoChanging) {
+        isAutoChanging = true;
+        const r = document.querySelector('input[name="saveMode"][value="bank"]');
+        if(r) r.checked = true;
+        
+        const qrSelect = document.getElementById('qrSelect');
+        if(qrSelect && qrSelect.value !== '') {
+            qrSelect.value = '';
+            refreshQrPreview(true);
+        }
+        isAutoChanging = false;
+    }
+
     const info = ACTIVE_BANK_INFO[key]; 
     const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
     
@@ -839,15 +861,37 @@
     });
   }
 
-  async function refreshQrPreview() {
+  async function refreshQrPreview(skipRadioUpdate = false) {
     const qrSelect = document.getElementById('qrSelect');
     if(!qrSelect || qrSelect.options.length === 0 || qrSelect.selectedIndex === -1 || !qrSelect.value) {
        document.getElementById('qrPreviewSolo').src = ''; 
        document.getElementById('qrOwnerValue').textContent = '—'; 
        document.getElementById('previewTwo').classList.add('hidden');
        document.getElementById('previewOne').classList.remove('hidden');
+       
+       if(skipRadioUpdate !== true && !isAutoChanging) {
+           const bankSelect = document.getElementById('bankSelect');
+           if(!bankSelect || !bankSelect.value) {
+               const r = document.querySelector('input[name="saveMode"][value="none"]');
+               if(r) r.checked = true;
+           }
+       }
        return;
     }
+    
+    if(skipRadioUpdate !== true && !isAutoChanging) {
+        isAutoChanging = true;
+        const r = document.querySelector('input[name="saveMode"][value="qr"]');
+        if(r) r.checked = true;
+        
+        const bankSelect = document.getElementById('bankSelect');
+        if(bankSelect && bankSelect.value !== '') {
+            bankSelect.value = '';
+            refreshBankInfo(true);
+        }
+        isAutoChanging = false;
+    }
+
     const file = qrSelect.value; 
     const labelNoExt = qrSelect.options[qrSelect.selectedIndex].text;
     const normalUrl = file.includes('http') ? file : 'assets/qr/' + file; 
@@ -876,6 +920,13 @@
     let sysDeviceId = localStorage.getItem('sys_device_id');
     if (!sysDeviceId) { sysDeviceId = "DEV-" + Math.floor(1000 + Math.random() * 9000); localStorage.setItem('sys_device_id', sysDeviceId); }
     document.getElementById('displayDeviceId').textContent = sysDeviceId;
+    
+    const bankEl = document.getElementById('bankSelect');
+    if(bankEl) bankEl.addEventListener('change', () => refreshBankInfo(false));
+    
+    const qrEl = document.getElementById('qrSelect');
+    if(qrEl) qrEl.addEventListener('change', () => refreshQrPreview(false));
+
     initDropdowns(); syncFrom100k(); refreshVndRateNote(); recalcVND();
   });
 
@@ -933,22 +984,34 @@
     const inputPass = document.getElementById('adminPassInput').value;
     
     if(inputPass === ADMIN_PASSWORD) {
-      CURRENT_ROLE = 'admin'; closeLogin(); 
+      // ADMIN Login
+      CURRENT_ROLE = 'admin';
+      closeLogin(); 
       document.getElementById('adminModal').style.display = 'block'; 
       document.getElementById('adminModalTitle').innerHTML = "⚙️ Admin Settings";
       document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'inline-block');
       document.getElementById('btnExportCSV').style.display = 'inline-block';
       switchTab('tab-dashboard', document.querySelector('.tab-btn')); 
       renderAdminLists(); loadHistory();
+      
     } else if(inputPass === STAFF_PASSWORD) {
-      CURRENT_ROLE = 'staff'; closeLogin(); 
+      // STAFF Login
+      CURRENT_ROLE = 'staff';
+      closeLogin(); 
       document.getElementById('adminModal').style.display = 'block'; 
       document.getElementById('adminModalTitle').innerHTML = "📜 ငွေလွှဲမှတ်တမ်းများ (Staff View)";
+      
+      // Hide all tabs except History
       document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
       document.getElementById('btnTabHistory').style.display = 'inline-block';
-      document.getElementById('btnExportCSV').style.display = 'none'; 
-      switchTab('tab-history', document.getElementById('btnTabHistory')); loadHistory();
-    } else { alert("စကားဝှက် မှားယွင်းနေပါသည်။"); }
+      document.getElementById('btnExportCSV').style.display = 'none'; // Staff cannot export Excel
+      
+      switchTab('tab-history', document.getElementById('btnTabHistory')); 
+      loadHistory();
+      
+    } else { 
+      alert("စကားဝှက် မှားယွင်းနေပါသည်။"); 
+    }
   }
   
   if(document.getElementById('adminPassInput')) document.getElementById('adminPassInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkLogin(); });
@@ -1177,14 +1240,16 @@
           <td class="p-3 text-xs font-bold text-purple-600">${displayRate}</td>
           <td class="p-3">${typeHtml}</td>
           <td class="p-3">${amountHtml}</td>
-          <td class="p-3 text-center">${statusHtml}</td>
           <td class="p-3 text-xs">${method}</td>
+          <td class="p-3 text-center">${statusHtml}</td>
           <td class="p-3 text-center">${actionHtml}</td>
         </tr>`;
       });
       list.innerHTML = html;
       
-      if(CURRENT_ROLE === 'admin') { updateDashboard(dataArray); }
+      if(CURRENT_ROLE === 'admin') {
+          updateDashboard(dataArray);
+      }
   }
 
   async function loadHistory() {
