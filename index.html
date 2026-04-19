@@ -115,29 +115,30 @@
 </header>
 
 <main class="max-w-2xl mx-auto">
+  
   <section class="box">
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span>မြန်မာငွေ ၁ သိန်း အတွက် ဘတ် (THB)</span></label>
+        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span>၁ သိန်း အတွက် ဘတ် (THB)</span></label>
         <p class="sub">THB per 100,000 MMK</p>
         <input id="rate100k" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ဥပမာ - 820">
       </div>
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span>၁ ဘတ် အတွက် မြန်မာကျပ်</span></label>
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span>၁ ဘတ် အတွက် ကျပ် (MMK)</span></label>
         <p class="sub">MMK per 1 THB</p>
         <input id="ratePerThb" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ဥပမာ - 121.95">
       </div>
-    </div>
-    <p class="rate-note mt-3" id="rateNoteTop"></p>
-    <hr class="my-4 border-slate-200">
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span>၁ ကျပ် အတွက် ဗီယက်နမ်ဒေါင် (VND)</span></label>
+        <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span>၁ ကျပ် အတွက် ဒေါင် (VND)</span></label>
         <p class="sub">VND per 1 MMK</p>
         <input id="rateVnd" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ဥပမာ - 6.5">
       </div>
     </div>
-    <p class="rate-note mt-3" id="rateNoteVndTop"></p>
+    
+    <div class="mt-3 flex flex-col sm:flex-row sm:gap-6 gap-1 border-t pt-3 border-slate-100">
+        <p class="rate-note !m-0 !p-0" id="rateNoteTop"></p>
+        <p class="rate-note !m-0 !p-0" id="rateNoteVndTop"></p>
+    </div>
   </section>
 
   <section id="box-thb2mmk" class="box capture-target">
@@ -404,6 +405,24 @@
     </div>
 
     <div id="tab-general" class="tab-pane">
+      
+      <div class="bg-pink-50 border border-pink-200 p-4 rounded-xl mb-4">
+        <h3 class="font-bold text-pink-800 mb-3">📝 ပြေစာအောက်ခြေ စာသားများ ပြင်ရန်</h3>
+        <div class="mb-2">
+          <label class="text-xs font-bold text-gray-600">သတိပေးချက် ၁ (Warning 1)</label>
+          <input type="text" id="adminWarn1" class="admin-input-box text-sm">
+        </div>
+        <div class="mb-2">
+          <label class="text-xs font-bold text-gray-600">သတိပေးချက် ၂ (Warning 2)</label>
+          <input type="text" id="adminWarn2" class="admin-input-box text-sm">
+        </div>
+        <div class="mb-3">
+          <label class="text-xs font-bold text-gray-600">ကျေးဇူးတင်လွှာ (Thanks Message)</label>
+          <input type="text" id="adminThanks" class="admin-input-box text-sm">
+        </div>
+        <button onclick="saveReceiptTexts()" id="btnReceiptTextSave" class="btn bg-pink-600 hover:bg-pink-700 w-full">စာသားများ သိမ်းမည်</button>
+      </div>
+
       <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-4">
         <div class="flex justify-between items-center mb-2">
            <h3 class="font-bold text-indigo-800">📱 စနစ်ထဲဝင်ရောက်ထားသော Device များ</h3>
@@ -464,9 +483,10 @@
     <div id="tab-qrs" class="tab-pane">
       <div class="bg-green-50 border border-green-200 p-4 rounded-xl mb-4">
         <h3 class="font-bold text-green-800 mb-3">🔲 QR အသစ် ထည့်ရန် / ပြင်ရန်</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
           <input id="newQrName" class="admin-input-box" placeholder="QR အမည် (ဥပမာ - KPay YLH)">
           <input id="newQrFile" class="admin-input-box" placeholder="QR ပုံနာမည် (ဥပမာ - newqr.jpg)">
+          <input id="newQrOwner" class="admin-input-box" placeholder="ပိုင်ရှင်အမည် (ဥပမာ - U BA)">
         </div>
         <button onclick="addCustomQR()" id="btnQRSave" class="btn bg-green-600 hover:bg-green-700 w-full">QR သိမ်းမည်</button>
       </div>
@@ -489,6 +509,12 @@
   let ACTIVE_BANK_INFO = {};
   let FIREBASE_DEVICE_NAMES = {}; 
   let FIREBASE_HIDDEN_DEVICES = []; 
+
+  let FIREBASE_RECEIPT_TEXTS = {
+      warn1: "ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။",
+      warn2: "ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။",
+      thanks: "Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။"
+  };
 
   let CURRENT_QR = { owner:'', normal:null, big:null, hasBig:false };
   let LAST_RATE = { r:null, inv:null, vnd:null };
@@ -899,10 +925,18 @@
     }
 
     const file = qrSelect.value; 
+
+    let customOwner = '';
+    const foundQr = FIREBASE_QRS.find(q => (typeof q === 'string' ? q : q.file) === file);
+    if(foundQr && typeof foundQr === 'object' && foundQr.owner) {
+        customOwner = foundQr.owner;
+    }
+
     const normalUrl = file.includes('http') ? file : 'assets/qr/' + file; 
     const baseName = file.replace(/\.[^.]+$/,''); 
     const bigUrl = file.includes('http') ? file : 'assets/qr/' + baseName + '_big.jpg'; 
-    const owner = getOwnerFromKey(baseName); // Use base filename for accurate owner auto-detection
+    
+    const owner = customOwner || getOwnerFromKey(baseName);
 
     CURRENT_QR = { owner, normal: normalUrl, big: bigUrl, hasBig: false };
     document.getElementById('qrOwnerValue').textContent = owner;
@@ -919,6 +953,17 @@
     }
   }
 
+  // --- Dynamic Receipt Texts UI Update ---
+  function updateReceiptUI() {
+      if(document.getElementById('adminWarn1')) document.getElementById('adminWarn1').value = FIREBASE_RECEIPT_TEXTS.warn1;
+      if(document.getElementById('adminWarn2')) document.getElementById('adminWarn2').value = FIREBASE_RECEIPT_TEXTS.warn2;
+      if(document.getElementById('adminThanks')) document.getElementById('adminThanks').value = FIREBASE_RECEIPT_TEXTS.thanks;
+
+      document.querySelectorAll('.lang-warn1').forEach(el => el.textContent = FIREBASE_RECEIPT_TEXTS.warn1);
+      document.querySelectorAll('.lang-warn2').forEach(el => el.textContent = FIREBASE_RECEIPT_TEXTS.warn2);
+      document.querySelectorAll('.lang-thanks').forEach(el => el.textContent = FIREBASE_RECEIPT_TEXTS.thanks);
+  }
+
   // --- Initializing ---
   window.addEventListener('DOMContentLoaded', () => {
     populateAllTimezones();
@@ -932,6 +977,7 @@
     const qrEl = document.getElementById('qrSelect');
     if(qrEl) qrEl.addEventListener('change', () => refreshQrPreview(false));
 
+    updateReceiptUI();
     initDropdowns(); syncFrom100k(); refreshVndRateNote(); recalcVND();
   });
 
@@ -947,18 +993,21 @@
         FIREBASE_BANKS = data.banks || {}; FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS); 
         
         let loadedQrs = data.qrs || [];
-        // Support old format (array of strings) seamlessly upgrading to object
         FIREBASE_QRS = loadedQrs.map(q => {
             if (typeof q === 'string') return { file: q, name: q.replace(/\.[^.]+$/, '') };
             return q;
         });
 
+        if (data.receiptTexts) FIREBASE_RECEIPT_TEXTS = { ...FIREBASE_RECEIPT_TEXTS, ...data.receiptTexts };
         FIREBASE_DEVICE_NAMES = data.deviceNames || {}; FIREBASE_HIDDEN_DEVICES = data.hiddenDevices || []; 
+        
         if (data.adminTimezone) { ADMIN_TIMEZONE = data.adminTimezone; const tzSelect = document.getElementById('adminTimezoneSelect'); if (tzSelect) tzSelect.value = ADMIN_TIMEZONE; }
         if (data.lastRates) {
           if (data.lastRates.rate100k) { document.getElementById('rate100k').value = data.lastRates.rate100k; formatInputThousands(document.getElementById('rate100k'), true); syncFrom100k(); }
           if (data.lastRates.rateVnd) { document.getElementById('rateVnd').value = data.lastRates.rateVnd; formatInputThousands(document.getElementById('rateVnd'), true); refreshVndRateNote(); recalcVND(); }
         }
+        
+        updateReceiptUI();
         initDropdowns(); 
       }
     });
@@ -967,7 +1016,7 @@
   async function updateFirebase() {
     if(dbRef) {
       try { 
-        await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES }, { merge: true }); 
+        await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES }, { merge: true }); 
       } catch(err) { alert("Firebase သိမ်း၍မရပါ။"); }
     }
   }
@@ -1072,7 +1121,7 @@
   }
 
   // ==========================================
-  // 🏦 ဘဏ် နှင့် QR များ စီမံရန် Functions များ (Bank & QR Management)
+  // 🏦 ဘဏ် နှင့် QR များ စီမံရန် Functions များ
   // ==========================================
 
   async function addCustomBank() {
@@ -1143,6 +1192,7 @@
   async function addCustomQR() {
       const name = document.getElementById('newQrName').value.trim();
       const file = document.getElementById('newQrFile').value.trim();
+      const owner = document.getElementById('newQrOwner').value.trim(); 
       
       if(!file || !name) { alert("ကျေးဇူးပြု၍ QR အမည် နှင့် ပုံနာမည် နှစ်ခုလုံး ထည့်ပါ။"); return; }
       
@@ -1151,15 +1201,16 @@
 
       const existingIndex = FIREBASE_QRS.findIndex(q => (typeof q === 'string' ? q : q.file) === file);
       if (existingIndex > -1) {
-          FIREBASE_QRS[existingIndex] = { file, name };
+          FIREBASE_QRS[existingIndex] = { file, name, owner }; 
       } else {
-          FIREBASE_QRS.push({ file, name });
+          FIREBASE_QRS.push({ file, name, owner }); 
       }
 
       try {
           await updateFirebase();
           document.getElementById('newQrName').value = '';
           document.getElementById('newQrFile').value = '';
+          document.getElementById('newQrOwner').value = ''; 
           initDropdowns();
           renderAdminLists();
           alert("QR အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
@@ -1175,9 +1226,11 @@
       if(!qr) return;
       const file = typeof qr === 'string' ? qr : qr.file;
       const name = typeof qr === 'string' ? qr.replace(/\.[^.]+$/, '') : (qr.name || file);
+      const owner = (typeof qr === 'object' && qr.owner) ? qr.owner : ''; 
       
       document.getElementById('newQrName').value = name;
       document.getElementById('newQrFile').value = file;
+      document.getElementById('newQrOwner').value = owner; 
       document.getElementById('newQrName').focus();
   }
 
@@ -1226,6 +1279,28 @@
       }
   }
   // ==========================================
+
+  // --- Admin General: Save Receipt Texts ---
+  async function saveReceiptTexts() {
+      const w1 = document.getElementById('adminWarn1').value.trim();
+      const w2 = document.getElementById('adminWarn2').value.trim();
+      const thx = document.getElementById('adminThanks').value.trim();
+
+      const btn = document.getElementById('btnReceiptTextSave');
+      btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
+
+      FIREBASE_RECEIPT_TEXTS = { warn1: w1, warn2: w2, thanks: thx };
+
+      try {
+          await updateFirebase();
+          updateReceiptUI();
+          alert("ပြေစာ စာသားများ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+      } catch(e) {
+          alert("Error: " + e.message);
+      } finally {
+          btn.disabled = false; btn.textContent = "စာသားများ သိမ်းမည်";
+      }
+  }
 
   // --- Admin General: Devices & Timezone ---
   async function loadAdminDevices() {
@@ -1471,8 +1546,8 @@
 
   // --- Export Image SaveSection & Web Share API ---
   const I18N = {
-    en: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"THB → MMK", h_mmk2thb:"MMK → THB", h_vnd2mmk:"VND → MMK", h_mmk2vnd:"MMK → VND", sub_thb2mmk:"Thai Baht to Myanmar Kyat", sub_mmk2thb:"Myanmar Kyat to Thai Baht", sub_vnd2mmk:"Vietnamese Dong to Myanmar Kyat", sub_mmk2vnd:"Myanmar Kyat to Vietnamese Dong", lbl_thb:"Amount (THB)", lbl_mmk:"Amount (MMK)", lbl_vnd:"Amount (VND)", in_thb:"Input THB", in_mmk:"Input MMK", in_vnd:"Input VND", out_mmk:"Result MMK", out_thb:"Result THB", out_vnd:"Result VND", warn1:"Always request the bank account before every transfer.", warn2:"We are not responsible for any transfer made without requesting and confirming the bank account.", thanks:"Thank you for trusting and using Thailand Guide - Supplier By Ye.", bankTitle:"Transfer Bank Information", bankLabel:"Bank Information", accName:"Account Name", accNo:"Account Number", qrTitle:"Bank QR / Payment", owner:"Account Name", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" },
-    th: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"บาท → จ๊าด", h_mmk2thb:"จ๊าด → บาท", h_vnd2mmk:"ดอง → จ๊าด", h_mmk2vnd:"จ๊าด → ดอง", sub_thb2mmk:"แปลงเงินบาทไทยเป็นจ๊าดเมียนมา", sub_mmk2thb:"แปลงจ๊าดเมียนมาเป็นเงินบาทไทย", sub_vnd2mmk:"แปลงเงินดองเวียดนามเป็นจ๊าดเมียนมา", sub_mmk2vnd:"แปลงจ๊าดเมียนมาเป็นเงินดองเวียดนาม", lbl_thb:"จำนวนเงิน (THB)", lbl_mmk:"จำนวนเงิน (MMK)", lbl_vnd:"จำนวนเงิน (VND)", in_thb:"กรอกจำนวนบาท", in_mmk:"กรอกจำนวนจ๊าด", in_vnd:"กรอกจำนวนดอง", out_mmk:"ผลลัพธ์ (MMK)", out_thb:"ผลลัพธ์ (THB)", out_vnd:"ผลลัพธ์ (VND)", warn1:"โอนเงินทุกครั้งกรุณาขอเลขบัญชีที่ต้องถามก่อน", warn2:"หากโอนโดยไม่ยืนยันเลขบัญชี ทางเพจขอไม่รับผิดชอบ", thanks:"ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye", bankTitle:"ข้อมูลบัญชีสำหรับโอน", bankLabel:"ข้อมูลบัญชีธนาคาร", accName:"ชื่อบัญชี", accNo:"เลขบัญชี", qrTitle:"คิวอาร์ธนาคาร", owner:"ชื่อบัญชี", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" }
+    en: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"THB → MMK", h_mmk2thb:"MMK → THB", h_vnd2mmk:"VND → MMK", h_mmk2vnd:"MMK → VND", sub_thb2mmk:"Thai Baht to Myanmar Kyat", sub_mmk2thb:"Myanmar Kyat to Thai Baht", sub_vnd2mmk:"Vietnamese Dong to Myanmar Kyat", sub_mmk2vnd:"Myanmar Kyat to Vietnamese Dong", lbl_thb:"Amount (THB)", lbl_mmk:"Amount (MMK)", lbl_vnd:"Amount (VND)", in_thb:"Input THB", in_mmk:"Input MMK", in_vnd:"Input VND", out_mmk:"Result MMK", out_thb:"Result THB", out_vnd:"Result VND", bankTitle:"Transfer Bank Information", bankLabel:"Bank Information", accName:"Account Name", accNo:"Account Number", qrTitle:"Bank QR / Payment", owner:"Account Name", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" },
+    th: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"บาท → จ๊าด", h_mmk2thb:"จ๊าด → บาท", h_vnd2mmk:"ดอง → จ๊าด", h_mmk2vnd:"จ๊าด → ดอง", sub_thb2mmk:"แปลงเงินบาทไทยเป็นจ๊าดเมียนมา", sub_mmk2thb:"แปลงจ๊าดเมียนมาเป็นเงินบาทไทย", sub_vnd2mmk:"แปลงเงินดองเวียดนามเป็นจ๊าดเมียนมา", sub_mmk2vnd:"แปลงจ๊าดเมียนมาเป็นเงินดองเวียดนาม", lbl_thb:"จำนวนเงิน (THB)", lbl_mmk:"จำนวนเงิน (MMK)", lbl_vnd:"จำนวนเงิน (VND)", in_thb:"กรอกจำนวนบาท", in_mmk:"กรอกจำนวนจ๊าด", in_vnd:"กรอกจำนวนดอง", out_mmk:"ผลลัพธ์ (MMK)", out_thb:"ผลลัพธ์ (THB)", out_vnd:"ผลลัพธ์ (VND)", bankTitle:"ข้อมูลบัญชีสำหรับโอน", bankLabel:"ข้อมูลบัญชีธนาคาร", accName:"ชื่อบัญชี", accNo:"เลขบัญชี", qrTitle:"คิวอาร์ธนาคาร", owner:"ชื่อบัญชี", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" }
   };
   function getExportTimeStr(lang) {
     const d = new Date(); const tz = ADMIN_TIMEZONE || 'Asia/Bangkok';
@@ -1509,9 +1584,10 @@
       if(clone.id==='box-thb2mmk' || clone.id==='box-mmk2thb'){ rateP.textContent = T.rateTpl.replace('{r}',fmt6(LAST_RATE.r)).replace('{inv}',fmt6(LAST_RATE.inv)); rateP.innerHTML += '<br>'; }
       if(clone.id==='box-vnd2mmk' || clone.id==='box-mmk2vnd'){ rateP.textContent = T.rateVndTpl.replace('{v}',fmt6(LAST_RATE.vnd)); rateP.innerHTML += '<br>'; }
     }
-    const w1 = clone.querySelector('.lang-warn1'); if(w1) { w1.textContent = T.warn1; w1.innerHTML += '<br>'; }
-    const w2 = clone.querySelector('.lang-warn2'); if(w2) { w2.textContent = T.warn2; w2.innerHTML += '<br>'; }
-    const thx = clone.querySelector('.lang-thanks'); if(thx) thx.textContent = T.thanks;
+    // Translation fallback (if available) or keep custom text
+    const w1 = clone.querySelector('.lang-warn1'); if(w1 && T.warn1) { w1.textContent = T.warn1; }
+    const w2 = clone.querySelector('.lang-warn2'); if(w2 && T.warn2) { w2.textContent = T.warn2; }
+    const thx = clone.querySelector('.lang-thanks'); if(thx && T.thanks) { thx.textContent = T.thanks; }
   }
 
   // --- Copy Text Function (Localized & Formatted) ---
@@ -1646,8 +1722,14 @@
     const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
     document.body.removeChild(clone);
     
-    const margin=18, titleHeight=30; const out=document.createElement('canvas'); out.width = canvas.width + margin*2; out.height = canvas.height + margin*3 + titleHeight;
-    const ctx = out.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,out.width,out.height); 
+    // ပုံမှန် Title အတိုင်း ပြန်ထားခြင်း
+    const margin=18, titleHeight=30; 
+    const out=document.createElement('canvas'); 
+    out.width = canvas.width + margin*2; 
+    out.height = canvas.height + margin*3 + titleHeight;
+    const ctx = out.getContext('2d'); 
+    ctx.fillStyle='#fff'; 
+    ctx.fillRect(0,0,out.width,out.height); 
     
     const dDate = new Date();
     const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
@@ -1656,8 +1738,10 @@
     ctx.fillStyle = '#64748b'; ctx.font = 'bold 18px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
     ctx.fillText("ID: " + invId, out.width - margin, margin + 4);
     ctx.fillStyle='#000'; ctx.font='bold 34px system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='top';
+    
     const topTitle = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
     ctx.fillText(topTitle, out.width/2, margin); 
+    
     ctx.drawImage(canvas, margin, margin*2 + titleHeight);
 
     let recType = ""; let savedRate = "";
