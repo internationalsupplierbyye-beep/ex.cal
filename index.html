@@ -1023,13 +1023,15 @@
         });
 
         if (data.receiptTexts) {
-            // Check for old structure migration
-            if (data.receiptTexts.warn1 !== undefined) {
-                FIREBASE_RECEIPT_TEXTS.orig = { ...FIREBASE_RECEIPT_TEXTS.orig, warn1: data.receiptTexts.warn1, warn2: data.receiptTexts.warn2, thanks: data.receiptTexts.thanks };
-            } else {
-                if (data.receiptTexts.orig) FIREBASE_RECEIPT_TEXTS.orig = { ...FIREBASE_RECEIPT_TEXTS.orig, ...data.receiptTexts.orig };
+            // FIX: If data.receiptTexts.orig exists, prioritize loading the new dynamic format.
+            if (data.receiptTexts.orig) {
+                FIREBASE_RECEIPT_TEXTS.orig = { ...FIREBASE_RECEIPT_TEXTS.orig, ...data.receiptTexts.orig };
                 if (data.receiptTexts.en) FIREBASE_RECEIPT_TEXTS.en = { ...FIREBASE_RECEIPT_TEXTS.en, ...data.receiptTexts.en };
                 if (data.receiptTexts.th) FIREBASE_RECEIPT_TEXTS.th = { ...FIREBASE_RECEIPT_TEXTS.th, ...data.receiptTexts.th };
+            } 
+            // Fallback for old single-format structure
+            else if (data.receiptTexts.warn1 !== undefined) {
+                FIREBASE_RECEIPT_TEXTS.orig = { ...FIREBASE_RECEIPT_TEXTS.orig, warn1: data.receiptTexts.warn1, warn2: data.receiptTexts.warn2, thanks: data.receiptTexts.thanks };
             }
         }
         
