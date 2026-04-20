@@ -154,10 +154,12 @@
       </div>
     </div>
     <div class="text-center mt-3">
-      <div class="rate-note" id="rateNote1"></div><br>
-      <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div><br>
-      <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div><br>
-      <div class="lang-thanks thanks"></div>
+      <div class="rate-note" id="rateNote1"></div>
+      <div class="export-only-texts hidden">
+          <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-thanks thanks"></div>
+      </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
       <button id="btnSave1PNG" class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png')">Save PNG</button>
@@ -180,10 +182,12 @@
       </div>
     </div>
     <div class="text-center mt-3">
-      <div class="rate-note" id="rateNote2"></div><br>
-      <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div><br>
-      <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div><br>
-      <div class="lang-thanks thanks"></div>
+      <div class="rate-note" id="rateNote2"></div>
+      <div class="export-only-texts hidden">
+          <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-thanks thanks"></div>
+      </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
       <button id="btnSave2PNG" class="btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','png')">Save PNG</button>
@@ -262,10 +266,12 @@
       </div>
     </div>
     <div class="text-center mt-3">
-      <div class="rate-note" id="rateNoteVnd1"></div><br>
-      <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div><br>
-      <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div><br>
-      <div class="lang-thanks thanks"></div>
+      <div class="rate-note" id="rateNoteVnd1"></div>
+      <div class="export-only-texts hidden">
+          <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-thanks thanks"></div>
+      </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
       <button id="btnSave3PNG" class="btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png')">Save PNG</button>
@@ -288,10 +294,12 @@
       </div>
     </div>
     <div class="text-center mt-3">
-      <div class="rate-note" id="rateNoteVnd2"></div><br>
-      <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div><br>
-      <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div><br>
-      <div class="lang-thanks thanks"></div>
+      <div class="rate-note" id="rateNoteVnd2"></div>
+      <div class="export-only-texts hidden">
+          <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-thanks thanks"></div>
+      </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
       <button id="btnSave4PNG" class="btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png')">Save PNG</button>
@@ -982,6 +990,7 @@
   }
 
   function updateReceiptUI() {
+      // Only apply to the hidden div (doesn't clutter UI)
       const texts = FIREBASE_RECEIPT_TEXTS['orig'];
       document.querySelectorAll('.lang-warn1').forEach(el => el.textContent = texts.warn1);
       document.querySelectorAll('.lang-warn2').forEach(el => el.textContent = texts.warn2);
@@ -1023,13 +1032,11 @@
         });
 
         if (data.receiptTexts) {
-            // FIX: If data.receiptTexts.orig exists, prioritize loading the new dynamic format.
             if (data.receiptTexts.orig) {
                 FIREBASE_RECEIPT_TEXTS.orig = { ...FIREBASE_RECEIPT_TEXTS.orig, ...data.receiptTexts.orig };
                 if (data.receiptTexts.en) FIREBASE_RECEIPT_TEXTS.en = { ...FIREBASE_RECEIPT_TEXTS.en, ...data.receiptTexts.en };
                 if (data.receiptTexts.th) FIREBASE_RECEIPT_TEXTS.th = { ...FIREBASE_RECEIPT_TEXTS.th, ...data.receiptTexts.th };
             } 
-            // Fallback for old single-format structure
             else if (data.receiptTexts.warn1 !== undefined) {
                 FIREBASE_RECEIPT_TEXTS.orig = { ...FIREBASE_RECEIPT_TEXTS.orig, warn1: data.receiptTexts.warn1, warn2: data.receiptTexts.warn2, thanks: data.receiptTexts.thanks };
             }
@@ -1699,6 +1706,13 @@
     const T = I18N[lang] || null; fmt = (fmt === 'jpg') ? 'jpg' : 'png';
     const original=document.getElementById(sectionId); const clone=original.cloneNode(true);
     clone.querySelectorAll('button').forEach(b=>b.remove());
+    
+    // Unhide the export-only texts
+    clone.querySelectorAll('.export-only-texts').forEach(el => {
+        el.classList.remove('hidden');
+        el.style.display = 'block';
+    });
+
     applyLangToClone(clone, lang);
     
     let inValueStr = '', outValueStr = '';
