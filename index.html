@@ -86,7 +86,7 @@
     #loginModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 60; align-items: center; justify-content: center; }
     .login-box { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
 
-    /* 🌟 Admin Tabs */
+    /* Admin Tabs */
     .tab-btn { padding: 10px 16px; font-weight: bold; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
     .tab-btn:hover { color: #111827; background: #f1f5f9; }
     .tab-btn.active { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
@@ -1183,7 +1183,7 @@
     const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
     
     if(mini) {
-        mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" stylewidth:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div></div>`;
+        mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div></div>`;
     }
   }
 
@@ -1269,7 +1269,6 @@
   }
 
   function updateReceiptUI() {
-      // Only apply to the hidden div (doesn't clutter UI)
       const texts = FIREBASE_RECEIPT_TEXTS['orig'] || {warn1:'', warn2:'', thanks:''};
       document.querySelectorAll('.lang-warn1').forEach(el => el.textContent = texts.warn1);
       document.querySelectorAll('.lang-warn2').forEach(el => el.textContent = texts.warn2);
@@ -1339,15 +1338,7 @@
   async function updateFirebase() {
     if(dbRef) {
       try { 
-        await dbRef.set({ 
-            banks: FIREBASE_BANKS, 
-            bankOrder: FIREBASE_BANK_ORDER, 
-            qrs: FIREBASE_QRS, 
-            receiptTexts: FIREBASE_RECEIPT_TEXTS, 
-            adminTimezone: ADMIN_TIMEZONE, 
-            deviceNames: FIREBASE_DEVICE_NAMES, 
-            hiddenDevices: FIREBASE_HIDDEN_DEVICES
-        }, { merge: true }); 
+        await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES }, { merge: true }); 
       } catch(err) { alert("Firebase သိမ်း၍မရပါ။"); }
     }
   }
@@ -1694,7 +1685,7 @@
     } catch (e) { alert("Error: " + e.message); } finally { if (btn) { btn.textContent = "အချိန်ဇုန် သိမ်းမည်"; btn.disabled = false; } }
   }
 
-  // --- 🌟 Admin History & Status Update Logic ---
+  // --- Admin History & Status Update Logic ---
   window.updateTxStatus = async function(invId, newStatus) {
       const index = allLoadedHistory.findIndex(x => x.id === invId);
       if(index === -1) return;
