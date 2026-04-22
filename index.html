@@ -857,7 +857,6 @@
       let vndIn = 0, vndOut = 0;
       let mmkIn = 0, mmkOut = 0;
       
-      // Profit calculation trackers
       let thbBoughtCostMmk = 0, thbSoldRevMmk = 0;
       let vndBoughtCostMmk = 0, vndSoldRevMmk = 0;
 
@@ -903,7 +902,6 @@
           }
       });
       
-      // 🌟 Calculate Average Rates & Estimated Profit dynamically
       let avgBuyThb = thbIn > 0 ? (thbBoughtCostMmk / thbIn) : 0;
       let avgSellThb = thbOut > 0 ? (thbSoldRevMmk / thbOut) : 0;
       let estProfitThb = 0;
@@ -911,7 +909,7 @@
       
       if(avgBuyThb > 0 && avgSellThb > 0) {
           estProfitThb = (avgSellThb - avgBuyThb) * Math.min(thbIn, thbOut);
-          estProfitThbInThb = estProfitThb / avgBuyThb; // Equivalent in THB based on average buy rate
+          estProfitThbInThb = estProfitThb / avgBuyThb; 
       }
 
       let avgBuyVnd = vndIn > 0 ? (vndBoughtCostMmk / vndIn) : 0;
@@ -926,7 +924,6 @@
       let totalProfitThb = avgBuyThb > 0 ? (totalProfit / avgBuyThb) : 0;
       
       if(document.getElementById('dash_thb_in')) {
-          // Volume Update
           document.getElementById('dash_thb_in').textContent = thbIn.toLocaleString() + " THB";
           document.getElementById('dash_thb_out').textContent = thbOut.toLocaleString() + " THB";
           let thbNet = thbIn - thbOut;
@@ -948,7 +945,6 @@
           vndNetEl.textContent = (vndNet > 0 ? "+" : "") + vndNet.toLocaleString() + " VND";
           vndNetEl.className = vndNet >= 0 ? "font-black text-green-600" : "font-black text-red-600";
 
-          // Profit Update UI
           document.getElementById('avg_buy_thb').textContent = formatRate(avgBuyThb) + " MMK";
           document.getElementById('avg_sell_thb').textContent = formatRate(avgSellThb) + " MMK";
           
@@ -1183,7 +1179,7 @@
     const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
     
     if(mini) {
-        mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div></div>`;
+        mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" stylewidth:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div></div>`;
     }
   }
 
@@ -1752,6 +1748,176 @@
       }
   }
 
+  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt) ---
+  window.reprintReceipt = async function(invId) {
+      const tx = allLoadedHistory.find(x => x.id === invId);
+      if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
+
+      await document.fonts?.ready;
+      const lang = document.getElementById('saveLangSelect').value || 'orig';
+      const T = I18N[lang] || null;
+
+      let sourceId = 'box-thb2mmk';
+      if (tx.type === 'MMK ➔ THB') sourceId = 'box-mmk2thb';
+      else if (tx.type === 'VND ➔ MMK') sourceId = 'box-vnd2mmk';
+      else if (tx.type === 'MMK ➔ VND') sourceId = 'box-mmk2vnd';
+
+      const original = document.getElementById(sourceId);
+      if (!original) return alert("System Error: Layout not found.");
+
+      const clone = original.cloneNode(true);
+      clone.querySelectorAll('button').forEach(b => b.remove());
+      
+      clone.querySelectorAll('.export-only-texts').forEach(el => {
+          el.classList.remove('hidden');
+          el.style.display = 'block';
+      });
+
+      applyLangToClone(clone, lang);
+
+      const inputs = clone.querySelectorAll('input.amt-input');
+      if (inputs.length >= 2) {
+          [tx.inAmt, tx.outAmt].forEach((val, i) => {
+              const div = document.createElement('div');
+              div.className = inputs[i].className || '';
+              div.style.whiteSpace = 'nowrap'; div.style.overflow = 'hidden'; div.style.textOverflow = 'ellipsis'; 
+              div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.lineHeight = '1.5'; 
+              div.style.minHeight = '56px'; div.style.height = '56px'; div.style.paddingTop = '12px'; div.style.paddingBottom = '14px';
+              div.textContent = val;
+              inputs[i].replaceWith(div);
+          });
+      }
+
+      const rateP = clone.querySelector('.rate-note');
+      if (rateP) rateP.textContent = tx.rate;
+
+      clone.style.boxShadow = 'none'; 
+      clone.style.border = '1px solid #e5e7eb'; 
+      clone.style.background = '#fff';
+
+      if (tx.method && tx.method !== 'မပါ (None)') {
+          if (tx.method.startsWith('QR (')) {
+              const qrNameStr = tx.method.match(/\((.*?)\)/);
+              if (qrNameStr) {
+                  const qrName = qrNameStr[1];
+                  const foundQr = FIREBASE_QRS.find(q => {
+                      const name = typeof q === 'string' ? q.replace(/\.[^.]+$/, '') : (q.name || q.file);
+                      return name === qrName;
+                  });
+                  
+                  if (foundQr) {
+                      const file = typeof foundQr === 'string' ? foundQr : foundQr.file;
+                      const normalUrl = file.includes('http') ? file : 'assets/qr/' + file;
+                      const baseName = file.replace(/\.[^.]+$/,'');
+                      const owner = (typeof foundQr === 'object' && foundQr.owner) ? foundQr.owner : getOwnerFromKey(baseName);
+                      
+                      const finalImgUrl = normalUrl; 
+
+                      const wrap = document.createElement('div'); wrap.className = 'export-block';
+                      const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
+                      const img = document.createElement('img'); img.style.width = '420px'; img.style.maxWidth = '95%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '10px'; img.style.background = '#fff'; img.style.display = 'block';
+                      img.src = finalImgUrl;
+                      const ownerP = document.createElement('p'); ownerP.className = 'mt-3 text-slate-700'; ownerP.style.paddingBottom = '4px'; ownerP.style.fontSize = '20px'; 
+                      ownerP.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${owner}</span>`);
+                      wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(ownerP); clone.appendChild(wrap);
+                      await new Promise(res => { if(img.complete) return res(); img.onload=()=>res(); img.onerror=()=>res(); });
+                  } else {
+                      const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
+                  }
+              }
+          } else if (tx.method.startsWith('Bank (')) {
+              const bankNameStr = tx.method.match(/\((.*?)\)/);
+              if (bankNameStr) {
+                  const bankName = bankNameStr[1];
+                  const foundBankKey = Object.keys(FIREBASE_BANKS).find(k => FIREBASE_BANKS[k].name === bankName);
+                  if (foundBankKey) {
+                      const info = FIREBASE_BANKS[foundBankKey];
+                      const wrap = document.createElement('div'); wrap.className = 'export-block';
+                      const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.bankTitle : 'ငွေလွှဲရန် ဘဏ်အချက်အလက်');
+                      const box = document.createElement('div'); box.style.maxWidth = '560px'; box.style.margin = '12px auto 0'; box.style.border = '1px solid #e5e7eb'; box.style.borderRadius = '16px'; box.style.padding = '16px'; box.style.background = '#fff'; box.style.textAlign = 'center';
+                      const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
+                      const logo = document.createElement('img'); logo.src = logoUrl; logo.style.width = '72px'; logo.style.height = '72px'; logo.style.borderRadius = '18px'; logo.style.border = '1px solid #e5e7eb'; logo.style.objectFit = 'cover';
+                      const headerRow = document.createElement('div'); headerRow.style.display = 'flex'; headerRow.style.flexDirection = 'column'; headerRow.style.alignItems = 'center'; headerRow.style.justifyContent = 'center'; headerRow.style.gap = '8px'; headerRow.style.marginBottom = '10px';
+                      const h = document.createElement('div'); h.style.textAlign = 'center'; 
+                      h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
+                      const body = document.createElement('div'); body.style.textAlign = 'center';
+                      body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
+                      headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
+                      wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
+                      await new Promise(res => { if(logo.complete) return res(); logo.onload=()=>res(); logo.onerror=()=>res(); });
+                  } else {
+                      const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
+                  }
+              }
+          } else {
+              const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
+          }
+      }
+
+      const dObj = new Date(tx.timestamp);
+      const formatTz = tx.tz || ADMIN_TIMEZONE || 'Asia/Bangkok';
+      const formatterDate = new Intl.DateTimeFormat('en-GB', { timeZone: formatTz, day: '2-digit', month: 'short', year: 'numeric' });
+      const formatterTime = new Intl.DateTimeFormat('en-US', { timeZone: formatTz, hour: 'numeric', minute: '2-digit', hour12: true });
+      let tzLabel = formatTz.split('/').pop().replace(/_/g, ' ') + " Time";
+      if (formatTz === 'Asia/Yangon') tzLabel = (lang === 'en') ? 'Myanmar Time' : (lang === 'th' ? 'เวลาพม่า' : 'မြန်မာအချိန်');
+      else if (formatTz === 'Asia/Bangkok') tzLabel = (lang === 'en') ? 'Thai Time' : (lang === 'th' ? 'เวลาไทย' : 'ထိုင်းအချိန်');
+      
+      const timeStr = `Date : ${formatterDate.format(dObj)} (${formatterTime.format(dObj).replace(/[\s\u202f]+/g, '')}) (${tzLabel})`;
+      
+      const timeDiv = document.createElement('div');
+      timeDiv.style.textAlign = 'center'; timeDiv.style.marginTop = '12px'; timeDiv.style.paddingTop = '12px'; timeDiv.style.borderTop = '1px dashed #cbd5e1';
+      timeDiv.style.fontSize = '14px'; timeDiv.style.fontWeight = '900'; timeDiv.style.color = '#64748b'; timeDiv.style.paddingBottom = '8px';
+      timeDiv.textContent = timeStr;
+      clone.appendChild(timeDiv);
+
+      const brandHeader = document.createElement('div');
+      brandHeader.style.textAlign = 'center'; 
+      brandHeader.style.paddingBottom = '15px'; 
+      brandHeader.style.marginBottom = '15px'; 
+      brandHeader.style.borderBottom = '2px dashed #cbd5e1';
+      
+      const brandTitle = document.createElement('div');
+      brandTitle.style.fontWeight = '900'; 
+      brandTitle.style.fontSize = '24px'; 
+      brandTitle.style.color = '#0f172a';
+      brandTitle.textContent = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
+      
+      brandHeader.appendChild(brandTitle);
+      clone.insertBefore(brandHeader, clone.firstChild);
+
+      clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
+      document.body.appendChild(clone);
+      await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
+      const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
+      document.body.removeChild(clone);
+
+      const margin=18; 
+      const out=document.createElement('canvas'); 
+      out.width = canvas.width + margin*2; 
+      out.height = canvas.height + margin*2; 
+      const ctx = out.getContext('2d'); 
+      ctx.fillStyle='#fff'; 
+      ctx.fillRect(0,0,out.width,out.height); 
+      
+      ctx.drawImage(canvas, margin, margin);
+
+      ctx.fillStyle = '#64748b'; ctx.font = 'bold 16px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+      ctx.fillText("ID: " + tx.id, out.width - margin - 10, margin + 10);
+
+      const finalFileName = 'Reprint_' + tx.id + '.png';
+
+      out.toBlob(async (blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = finalFileName;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+      }, 'image/png', 0.92);
+  }
+
   function renderHistoryRows(dataArray) {
       const list = document.getElementById('adminHistoryList');
       if(dataArray.length === 0) { list.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-red-500">ရှာဖွေထားသော မှတ်တမ်း မတွေ့ပါ</td></tr>'; return; }
@@ -1771,7 +1937,8 @@
         let typeHtml = `<span class="font-bold text-blue-700 text-xs">${d.type}</span>`;
         let statusHtml = `<span class="border rounded px-2 py-1 text-xs font-bold bg-white ${statusColor}">${status}</span>`;
         let amountHtml = `<span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>`;
-        let actionHtml = `<span class="text-gray-400 text-xs">-</span>`;
+        
+        let actionHtml = `<button onclick="reprintReceipt('${d.id}')" class="btn bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 !py-1 !px-2 !text-xs whitespace-nowrap mr-1" title="ပြေစာပြန်ထုတ်မည်">🖨️</button>`;
 
         if(CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
            typeHtml = `
@@ -1798,7 +1965,7 @@
         }
         
         if(CURRENT_ROLE === 'admin') {
-            actionHtml = `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
+            actionHtml += `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
         }
         
         html += `<tr class="border-b hover:bg-gray-50">
@@ -2058,32 +2225,45 @@
     timeDiv.textContent = getExportTimeStr(lang);
     clone.appendChild(timeDiv);
     
+    // 🌟 Add Header Brand (No Logo - only Title as requested) 🌟
+    const brandHeader = document.createElement('div');
+    brandHeader.style.textAlign = 'center'; 
+    brandHeader.style.paddingBottom = '15px'; 
+    brandHeader.style.marginBottom = '15px'; 
+    brandHeader.style.borderBottom = '2px dashed #cbd5e1';
+    
+    const brandTitle = document.createElement('div');
+    brandTitle.style.fontWeight = '900'; 
+    brandTitle.style.fontSize = '24px'; 
+    brandTitle.style.color = '#0f172a';
+    brandTitle.textContent = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
+    
+    brandHeader.appendChild(brandTitle);
+    clone.insertBefore(brandHeader, clone.firstChild);
+
     clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
     document.body.appendChild(clone);
     await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
     const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
     document.body.removeChild(clone);
     
-    const margin=18, titleHeight=30; 
+    const margin=18; 
     const out=document.createElement('canvas'); 
     out.width = canvas.width + margin*2; 
-    out.height = canvas.height + margin*3 + titleHeight;
+    out.height = canvas.height + margin*2; 
     const ctx = out.getContext('2d'); 
     ctx.fillStyle='#fff'; 
     ctx.fillRect(0,0,out.width,out.height); 
     
+    ctx.drawImage(canvas, margin, margin);
+    
+    // 🌟 Bug Fix: Added ID generation logic back here
     const dDate = new Date();
     const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
     const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
-    
-    ctx.fillStyle = '#64748b'; ctx.font = 'bold 18px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
-    ctx.fillText("ID: " + invId, out.width - margin, margin + 4);
-    ctx.fillStyle='#000'; ctx.font='bold 34px system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='top';
-    
-    const topTitle = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
-    ctx.fillText(topTitle, out.width/2, margin); 
-    
-    ctx.drawImage(canvas, margin, margin*2 + titleHeight);
+
+    ctx.fillStyle = '#64748b'; ctx.font = 'bold 16px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.fillText("ID: " + invId, out.width - margin - 10, margin + 10);
 
     let recType = ""; let savedRate = ""; 
     if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
@@ -2093,7 +2273,7 @@
     
     const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
 
-    // Status is 'Pending' initially.
+    // Status is 'Pending' initially. System calculates profit later dynamically.
     const historyRecord = { 
       id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
       method: paymentMethodName, status: 'Pending', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId
