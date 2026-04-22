@@ -966,7 +966,7 @@
       }
   }
 
-  // --- 🌟 PDF Generation Function (စာရင်းချုပ် PDF ထုတ်ရန်) ---
+  // --- 🌟 PDF Generation Function ---
   async function generatePDFReport() {
       const thbIn = document.getElementById('dash_thb_in').textContent;
       const thbOut = document.getElementById('dash_thb_out').textContent;
@@ -1179,7 +1179,7 @@
     const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
     
     if(mini) {
-        mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" stylewidth:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div></div>`;
+        mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div></div>`;
     }
   }
 
@@ -1748,7 +1748,7 @@
       }
   }
 
-  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt) ---
+  // --- ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt) ---
   window.reprintReceipt = async function(invId) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
