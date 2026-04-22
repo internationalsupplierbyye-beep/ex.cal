@@ -1748,7 +1748,7 @@
       }
   }
 
-  // --- ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt) ---
+  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt) 🌟 ---
   window.reprintReceipt = async function(invId) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
@@ -1870,6 +1870,7 @@
       timeDiv.textContent = timeStr;
       clone.appendChild(timeDiv);
 
+      // 🌟 Add Header Brand (No Logo - only Title as requested) 🌟
       const brandHeader = document.createElement('div');
       brandHeader.style.textAlign = 'center'; 
       brandHeader.style.paddingBottom = '15px'; 
@@ -2257,11 +2258,6 @@
     
     ctx.drawImage(canvas, margin, margin);
     
-    // 🌟 Bug Fix: Added ID generation logic back here
-    const dDate = new Date();
-    const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
-    const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
-
     ctx.fillStyle = '#64748b'; ctx.font = 'bold 16px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
     ctx.fillText("ID: " + invId, out.width - margin - 10, margin + 10);
 
