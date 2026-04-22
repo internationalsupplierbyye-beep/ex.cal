@@ -857,6 +857,7 @@
       let vndIn = 0, vndOut = 0;
       let mmkIn = 0, mmkOut = 0;
       
+      // Profit calculation trackers
       let thbBoughtCostMmk = 0, thbSoldRevMmk = 0;
       let vndBoughtCostMmk = 0, vndSoldRevMmk = 0;
 
@@ -924,6 +925,7 @@
       let totalProfitThb = avgBuyThb > 0 ? (totalProfit / avgBuyThb) : 0;
       
       if(document.getElementById('dash_thb_in')) {
+          // Volume Update
           document.getElementById('dash_thb_in').textContent = thbIn.toLocaleString() + " THB";
           document.getElementById('dash_thb_out').textContent = thbOut.toLocaleString() + " THB";
           let thbNet = thbIn - thbOut;
@@ -945,6 +947,7 @@
           vndNetEl.textContent = (vndNet > 0 ? "+" : "") + vndNet.toLocaleString() + " VND";
           vndNetEl.className = vndNet >= 0 ? "font-black text-green-600" : "font-black text-red-600";
 
+          // Profit Update UI
           document.getElementById('avg_buy_thb').textContent = formatRate(avgBuyThb) + " MMK";
           document.getElementById('avg_sell_thb').textContent = formatRate(avgSellThb) + " MMK";
           
@@ -966,7 +969,7 @@
       }
   }
 
-  // --- 🌟 PDF Generation Function ---
+  // --- 🌟 PDF Generation Function (စာရင်းချုပ် PDF ထုတ်ရန်) ---
   async function generatePDFReport() {
       const thbIn = document.getElementById('dash_thb_in').textContent;
       const thbOut = document.getElementById('dash_thb_out').textContent;
@@ -1179,6 +1182,7 @@
     const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
     
     if(mini) {
+        // 🌟 BUG FIX: Added correct style formatting to Logo 🌟
         mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div></div>`;
     }
   }
@@ -1265,6 +1269,7 @@
   }
 
   function updateReceiptUI() {
+      // Only apply to the hidden div (doesn't clutter UI)
       const texts = FIREBASE_RECEIPT_TEXTS['orig'] || {warn1:'', warn2:'', thanks:''};
       document.querySelectorAll('.lang-warn1').forEach(el => el.textContent = texts.warn1);
       document.querySelectorAll('.lang-warn2').forEach(el => el.textContent = texts.warn2);
@@ -1306,10 +1311,11 @@
         });
 
         if (data.receiptTexts) {
+            // Check for new structure specifically to overwrite any stale states
             if (data.receiptTexts.orig) {
-                FIREBASE_RECEIPT_TEXTS.orig = { ...FIREBASE_RECEIPT_TEXTS.orig, ...data.receiptTexts.orig };
-                if (data.receiptTexts.en) FIREBASE_RECEIPT_TEXTS.en = { ...FIREBASE_RECEIPT_TEXTS.en, ...data.receiptTexts.en };
-                if (data.receiptTexts.th) FIREBASE_RECEIPT_TEXTS.th = { ...FIREBASE_RECEIPT_TEXTS.th, ...data.receiptTexts.th };
+                FIREBASE_RECEIPT_TEXTS.orig = data.receiptTexts.orig;
+                if (data.receiptTexts.en) FIREBASE_RECEIPT_TEXTS.en = data.receiptTexts.en;
+                if (data.receiptTexts.th) FIREBASE_RECEIPT_TEXTS.th = data.receiptTexts.th;
             } 
             else if (data.receiptTexts.warn1 !== undefined) {
                 FIREBASE_RECEIPT_TEXTS.orig = { warn1: data.receiptTexts.warn1, warn2: data.receiptTexts.warn2, thanks: data.receiptTexts.thanks };
@@ -1748,7 +1754,7 @@
       }
   }
 
-  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt) 🌟 ---
+  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt) ---
   window.reprintReceipt = async function(invId) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
@@ -1788,13 +1794,40 @@
           });
       }
 
+      // 🌟 BUG FIX: အတိုရေးထားသော ငွေဈေးကို အပြည့်အစုံပြန်ဖြန့်ပေးခြင်း 🌟
       const rateP = clone.querySelector('.rate-note');
-      if (rateP) rateP.textContent = tx.rate;
+      if (rateP) {
+          let histRateText = tx.rate || ""; 
+          let rTpl = (T && T.rateTpl) ? T.rateTpl : "မြန်မာငွေ ၁ သိန်း = {r} ဘတ် | ၁ ဘတ် = {inv} ကျပ်";
+          let vTpl = (T && T.rateVndTpl) ? T.rateVndTpl : "၁ ကျပ် = {v} ဒေါင် (VND)";
+
+          if (histRateText.includes('100K =')) {
+              const match = histRateText.match(/100K\s*=\s*([\d,.]+)/);
+              if (match && match[1]) {
+                  const r = parseFloat(match[1].replace(/,/g, ''));
+                  if (r > 0) {
+                      const inv = 100000 / r;
+                      histRateText = rTpl.replace('{r}', fmt6(r)).replace('{inv}', fmt6(inv));
+                  }
+              }
+          } else if (histRateText.includes('1 MMK =')) {
+              const match = histRateText.match(/1 MMK\s*=\s*([\d,.]+)/);
+              if (match && match[1]) {
+                  const v = parseFloat(match[1].replace(/,/g, ''));
+                  if (v > 0) {
+                      histRateText = vTpl.replace('{v}', fmt6(v));
+                  }
+              }
+          }
+          rateP.textContent = histRateText;
+          rateP.innerHTML += '<br>';
+      }
 
       clone.style.boxShadow = 'none'; 
       clone.style.border = '1px solid #e5e7eb'; 
       clone.style.background = '#fff';
 
+      // 🌟 BUG FIX: Reprint တွင် Big QR ပုံရှိမရှိ အလိုအလျောက် စစ်ဆေးဆွဲယူခြင်း 🌟
       if (tx.method && tx.method !== 'မပါ (None)') {
           if (tx.method.startsWith('QR (')) {
               const qrNameStr = tx.method.match(/\((.*?)\)/);
@@ -1809,13 +1842,18 @@
                       const file = typeof foundQr === 'string' ? foundQr : foundQr.file;
                       const normalUrl = file.includes('http') ? file : 'assets/qr/' + file;
                       const baseName = file.replace(/\.[^.]+$/,'');
+                      const bigUrl = file.includes('http') ? file : 'assets/qr/' + baseName + '_big.jpg';
                       const owner = (typeof foundQr === 'object' && foundQr.owner) ? foundQr.owner : getOwnerFromKey(baseName);
                       
-                      const finalImgUrl = normalUrl; 
+                      let finalImgUrl = normalUrl; 
+                      const hasBig = await probeImage(bigUrl);
+                      if (hasBig) finalImgUrl = bigUrl; // အကြီးရှိပါက အကြီးကိုသုံးမည်
 
                       const wrap = document.createElement('div'); wrap.className = 'export-block';
                       const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
-                      const img = document.createElement('img'); img.style.width = '420px'; img.style.maxWidth = '95%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '10px'; img.style.background = '#fff'; img.style.display = 'block';
+                      const img = document.createElement('img'); 
+                      img.style.width = hasBig ? '500px' : '420px'; // Big ဆိုရင် ပိုကြီးကြီးပြမည်
+                      img.style.maxWidth = '95%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '10px'; img.style.background = '#fff'; img.style.display = 'block';
                       img.src = finalImgUrl;
                       const ownerP = document.createElement('p'); ownerP.className = 'mt-3 text-slate-700'; ownerP.style.paddingBottom = '4px'; ownerP.style.fontSize = '20px'; 
                       ownerP.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${owner}</span>`);
@@ -1870,7 +1908,6 @@
       timeDiv.textContent = timeStr;
       clone.appendChild(timeDiv);
 
-      // 🌟 Add Header Brand (No Logo - only Title as requested) 🌟
       const brandHeader = document.createElement('div');
       brandHeader.style.textAlign = 'center'; 
       brandHeader.style.paddingBottom = '15px'; 
@@ -2093,224 +2130,186 @@
     const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = customTexts.thanks; }
   }
 
-  // --- Copy Text Function (Localized & Formatted) ---
-  async function copyText(sectionId, btnElement) {
-    let title, inAmt, outAmt, rateTxt;
-    
-    if (sectionId === 'box-thb2mmk') {
-        title = "ထိုင်းဘတ် 🇹🇭 ➔ မြန်မာကျပ် 🇲🇲";
-        inAmt = document.getElementById('thbIn').value;
-        if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
-        inAmt += " ဘတ်";
-        outAmt = document.getElementById('mmkOut').value + " ကျပ်";
-        rateTxt = LAST_RATE.r ? `1 သိန်းကျပ် = ${fmt6(LAST_RATE.r)} ဘတ်` : "";
-    } else if (sectionId === 'box-mmk2thb') {
-        title = "မြန်မာကျပ် 🇲🇲 ➔ ထိုင်းဘတ် 🇹🇭";
-        inAmt = document.getElementById('mmkIn').value;
-        if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
-        inAmt += " ကျပ်";
-        outAmt = document.getElementById('thbOut').value + " ဘတ်";
-        rateTxt = LAST_RATE.r ? `1 သိန်းကျပ် = ${fmt6(LAST_RATE.r)} ဘတ်` : "";
-    } else if (sectionId === 'box-vnd2mmk') {
-        title = "ဗီယက်နမ်ဒေါင် 🇻🇳 ➔ မြန်မာကျပ် 🇲🇲";
-        inAmt = document.getElementById('vndIn').value;
-        if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
-        inAmt += " ဒေါင်";
-        outAmt = document.getElementById('mmkOut2').value + " ကျပ်";
-        rateTxt = LAST_RATE.vnd ? `၁ ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : "";
-    } else if (sectionId === 'box-mmk2vnd') {
-        title = "မြန်မာကျပ် 🇲🇲 ➔ ဗီယက်နမ်ဒေါင် 🇻🇳";
-        inAmt = document.getElementById('mmkIn2').value;
-        if(!inAmt) return alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။");
-        inAmt += " ကျပ်";
-        outAmt = document.getElementById('vndOut').value + " ဒေါင်";
-        rateTxt = LAST_RATE.vnd ? `၁ ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : "";
-    }
-
-    const textToCopy = `💸 [ ${title} ]\n\nလွှဲငွေ : ${inAmt}\nရငွေ : ${outAmt}\n\n(ငွေဈေး: ${rateTxt})\n\nငွေလွှဲမည်ဆိုပါက ပြန်ပြောပေးပါ ငွေလွှဲရမည့်အကောင့်ပို့ပေးပါမည်။`;
-
+  // --- 🌟 🌟 🌟 BUG FIX: Save Section 🌟 🌟 🌟 ---
+  async function saveSection(sectionId, filenameBase, fmt, action = 'download') {
     try {
-        await navigator.clipboard.writeText(textToCopy);
-        const originalText = btnElement.innerHTML;
-        btnElement.innerHTML = "✅ Copied!";
-        btnElement.classList.replace('bg-gray-600', 'bg-green-600');
-        setTimeout(() => {
-            btnElement.innerHTML = originalText;
-            btnElement.classList.replace('bg-green-600', 'bg-gray-600');
-        }, 1500);
-    } catch (err) {
-        console.error('Failed to copy text: ', err);
-        alert("Copy ကူးခြင်း မအောင်မြင်ပါ။ သင့် Browser က ခွင့်မပြုတာ ဖြစ်နိုင်ပါတယ်။");
-    }
-  }
+        await document.fonts?.ready; 
+        recalc(); recalcVND();
+        
+        const lang = document.getElementById('saveLangSelect').value || 'orig';
+        const T = I18N[lang] || null; fmt = (fmt === 'jpg') ? 'jpg' : 'png';
+        const original=document.getElementById(sectionId); 
+        const clone=original.cloneNode(true);
+        
+        clone.querySelectorAll('button').forEach(b=>b.remove());
+        
+        clone.querySelectorAll('.export-only-texts').forEach(el => {
+            el.classList.remove('hidden');
+            el.style.display = 'block';
+        });
 
-  // --- Main Save/Share Logic ---
-  async function saveSection(sectionId, filenameBase, fmt, action = 'download'){
-    await document.fonts?.ready; recalc(); recalcVND();
-    const lang = document.getElementById('saveLangSelect').value || 'orig';
-    const T = I18N[lang] || null; fmt = (fmt === 'jpg') ? 'jpg' : 'png';
-    const original=document.getElementById(sectionId); const clone=original.cloneNode(true);
-    clone.querySelectorAll('button').forEach(b=>b.remove());
-    
-    // Unhide the export-only texts
-    clone.querySelectorAll('.export-only-texts').forEach(el => {
-        el.classList.remove('hidden');
-        el.style.display = 'block';
-    });
+        applyLangToClone(clone, lang);
+        
+        let inValueStr = '', outValueStr = '';
+        clone.querySelectorAll('input').forEach(el=>{
+          if(!el.classList.contains('amt-input')) return;
+          
+          const isTarget = el.id.toLowerCase().includes('out');
+          let val = (el.value || '').trim();
+          
+          if(val === '') val = '0';
+          
+          if(el.id.toLowerCase().includes('mmk')) val += ' MMK';
+          else if(el.id.toLowerCase().includes('thb')) val += ' THB';
+          else if(el.id.toLowerCase().includes('vnd')) val += ' VND';
 
-    applyLangToClone(clone, lang);
-    
-    let inValueStr = '', outValueStr = '';
-    clone.querySelectorAll('input').forEach(el=>{
-      if(!el.classList.contains('amt-input')) return;
-      
-      const isTarget = el.id.toLowerCase().includes('out');
-      let val = (el.value || '').trim();
-      
-      if(val === '') val = '0';
-      
-      if(el.id.toLowerCase().includes('mmk')) val += ' MMK';
-      else if(el.id.toLowerCase().includes('thb')) val += ' THB';
-      else if(el.id.toLowerCase().includes('vnd')) val += ' VND';
-
-      const div=document.createElement('div');
-      div.className=el.className || ''; div.style.whiteSpace='nowrap'; div.style.overflow='hidden'; div.style.textOverflow='ellipsis'; div.style.display='flex'; div.style.alignItems='center'; div.style.lineHeight='1.5'; div.style.minHeight='56px'; div.style.height='56px'; div.style.paddingTop='12px'; div.style.paddingBottom='14px';
-      
-      div.textContent = val;
-      if (!isTarget) inValueStr = val; else outValueStr = val;
-      el.replaceWith(div);
-    });
-    
-    clone.style.boxShadow='none'; clone.style.border='1px solid #e5e7eb'; clone.style.background='#fff';
-    const mode = document.querySelector('input[name="saveMode"]:checked')?.value || 'none';
-    let paymentMethodName = "မပါ (None)";
-    
-    if(mode==='qr' && CURRENT_QR && CURRENT_QR.normal){
-      const selectedQrEl = document.getElementById('qrSelect');
-      const selectedQrText = selectedQrEl.options[selectedQrEl.selectedIndex].text;
-      paymentMethodName = `QR (${selectedQrText})`; 
-      
-      const wrap=document.createElement('div'); wrap.className='export-block';
-      const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
-      const img=document.createElement('img'); img.style.width='420px'; img.style.maxWidth='95%'; img.style.margin='10px auto 0'; img.style.border='1px solid #e5e7eb'; img.style.borderRadius='16px'; img.style.padding='10px'; img.style.background='#fff'; img.style.display='block';
-      img.src = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
-      const owner=document.createElement('p'); owner.className='mt-3 text-slate-700'; owner.style.paddingBottom = '4px'; owner.style.fontSize = '20px'; 
-      owner.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>`);
-      wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(owner); clone.appendChild(wrap);
-      await new Promise(res=>{ if(img.complete) return res(); img.onload=()=>res(); img.onerror=()=>res(); });
-    }
-    
-    if(mode==='bank'){
-      const key=document.getElementById('bankSelect').value;
-      if(key && ACTIVE_BANK_INFO && ACTIVE_BANK_INFO[key]){
-        const info=ACTIVE_BANK_INFO[key];
-        paymentMethodName = `Bank (${info.name})`;
-        const wrap=document.createElement('div'); wrap.className='export-block';
-        const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.bankTitle : 'ငွေလွှဲရန် ဘဏ်အချက်အလက်');
-        const box=document.createElement('div'); box.style.maxWidth='560px'; box.style.margin='12px auto 0'; box.style.border='1px solid #e5e7eb'; box.style.borderRadius='16px'; box.style.padding='16px'; box.style.background='#fff'; box.style.textAlign='center';
-        const logo=document.createElement('img'); logo.src="assets/logo/"+info.logo; logo.style.width='72px'; logo.style.height='72px'; logo.style.borderRadius='18px'; logo.style.border='1px solid #e5e7eb'; logo.style.objectFit='cover';
-        const headerRow=document.createElement('div'); headerRow.style.display='flex'; headerRow.style.flexDirection='column'; headerRow.style.alignItems='center'; headerRow.style.justifyContent='center'; headerRow.style.gap='8px'; headerRow.style.marginBottom='10px';
-        const h=document.createElement('div'); h.style.textAlign='center'; 
-        h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
-        const body=document.createElement('div'); body.style.textAlign='center';
-        body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
-        headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
-        wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
-        await new Promise(res=>{ if(logo.complete) return res(); logo.onload=()=>res(); logo.onerror=()=>res(); });
-      }
-    }
-    
-    const timeDiv = document.createElement('div');
-    timeDiv.style.textAlign = 'center'; timeDiv.style.marginTop = '12px'; timeDiv.style.paddingTop = '12px'; timeDiv.style.borderTop = '1px dashed #cbd5e1';
-    timeDiv.style.fontSize = '14px'; timeDiv.style.fontWeight = '900'; timeDiv.style.color = '#64748b'; timeDiv.style.paddingBottom = '8px';
-    timeDiv.textContent = getExportTimeStr(lang);
-    clone.appendChild(timeDiv);
-    
-    // 🌟 Add Header Brand (No Logo - only Title as requested) 🌟
-    const brandHeader = document.createElement('div');
-    brandHeader.style.textAlign = 'center'; 
-    brandHeader.style.paddingBottom = '15px'; 
-    brandHeader.style.marginBottom = '15px'; 
-    brandHeader.style.borderBottom = '2px dashed #cbd5e1';
-    
-    const brandTitle = document.createElement('div');
-    brandTitle.style.fontWeight = '900'; 
-    brandTitle.style.fontSize = '24px'; 
-    brandTitle.style.color = '#0f172a';
-    brandTitle.textContent = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
-    
-    brandHeader.appendChild(brandTitle);
-    clone.insertBefore(brandHeader, clone.firstChild);
-
-    clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
-    document.body.appendChild(clone);
-    await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
-    const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
-    document.body.removeChild(clone);
-    
-    const margin=18; 
-    const out=document.createElement('canvas'); 
-    out.width = canvas.width + margin*2; 
-    out.height = canvas.height + margin*2; 
-    const ctx = out.getContext('2d'); 
-    ctx.fillStyle='#fff'; 
-    ctx.fillRect(0,0,out.width,out.height); 
-    
-    ctx.drawImage(canvas, margin, margin);
-    
-    ctx.fillStyle = '#64748b'; ctx.font = 'bold 16px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
-    ctx.fillText("ID: " + invId, out.width - margin - 10, margin + 10);
-
-    let recType = ""; let savedRate = ""; 
-    if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
-    else if(sectionId==='box-mmk2thb') { recType = "MMK ➔ THB"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
-    else if(sectionId==='box-vnd2mmk') { recType = "VND ➔ MMK"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
-    else if(sectionId==='box-mmk2vnd') { recType = "MMK ➔ VND"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
-    
-    const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
-
-    // Status is 'Pending' initially. System calculates profit later dynamically.
-    const historyRecord = { 
-      id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
-      method: paymentMethodName, status: 'Pending', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId
-    };
-    try { firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); } catch(e) {}
-    
-    const mimeType = fmt === 'jpg' ? 'image/jpeg' : 'image/png';
-    const fileExt = fmt === 'jpg' ? '.jpg' : '.png';
-    const finalFileName = filenameBase + '_' + invId + fileExt;
-
-    out.toBlob(async (blob) => {
-        if (!blob) return;
-
-        if (action === 'share' && navigator.canShare) {
-            const file = new File([blob], finalFileName, { type: mimeType });
-            if (navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        title: 'ငွေလွှဲပြေစာ',
-                        text: 'Thailand Guide - Supplier By Ye မှ ငွေလွှဲပြေစာ',
-                        files: [file]
-                    });
-                    return; 
-                } catch (e) {
-                    console.log('Share canceled or failed:', e);
-                }
-            } else {
-                alert('သင့် Browser က ဓာတ်ပုံတိုက်ရိုက် Share ခြင်းကို မထောက်ပံ့ပါ။');
-            }
+          const div=document.createElement('div');
+          div.className=el.className || ''; div.style.whiteSpace='nowrap'; div.style.overflow='hidden'; div.style.textOverflow='ellipsis'; div.style.display='flex'; div.style.alignItems='center'; div.style.lineHeight='1.5'; div.style.minHeight='56px'; div.style.height='56px'; div.style.paddingTop='12px'; div.style.paddingBottom='14px';
+          
+          div.textContent = val;
+          if (!isTarget) inValueStr = val; else outValueStr = val;
+          el.replaceWith(div);
+        });
+        
+        clone.style.boxShadow='none'; clone.style.border='1px solid #e5e7eb'; clone.style.background='#fff';
+        const mode = document.querySelector('input[name="saveMode"]:checked')?.value || 'none';
+        let paymentMethodName = "မပါ (None)";
+        
+        if(mode==='qr' && CURRENT_QR && CURRENT_QR.normal){
+          const selectedQrEl = document.getElementById('qrSelect');
+          const selectedQrText = selectedQrEl.options[selectedQrEl.selectedIndex].text;
+          paymentMethodName = `QR (${selectedQrText})`; 
+          
+          const wrap=document.createElement('div'); wrap.className='export-block';
+          const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
+          const img=document.createElement('img'); img.style.width='420px'; img.style.maxWidth='95%'; img.style.margin='10px auto 0'; img.style.border='1px solid #e5e7eb'; img.style.borderRadius='16px'; img.style.padding='10px'; img.style.background='#fff'; img.style.display='block';
+          img.src = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
+          const owner=document.createElement('p'); owner.className='mt-3 text-slate-700'; owner.style.paddingBottom = '4px'; owner.style.fontSize = '20px'; 
+          owner.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>`);
+          wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(owner); clone.appendChild(wrap);
+          await new Promise(res=>{ if(img.complete) return res(); img.onload=()=>res(); img.onerror=()=>res(); });
         }
+        
+        if(mode==='bank'){
+          const key=document.getElementById('bankSelect').value;
+          if(key && ACTIVE_BANK_INFO && ACTIVE_BANK_INFO[key]){
+            const info=ACTIVE_BANK_INFO[key];
+            paymentMethodName = `Bank (${info.name})`;
+            const wrap=document.createElement('div'); wrap.className='export-block';
+            const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.bankTitle : 'ငွေလွှဲရန် ဘဏ်အချက်အလက်');
+            const box=document.createElement('div'); box.style.maxWidth='560px'; box.style.margin='12px auto 0'; box.style.border='1px solid #e5e7eb'; box.style.borderRadius='16px'; box.style.padding='16px'; box.style.background='#fff'; box.style.textAlign='center';
+            const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
+            const logo=document.createElement('img'); logo.src=logoUrl; logo.style.width='72px'; logo.style.height='72px'; logo.style.borderRadius='18px'; logo.style.border='1px solid #e5e7eb'; logo.style.objectFit='cover';
+            const headerRow=document.createElement('div'); headerRow.style.display='flex'; headerRow.style.flexDirection='column'; headerRow.style.alignItems='center'; headerRow.style.justifyContent='center'; headerRow.style.gap='8px'; headerRow.style.marginBottom='10px';
+            const h=document.createElement('div'); h.style.textAlign='center'; 
+            h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
+            const body=document.createElement('div'); body.style.textAlign='center';
+            body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
+            headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
+            wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
+            await new Promise(res=>{ if(logo.complete) return res(); logo.onload=()=>res(); logo.onerror=()=>res(); });
+          }
+        }
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.style.textAlign = 'center'; timeDiv.style.marginTop = '12px'; timeDiv.style.paddingTop = '12px'; timeDiv.style.borderTop = '1px dashed #cbd5e1';
+        timeDiv.style.fontSize = '14px'; timeDiv.style.fontWeight = '900'; timeDiv.style.color = '#64748b'; timeDiv.style.paddingBottom = '8px';
+        timeDiv.textContent = getExportTimeStr(lang);
+        clone.appendChild(timeDiv);
 
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = finalFileName;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+        const brandHeader = document.createElement('div');
+        brandHeader.style.textAlign = 'center'; 
+        brandHeader.style.paddingBottom = '15px'; 
+        brandHeader.style.marginBottom = '15px'; 
+        brandHeader.style.borderBottom = '2px dashed #cbd5e1';
+        
+        const brandTitle = document.createElement('div');
+        brandTitle.style.fontWeight = '900'; 
+        brandTitle.style.fontSize = '24px'; 
+        brandTitle.style.color = '#0f172a';
+        brandTitle.textContent = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
+        
+        brandHeader.appendChild(brandTitle);
+        clone.insertBefore(brandHeader, clone.firstChild);
+        
+        clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
+        document.body.appendChild(clone);
+        await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
+        const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
+        document.body.removeChild(clone);
+        
+        const margin=18, titleHeight=30; 
+        const out=document.createElement('canvas'); 
+        out.width = canvas.width + margin*2; 
+        out.height = canvas.height + margin*2;
+        const ctx = out.getContext('2d'); 
+        ctx.fillStyle='#fff'; 
+        ctx.fillRect(0,0,out.width,out.height); 
+        
+        ctx.drawImage(canvas, margin, margin);
 
-    }, mimeType, 0.92);
+        const dDate = new Date();
+        const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
+        const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
+        
+        ctx.fillStyle = '#64748b'; ctx.font = 'bold 16px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+        ctx.fillText("ID: " + invId, out.width - margin - 10, margin + 10);
+
+        let recType = ""; let savedRate = ""; 
+        if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
+        else if(sectionId==='box-mmk2thb') { recType = "MMK ➔ THB"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
+        else if(sectionId==='box-vnd2mmk') { recType = "VND ➔ MMK"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
+        else if(sectionId==='box-mmk2vnd') { recType = "MMK ➔ VND"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
+        
+        const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
+
+        const historyRecord = { 
+          id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
+          method: paymentMethodName, profit: 0, status: 'Pending', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId
+        };
+        try { firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); } catch(e) {}
+        
+        const mimeType = fmt === 'jpg' ? 'image/jpeg' : 'image/png';
+        const fileExt = fmt === 'jpg' ? '.jpg' : '.png';
+        const finalFileName = filenameBase + '_' + invId + fileExt;
+
+        out.toBlob(async (blob) => {
+            if (!blob) return;
+
+            if (action === 'share' && navigator.canShare) {
+                const file = new File([blob], finalFileName, { type: mimeType });
+                if (navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            title: 'ငွေလွှဲပြေစာ',
+                            text: 'Thailand Guide - Supplier By Ye မှ ငွေလွှဲပြေစာ',
+                            files: [file]
+                        });
+                        return; 
+                    } catch (e) {
+                        console.log('Share canceled or failed:', e);
+                    }
+                } else {
+                    alert('သင့် Browser က ဓာတ်ပုံတိုက်ရိုက် Share ခြင်းကို မထောက်ပံ့ပါ။');
+                }
+            }
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = finalFileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+
+        }, mimeType, 0.92);
+        
+    } catch (err) {
+        console.error("Save/Share Error: ", err);
+        alert("Save/Share အလုပ်လုပ်ရာတွင် အခက်အခဲရှိပါသည်။ \n" + err.message);
+    }
   }
+
 </script>
 </body>
 </html>
