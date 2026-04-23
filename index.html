@@ -327,6 +327,37 @@
   </div>
 </main>
 
+<div id="manualLotModal" style="display:none;" class="fixed inset-0 bg-black/60 z-[70] items-center justify-center p-4">
+  <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl">
+    <h3 class="text-lg font-black mb-4 text-indigo-700">➕ Manual Lot ထည့်ရန်</h3>
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs font-bold text-gray-600 mb-1 block">အမျိုးအစား ရွေးပါ</label>
+        <select id="manualLotType" class="admin-input-box !mb-0 text-sm" onchange="updateManualTypeLabel()">
+           <option value="MMK ➔ THB">THB (MMK ဝယ်ထား / THB ရောင်းထား)</option>
+           <option value="MMK ➔ VND">VND (MMK ဝယ်ထား / VND ရောင်းထား)</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-bold text-gray-600 mb-1 block">နိုင်ငံခြားငွေ ပမာဏ (THB / VND)</label>
+        <input type="text" id="manualLotForeign" class="admin-input-box !mb-0 text-sm" placeholder="ဥပမာ - 5000">
+      </div>
+      <div>
+        <label id="lblManualRate" class="text-xs font-bold text-gray-600 mb-1 block">ငွေဈေး (၁ သိန်းကျပ် = ? ဘတ်)</label>
+        <input type="text" id="manualLotRate" class="admin-input-box !mb-0 text-sm" placeholder="ဥပမာ - 750">
+      </div>
+      <div>
+        <label class="text-xs font-bold text-gray-600 mb-1 block">မြန်မာငွေ ပမာဏ (MMK)</label>
+        <input type="text" id="manualLotMmk" class="admin-input-box !mb-0 text-sm" placeholder="ဥပမာ - 666667">
+      </div>
+      <div class="flex gap-2 mt-5">
+        <button onclick="document.getElementById('manualLotModal').style.display='none'" class="btn2 w-1/2">ပိတ်မည်</button>
+        <button onclick="saveManualLot(event)" class="btn bg-indigo-600 hover:bg-indigo-700 w-1/2">ထည့်မည်</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="adminModal">
   <div class="admin-content relative">
     <button onclick="closeAdmin()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl z-10">✕</button>
@@ -349,6 +380,7 @@
         </div>
         
         <div class="flex flex-wrap gap-2 items-center bg-gray-50 p-2 rounded-xl border border-gray-200">
+           <button onclick="document.getElementById('manualLotModal').style.display='flex'" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1.5 !px-3 !text-sm whitespace-nowrap">➕ Manual Lot ထည့်ရန်</button>
            <button onclick="generatePDFReport()" class="btn bg-red-600 hover:bg-red-700 !py-1.5 !px-3 !text-sm whitespace-nowrap">📄 PDF စာရင်းချုပ်</button>
            
            <select id="dashFilterSelect" class="admin-input-box !mb-0 !py-1.5 text-sm w-auto cursor-pointer" onchange="applyDashboardFilter()">
@@ -369,44 +401,38 @@
 
       <div class="bg-white border border-gray-200 rounded-xl shadow-sm mb-4">
           <div class="bg-gray-100 px-4 py-3 border-b border-gray-200 rounded-t-xl font-bold text-gray-800">
-             📈 အမြတ် / အရှုံး ရှင်းတမ်း (Profit & Loss)
+             📈 FIFO Profit & Active Lots (အမြတ် နှင့် လက်ကျန်)
           </div>
           <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="border rounded-lg p-3 bg-blue-50/50">
+              <div class="border rounded-lg p-3 bg-blue-50/50 flex flex-col h-full">
                   <div class="font-bold text-blue-800 border-b pb-2 mb-2 flex justify-between items-start">
                       <span>🇹🇭 THB (ဘတ်)</span>
                       <div class="text-right">
                           <div id="est_profit_thb" class="text-lg text-green-600 font-black">+ 0 MMK</div>
-                          <div id="est_profit_thb_in_thb" class="text-sm text-green-600 font-bold mt-1">~ 0 THB</div>
+                          <div class="text-[10px] font-bold text-gray-500 mt-1 uppercase">Realized Profit</div>
                       </div>
                   </div>
-                  <div class="flex justify-between text-xs text-gray-600 mb-1">
-                      <span>ပျမ်းမျှ ဝယ်ဈေး:</span> <span class="font-bold text-gray-800" id="avg_buy_thb">0 MMK</span>
-                  </div>
-                  <div class="flex justify-between text-xs text-gray-600">
-                      <span>ပျမ်းမျှ ရောင်းဈေး:</span> <span class="font-bold text-gray-800" id="avg_sell_thb">0 MMK</span>
-                  </div>
+                  <div class="text-xs font-bold text-gray-700 mb-1">Active Lots (လက်ရှိကျန်နေသော):</div>
+                  <div id="thb_active_lots" class="flex-1 overflow-y-auto max-h-40 text-xs space-y-1 bg-white p-2 rounded border border-blue-100 shadow-inner font-mono">
+                      </div>
               </div>
-              <div class="border rounded-lg p-3 bg-orange-50/50">
+              <div class="border rounded-lg p-3 bg-orange-50/50 flex flex-col h-full">
                   <div class="font-bold text-orange-800 border-b pb-2 mb-2 flex justify-between items-start">
                       <span>🇻🇳 VND (ဒေါင်)</span>
                       <div class="text-right">
                           <div id="est_profit_vnd" class="text-lg text-green-600 font-black">+ 0 MMK</div>
+                          <div class="text-[10px] font-bold text-gray-500 mt-1 uppercase">Realized Profit</div>
                       </div>
                   </div>
-                  <div class="flex justify-between text-xs text-gray-600 mb-1">
-                      <span>ပျမ်းမျှ ဝယ်ဈေး:</span> <span class="font-bold text-gray-800" id="avg_buy_vnd">0 MMK</span>
-                  </div>
-                  <div class="flex justify-between text-xs text-gray-600">
-                      <span>ပျမ်းမျှ ရောင်းဈေး:</span> <span class="font-bold text-gray-800" id="avg_sell_vnd">0 MMK</span>
-                  </div>
+                  <div class="text-xs font-bold text-gray-700 mb-1">Active Lots (လက်ရှိကျန်နေသော):</div>
+                  <div id="vnd_active_lots" class="flex-1 overflow-y-auto max-h-40 text-xs space-y-1 bg-white p-2 rounded border border-orange-100 shadow-inner font-mono">
+                      </div>
               </div>
           </div>
           <div class="bg-green-50 px-4 py-3 border-t border-green-200 rounded-b-xl flex justify-between items-center">
               <span class="font-bold text-green-800">စုစုပေါင်း အမြတ်ငွေ (Total Profit)</span>
               <div class="text-right">
                  <div class="font-black text-green-700 text-xl" id="dash_total_profit">0 MMK</div>
-                 <div class="font-bold text-green-600 text-sm mt-1" id="dash_total_profit_thb">~ 0 THB</div>
               </div>
           </div>
       </div>
@@ -452,11 +478,12 @@
     <div id="tab-history" class="tab-pane">
       <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
         <h3 class="font-bold text-gray-800">📜 ငွေလွှဲမှတ်တမ်းများ</h3>
-        <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-          <input type="text" id="searchInvId" class="admin-input-box !mb-0 !py-1 text-sm flex-1 sm:w-40" placeholder="ID ဖြင့်ရှာရန်" oninput="searchHistoryLocally()">
+        <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 overflow-x-auto">
+          <input type="text" id="searchInvId" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[120px]" placeholder="ID ဖြင့်ရှာရန်" oninput="searchHistoryLocally()">
           <button onclick="searchHistoryLocally()" class="btn bg-blue-600 !py-1 !px-3 !text-sm" title="ရှာရန်">🔍</button>
           <button onclick="loadHistory()" class="btn2 !py-1 !px-3 !text-sm" title="Refresh">🔄</button>
-          <button id="btnExportCSV" onclick="exportHistoryCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm" title="Excel ဖိုင်ထုတ်ရန်">📥 Export CSV</button>
+          <button id="btnExportCSV" onclick="exportHistoryCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="Excel ဖိုင်ထုတ်ရန်">📥 Export</button>
+          <button id="btnClearHistory" onclick="clearAllHistory()" class="btn bg-red-600 hover:bg-red-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="မှတ်တမ်းအားလုံးကို ဖျက်မည်">🗑 Clear All</button>
         </div>
       </div>
       <div class="overflow-y-auto border rounded-xl bg-white shadow-sm h-[70vh] min-h-[500px]">
@@ -905,7 +932,7 @@
   }
 
 
-  // --- 🌟 DASHBOARD & AUTO PROFIT FUNCTIONS ---
+  // --- 🌟 DASHBOARD & FIFO PROFIT/LOTS FUNCTIONS 🌟 ---
   function applyDashboardFilter() {
       const filter = document.getElementById('dashFilterSelect').value;
       const customWrap = document.getElementById('customDateWrap');
@@ -957,24 +984,41 @@
           if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${sd} မှ ${ed} အထိ`;
       }
 
+      const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
+
       let thbIn = 0, thbOut = 0;
       let vndIn = 0, vndOut = 0;
       let mmkIn = 0, mmkOut = 0;
-      
-      // Profit calculation trackers
-      let thbBoughtCostMmk = 0, thbSoldRevMmk = 0;
-      let vndBoughtCostMmk = 0, vndSoldRevMmk = 0;
 
-      const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
-      
-      dataArray.forEach(d => {
-          if (d.status !== 'Success') return;
+      // FIFO Variables
+      let thbLongs = [], thbShorts = [];
+      let vndLongs = [], vndShorts = [];
+      let periodProfitThb = 0, periodProfitVnd = 0;
 
-          const recDateObj = new Date(new Date(d.timestamp).toLocaleString('en-US', { timeZone: tz }));
+      // Ensure no crash by safely checking timestamps
+      let sortedTxs = [...dataArray].sort((a, b) => {
+          let tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          let tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return tA - tB;
+      });
+
+      sortedTxs.forEach(tx => {
+          if (tx.status !== 'Success') return;
+
+          let txType = tx.type || '';
+          let txTime = tx.timestamp || new Date().toISOString();
+
+          let recDateObj;
+          try {
+              recDateObj = new Date(new Date(txTime).toLocaleString('en-US', { timeZone: tz }));
+          } catch(e) {
+              recDateObj = new Date(txTime);
+          }
+          if(isNaN(recDateObj.getTime())) return;
+          
           const recDateStr = toYYYYMMDD(recDateObj);
           
           let includeThisRecord = false;
-
           if (filter === 'today') { includeThisRecord = (recDateStr === todayTzStr); } 
           else if (filter === 'week') { includeThisRecord = targetDates.includes(recDateStr); } 
           else if (filter === 'month') { includeThisRecord = recDateStr.startsWith(targetDates); } 
@@ -984,50 +1028,86 @@
               includeThisRecord = (recDateStr >= sd && recDateStr <= ed);
           }
 
-          if (includeThisRecord) {
-              let inNum = getCleanNum(d.inAmt);
-              let outNum = getCleanNum(d.outAmt);
+          let inNum = getCleanNum(tx.inAmt);
+          let outNum = getCleanNum(tx.outAmt);
 
-              if (d.type === 'THB ➔ MMK') { 
-                  thbIn += inNum; mmkOut += outNum; 
-                  thbBoughtCostMmk += outNum; 
+          // Volume tracking (Only for filtered period)
+          if (includeThisRecord) {
+              if (txType === 'THB ➔ MMK') { thbIn += inNum; mmkOut += outNum; }
+              else if (txType === 'MMK ➔ THB') { mmkIn += inNum; thbOut += outNum; }
+              else if (txType === 'VND ➔ MMK') { vndIn += inNum; mmkOut += outNum; }
+              else if (txType === 'MMK ➔ VND') { mmkIn += inNum; vndOut += outNum; }
+          }
+
+          // 🌟 Core Logic (FIFO Matching) 🌟
+          let currency = txType.includes('THB') ? 'THB' : (txType.includes('VND') ? 'VND' : '');
+          if(!currency) return;
+
+          let isBuy = false; // We buy foreign currency (Long)
+          let isSell = false; // We sell foreign currency (Short)
+          let fAmt = 0, mAmt = 0, rate = 0;
+
+          // THB/VND ➔ MMK : Customer gives THB, we give MMK -> We BUY THB/VND
+          if (txType === 'THB ➔ MMK' || txType === 'VND ➔ MMK') { isBuy = true; fAmt = inNum; mAmt = outNum; }
+          
+          // MMK ➔ THB/VND : Customer gives MMK, we give THB -> We SELL THB/VND
+          if (txType === 'MMK ➔ THB' || txType === 'MMK ➔ VND') { isSell = true; fAmt = outNum; mAmt = inNum; }
+
+          if(fAmt <= 0 || mAmt <= 0) return;
+          
+          // Rate is MMK per 1 Foreign Currency
+          rate = mAmt / fAmt;
+          let qtyToProcess = fAmt;
+
+          let targetLongs = currency === 'THB' ? thbLongs : vndLongs;
+          let targetShorts = currency === 'THB' ? thbShorts : vndShorts;
+
+          if (isBuy) { 
+              // We bought Foreign Currency. Match against previous Sales (Shorts)
+              while (qtyToProcess > 0 && targetShorts.length > 0) {
+                  let s = targetShorts[0];
+                  let matchQty = Math.min(qtyToProcess, s.qty);
+                  
+                  // Profit = (Sell Price - Buy Price) * Quantity
+                  let profit = (s.rate - rate) * matchQty; 
+                  if (includeThisRecord) {
+                      if (currency === 'THB') periodProfitThb += profit;
+                      else periodProfitVnd += profit;
+                  }
+
+                  qtyToProcess -= matchQty;
+                  s.qty -= matchQty;
+                  if (s.qty <= 0) targetShorts.shift(); // Remove completely filled lot
               }
-              else if (d.type === 'MMK ➔ THB') { 
-                  mmkIn += inNum; thbOut += outNum; 
-                  thbSoldRevMmk += inNum; 
+              if (qtyToProcess > 0) {
+                  // Leftover goes to Longs
+                  targetLongs.push({ qty: qtyToProcess, rate: rate, date: tx.timestamp });
               }
-              else if (d.type === 'VND ➔ MMK') { 
-                  vndIn += inNum; mmkOut += outNum; 
-                  vndBoughtCostMmk += outNum;
+          } else if (isSell) { 
+              // We sold Foreign Currency. Match against previous Buys (Longs)
+              while (qtyToProcess > 0 && targetLongs.length > 0) {
+                  let l = targetLongs[0];
+                  let matchQty = Math.min(qtyToProcess, l.qty);
+                  
+                  // Profit = (Sell Price - Buy Price) * Quantity
+                  let profit = (rate - l.rate) * matchQty;
+                  if (includeThisRecord) {
+                      if (currency === 'THB') periodProfitThb += profit;
+                      else periodProfitVnd += profit;
+                  }
+
+                  qtyToProcess -= matchQty;
+                  l.qty -= matchQty;
+                  if (l.qty <= 0) targetLongs.shift(); // Remove completely filled lot
               }
-              else if (d.type === 'MMK ➔ VND') { 
-                  mmkIn += inNum; vndOut += outNum; 
-                  vndSoldRevMmk += inNum;
+              if (qtyToProcess > 0) {
+                  // Leftover goes to Shorts
+                  targetShorts.push({ qty: qtyToProcess, rate: rate, date: tx.timestamp });
               }
           }
       });
-      
-      let avgBuyThb = thbIn > 0 ? (thbBoughtCostMmk / thbIn) : 0;
-      let avgSellThb = thbOut > 0 ? (thbSoldRevMmk / thbOut) : 0;
-      let estProfitThb = 0;
-      let estProfitThbInThb = 0;
-      
-      if(avgBuyThb > 0 && avgSellThb > 0) {
-          estProfitThb = (avgSellThb - avgBuyThb) * Math.min(thbIn, thbOut);
-          estProfitThbInThb = estProfitThb / avgBuyThb; 
-      }
 
-      let avgBuyVnd = vndIn > 0 ? (vndBoughtCostMmk / vndIn) : 0;
-      let avgSellVnd = vndOut > 0 ? (vndSoldRevMmk / vndOut) : 0;
-      let estProfitVnd = 0;
-      
-      if(avgBuyVnd > 0 && avgSellVnd > 0) {
-          estProfitVnd = (avgSellVnd - avgBuyVnd) * Math.min(vndIn, vndOut);
-      }
-
-      let totalProfit = estProfitThb + estProfitVnd;
-      let totalProfitThb = avgBuyThb > 0 ? (totalProfit / avgBuyThb) : 0;
-      
+      // --- UPDATE UI ---
       if(document.getElementById('dash_thb_in')) {
           // Volume Update
           document.getElementById('dash_thb_in').textContent = thbIn.toLocaleString() + " THB";
@@ -1051,25 +1131,58 @@
           vndNetEl.textContent = (vndNet > 0 ? "+" : "") + vndNet.toLocaleString() + " VND";
           vndNetEl.className = vndNet >= 0 ? "font-black text-green-600" : "font-black text-red-600";
 
-          // Profit Update UI
-          document.getElementById('avg_buy_thb').textContent = formatRate(avgBuyThb) + " MMK";
-          document.getElementById('avg_sell_thb').textContent = formatRate(avgSellThb) + " MMK";
-          
-          document.getElementById('est_profit_thb').textContent = (estProfitThb >= 0 ? "+ " : "") + formatMmk(estProfitThb) + " MMK";
-          document.getElementById('est_profit_thb').className = estProfitThb >= 0 ? "text-lg text-green-600 font-black" : "text-lg text-red-600 font-black";
-          document.getElementById('est_profit_thb_in_thb').textContent = `(~ ${formatRate(estProfitThbInThb)} THB)`;
-          document.getElementById('est_profit_thb_in_thb').className = estProfitThb >= 0 ? "text-sm text-green-600 font-bold mt-1" : "text-sm text-red-600 font-bold mt-1";
+          // Update Realized Profit
+          document.getElementById('est_profit_thb').textContent = (periodProfitThb >= 0 ? "+ " : "") + formatMmk(periodProfitThb) + " MMK";
+          document.getElementById('est_profit_thb').className = periodProfitThb >= 0 ? "text-lg text-green-600 font-black" : "text-lg text-red-600 font-black";
 
-          document.getElementById('avg_buy_vnd').textContent = formatRate(avgBuyVnd) + " MMK";
-          document.getElementById('avg_sell_vnd').textContent = formatRate(avgSellVnd) + " MMK";
-          
-          document.getElementById('est_profit_vnd').textContent = (estProfitVnd >= 0 ? "+ " : "") + formatMmk(estProfitVnd) + " MMK";
-          document.getElementById('est_profit_vnd').className = estProfitVnd >= 0 ? "text-lg text-green-600 font-black" : "text-lg text-red-600 font-black";
+          document.getElementById('est_profit_vnd').textContent = (periodProfitVnd >= 0 ? "+ " : "") + formatMmk(periodProfitVnd) + " MMK";
+          document.getElementById('est_profit_vnd').className = periodProfitVnd >= 0 ? "text-lg text-green-600 font-black" : "text-lg text-red-600 font-black";
 
+          let totalProfit = periodProfitThb + periodProfitVnd;
           document.getElementById('dash_total_profit').textContent = (totalProfit >= 0 ? "+ " : "") + formatMmk(totalProfit) + " MMK";
           document.getElementById('dash_total_profit').className = totalProfit >= 0 ? "font-black text-green-700 text-xl" : "font-black text-red-700 text-xl";
-          document.getElementById('dash_total_profit_thb').textContent = `(~ ${formatRate(totalProfitThb)} THB)`;
-          document.getElementById('dash_total_profit_thb').className = totalProfit >= 0 ? "font-bold text-green-600 text-sm mt-1" : "font-bold text-red-600 text-sm mt-1";
+
+          // 🌟 Helper for precise 1 Lakh Base Rate displaying 🌟
+          const formatCustomRate = (rate, curr) => {
+              if (!rate || rate === 0) return '0';
+              if (curr === 'THB') {
+                  let r = 100000 / rate; // Convert back to THB per 1 Lakh MMK
+                  return '၁သိန်း = ' + r.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' ဘတ်';
+              } else if (curr === 'VND') {
+                  let r = 1 / rate; // Convert back to VND per 1 MMK
+                  return '၁ကျပ် = ' + r.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:4}) + ' ဒေါင်';
+              }
+              return rate;
+          };
+
+          // 🌟 Active Lots သီးသန့် ရှင်းလင်းစွာ ပြသခြင်း 🌟
+          const renderLots = (longs, shorts, elementId, curr) => {
+              const el = document.getElementById(elementId);
+              if(!el) return;
+              let html = '';
+              
+              if(shorts.length === 0) {
+                  html = '<div class="text-gray-400 italic text-center mt-2">Clear (လက်ကျန်မရှိပါ)</div>';
+              } else {
+                  shorts.forEach(s => {
+                      html += `<div class="flex flex-col border-b border-blue-200 last:border-0 pb-1.5 mb-1.5">
+                                  <div class="flex justify-between items-center mb-1">
+                                      <span class="text-blue-700 font-bold text-[10px] uppercase tracking-wider">🔵 [MMK ဝယ်ထား / ${curr} ရောင်းထား]</span>
+                                  </div>
+                                  <div class="flex justify-between items-center">
+                                      <span class="text-blue-900 font-black text-sm">${formatMmk(s.qty)} ${curr} စာ</span>
+                                      <span class="text-gray-800 font-black text-xs bg-blue-50 border border-blue-200 px-2 py-0.5 rounded shadow-sm">
+                                          ${formatCustomRate(s.rate, curr)}
+                                      </span>
+                                  </div>
+                               </div>`;
+                  });
+              }
+              el.innerHTML = html;
+          };
+
+          renderLots(thbLongs, thbShorts, 'thb_active_lots', 'THB');
+          renderLots(vndLongs, vndShorts, 'vnd_active_lots', 'VND');
       }
   }
 
@@ -1087,17 +1200,9 @@
       const vndOut = document.getElementById('dash_vnd_out').textContent;
       const vndNet = document.getElementById('dash_vnd_net').textContent;
       
-      const avgBuyThb = document.getElementById('avg_buy_thb').textContent;
-      const avgSellThb = document.getElementById('avg_sell_thb').textContent;
       const estProfitThb = document.getElementById('est_profit_thb').textContent;
-      const estProfitThbInThb = document.getElementById('est_profit_thb_in_thb').textContent;
-
-      const avgBuyVnd = document.getElementById('avg_buy_vnd').textContent;
-      const avgSellVnd = document.getElementById('avg_sell_vnd').textContent;
       const estProfitVnd = document.getElementById('est_profit_vnd').textContent;
-
       const totalProfit = document.getElementById('dash_total_profit').textContent;
-      const totalProfitThb = document.getElementById('dash_total_profit_thb').textContent;
       
       const periodText = document.getElementById('dash_title_period').textContent;
 
@@ -1146,23 +1251,20 @@
           </div>
           
           <div style="background: #faf5ff; padding: 20px; border-radius: 12px; border: 2px solid #e9d5ff; text-align:center;">
-              <h3 style="margin:0 0 10px 0; font-size:18px; color:#6b21a8;">Estimated Profit & Loss</h3>
+              <h3 style="margin:0 0 10px 0; font-size:18px; color:#6b21a8;">Realized Profit (FIFO)</h3>
               
               <div style="display:flex; justify-content:space-around; align-items:center; margin-top:15px; border-bottom: 1px dashed #e9d5ff; padding-bottom: 15px;">
                   <div style="text-align:left;">
-                      <span style="font-weight:bold; color:#1e40af; font-size:14px;">THB Profit</span><br>
-                      <span style="font-size:11px; color:#6b7280;">Buy: ${avgBuyThb} | Sell: ${avgSellThb}</span>
+                      <span style="font-weight:bold; color:#1e40af; font-size:16px;">THB Profit</span>
                   </div>
                   <div style="text-align:right;">
-                      <span style="font-weight:900; font-size:18px; color:#15803d;">${estProfitThb}</span><br>
-                      <span style="font-weight:bold; font-size:12px; color:#15803d;">${estProfitThbInThb}</span>
+                      <span style="font-weight:900; font-size:18px; color:#15803d;">${estProfitThb}</span>
                   </div>
               </div>
               
               <div style="display:flex; justify-content:space-around; align-items:center; margin-top:15px; border-bottom: 1px dashed #e9d5ff; padding-bottom: 15px;">
                   <div style="text-align:left;">
-                      <span style="font-weight:bold; color:#c2410c; font-size:14px;">VND Profit</span><br>
-                      <span style="font-size:11px; color:#6b7280;">Buy: ${avgBuyVnd} | Sell: ${avgSellVnd}</span>
+                      <span style="font-weight:bold; color:#c2410c; font-size:16px;">VND Profit</span>
                   </div>
                   <div style="text-align:right;">
                       <span style="font-weight:900; font-size:18px; color:#15803d;">${estProfitVnd}</span>
@@ -1172,8 +1274,7 @@
               <div style="display:flex; justify-content:space-around; align-items:center; margin-top:15px;">
                   <span style="font-weight:bold; font-size:20px; color:#0f172a;">Total Profit:</span>
                   <div style="text-align:right;">
-                      <span style="font-weight:900; font-size:28px; color:#166534;">${totalProfit}</span><br>
-                      <span style="font-weight:bold; font-size:16px; color:#15803d;">${totalProfitThb}</span>
+                      <span style="font-weight:900; font-size:28px; color:#166534;">${totalProfit}</span>
                   </div>
               </div>
           </div>
@@ -1199,6 +1300,103 @@
           alert("PDF ထုတ်ရာတွင် အခက်အခဲရှိပါသည်။");
       } finally {
           document.body.removeChild(reportDiv);
+      }
+  }
+
+  // --- 🌟 Manual Lot သိမ်းဆည်းရန် Function 🌟 ---
+  let manualCalcLock = false;
+
+  function updateManualTypeLabel() {
+      const type = document.getElementById('manualLotType').value;
+      const lbl = document.getElementById('lblManualRate');
+      if(type.includes('THB')) {
+          lbl.textContent = "ငွေဈေး (၁ သိန်းကျပ် = ? ဘတ်)";
+      } else {
+          lbl.textContent = "ငွေဈေး (၁ ကျပ် = ? ဒေါင်)";
+      }
+      manualCalcMmk();
+  }
+
+  function manualCalcMmk() {
+      if(manualCalcLock) return; manualCalcLock = true;
+      const type = document.getElementById('manualLotType').value;
+      const fAmt = parseNum(document.getElementById('manualLotForeign').value);
+      const rate = parseNum(document.getElementById('manualLotRate').value);
+      if(fAmt > 0 && rate > 0) {
+          let mAmt = type.includes('THB') ? (fAmt / rate) * 100000 : (fAmt / rate);
+          updateVal('manualLotMmk', mAmt, false);
+      } else {
+          document.getElementById('manualLotMmk').value = '';
+      }
+      manualCalcLock = false;
+  }
+
+  function manualCalcRate() {
+      if(manualCalcLock) return; manualCalcLock = true;
+      const type = document.getElementById('manualLotType').value;
+      const fAmt = parseNum(document.getElementById('manualLotForeign').value);
+      const mAmt = parseNum(document.getElementById('manualLotMmk').value);
+      if(fAmt > 0 && mAmt > 0) {
+          let rate = type.includes('THB') ? (fAmt / mAmt) * 100000 : (fAmt / mAmt);
+          updateVal('manualLotRate', rate, true);
+      } else {
+          document.getElementById('manualLotRate').value = '';
+      }
+      manualCalcLock = false;
+  }
+
+  async function saveManualLot(event) {
+      const type = document.getElementById('manualLotType').value;
+      const fAmtStr = document.getElementById('manualLotForeign').value;
+      const mAmtStr = document.getElementById('manualLotMmk').value;
+      
+      const fAmt = parseNum(fAmtStr);
+      const mAmt = parseNum(mAmtStr);
+
+      if(!fAmt || !mAmt || fAmt <= 0 || mAmt <= 0) return alert("ပမာဏများကို မှန်ကန်စွာ ထည့်ပါ။");
+
+      const btn = event.currentTarget;
+      const originalText = btn.textContent;
+      btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
+
+      let inAmtStr = "", outAmtStr = "";
+      // Type is basically exactly like normal transaction types
+      if(type === 'MMK ➔ THB' || type === 'MMK ➔ VND') {
+          inAmtStr = mAmt.toLocaleString() + " MMK";
+          outAmtStr = fAmt.toLocaleString() + (type.includes('THB') ? " THB" : " VND");
+      } else {
+          inAmtStr = fAmt.toLocaleString() + (type.includes('THB') ? " THB" : " VND");
+          outAmtStr = mAmt.toLocaleString() + " MMK";
+      }
+
+      const dDate = new Date();
+      const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
+      const invId = "MAN-" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
+
+      let savedRate = "";
+      if(type.includes('THB')) {
+          savedRate = `100K = ${fmt6((fAmt/mAmt)*100000)} THB`;
+      } else {
+          savedRate = `1 MMK = ${fmt6(fAmt/mAmt)} VND`;
+      }
+
+      const historyRecord = {
+        id: invId, type: type, rate: savedRate, inAmt: inAmtStr, outAmt: outAmtStr,
+        method: "Manual Lot", profit: 0, status: 'Success', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: "Admin"
+      };
+
+      try {
+          await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord);
+          document.getElementById('manualLotModal').style.display='none';
+          document.getElementById('manualLotForeign').value = '';
+          document.getElementById('manualLotRate').value = '';
+          document.getElementById('manualLotMmk').value = '';
+          alert("Manual Lot အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။");
+          loadHistory();
+      } catch(e) {
+          console.error(e); alert("ထည့်သွင်းရာတွင် အခက်အခဲရှိပါသည်။");
+      } finally {
+          btn.disabled = false; btn.textContent = originalText;
       }
   }
 
@@ -1394,6 +1592,29 @@
     const qrEl = document.getElementById('qrSelect');
     if(qrEl) qrEl.addEventListener('change', () => refreshQrPreview(false));
 
+    // Manual Lot Listeners
+    const mlFor = document.getElementById('manualLotForeign');
+    if(mlFor) {
+        mlFor.addEventListener('input', () => {
+            formatInputThousands(document.getElementById('manualLotForeign'), true);
+            manualCalcMmk();
+        });
+    }
+    const mlRate = document.getElementById('manualLotRate');
+    if(mlRate) {
+        mlRate.addEventListener('input', () => {
+            formatInputThousands(document.getElementById('manualLotRate'), true);
+            manualCalcMmk();
+        });
+    }
+    const mlMmk = document.getElementById('manualLotMmk');
+    if(mlMmk) {
+        mlMmk.addEventListener('input', () => {
+            formatInputThousands(document.getElementById('manualLotMmk'), false);
+            manualCalcRate();
+        });
+    }
+
     updateReceiptUI();
     initDropdowns(); syncFrom100k(); refreshVndRateNote(); recalcVND();
   });
@@ -1484,6 +1705,7 @@
       document.getElementById('adminModalTitle').innerHTML = "⚙️ Admin Settings";
       document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'inline-block');
       document.getElementById('btnExportCSV').style.display = 'inline-block';
+      const btnClear = document.getElementById('btnClearHistory'); if(btnClear) btnClear.style.display = 'inline-block';
       switchTab('tab-dashboard', document.querySelector('.tab-btn')); 
       renderAdminLists(); loadHistory();
       
@@ -1496,6 +1718,7 @@
       document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
       document.getElementById('btnTabHistory').style.display = 'inline-block';
       document.getElementById('btnExportCSV').style.display = 'none'; 
+      const btnClear = document.getElementById('btnClearHistory'); if(btnClear) btnClear.style.display = 'none';
       
       switchTab('tab-history', document.getElementById('btnTabHistory')); 
       loadHistory();
@@ -1794,6 +2017,47 @@
       if (dbRef) await dbRef.set({ adminTimezone: newTz }, { merge: true });
       alert("အချိန်ဇုန် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ။ (" + newTz.split('/').pop().replace(/_/g, ' ') + ")");
     } catch (e) { alert("Error: " + e.message); } finally { if (btn) { btn.textContent = "အချိန်ဇုန် သိမ်းမည်"; btn.disabled = false; } }
+  }
+
+  // --- 🌟 မှတ်တမ်းများ အားလုံး တခါတည်း ရှင်းလင်းရန် 🌟 ---
+  window.clearAllHistory = async function() {
+      if(!confirm("⚠️ သတိပေးချက် ⚠️\nမှတ်တမ်းအားလုံးကို ဖျက်ပစ်ရန် သေချာပါသလား?\n(ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍မရပါ။)")) return;
+
+      const btn = document.getElementById('btnClearHistory');
+      if(btn) { btn.disabled = true; btn.textContent = "ဖျက်နေသည်..."; }
+
+      try {
+          const db = firebase.firestore();
+          const snapshot = await db.collection("exchange_history").get();
+          const batches = [];
+          let currentBatch = db.batch();
+          let count = 0;
+
+          snapshot.docs.forEach(doc => {
+              currentBatch.delete(doc.ref);
+              count++;
+              if(count === 490) {
+                  batches.push(currentBatch);
+                  currentBatch = db.batch();
+                  count = 0;
+              }
+          });
+          if(count > 0) batches.push(currentBatch);
+
+          for(let b of batches) {
+              await b.commit();
+          }
+
+          alert("မှတ်တမ်းအားလုံး အောင်မြင်စွာ ဖျက်ပစ်ပြီးပါပြီ။");
+          allLoadedHistory = [];
+          renderHistoryRows([]);
+          updateDashboard([]);
+      } catch(e) {
+          console.error(e);
+          alert("ဖျက်ရာတွင် အမှားအယွင်းရှိပါသည်။");
+      } finally {
+          if(btn) { btn.disabled = false; btn.textContent = "🗑 Clear All"; }
+      }
   }
 
   // --- Admin History & Status Update Logic ---
