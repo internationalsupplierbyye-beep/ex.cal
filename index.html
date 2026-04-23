@@ -503,6 +503,10 @@
           <label class="text-xs font-bold text-gray-600">ကျေးဇူးတင်လွှာ (Thanks Message)</label>
           <input type="text" id="adminThanks" class="admin-input-box text-sm">
         </div>
+        <div class="mb-3">
+          <label class="text-xs font-bold text-gray-600">Copy Text အောက်ခြေစာသား (Copy Bottom)</label>
+          <input type="text" id="adminCopyBottom" class="admin-input-box text-sm">
+        </div>
         <button onclick="saveReceiptTexts()" id="btnReceiptTextSave" class="btn bg-pink-600 hover:bg-pink-700 w-full">စာသားများ သိမ်းမည်</button>
       </div>
 
@@ -601,17 +605,20 @@
       orig: {
           warn1: "ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။",
           warn2: "ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။",
-          thanks: "Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။"
+          thanks: "Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။",
+          copyBottom: "ငွေလွှဲမည်ဆိုပါက ဘဏ်အကောင့်မေးပါ ခင်ဗျ၊"
       },
       en: {
           warn1: "Always request the bank account before every transfer.",
           warn2: "We are not responsible for any transfer made without requesting and confirming the bank account.",
-          thanks: "Thank you for trusting and using Thailand Guide - Supplier By Ye."
+          thanks: "Thank you for trusting and using Thailand Guide - Supplier By Ye.",
+          copyBottom: "Please ask for the bank account before transferring."
       },
       th: {
           warn1: "โอนเงินทุกครั้งกรุณาขอเลขบัญชีที่ต้องถามก่อน",
           warn2: "หากโอนโดยไม่ยืนยันเลขบัญชี ทางเพจขอไม่รับผิดชอบ",
-          thanks: "ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye"
+          thanks: "ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye",
+          copyBottom: "กรุณาสอบถามเลขบัญชีธนาคารก่อนโอนเงิน"
       }
   };
 
@@ -800,6 +807,103 @@
   bindAutoSeparator('thbIn', true); bindAutoSeparator('mmkIn', true); bindAutoSeparator('vndIn', true); bindAutoSeparator('mmkIn2', true);
   bindAutoSeparator('mmkOut', false); bindAutoSeparator('thbOut', true); bindAutoSeparator('mmkOut2', false); bindAutoSeparator('vndOut', false);
   bindAutoSeparator('rate100k', true); bindAutoSeparator('ratePerThb', true); bindAutoSeparator('rateVnd', true);
+
+
+  // --- 📋 Copy Text Function ---
+  function copyText(sectionId, btn) {
+      const section = document.getElementById(sectionId);
+      if (!section) return;
+
+      const inputs = section.querySelectorAll('input.amt-input');
+
+      // --- 🌟 Validation Check ---
+      let rawVal1 = inputs[0] ? inputs[0].value.trim() : '';
+      let rawVal2 = inputs[1] ? inputs[1].value.trim() : '';
+      
+      // တန်ဖိုး မရှိရင် သို့မဟုတ် ၀ ဖြစ်နေရင် Copy မကူးပေးပါ
+      if (!rawVal1 || !rawVal2 || parseFloat(rawVal1.replace(/,/g, '')) === 0 || parseFloat(rawVal2.replace(/,/g, '')) === 0) {
+          alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။ (ဂဏန်းမပါဘဲ Copy ကူး၍မရပါ)");
+          return;
+      }
+
+      const title = section.querySelector('h2').textContent;
+
+      let flag1 = '', flag2 = '';
+      let label1 = '', label2 = '';
+      let rateStr = '';
+
+      // Section အလိုက် နိုင်ငံအလံ၊ လွှဲငွေ/ရငွေ သတ်မှတ်ခြင်း နှင့် ငွေဈေးနှုန်း ယူခြင်း
+      if (sectionId === 'box-thb2mmk') {
+          flag1 = '🇹🇭 '; label1 = 'ဘတ်ငွေ (လွှဲငွေ)';
+          flag2 = '🇲🇲 '; label2 = 'မြန်မာကျပ် (ရငွေ)';
+          rateStr = LAST_RATE.r ? `ငွေဈေး ၁ သိန်းကျပ် = ${fmt6(LAST_RATE.r)} ဘတ်` : '';
+      } else if (sectionId === 'box-mmk2thb') {
+          flag1 = '🇲🇲 '; label1 = 'မြန်မာကျပ် (လွှဲငွေ)';
+          flag2 = '🇹🇭 '; label2 = 'ဘတ်ငွေ (ရငွေ)';
+          rateStr = LAST_RATE.r ? `ငွေဈေး ၁ သိန်းကျပ် = ${fmt6(LAST_RATE.r)} ဘတ်` : '';
+      } else if (sectionId === 'box-vnd2mmk') {
+          flag1 = '🇻🇳 '; label1 = 'ဒေါင်ငွေ (လွှဲငွေ)';
+          flag2 = '🇲🇲 '; label2 = 'မြန်မာကျပ် (ရငွေ)';
+          rateStr = LAST_RATE.vnd ? `ငွေဈေး ၁ ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : '';
+      } else if (sectionId === 'box-mmk2vnd') {
+          flag1 = '🇲🇲 '; label1 = 'မြန်မာကျပ် (လွှဲငွေ)';
+          flag2 = '🇻🇳 '; label2 = 'ဒေါင်ငွေ (ရငွေ)';
+          rateStr = LAST_RATE.vnd ? `ငွေဈေး ၁ ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : '';
+      }
+
+      let val1 = inputs[0] ? (inputs[0].value || '0') : '0';
+      let val2 = inputs[1] ? (inputs[1].value || '0') : '0';
+
+      // Text Format တည်ဆောက်ခြင်း
+      let textToCopy = `[ ${title} ]\n`;
+      textToCopy += `${flag1}${label1} : ${val1}\n`;
+      textToCopy += `${flag2}${label2} : ${val2}\n`;
+
+      if (rateStr) {
+          textToCopy += `\n${rateStr}\n`;
+      }
+
+      // --- 🌟 Firebase Admin Settings မှ Copy Custom စာသား ယူခြင်း ---
+      const saveLang = document.getElementById('saveLangSelect') ? document.getElementById('saveLangSelect').value : 'orig';
+      const copyCustomText = (FIREBASE_RECEIPT_TEXTS[saveLang] && FIREBASE_RECEIPT_TEXTS[saveLang].copyBottom !== undefined) 
+                              ? FIREBASE_RECEIPT_TEXTS[saveLang].copyBottom 
+                              : (saveLang === 'en' ? "Please ask for the bank account before transferring." : 
+                                 saveLang === 'th' ? "กรุณาสอบถามเลขบัญชีธนาคารก่อนโอนเงิน" : 
+                                 "ငွေလွှဲမည်ဆိုပါက ဘဏ်အကောင့်မေးပါ ခင်ဗျ၊");
+
+      if (copyCustomText) {
+          textToCopy += `\n${copyCustomText}\n`;
+      }
+
+      // (Optional) အကယ်၍ QR သို့မဟုတ် Bank ရွေးထားရင် Copy ထဲ ဆက်ထည့်ပေးဖို့
+      const mode = document.querySelector('input[name="saveMode"]:checked')?.value;
+      if (mode === 'qr' && typeof CURRENT_QR !== 'undefined' && CURRENT_QR.owner) {
+          const qrSelect = document.getElementById('qrSelect');
+          const qrText = qrSelect.options[qrSelect.selectedIndex]?.text || '';
+          textToCopy += `\n[ ငွေလွှဲရန် ]\nနည်းလမ်း : QR (${qrText})\nအကောင့်နာမည် : ${CURRENT_QR.owner}\n`;
+      } else if (mode === 'bank' && typeof ACTIVE_BANK_INFO !== 'undefined') {
+          const key = document.getElementById('bankSelect').value;
+          if (key && ACTIVE_BANK_INFO[key]) {
+              const info = ACTIVE_BANK_INFO[key];
+              textToCopy += `\n[ ဘဏ်အချက်အလက် ]\nဘဏ် : ${info.name}\nအကောင့်နာမည် : ${info.accName}\nအကောင့်နံပါတ် : ${info.accNo}\n`;
+          }
+      }
+
+      // Clipboard ထဲသို့ ကူးထည့်ခြင်း
+      navigator.clipboard.writeText(textToCopy).then(() => {
+          const originalText = btn.innerHTML;
+          btn.innerHTML = "✅ Copied!";
+          btn.classList.add('!bg-green-600'); 
+          setTimeout(() => {
+              btn.innerHTML = originalText;
+              btn.classList.remove('!bg-green-600');
+          }, 1500);
+      }).catch(err => {
+          console.error("Copy failed", err);
+          alert("Copy ကူးရန် အခက်အခဲရှိပါသည်။ Browser Permission လိုအပ်နိုင်ပါသည်။");
+      });
+  }
+
 
   // --- 🌟 DASHBOARD & AUTO PROFIT FUNCTIONS ---
   function applyDashboardFilter() {
@@ -1262,10 +1366,11 @@
   // --- Dynamic Receipt Texts UI Update ---
   function loadReceiptTextsToInputs() {
       const lang = document.getElementById('adminReceiptLang').value;
-      const texts = FIREBASE_RECEIPT_TEXTS[lang] || {warn1:'', warn2:'', thanks:''};
+      const texts = FIREBASE_RECEIPT_TEXTS[lang] || {warn1:'', warn2:'', thanks:'', copyBottom:''};
       document.getElementById('adminWarn1').value = texts.warn1 || '';
       document.getElementById('adminWarn2').value = texts.warn2 || '';
       document.getElementById('adminThanks').value = texts.thanks || '';
+      document.getElementById('adminCopyBottom').value = texts.copyBottom || '';
   }
 
   function updateReceiptUI() {
@@ -1314,11 +1419,14 @@
             // Check for new structure specifically to overwrite any stale states
             if (data.receiptTexts.orig) {
                 FIREBASE_RECEIPT_TEXTS.orig = data.receiptTexts.orig;
+                if (!FIREBASE_RECEIPT_TEXTS.orig.copyBottom && FIREBASE_RECEIPT_TEXTS.orig.copyBottom !== "") {
+                    FIREBASE_RECEIPT_TEXTS.orig.copyBottom = "ငွေလွှဲမည်ဆိုပါက ဘဏ်အကောင့်မေးပါ ခင်ဗျ၊";
+                }
                 if (data.receiptTexts.en) FIREBASE_RECEIPT_TEXTS.en = data.receiptTexts.en;
                 if (data.receiptTexts.th) FIREBASE_RECEIPT_TEXTS.th = data.receiptTexts.th;
             } 
             else if (data.receiptTexts.warn1 !== undefined) {
-                FIREBASE_RECEIPT_TEXTS.orig = { warn1: data.receiptTexts.warn1, warn2: data.receiptTexts.warn2, thanks: data.receiptTexts.thanks };
+                FIREBASE_RECEIPT_TEXTS.orig = { warn1: data.receiptTexts.warn1, warn2: data.receiptTexts.warn2, thanks: data.receiptTexts.thanks, copyBottom: "ငွေလွှဲမည်ဆိုပါက ဘဏ်အကောင့်မေးပါ ခင်ဗျ၊" };
             }
         }
         
@@ -1609,11 +1717,12 @@
       const w1 = document.getElementById('adminWarn1').value.trim();
       const w2 = document.getElementById('adminWarn2').value.trim();
       const thx = document.getElementById('adminThanks').value.trim();
+      const cb = document.getElementById('adminCopyBottom').value.trim();
 
       const btn = document.getElementById('btnReceiptTextSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
-      FIREBASE_RECEIPT_TEXTS[lang] = { warn1: w1, warn2: w2, thanks: thx };
+      FIREBASE_RECEIPT_TEXTS[lang] = { warn1: w1, warn2: w2, thanks: thx, copyBottom: cb };
 
       try {
           await updateFirebase();
