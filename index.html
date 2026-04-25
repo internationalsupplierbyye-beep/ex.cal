@@ -539,12 +539,16 @@
         <hr class="border-pink-200 my-3">
         <h3 class="font-bold text-pink-800 mb-3 text-sm">🤖 Telegram Bot ချိတ်ဆက်ရန်</h3>
         <div class="mb-2">
-          <label class="text-xs font-bold text-gray-600">Telegram Chat ID (ဥပမာ: -100123456789)</label>
-          <input type="text" id="adminTgChatId" class="admin-input-box text-sm" placeholder="Chat ID ထည့်ပါ">
+          <label class="text-xs font-bold text-gray-600">Telegram Chat ID</label>
+          <input type="text" id="adminTgChatId" class="admin-input-box text-sm" placeholder="Chat ID ထည့်ပါ (ဥပမာ: -100123456789)">
+        </div>
+        <div class="mb-2">
+          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (ပြေစာအသစ်များပို့ရန်)</label>
+          <input type="text" id="adminTgTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 2)">
         </div>
         <div class="mb-3">
-          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Topics ခွဲမထားလျှင် အလွတ်ထားပါ)</label>
-          <input type="text" id="adminTgTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 12)">
+          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Success ဖြစ်သော မှတ်တမ်းများပို့ရန်)</label>
+          <input type="text" id="adminTgSuccessTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 14)">
         </div>
         <button onclick="saveTelegramSettings()" id="btnTgSave" class="btn bg-blue-600 hover:bg-blue-700 w-full">Telegram Settings သိမ်းမည်</button>
       </div>
@@ -644,6 +648,7 @@
   const TELEGRAM_BOT_TOKEN = "8646347244:AAG-9OMp62ThgZOUt7KRdFO9200POmLvNrY";
   let TELEGRAM_CHAT_ID = "-1003987703326";
   let TELEGRAM_TOPIC_ID = "2";
+  let TELEGRAM_SUCCESS_TOPIC_ID = "14"; // Default for Success
 
   let FIREBASE_RECEIPT_TEXTS = {
       orig: {
@@ -687,7 +692,7 @@
   const DEFAULT_QR_FILES = ["hba.jpg","hbq.jpg","hkqr.jpg","ht7.jpg","tkpayq.jpg","yba.jpg","ybq.jpg","ybidv.jpg","yka.jpg","ykpayq.jpg","ykq.jpg","yktba.jpg","yktbq.jpg","ysa.jpg","yt7.jpg","ytq.jpg","ywaveq.jpg"];
 
   // --- Telegram Integration Function ---
-  function sendTelegramAlert(messageText) {
+  function sendTelegramAlert(messageText, specificTopicId = null) {
       if(!TELEGRAM_CHAT_ID) return; 
       
       const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -697,8 +702,9 @@
           parse_mode: "HTML"
       };
       
-      if(TELEGRAM_TOPIC_ID) {
-          payload.message_thread_id = TELEGRAM_TOPIC_ID;
+      let finalTopicId = specificTopicId || TELEGRAM_TOPIC_ID;
+      if(finalTopicId) {
+          payload.message_thread_id = finalTopicId;
       }
 
       fetch(url, {
@@ -1433,7 +1439,7 @@
           alertMsg += `ပမာဏ: <code>${inAmtStr}</code> ➔ <code>${outAmtStr}</code>\n`;
           alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
           alertMsg += `Device: Admin`;
-          sendTelegramAlert(alertMsg);
+          sendTelegramAlert(alertMsg, TELEGRAM_SUCCESS_TOPIC_ID); // Manual Lot က တန်း Success ဖြစ်လို့ Topic 14 ကို သီးသန့်ပို့မယ်
 
           document.getElementById('manualLotModal').style.display='none';
           document.getElementById('manualLotForeign').value = '';
@@ -1452,6 +1458,7 @@
   window.saveTelegramSettings = async function() {
       const chatId = document.getElementById('adminTgChatId').value.trim();
       const topicId = document.getElementById('adminTgTopicId').value.trim();
+      const successTopicId = document.getElementById('adminTgSuccessTopicId').value.trim();
       
       const btn = document.getElementById('btnTgSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
@@ -1459,9 +1466,10 @@
       try {
           TELEGRAM_CHAT_ID = chatId;
           TELEGRAM_TOPIC_ID = topicId;
+          TELEGRAM_SUCCESS_TOPIC_ID = successTopicId;
           
           if(dbRef) {
-              await dbRef.set({ telegram: { chatId: chatId, topicId: topicId } }, { merge: true });
+              await dbRef.set({ telegram: { chatId: chatId, topicId: topicId, successTopicId: successTopicId } }, { merge: true });
           }
           alert("Telegram Settings အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) {
@@ -1733,12 +1741,15 @@
         if (data.telegram) {
             if(data.telegram.chatId) TELEGRAM_CHAT_ID = data.telegram.chatId;
             if(data.telegram.topicId) TELEGRAM_TOPIC_ID = data.telegram.topicId;
+            if(data.telegram.successTopicId) TELEGRAM_SUCCESS_TOPIC_ID = data.telegram.successTopicId;
         }
         
         const tgChatInput = document.getElementById('adminTgChatId');
         if(tgChatInput) tgChatInput.value = TELEGRAM_CHAT_ID;
         const tgTopicInput = document.getElementById('adminTgTopicId');
         if(tgTopicInput) tgTopicInput.value = TELEGRAM_TOPIC_ID;
+        const tgSuccessTopicInput = document.getElementById('adminTgSuccessTopicId');
+        if(tgSuccessTopicInput) tgSuccessTopicInput.value = TELEGRAM_SUCCESS_TOPIC_ID;
         
         loadReceiptTextsToInputs();
         updateReceiptUI();
@@ -2152,6 +2163,21 @@
           await firebase.firestore().collection("exchange_history").doc(invId).update({ status: newStatus });
           allLoadedHistory[index].status = newStatus;
           renderHistoryRows(allLoadedHistory);
+          
+          // 🌟 Telegram သို့ Status ပြောင်းလဲကြောင်း အသိပေးစာပို့ခြင်း 🌟
+          let statusEmoji = newStatus === 'Success' ? '✅' : (newStatus === 'Cancelled' ? '❌' : '⏳');
+          let alertMsg = `${statusEmoji} <b>မှတ်တမ်း Status ပြောင်းလဲမှု</b>\n\n`;
+          alertMsg += `ID: <code>${invId}</code>\n`;
+          alertMsg += `အမျိုးအစား: <b>${tx.type}</b>\n`;
+          alertMsg += `ပမာဏ: <code>${tx.inAmt}</code> ➔ <code>${tx.outAmt}</code>\n`;
+          alertMsg += `Status အသစ်: <b>${newStatus}</b>`;
+          
+          if(newStatus === 'Success') {
+              sendTelegramAlert(alertMsg, TELEGRAM_SUCCESS_TOPIC_ID);
+          } else {
+              sendTelegramAlert(alertMsg);
+          }
+          
       } catch(e) {
           console.error(e); alert("Status ပြောင်းလဲခြင်း မအောင်မြင်ပါ။");
       }
@@ -2733,7 +2759,7 @@
             alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
             alertMsg += `နည်းလမ်း: ${paymentMethodName}\n`;
             alertMsg += `Device: ${currentDeviceId}`;
-            sendTelegramAlert(alertMsg);
+            sendTelegramAlert(alertMsg); // default topic 2 သို့ပို့မည်
 
         } catch(e) {}
         
