@@ -534,7 +534,19 @@
           <label class="text-xs font-bold text-gray-600">Copy Text အောက်ခြေစာသား (Copy Bottom)</label>
           <input type="text" id="adminCopyBottom" class="admin-input-box text-sm">
         </div>
-        <button onclick="saveReceiptTexts()" id="btnReceiptTextSave" class="btn bg-pink-600 hover:bg-pink-700 w-full">စာသားများ သိမ်းမည်</button>
+        <button onclick="saveReceiptTexts()" id="btnReceiptTextSave" class="btn bg-pink-600 hover:bg-pink-700 w-full mb-3">စာသားများ သိမ်းမည်</button>
+        
+        <hr class="border-pink-200 my-3">
+        <h3 class="font-bold text-pink-800 mb-3 text-sm">🤖 Telegram Bot ချိတ်ဆက်ရန်</h3>
+        <div class="mb-2">
+          <label class="text-xs font-bold text-gray-600">Telegram Chat ID (ဥပမာ: -100123456789)</label>
+          <input type="text" id="adminTgChatId" class="admin-input-box text-sm" placeholder="Chat ID ထည့်ပါ">
+        </div>
+        <div class="mb-3">
+          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Topics ခွဲမထားလျှင် အလွတ်ထားပါ)</label>
+          <input type="text" id="adminTgTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 12)">
+        </div>
+        <button onclick="saveTelegramSettings()" id="btnTgSave" class="btn bg-blue-600 hover:bg-blue-700 w-full">Telegram Settings သိမ်းမည်</button>
       </div>
 
       <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-4">
@@ -627,6 +639,11 @@
   let ACTIVE_BANK_INFO = {};
   let FIREBASE_DEVICE_NAMES = {}; 
   let FIREBASE_HIDDEN_DEVICES = []; 
+  
+  // Telegram Globals
+  const TELEGRAM_BOT_TOKEN = "8646347244:AAG-9OMp62ThgZOUt7KRdFO9200POmLvNrY";
+  let TELEGRAM_CHAT_ID = "-1003987703326";
+  let TELEGRAM_TOPIC_ID = "2";
 
   let FIREBASE_RECEIPT_TEXTS = {
       orig: {
@@ -668,6 +685,28 @@
   };
   const DEFAULT_BANK_ORDER = ["KTB","BBL","KPLUS","KBZ","KPAY_YLH","KPAY_TDW","KPAY_HSA","WAVE_YLH","WAVE_HSA"];
   const DEFAULT_QR_FILES = ["hba.jpg","hbq.jpg","hkqr.jpg","ht7.jpg","tkpayq.jpg","yba.jpg","ybq.jpg","ybidv.jpg","yka.jpg","ykpayq.jpg","ykq.jpg","yktba.jpg","yktbq.jpg","ysa.jpg","yt7.jpg","ytq.jpg","ywaveq.jpg"];
+
+  // --- Telegram Integration Function ---
+  function sendTelegramAlert(messageText) {
+      if(!TELEGRAM_CHAT_ID) return; 
+      
+      const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+      const payload = {
+          chat_id: TELEGRAM_CHAT_ID,
+          text: messageText,
+          parse_mode: "HTML"
+      };
+      
+      if(TELEGRAM_TOPIC_ID) {
+          payload.message_thread_id = TELEGRAM_TOPIC_ID;
+      }
+
+      fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+      }).catch(e => console.error("Telegram Send Error:", e));
+  }
 
   // --- Calculator Utility Functions ---
   function normalizeDigits(v){ const map={'၀':'0','၁':'1','၂':'2','၃':'3','၄':'4','၅':'5','၆':'6','၇':'7','၈':'8','၉':'9'}; return (v||'').replace(/[၀၁၂၃၄၅၆၇၈၉]/g, d=>map[d]??d); }
@@ -1360,7 +1399,6 @@
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
       let inAmtStr = "", outAmtStr = "";
-      // Type is basically exactly like normal transaction types
       if(type === 'MMK ➔ THB' || type === 'MMK ➔ VND') {
           inAmtStr = mAmt.toLocaleString() + " MMK";
           outAmtStr = fAmt.toLocaleString() + (type.includes('THB') ? " THB" : " VND");
@@ -1387,6 +1425,16 @@
 
       try {
           await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord);
+          
+          // 🌟 Telegram သို့ အသိပေးစာပို့ခြင်း 🌟
+          let alertMsg = `➕ <b>Manual Lot ထည့်သွင်းမှု အသစ်</b>\n\n`;
+          alertMsg += `ID: <code>${invId}</code>\n`;
+          alertMsg += `အမျိုးအစား: <b>${type}</b>\n`;
+          alertMsg += `ပမာဏ: <code>${inAmtStr}</code> ➔ <code>${outAmtStr}</code>\n`;
+          alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
+          alertMsg += `Device: Admin`;
+          sendTelegramAlert(alertMsg);
+
           document.getElementById('manualLotModal').style.display='none';
           document.getElementById('manualLotForeign').value = '';
           document.getElementById('manualLotRate').value = '';
@@ -1397,6 +1445,29 @@
           console.error(e); alert("ထည့်သွင်းရာတွင် အခက်အခဲရှိပါသည်။");
       } finally {
           btn.disabled = false; btn.textContent = originalText;
+      }
+  }
+
+  // --- Admin General: Save Telegram Settings ---
+  window.saveTelegramSettings = async function() {
+      const chatId = document.getElementById('adminTgChatId').value.trim();
+      const topicId = document.getElementById('adminTgTopicId').value.trim();
+      
+      const btn = document.getElementById('btnTgSave');
+      btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
+      
+      try {
+          TELEGRAM_CHAT_ID = chatId;
+          TELEGRAM_TOPIC_ID = topicId;
+          
+          if(dbRef) {
+              await dbRef.set({ telegram: { chatId: chatId, topicId: topicId } }, { merge: true });
+          }
+          alert("Telegram Settings အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+      } catch(e) {
+          alert("Error: " + e.message);
+      } finally {
+          btn.disabled = false; btn.textContent = "Telegram Settings သိမ်းမည်";
       }
   }
 
@@ -1658,6 +1729,16 @@
           if (data.lastRates.rate100k) { document.getElementById('rate100k').value = data.lastRates.rate100k; formatInputThousands(document.getElementById('rate100k'), true); syncFrom100k(); }
           if (data.lastRates.rateVnd) { document.getElementById('rateVnd').value = data.lastRates.rateVnd; formatInputThousands(document.getElementById('rateVnd'), true); refreshVndRateNote(); recalcVND(); }
         }
+        
+        if (data.telegram) {
+            if(data.telegram.chatId) TELEGRAM_CHAT_ID = data.telegram.chatId;
+            if(data.telegram.topicId) TELEGRAM_TOPIC_ID = data.telegram.topicId;
+        }
+        
+        const tgChatInput = document.getElementById('adminTgChatId');
+        if(tgChatInput) tgChatInput.value = TELEGRAM_CHAT_ID;
+        const tgTopicInput = document.getElementById('adminTgTopicId');
+        if(tgTopicInput) tgTopicInput.value = TELEGRAM_TOPIC_ID;
         
         loadReceiptTextsToInputs();
         updateReceiptUI();
@@ -2640,7 +2721,21 @@
           id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
           method: paymentMethodName, profit: 0, status: 'Pending', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId
         };
-        try { firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); } catch(e) {}
+        
+        try { 
+            await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); 
+            
+            // 🌟 Telegram သို့ အသိပေးစာပို့ခြင်း 🌟
+            let alertMsg = `✅ <b>ငွေလွှဲပြေစာ အသစ် (Auto)</b>\n\n`;
+            alertMsg += `ID: <code>${invId}</code>\n`;
+            alertMsg += `အမျိုးအစား: <b>${recType}</b>\n`;
+            alertMsg += `ပမာဏ: <code>${inValueStr}</code> ➔ <code>${outValueStr}</code>\n`;
+            alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
+            alertMsg += `နည်းလမ်း: ${paymentMethodName}\n`;
+            alertMsg += `Device: ${currentDeviceId}`;
+            sendTelegramAlert(alertMsg);
+
+        } catch(e) {}
         
         const mimeType = fmt === 'jpg' ? 'image/jpeg' : 'image/png';
         const fileExt = fmt === 'jpg' ? '.jpg' : '.png';
