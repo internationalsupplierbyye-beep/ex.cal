@@ -38,14 +38,15 @@
 
     h1, h2, h3 { line-height: 1.6 !important; padding-bottom: 4px; }
 
-    .btn{ border-radius:.85rem; border:none; background:#111827; color:white; padding:.58rem .95rem; font-size:.95rem; font-weight:900; cursor:pointer; transition:background .2s, transform .05s; }
-    .btn:hover{ background:#0f172a; }
+    .btn{ border-radius:.85rem; border:none; background-color:#111827; color:white; padding:.58rem .95rem; font-size:.95rem; font-weight:900; cursor:pointer; transition:background-color .2s, transform .05s; }
+    .btn:hover{ background-color:#0f172a; }
     .btn:active{ transform:translateY(1px); }
     .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    .btn2{ border-radius:.85rem; border:2px solid #111827; background:white; color:#111827; padding:.52rem .9rem; font-size:.92rem; font-weight:900; cursor:pointer; transition:background .2s, transform .05s; }
-    .btn2:hover{ background:#f1f5f9; }
+    .btn2{ border-radius:.85rem; border:2px solid #111827; background-color:white; color:#111827; padding:.52rem .9rem; font-size:.92rem; font-weight:900; cursor:pointer; transition:background-color .2s, transform .05s; }
+    .btn2:hover{ background-color:#f1f5f9; }
     .btn2:active{ transform:translateY(1px); }
+    .btn2:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .flag{ width:20px; height:auto; border-radius:2px; display:inline-block; }
     .card{ border:1px solid #e5e7eb; border-radius:16px; padding:12px; background:#fff; }
@@ -175,9 +176,9 @@
       </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
-      <button id="btnSave1PNG" class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png')">Save PNG</button>
-      <button id="btnSave1JPG" class="btn2" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg')">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'share')">📤 Share</button>
+      <button class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'download', this)">Save PNG</button>
+      <button class="btn2" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg', 'download', this)">Save JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'share', this)">📤 Share</button>
       <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-thb2mmk', this)">📋 Copy Text</button>
     </div>
   </section>
@@ -203,9 +204,9 @@
       </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
-      <button id="btnSave2PNG" class="btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','png')">Save PNG</button>
-      <button id="btnSave2JPG" class="btn2" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg')">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'share')">📤 Share</button>
+      <button class="btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'download', this)">Save PNG</button>
+      <button class="btn2" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg', 'download', this)">Save JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'share', this)">📤 Share</button>
       <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2thb', this)">📋 Copy Text</button>
     </div>
   </section>
@@ -287,9 +288,9 @@
       </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
-      <button id="btnSave3PNG" class="btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png')">Save PNG</button>
-      <button id="btnSave3JPG" class="btn2" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','jpg')">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'share')">📤 Share</button>
+      <button class="btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'download', this)">Save PNG</button>
+      <button class="btn2" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','jpg', 'download', this)">Save JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'share', this)">📤 Share</button>
       <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-vnd2mmk', this)">📋 Copy Text</button>
     </div>
   </section>
@@ -315,9 +316,9 @@
       </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
-      <button id="btnSave4PNG" class="btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png')">Save PNG</button>
-      <button id="btnSave4JPG" class="btn2" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','jpg')">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'share')">📤 Share</button>
+      <button class="btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'download', this)">Save PNG</button>
+      <button class="btn2" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','jpg', 'download', this)">Save JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'share', this)">📤 Share</button>
       <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2vnd', this)">📋 Copy Text</button>
     </div>
   </section>
@@ -632,7 +633,9 @@
 </div>
 
 <script>
-  const ADMIN_PASSWORD = "158062"; 
+  // 🌟 စကားဝှက်များကို ဒီနေရာမှာ သတ်မှတ်ပါ
+  const ADMIN_PASSWORD_1 = "158062"; 
+  const ADMIN_PASSWORD_2 = "၁၅၈၀၆၂"; 
   const STAFF_PASSWORD = "staff"; 
   let CURRENT_ROLE = null; 
 
@@ -965,10 +968,12 @@
       navigator.clipboard.writeText(textToCopy).then(() => {
           const originalText = btn.innerHTML;
           btn.innerHTML = "✅ Copied!";
-          btn.classList.add('!bg-green-600'); 
+          btn.style.backgroundColor = '#16a34a';
+          btn.style.color = '#fff';
           setTimeout(() => {
               btn.innerHTML = originalText;
-              btn.classList.remove('!bg-green-600');
+              btn.style.backgroundColor = '';
+              btn.style.color = '';
           }, 1500);
       }).catch(err => {
           console.error("Copy failed", err);
@@ -1787,10 +1792,14 @@
   function openAdmin() { document.getElementById('loginModal').style.display = 'flex'; document.getElementById('adminPassInput').value = ''; document.getElementById('adminPassInput').focus(); }
   function closeLogin() { document.getElementById('loginModal').style.display = 'none'; }
   
+  // 🌟 Login အပိုင်းကို Space မတော်တဆပါသွားခြင်း နဲ့ မြန်မာဂဏန်းရိုက်မိခြင်းတွေအတွက် ပိုကောင်းအောင် ပြင်ဆင်ထားပါတယ်
   function checkLogin() {
-    const inputPass = document.getElementById('adminPassInput').value;
+    let inputPass = document.getElementById('adminPassInput').value.trim();
     
-    if(inputPass === ADMIN_PASSWORD) {
+    // Space အပိုတွေ ပါလာရင် ဖြတ်ထုတ်မယ်
+    inputPass = inputPass.replace(/\s+/g, '');
+    
+    if(inputPass === ADMIN_PASSWORD_1 || inputPass === ADMIN_PASSWORD_2) {
       CURRENT_ROLE = 'admin';
       closeLogin(); 
       document.getElementById('adminModal').style.display = 'block'; 
@@ -1801,7 +1810,7 @@
       switchTab('tab-dashboard', document.querySelector('.tab-btn')); 
       renderAdminLists(); loadHistory();
       
-    } else if(inputPass === STAFF_PASSWORD) {
+    } else if(inputPass.toLowerCase() === STAFF_PASSWORD) {
       CURRENT_ROLE = 'staff';
       closeLogin(); 
       document.getElementById('adminModal').style.display = 'block'; 
@@ -2235,59 +2244,68 @@
   }
 
   // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt) ---
-  window.reprintReceipt = async function(invId) {
+  window.reprintReceipt = async function(invId, btnElement = null) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
 
-      await document.fonts?.ready;
-      const lang = document.getElementById('saveLangSelect').value || 'orig';
-      const T = I18N[lang] || null;
-
-      let sourceId = 'box-thb2mmk';
-      if (tx.type === 'MMK ➔ THB') sourceId = 'box-mmk2thb';
-      else if (tx.type === 'VND ➔ MMK') sourceId = 'box-vnd2mmk';
-      else if (tx.type === 'MMK ➔ VND') sourceId = 'box-mmk2vnd';
-
-      const original = document.getElementById(sourceId);
-      if (!original) return alert("System Error: Layout not found.");
-
-      const clone = original.cloneNode(true);
-      clone.querySelectorAll('button').forEach(b => b.remove());
-      
-      clone.querySelectorAll('.export-only-texts').forEach(el => {
-          el.classList.remove('hidden');
-          el.style.display = 'block';
-      });
-
-      applyLangToClone(clone, lang);
-
-      const inputs = clone.querySelectorAll('input.amt-input');
-      if (inputs.length >= 2) {
-          [tx.inAmt, tx.outAmt].forEach((val, i) => {
-              const div = document.createElement('div');
-              div.className = inputs[i].className || '';
-              div.style.whiteSpace = 'nowrap'; div.style.overflow = 'hidden'; div.style.textOverflow = 'ellipsis'; 
-              div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.lineHeight = '1.5'; 
-              div.style.minHeight = '56px'; div.style.height = '56px'; div.style.paddingTop = '12px'; div.style.paddingBottom = '14px';
-              div.textContent = val;
-              inputs[i].replaceWith(div);
-          });
+      let origText = '';
+      if (btnElement) { 
+          origText = btnElement.innerHTML; 
+          btnElement.innerHTML = '⏳...'; 
+          btnElement.disabled = true; 
+          await new Promise(r => setTimeout(r, 50)); 
       }
 
-      // 🌟 BUG FIX: အတိုရေးထားသော ငွေဈေးကို အပြည့်အစုံပြန်ဖြန့်ပေးခြင်း 🌟
-      const rateP = clone.querySelector('.rate-note');
-      if (rateP) {
-          let histRateText = tx.rate || ""; 
-          let rTpl = (T && T.rateTpl) ? T.rateTpl : "မြန်မာငွေ ၁ သိန်း = {r} ဘတ် | ၁ ဘတ် = {inv} ကျပ်";
-          let vTpl = (T && T.rateVndTpl) ? T.rateVndTpl : "၁ ကျပ် = {v} ဒေါင် (VND)";
+      try {
+          await document.fonts?.ready;
+          const lang = document.getElementById('saveLangSelect').value || 'orig';
+          const T = I18N[lang] || null;
 
-          if (histRateText.includes('100K =')) {
-              const match = histRateText.match(/100K\s*=\s*([\d,.]+)/);
-              if (match && match[1]) {
-                  const r = parseFloat(match[1].replace(/,/g, ''));
-                  if (r > 0) {
-                      const inv = 100000 / r;
-                      histRateText = rTpl.replace('{r}', fmt6(r)).replace('{inv}', fmt6(inv));
+          let sourceId = 'box-thb2mmk';
+          if (tx.type === 'MMK ➔ THB') sourceId = 'box-mmk2thb';
+          else if (tx.type === 'VND ➔ MMK') sourceId = 'box-vnd2mmk';
+          else if (tx.type === 'MMK ➔ VND') sourceId = 'box-mmk2vnd';
+
+          const original = document.getElementById(sourceId);
+          if (!original) throw new Error("System Error: Layout not found.");
+
+          const clone = original.cloneNode(true);
+          clone.querySelectorAll('button').forEach(b => b.remove());
+          
+          clone.querySelectorAll('.export-only-texts').forEach(el => {
+              el.classList.remove('hidden');
+              el.style.display = 'block';
+          });
+
+          applyLangToClone(clone, lang);
+
+          const inputs = clone.querySelectorAll('input.amt-input');
+          if (inputs.length >= 2) {
+              [tx.inAmt, tx.outAmt].forEach((val, i) => {
+                  const div = document.createElement('div');
+                  div.className = inputs[i].className || '';
+                  div.style.whiteSpace = 'nowrap'; div.style.overflow = 'hidden'; div.style.textOverflow = 'ellipsis'; 
+                  div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.lineHeight = '1.5'; 
+                  div.style.minHeight = '56px'; div.style.height = '56px'; div.style.paddingTop = '12px'; div.style.paddingBottom = '14px';
+                  div.textContent = val;
+                  inputs[i].replaceWith(div);
+              });
+          }
+
+          // 🌟 BUG FIX: အတိုရေးထားသော ငွေဈေးကို အပြည့်အစုံပြန်ဖြန့်ပေးခြင်း 🌟
+          const rateP = clone.querySelector('.rate-note');
+          if (rateP) {
+              let histRateText = tx.rate || ""; 
+              let rTpl = (T && T.rateTpl) ? T.rateTpl : "မြန်မာငွေ ၁ သိန်း = {r} ဘတ် | ၁ ဘတ် = {inv} ကျပ်";
+              let vTpl = (T && T.rateVndTpl) ? T.rateVndTpl : "၁ ကျပ် = {v} ဒေါင် (VND)";
+
+              if (histRateText.includes('100K =')) {
+                  const match = histRateText.match(/100K\s*=\s*([\d,.]+)/);
+                  if (match && match[1]) {
+                      const r = parseFloat(match[1].replace(/,/g, ''));
+                      if (r > 0) {
+                          const inv = 100000 / r;
+                          histRateText = rTpl.replace('{r}', fmt6(r)).replace('{inv}', fmt6(inv));
                   }
               }
           } else if (histRateText.includes('1 MMK =')) {
@@ -2303,137 +2321,147 @@
           rateP.innerHTML += '<br>';
       }
 
-      clone.style.boxShadow = 'none'; 
-      clone.style.border = '1px solid #e5e7eb'; 
-      clone.style.background = '#fff';
+          // HTML ထဲက brandHeader အဟောင်း ပြန်ခေါ်ပေးခြင်း
+          const brandHeader = document.createElement('div');
+          brandHeader.style.textAlign = 'center'; 
+          brandHeader.style.paddingBottom = '15px'; 
+          brandHeader.style.marginBottom = '15px'; 
+          brandHeader.style.borderBottom = '2px dashed #cbd5e1';
+          
+          const brandTitle = document.createElement('div');
+          brandTitle.style.fontWeight = '900'; 
+          brandTitle.style.fontSize = '24px'; 
+          brandTitle.style.color = '#0f172a';
+          brandTitle.textContent = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
+          
+          brandHeader.appendChild(brandTitle);
+          clone.insertBefore(brandHeader, clone.firstChild);
 
-      // 🌟 BUG FIX: Reprint တွင် Big QR ပုံရှိမရှိ အလိုအလျောက် စစ်ဆေးဆွဲယူခြင်း 🌟
-      if (tx.method && tx.method !== 'မပါ (None)') {
-          if (tx.method.startsWith('QR (')) {
-              const qrNameStr = tx.method.match(/\((.*?)\)/);
-              if (qrNameStr) {
-                  const qrName = qrNameStr[1];
-                  const foundQr = FIREBASE_QRS.find(q => {
-                      const name = typeof q === 'string' ? q.replace(/\.[^.]+$/, '') : (q.name || q.file);
-                      return name === qrName;
-                  });
-                  
-                  if (foundQr) {
-                      const file = typeof foundQr === 'string' ? foundQr : foundQr.file;
-                      const normalUrl = file.includes('http') ? file : 'assets/qr/' + file;
-                      const baseName = file.replace(/\.[^.]+$/,'');
-                      const bigUrl = file.includes('http') ? file : 'assets/qr/' + baseName + '_big.jpg';
-                      const owner = (typeof foundQr === 'object' && foundQr.owner) ? foundQr.owner : getOwnerFromKey(baseName);
+          clone.style.boxShadow = 'none'; 
+          clone.style.border = '1px solid #e5e7eb'; 
+          clone.style.background = '#fff';
+
+          // 🌟 BUG FIX: Reprint တွင် Big QR ပုံရှိမရှိ အလိုအလျောက် စစ်ဆေးဆွဲယူခြင်း 🌟
+          if (tx.method && tx.method !== 'မပါ (None)') {
+              if (tx.method.startsWith('QR (')) {
+                  const qrNameStr = tx.method.match(/\((.*?)\)/);
+                  if (qrNameStr) {
+                      const qrName = qrNameStr[1];
+                      const foundQr = FIREBASE_QRS.find(q => {
+                          const name = typeof q === 'string' ? q.replace(/\.[^.]+$/, '') : (q.name || q.file);
+                          return name === qrName;
+                      });
                       
-                      let finalImgUrl = normalUrl; 
-                      const hasBig = await probeImage(bigUrl);
-                      if (hasBig) finalImgUrl = bigUrl; // အကြီးရှိပါက အကြီးကိုသုံးမည်
+                      if (foundQr) {
+                          const file = typeof foundQr === 'string' ? foundQr : foundQr.file;
+                          const normalUrl = file.includes('http') ? file : 'assets/qr/' + file;
+                          const baseName = file.replace(/\.[^.]+$/,'');
+                          const bigUrl = file.includes('http') ? file : 'assets/qr/' + baseName + '_big.jpg';
+                          const owner = (typeof foundQr === 'object' && foundQr.owner) ? foundQr.owner : getOwnerFromKey(baseName);
+                          
+                          let finalImgUrl = normalUrl; 
+                          const hasBig = await probeImage(bigUrl);
+                          if (hasBig) finalImgUrl = bigUrl; // အကြီးရှိပါက အကြီးကိုသုံးမည်
 
-                      const wrap = document.createElement('div'); wrap.className = 'export-block';
-                      const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
-                      const img = document.createElement('img'); 
-                      img.style.width = hasBig ? '500px' : '420px'; // Big ဆိုရင် ပိုကြီးကြီးပြမည်
-                      img.style.maxWidth = '95%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '10px'; img.style.background = '#fff'; img.style.display = 'block';
-                      img.src = finalImgUrl;
-                      const ownerP = document.createElement('p'); ownerP.className = 'mt-3 text-slate-700'; ownerP.style.paddingBottom = '4px'; ownerP.style.fontSize = '20px'; 
-                      ownerP.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${owner}</span>`);
-                      wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(ownerP); clone.appendChild(wrap);
-                      await new Promise(res => { if(img.complete) return res(); img.onload=()=>res(); img.onerror=()=>res(); });
-                  } else {
-                      const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
+                          const wrap = document.createElement('div'); wrap.className = 'export-block';
+                          const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
+                          const img = document.createElement('img'); 
+                          img.style.width = hasBig ? '500px' : '420px'; // Big ဆိုရင် ပိုကြီးကြီးပြမည်
+                          img.style.maxWidth = '95%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '10px'; img.style.background = '#fff'; img.style.display = 'block';
+                          img.src = finalImgUrl;
+                          const ownerP = document.createElement('p'); ownerP.className = 'mt-3 text-slate-700'; ownerP.style.paddingBottom = '4px'; ownerP.style.fontSize = '20px'; 
+                          ownerP.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${owner}</span>`);
+                          wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(ownerP); clone.appendChild(wrap);
+                          await new Promise(res => { if(img.complete) return res(); img.onload=()=>res(); img.onerror=()=>res(); });
+                      } else {
+                          const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
+                      }
                   }
-              }
-          } else if (tx.method.startsWith('Bank (')) {
-              const bankNameStr = tx.method.match(/\((.*?)\)/);
-              if (bankNameStr) {
-                  const bankName = bankNameStr[1];
-                  const foundBankKey = Object.keys(FIREBASE_BANKS).find(k => FIREBASE_BANKS[k].name === bankName);
-                  if (foundBankKey) {
-                      const info = FIREBASE_BANKS[foundBankKey];
-                      const wrap = document.createElement('div'); wrap.className = 'export-block';
-                      const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.bankTitle : 'ငွေလွှဲရန် ဘဏ်အချက်အလက်');
-                      const box = document.createElement('div'); box.style.maxWidth = '560px'; box.style.margin = '12px auto 0'; box.style.border = '1px solid #e5e7eb'; box.style.borderRadius = '16px'; box.style.padding = '16px'; box.style.background = '#fff'; box.style.textAlign = 'center';
-                      const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
-                      const logo = document.createElement('img'); logo.src = logoUrl; logo.style.width = '72px'; logo.style.height = '72px'; logo.style.borderRadius = '18px'; logo.style.border = '1px solid #e5e7eb'; logo.style.objectFit = 'cover';
-                      const headerRow = document.createElement('div'); headerRow.style.display = 'flex'; headerRow.style.flexDirection = 'column'; headerRow.style.alignItems = 'center'; headerRow.style.justifyContent = 'center'; headerRow.style.gap = '8px'; headerRow.style.marginBottom = '10px';
-                      const h = document.createElement('div'); h.style.textAlign = 'center'; 
-                      h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
-                      const body = document.createElement('div'); body.style.textAlign = 'center';
-                      body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
-                      headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
-                      wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
-                      await new Promise(res => { if(logo.complete) return res(); logo.onload=()=>res(); logo.onerror=()=>res(); });
-                  } else {
-                      const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
+              } else if (tx.method.startsWith('Bank (')) {
+                  const bankNameStr = tx.method.match(/\((.*?)\)/);
+                  if (bankNameStr) {
+                      const bankName = bankNameStr[1];
+                      const foundBankKey = Object.keys(FIREBASE_BANKS).find(k => FIREBASE_BANKS[k].name === bankName);
+                      if (foundBankKey) {
+                          const info = FIREBASE_BANKS[foundBankKey];
+                          const wrap = document.createElement('div'); wrap.className = 'export-block';
+                          const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.bankTitle : 'ငွေလွှဲရန် ဘဏ်အချက်အလက်');
+                          const box = document.createElement('div'); box.style.maxWidth = '560px'; box.style.margin = '12px auto 0'; box.style.border = '1px solid #e5e7eb'; box.style.borderRadius = '16px'; box.style.padding = '16px'; box.style.background = '#fff'; box.style.textAlign = 'center';
+                          const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
+                          const logo = document.createElement('img'); logo.src = logoUrl; logo.style.width = '72px'; logo.style.height = '72px'; logo.style.borderRadius = '18px'; logo.style.border = '1px solid #e5e7eb'; logo.style.objectFit = 'cover';
+                          const headerRow = document.createElement('div'); headerRow.style.display = 'flex'; headerRow.style.flexDirection = 'column'; headerRow.style.alignItems = 'center'; headerRow.style.justifyContent = 'center'; headerRow.style.gap = '8px'; headerRow.style.marginBottom = '10px';
+                          const h = document.createElement('div'); h.style.textAlign = 'center'; 
+                          h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
+                          const body = document.createElement('div'); body.style.textAlign = 'center';
+                          body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
+                          headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
+                          wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
+                          await new Promise(res => { if(logo.complete) return res(); logo.onload=()=>res(); logo.onerror=()=>res(); });
+                      } else {
+                          const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
+                      }
                   }
+              } else {
+                  const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
               }
-          } else {
-              const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
           }
+
+          const dObj = new Date(tx.timestamp);
+          const formatTz = tx.tz || ADMIN_TIMEZONE || 'Asia/Bangkok';
+          const formatterDate = new Intl.DateTimeFormat('en-GB', { timeZone: formatTz, day: '2-digit', month: 'short', year: 'numeric' });
+          const formatterTime = new Intl.DateTimeFormat('en-US', { timeZone: formatTz, hour: 'numeric', minute: '2-digit', hour12: true });
+          let tzLabel = formatTz.split('/').pop().replace(/_/g, ' ') + " Time";
+          if (formatTz === 'Asia/Yangon') tzLabel = (lang === 'en') ? 'Myanmar Time' : (lang === 'th' ? 'เวลาพม่า' : 'မြန်မာအချိန်');
+          else if (formatTz === 'Asia/Bangkok') tzLabel = (lang === 'en') ? 'Thai Time' : (lang === 'th' ? 'เวลาไทย' : 'ထိုင်းအချိန်');
+          
+          const timeStr = `Date : ${formatterDate.format(dObj)} (${formatterTime.format(dObj).replace(/[\s\u202f]+/g, '')}) (${tzLabel})`;
+          
+          const timeDiv = document.createElement('div');
+          timeDiv.style.textAlign = 'center'; timeDiv.style.marginTop = '12px'; timeDiv.style.paddingTop = '12px'; timeDiv.style.borderTop = '1px dashed #cbd5e1';
+          timeDiv.style.fontSize = '14px'; timeDiv.style.fontWeight = '900'; timeDiv.style.color = '#64748b'; timeDiv.style.paddingBottom = '8px';
+          timeDiv.textContent = timeStr;
+          clone.appendChild(timeDiv);
+
+          clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
+          document.body.appendChild(clone);
+          await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
+          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
+          document.body.removeChild(clone);
+
+          const margin=18; 
+          const out=document.createElement('canvas'); 
+          out.width = canvas.width + margin*2; 
+          out.height = canvas.height + margin*2; 
+          const ctx = out.getContext('2d'); 
+          ctx.fillStyle='#fff'; 
+          ctx.fillRect(0,0,out.width,out.height); 
+          
+          ctx.drawImage(canvas, margin, margin);
+
+          // 🌟 INVOICE ID ကို Canvas ရဲ့ အပေါ်ဆုံး ဘယ်ဘက်ထောင့်တွင် ဆွဲတင်ပေးခြင်း 🌟
+          ctx.fillStyle = '#64748b'; 
+          ctx.font = 'bold 16px system-ui, sans-serif'; 
+          ctx.textAlign = 'left'; 
+          ctx.textBaseline = 'top';
+          ctx.fillText("ID: " + tx.id, margin, 8);
+
+          const finalFileName = 'Reprint_' + tx.id + '.png';
+
+          out.toBlob(async (blob) => {
+              if (!blob) return;
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = finalFileName;
+              document.body.appendChild(a);
+              a.click();
+              setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+          }, 'image/png', 0.92);
+      } catch(e) {
+          alert("Error: " + e.message);
+      } finally {
+          if (btnElement) { btnElement.innerHTML = origText; btnElement.disabled = false; }
       }
-
-      const dObj = new Date(tx.timestamp);
-      const formatTz = tx.tz || ADMIN_TIMEZONE || 'Asia/Bangkok';
-      const formatterDate = new Intl.DateTimeFormat('en-GB', { timeZone: formatTz, day: '2-digit', month: 'short', year: 'numeric' });
-      const formatterTime = new Intl.DateTimeFormat('en-US', { timeZone: formatTz, hour: 'numeric', minute: '2-digit', hour12: true });
-      let tzLabel = formatTz.split('/').pop().replace(/_/g, ' ') + " Time";
-      if (formatTz === 'Asia/Yangon') tzLabel = (lang === 'en') ? 'Myanmar Time' : (lang === 'th' ? 'เวลาพม่า' : 'မြန်မာအချိန်');
-      else if (formatTz === 'Asia/Bangkok') tzLabel = (lang === 'en') ? 'Thai Time' : (lang === 'th' ? 'เวลาไทย' : 'ထိုင်းအချိန်');
-      
-      const timeStr = `Date : ${formatterDate.format(dObj)} (${formatterTime.format(dObj).replace(/[\s\u202f]+/g, '')}) (${tzLabel})`;
-      
-      const timeDiv = document.createElement('div');
-      timeDiv.style.textAlign = 'center'; timeDiv.style.marginTop = '12px'; timeDiv.style.paddingTop = '12px'; timeDiv.style.borderTop = '1px dashed #cbd5e1';
-      timeDiv.style.fontSize = '14px'; timeDiv.style.fontWeight = '900'; timeDiv.style.color = '#64748b'; timeDiv.style.paddingBottom = '8px';
-      timeDiv.textContent = timeStr;
-      clone.appendChild(timeDiv);
-
-      const brandHeader = document.createElement('div');
-      brandHeader.style.textAlign = 'center'; 
-      brandHeader.style.paddingBottom = '15px'; 
-      brandHeader.style.marginBottom = '15px'; 
-      brandHeader.style.borderBottom = '2px dashed #cbd5e1';
-      
-      const brandTitle = document.createElement('div');
-      brandTitle.style.fontWeight = '900'; 
-      brandTitle.style.fontSize = '24px'; 
-      brandTitle.style.color = '#0f172a';
-      brandTitle.textContent = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
-      
-      brandHeader.appendChild(brandTitle);
-      clone.insertBefore(brandHeader, clone.firstChild);
-
-      clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
-      document.body.appendChild(clone);
-      await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
-      const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
-      document.body.removeChild(clone);
-
-      const margin=18; 
-      const out=document.createElement('canvas'); 
-      out.width = canvas.width + margin*2; 
-      out.height = canvas.height + margin*2; 
-      const ctx = out.getContext('2d'); 
-      ctx.fillStyle='#fff'; 
-      ctx.fillRect(0,0,out.width,out.height); 
-      
-      ctx.drawImage(canvas, margin, margin);
-
-      ctx.fillStyle = '#64748b'; ctx.font = 'bold 16px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
-      ctx.fillText("ID: " + tx.id, out.width - margin - 10, margin + 10);
-
-      const finalFileName = 'Reprint_' + tx.id + '.png';
-
-      out.toBlob(async (blob) => {
-          if (!blob) return;
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = finalFileName;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-      }, 'image/png', 0.92);
   }
 
   function renderHistoryRows(dataArray) {
@@ -2456,7 +2484,7 @@
         let statusHtml = `<span class="border rounded px-2 py-1 text-xs font-bold bg-white ${statusColor}">${status}</span>`;
         let amountHtml = `<span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>`;
         
-        let actionHtml = `<button onclick="reprintReceipt('${d.id}')" class="btn bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 !py-1 !px-2 !text-xs whitespace-nowrap mr-1" title="ပြေစာပြန်ထုတ်မည်">🖨️</button>`;
+        let actionHtml = `<button onclick="reprintReceipt('${d.id}', this)" class="btn bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 !py-1 !px-2 !text-xs whitespace-nowrap mr-1" title="ပြေစာပြန်ထုတ်မည်">🖨️</button>`;
 
         if(CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
            typeHtml = `
@@ -2611,7 +2639,15 @@
   }
 
   // --- 🌟 🌟 🌟 BUG FIX: Save Section 🌟 🌟 🌟 ---
-  async function saveSection(sectionId, filenameBase, fmt, action = 'download') {
+  async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
+    let origText = '';
+    if (btnElement) {
+        origText = btnElement.innerHTML;
+        btnElement.innerHTML = '⏳ Loading...';
+        btnElement.disabled = true;
+        await new Promise(r => setTimeout(r, 50));
+    }
+
     try {
         await document.fonts?.ready; 
         recalc(); recalcVND();
@@ -2697,6 +2733,7 @@
         timeDiv.textContent = getExportTimeStr(lang);
         clone.appendChild(timeDiv);
 
+        // HTML ထဲက brandHeader အဟောင်း ပြန်ခေါ်ပေးခြင်း
         const brandHeader = document.createElement('div');
         brandHeader.style.textAlign = 'center'; 
         brandHeader.style.paddingBottom = '15px'; 
@@ -2732,8 +2769,12 @@
         const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
         const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
         
-        ctx.fillStyle = '#64748b'; ctx.font = 'bold 16px system-ui, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
-        ctx.fillText("ID: " + invId, out.width - margin - 10, margin + 10);
+        // 🌟 INVOICE ID ကို Canvas ရဲ့ အပေါ်ဆုံး ဘယ်ဘက်ထောင့်တွင် ဆွဲတင်ပေးခြင်း 🌟
+        ctx.fillStyle = '#64748b'; 
+        ctx.font = 'bold 16px system-ui, sans-serif'; 
+        ctx.textAlign = 'left'; 
+        ctx.textBaseline = 'top';
+        ctx.fillText("ID: " + invId, margin, 8);
 
         let recType = ""; let savedRate = ""; 
         if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
@@ -2801,6 +2842,11 @@
     } catch (err) {
         console.error("Save/Share Error: ", err);
         alert("Save/Share အလုပ်လုပ်ရာတွင် အခက်အခဲရှိပါသည်။ \n" + err.message);
+    } finally {
+        if (btnElement) {
+            btnElement.innerHTML = origText;
+            btnElement.disabled = false;
+        }
     }
   }
 
