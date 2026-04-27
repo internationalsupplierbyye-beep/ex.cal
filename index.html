@@ -480,8 +480,8 @@
       <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
         <h3 class="font-bold text-gray-800">📜 ငွေလွှဲမှတ်တမ်းများ</h3>
         <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 overflow-x-auto">
-          <input type="text" id="searchInvId" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[120px]" placeholder="ID ဖြင့်ရှာရန်" oninput="searchHistoryLocally()">
-          <button onclick="searchHistoryLocally()" class="btn bg-blue-600 !py-1 !px-3 !text-sm" title="ရှာရန်">🔍</button>
+          <input type="text" id="searchInvId" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[120px]" placeholder="ID ဖြင့်ရှာရန်" oninput="searchHistoryLocally(true)">
+          <button onclick="searchHistoryLocally(true)" class="btn bg-blue-600 !py-1 !px-3 !text-sm" title="ရှာရန်">🔍</button>
           <button onclick="loadHistory()" class="btn2 !py-1 !px-3 !text-sm" title="Refresh">🔄</button>
           <button id="btnExportCSV" onclick="exportHistoryCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="Excel ဖိုင်ထုတ်ရန်">📥 Export</button>
           <button id="btnClearHistory" onclick="clearAllHistory()" class="btn bg-red-600 hover:bg-red-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="မှတ်တမ်းအားလုံးကို ဖျက်မည်">🗑 Clear All</button>
@@ -491,7 +491,7 @@
         <table class="w-full text-left text-sm whitespace-nowrap">
           <thead class="bg-gray-100 text-gray-600 sticky top-0 shadow-sm z-10">
             <tr>
-              <th class="p-3 border-b font-bold">Invoice ID</th>
+              <th class="p-3 border-b font-bold text-center">Invoice ID</th>
               <th class="p-3 border-b font-bold">ရက်စွဲ/အချိန်</th>
               <th class="p-3 border-b font-bold">Device</th>
               <th class="p-3 border-b font-bold text-purple-700">Rate</th> 
@@ -506,6 +506,12 @@
             <tr><td colspan="9" class="p-4 text-center text-gray-500">Loading...</td></tr>
           </tbody>
         </table>
+        
+        <div id="loadMoreContainer" class="hidden p-4 text-center border-t border-gray-100">
+            <button onclick="window.loadMoreHistory()" class="btn2 !bg-blue-50 !border-blue-200 !text-blue-600 w-full sm:w-1/2 font-bold py-2">
+                နောက်ထပ်မှတ်တမ်းများ ကြည့်ရန် (Load More) ➕
+            </button>
+        </div>
       </div>
     </div>
 
@@ -651,7 +657,7 @@
   const TELEGRAM_BOT_TOKEN = "8646347244:AAG-9OMp62ThgZOUt7KRdFO9200POmLvNrY";
   let TELEGRAM_CHAT_ID = "-1003987703326";
   let TELEGRAM_TOPIC_ID = "2";
-  let TELEGRAM_SUCCESS_TOPIC_ID = "14"; // Default for Success
+  let TELEGRAM_SUCCESS_TOPIC_ID = "14"; 
 
   let FIREBASE_RECEIPT_TEXTS = {
       orig: {
@@ -679,6 +685,10 @@
   let ADMIN_TIMEZONE = 'Asia/Bangkok'; 
   let calcLock = false;
   let allLoadedHistory = [];
+  
+  // 🌟 Pagination States
+  let CURRENT_DISPLAY_COUNT = 150;
+  const DISPLAY_LIMIT = 150;
 
   const DEFAULT_BANK_INFO = {
     KTB:{ name:"Krungthai Bank - ကုံထိုင်းဘဏ်", logo:"krungthai.jpg", accName:"YE LYNN HTUN", accNo:"497-061-977-8" },
@@ -891,11 +901,9 @@
 
       const inputs = section.querySelectorAll('input.amt-input');
 
-      // --- 🌟 Validation Check ---
       let rawVal1 = inputs[0] ? inputs[0].value.trim() : '';
       let rawVal2 = inputs[1] ? inputs[1].value.trim() : '';
       
-      // တန်ဖိုး မရှိရင် သို့မဟုတ် ၀ ဖြစ်နေရင် Copy မကူးပေးပါ
       if (!rawVal1 || !rawVal2 || parseFloat(rawVal1.replace(/,/g, '')) === 0 || parseFloat(rawVal2.replace(/,/g, '')) === 0) {
           alert("ကျေးဇူးပြု၍ ငွေပမာဏ ရိုက်ထည့်ပါ။ (ဂဏန်းမပါဘဲ Copy ကူး၍မရပါ)");
           return;
@@ -907,7 +915,6 @@
       let label1 = '', label2 = '';
       let rateStr = '';
 
-      // Section အလိုက် နိုင်ငံအလံ၊ လွှဲငွေ/ရငွေ သတ်မှတ်ခြင်း နှင့် ငွေဈေးနှုန်း ယူခြင်း
       if (sectionId === 'box-thb2mmk') {
           flag1 = '🇹🇭 '; label1 = 'ဘတ်ငွေ (လွှဲငွေ)';
           flag2 = '🇲🇲 '; label2 = 'မြန်မာကျပ် (ရငွေ)';
@@ -929,7 +936,6 @@
       let val1 = inputs[0] ? (inputs[0].value || '0') : '0';
       let val2 = inputs[1] ? (inputs[1].value || '0') : '0';
 
-      // Text Format တည်ဆောက်ခြင်း
       let textToCopy = `[ ${title} ]\n`;
       textToCopy += `${flag1}${label1} : ${val1}\n`;
       textToCopy += `${flag2}${label2} : ${val2}\n`;
@@ -938,7 +944,6 @@
           textToCopy += `\n${rateStr}\n`;
       }
 
-      // --- 🌟 Firebase Admin Settings မှ Copy Custom စာသား ယူခြင်း ---
       const saveLang = document.getElementById('saveLangSelect') ? document.getElementById('saveLangSelect').value : 'orig';
       const copyCustomText = (FIREBASE_RECEIPT_TEXTS[saveLang] && FIREBASE_RECEIPT_TEXTS[saveLang].copyBottom !== undefined) 
                               ? FIREBASE_RECEIPT_TEXTS[saveLang].copyBottom 
@@ -950,7 +955,6 @@
           textToCopy += `\n${copyCustomText}\n`;
       }
 
-      // (Optional) အကယ်၍ QR သို့မဟုတ် Bank ရွေးထားရင် Copy ထဲ ဆက်ထည့်ပေးဖို့
       const mode = document.querySelector('input[name="saveMode"]:checked')?.value;
       if (mode === 'qr' && typeof CURRENT_QR !== 'undefined' && CURRENT_QR.owner) {
           const qrSelect = document.getElementById('qrSelect');
@@ -964,7 +968,6 @@
           }
       }
 
-      // Clipboard ထဲသို့ ကူးထည့်ခြင်း
       navigator.clipboard.writeText(textToCopy).then(() => {
           const originalText = btn.innerHTML;
           btn.innerHTML = "✅ Copied!";
@@ -1023,7 +1026,7 @@
               d.setDate(nowTz.getDate() - i);
               targetDates.push(toYYYYMMDD(d));
           }
-          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${targetDates[targetDates.length-1]} မှ ${targetDates[0]} အထိ (ယခုတစ်ပတ်)`;
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${targetDates[targetDates.length-1]} မှ ${targetDates[0]} อะตี (ယခုတစ်ပတ်)`;
       } else if (filter === 'month') {
           const currentMonthStr = todayTzStr.substring(0, 7); 
           targetDates = currentMonthStr; 
@@ -1031,7 +1034,7 @@
       } else if (filter === 'custom') {
           const sd = document.getElementById('dashStartDate').value || "0000-00-00";
           const ed = document.getElementById('dashEndDate').value || "9999-99-99";
-          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${sd} မှ ${ed} အထိ`;
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${sd} မှ ${ed} อะตี`;
       }
 
       const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
@@ -1040,12 +1043,10 @@
       let vndIn = 0, vndOut = 0;
       let mmkIn = 0, mmkOut = 0;
 
-      // FIFO Variables
       let thbLongs = [], thbShorts = [];
       let vndLongs = [], vndShorts = [];
       let periodProfitThb = 0, periodProfitVnd = 0;
 
-      // Ensure no crash by safely checking timestamps
       let sortedTxs = [...dataArray].sort((a, b) => {
           let tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
           let tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
@@ -1081,7 +1082,6 @@
           let inNum = getCleanNum(tx.inAmt);
           let outNum = getCleanNum(tx.outAmt);
 
-          // Volume tracking (Only for filtered period)
           if (includeThisRecord) {
               if (txType === 'THB ➔ MMK') { thbIn += inNum; mmkOut += outNum; }
               else if (txType === 'MMK ➔ THB') { mmkIn += inNum; thbOut += outNum; }
@@ -1089,23 +1089,18 @@
               else if (txType === 'MMK ➔ VND') { mmkIn += inNum; vndOut += outNum; }
           }
 
-          // 🌟 Core Logic (FIFO Matching) 🌟
           let currency = txType.includes('THB') ? 'THB' : (txType.includes('VND') ? 'VND' : '');
           if(!currency) return;
 
-          let isBuy = false; // We buy foreign currency (Long)
-          let isSell = false; // We sell foreign currency (Short)
+          let isBuy = false; 
+          let isSell = false; 
           let fAmt = 0, mAmt = 0, rate = 0;
 
-          // THB/VND ➔ MMK : Customer gives THB, we give MMK -> We BUY THB/VND
           if (txType === 'THB ➔ MMK' || txType === 'VND ➔ MMK') { isBuy = true; fAmt = inNum; mAmt = outNum; }
-          
-          // MMK ➔ THB/VND : Customer gives MMK, we give THB -> We SELL THB/VND
           if (txType === 'MMK ➔ THB' || txType === 'MMK ➔ VND') { isSell = true; fAmt = outNum; mAmt = inNum; }
 
           if(fAmt <= 0 || mAmt <= 0) return;
           
-          // Rate is MMK per 1 Foreign Currency
           rate = mAmt / fAmt;
           let qtyToProcess = fAmt;
 
@@ -1113,12 +1108,10 @@
           let targetShorts = currency === 'THB' ? thbShorts : vndShorts;
 
           if (isBuy) { 
-              // We bought Foreign Currency. Match against previous Sales (Shorts)
               while (qtyToProcess > 0 && targetShorts.length > 0) {
                   let s = targetShorts[0];
                   let matchQty = Math.min(qtyToProcess, s.qty);
                   
-                  // Profit = (Sell Price - Buy Price) * Quantity
                   let profit = (s.rate - rate) * matchQty; 
                   if (includeThisRecord) {
                       if (currency === 'THB') periodProfitThb += profit;
@@ -1127,19 +1120,16 @@
 
                   qtyToProcess -= matchQty;
                   s.qty -= matchQty;
-                  if (s.qty <= 0) targetShorts.shift(); // Remove completely filled lot
+                  if (s.qty <= 0) targetShorts.shift(); 
               }
               if (qtyToProcess > 0) {
-                  // Leftover goes to Longs
                   targetLongs.push({ qty: qtyToProcess, rate: rate, date: tx.timestamp });
               }
           } else if (isSell) { 
-              // We sold Foreign Currency. Match against previous Buys (Longs)
               while (qtyToProcess > 0 && targetLongs.length > 0) {
                   let l = targetLongs[0];
                   let matchQty = Math.min(qtyToProcess, l.qty);
                   
-                  // Profit = (Sell Price - Buy Price) * Quantity
                   let profit = (rate - l.rate) * matchQty;
                   if (includeThisRecord) {
                       if (currency === 'THB') periodProfitThb += profit;
@@ -1148,18 +1138,15 @@
 
                   qtyToProcess -= matchQty;
                   l.qty -= matchQty;
-                  if (l.qty <= 0) targetLongs.shift(); // Remove completely filled lot
+                  if (l.qty <= 0) targetLongs.shift(); 
               }
               if (qtyToProcess > 0) {
-                  // Leftover goes to Shorts
                   targetShorts.push({ qty: qtyToProcess, rate: rate, date: tx.timestamp });
               }
           }
       });
 
-      // --- UPDATE UI ---
       if(document.getElementById('dash_thb_in')) {
-          // Volume Update
           document.getElementById('dash_thb_in').textContent = thbIn.toLocaleString() + " THB";
           document.getElementById('dash_thb_out').textContent = thbOut.toLocaleString() + " THB";
           let thbNet = thbIn - thbOut;
@@ -1181,7 +1168,6 @@
           vndNetEl.textContent = (vndNet > 0 ? "+" : "") + vndNet.toLocaleString() + " VND";
           vndNetEl.className = vndNet >= 0 ? "font-black text-green-600" : "font-black text-red-600";
 
-          // Update Realized Profit
           document.getElementById('est_profit_thb').textContent = (periodProfitThb >= 0 ? "+ " : "") + formatMmk(periodProfitThb) + " MMK";
           document.getElementById('est_profit_thb').className = periodProfitThb >= 0 ? "text-lg text-green-600 font-black" : "text-lg text-red-600 font-black";
 
@@ -1192,20 +1178,18 @@
           document.getElementById('dash_total_profit').textContent = (totalProfit >= 0 ? "+ " : "") + formatMmk(totalProfit) + " MMK";
           document.getElementById('dash_total_profit').className = totalProfit >= 0 ? "font-black text-green-700 text-xl" : "font-black text-red-700 text-xl";
 
-          // 🌟 Helper for precise 1 Lakh Base Rate displaying 🌟
           const formatCustomRate = (rate, curr) => {
               if (!rate || rate === 0) return '0';
               if (curr === 'THB') {
-                  let r = 100000 / rate; // Convert back to THB per 1 Lakh MMK
+                  let r = 100000 / rate; 
                   return '၁သိန်း = ' + r.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' ဘတ်';
               } else if (curr === 'VND') {
-                  let r = 1 / rate; // Convert back to VND per 1 MMK
+                  let r = 1 / rate; 
                   return '၁ကျပ် = ' + r.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:4}) + ' ဒေါင်';
               }
               return rate;
           };
 
-          // 🌟 Active Lots သီးသန့် ရှင်းလင်းစွာ ပြသခြင်း 🌟
           const renderLots = (longs, shorts, elementId, curr) => {
               const el = document.getElementById(elementId);
               if(!el) return;
@@ -1437,14 +1421,13 @@
       try {
           await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord);
           
-          // 🌟 Telegram သို့ အသိပေးစာပို့ခြင်း 🌟
           let alertMsg = `➕ <b>Manual Lot ထည့်သွင်းမှု အသစ်</b>\n\n`;
           alertMsg += `ID: <code>${invId}</code>\n`;
           alertMsg += `အမျိုးအစား: <b>${type}</b>\n`;
           alertMsg += `ပမာဏ: <code>${inAmtStr}</code> ➔ <code>${outAmtStr}</code>\n`;
           alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
           alertMsg += `Device: Admin`;
-          sendTelegramAlert(alertMsg, TELEGRAM_SUCCESS_TOPIC_ID); // Manual Lot က တန်း Success ဖြစ်လို့ Topic 14 ကို သီးသန့်ပို့မယ်
+          sendTelegramAlert(alertMsg, TELEGRAM_SUCCESS_TOPIC_ID); 
 
           document.getElementById('manualLotModal').style.display='none';
           document.getElementById('manualLotForeign').value = '';
@@ -1568,7 +1551,6 @@
     const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
     
     if(mini) {
-        // 🌟 BUG FIX: Added correct style formatting to Logo 🌟
         mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div></div>`;
     }
   }
@@ -1656,7 +1638,6 @@
   }
 
   function updateReceiptUI() {
-      // Only apply to the hidden div (doesn't clutter UI)
       const texts = FIREBASE_RECEIPT_TEXTS['orig'] || {warn1:'', warn2:'', thanks:''};
       document.querySelectorAll('.lang-warn1').forEach(el => el.textContent = texts.warn1);
       document.querySelectorAll('.lang-warn2').forEach(el => el.textContent = texts.warn2);
@@ -1721,7 +1702,6 @@
         });
 
         if (data.receiptTexts) {
-            // Check for new structure specifically to overwrite any stale states
             if (data.receiptTexts.orig) {
                 FIREBASE_RECEIPT_TEXTS.orig = data.receiptTexts.orig;
                 if (!FIREBASE_RECEIPT_TEXTS.orig.copyBottom && FIREBASE_RECEIPT_TEXTS.orig.copyBottom !== "") {
@@ -1792,11 +1772,8 @@
   function openAdmin() { document.getElementById('loginModal').style.display = 'flex'; document.getElementById('adminPassInput').value = ''; document.getElementById('adminPassInput').focus(); }
   function closeLogin() { document.getElementById('loginModal').style.display = 'none'; }
   
-  // 🌟 Login အပိုင်းကို Space မတော်တဆပါသွားခြင်း နဲ့ မြန်မာဂဏန်းရိုက်မိခြင်းတွေအတွက် ပိုကောင်းအောင် ပြင်ဆင်ထားပါတယ်
   function checkLogin() {
     let inputPass = document.getElementById('adminPassInput').value.trim();
-    
-    // Space အပိုတွေ ပါလာရင် ဖြတ်ထုတ်မယ်
     inputPass = inputPass.replace(/\s+/g, '');
     
     if(inputPass === ADMIN_PASSWORD_1 || inputPass === ADMIN_PASSWORD_2) {
@@ -2120,7 +2097,6 @@
     } catch (e) { alert("Error: " + e.message); } finally { if (btn) { btn.textContent = "အချိန်ဇုန် သိမ်းမည်"; btn.disabled = false; } }
   }
 
-  // --- 🌟 မှတ်တမ်းများ အားလုံး တခါတည်း ရှင်းလင်းရန် 🌟 ---
   window.clearAllHistory = async function() {
       if(!confirm("⚠️ သတိပေးချက် ⚠️\nမှတ်တမ်းအားလုံးကို ဖျက်ပစ်ရန် သေချာပါသလား?\n(ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍မရပါ။)")) return;
 
@@ -2173,7 +2149,6 @@
           allLoadedHistory[index].status = newStatus;
           renderHistoryRows(allLoadedHistory);
           
-          // 🌟 Telegram သို့ Status ပြောင်းလဲကြောင်း အသိပေးစာပို့ခြင်း 🌟
           let statusEmoji = newStatus === 'Success' ? '✅' : (newStatus === 'Cancelled' ? '❌' : '⏳');
           let alertMsg = `${statusEmoji} <b>မှတ်တမ်း Status ပြောင်းလဲမှု</b>\n\n`;
           alertMsg += `ID: <code>${invId}</code>\n`;
@@ -2292,7 +2267,6 @@
               });
           }
 
-          // 🌟 BUG FIX: အတိုရေးထားသော ငွေဈေးကို အပြည့်အစုံပြန်ဖြန့်ပေးခြင်း 🌟
           const rateP = clone.querySelector('.rate-note');
           if (rateP) {
               let histRateText = tx.rate || ""; 
@@ -2321,7 +2295,6 @@
           rateP.innerHTML += '<br>';
       }
 
-          // HTML ထဲက brandHeader အဟောင်း ပြန်ခေါ်ပေးခြင်း
           const brandHeader = document.createElement('div');
           brandHeader.style.textAlign = 'center'; 
           brandHeader.style.paddingBottom = '15px'; 
@@ -2341,7 +2314,6 @@
           clone.style.border = '1px solid #e5e7eb'; 
           clone.style.background = '#fff';
 
-          // 🌟 BUG FIX: Reprint တွင် Big QR ပုံရှိမရှိ အလိုအလျောက် စစ်ဆေးဆွဲယူခြင်း 🌟
           if (tx.method && tx.method !== 'မပါ (None)') {
               if (tx.method.startsWith('QR (')) {
                   const qrNameStr = tx.method.match(/\((.*?)\)/);
@@ -2361,12 +2333,12 @@
                           
                           let finalImgUrl = normalUrl; 
                           const hasBig = await probeImage(bigUrl);
-                          if (hasBig) finalImgUrl = bigUrl; // အကြီးရှိပါက အကြီးကိုသုံးမည်
+                          if (hasBig) finalImgUrl = bigUrl; 
 
                           const wrap = document.createElement('div'); wrap.className = 'export-block';
                           const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
                           const img = document.createElement('img'); 
-                          img.style.width = hasBig ? '500px' : '420px'; // Big ဆိုရင် ပိုကြီးကြီးပြမည်
+                          img.style.width = hasBig ? '500px' : '420px'; 
                           img.style.maxWidth = '95%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '10px'; img.style.background = '#fff'; img.style.display = 'block';
                           img.src = finalImgUrl;
                           const ownerP = document.createElement('p'); ownerP.className = 'mt-3 text-slate-700'; ownerP.style.paddingBottom = '4px'; ownerP.style.fontSize = '20px'; 
@@ -2425,7 +2397,9 @@
           clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
-          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
+          
+          // 🚀 Fast Render for Reprint (Scale 1.5 & no image timeout delay)
+          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 1.5, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
           document.body.removeChild(clone);
 
           const margin=18; 
@@ -2438,12 +2412,12 @@
           
           ctx.drawImage(canvas, margin, margin);
 
-          // 🌟 INVOICE ID ကို Canvas ရဲ့ အပေါ်ဆုံး ဘယ်ဘက်ထောင့်တွင် ဆွဲတင်ပေးခြင်း 🌟
+          // 🌟 INVOICE ID ကို Canvas ရဲ့ အပေါ်ဆုံး အလယ်ဗဟိုမှာ ဆွဲတင်ပေးခြင်း 🌟
           ctx.fillStyle = '#64748b'; 
-          ctx.font = 'bold 20px system-ui, sans-serif'; 
-          ctx.textAlign = 'left'; 
+          ctx.font = 'bold 22px system-ui, sans-serif'; 
+          ctx.textAlign = 'center'; 
           ctx.textBaseline = 'top';
-          ctx.fillText("ID: " + tx.id, margin, 8);
+          ctx.fillText("ID: " + tx.id, out.width / 2, 8);
 
           const finalFileName = 'Reprint_' + tx.id + '.png';
 
@@ -2466,9 +2440,19 @@
 
   function renderHistoryRows(dataArray) {
       const list = document.getElementById('adminHistoryList');
-      if(dataArray.length === 0) { list.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-red-500">ရှာဖွေထားသော မှတ်တမ်း မတွေ့ပါ</td></tr>'; return; }
+      const loadMoreBtn = document.getElementById('loadMoreContainer');
+      
+      if(dataArray.length === 0) { 
+          list.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-red-500">ရှာဖွေထားသော မှတ်တမ်း မတွေ့ပါ</td></tr>'; 
+          if(loadMoreBtn) loadMoreBtn.classList.add('hidden');
+          return; 
+      }
+      
+      // 🌟 Load More အတွက် လိုအပ်သလောက်သာ ဖြတ်ယူခြင်း
+      const batch = dataArray.slice(0, CURRENT_DISPLAY_COUNT);
       let html = '';
-      dataArray.forEach(d => {
+      
+      batch.forEach(d => {
         let dateObj = new Date(d.timestamp);
         let dateStr = dateObj.toLocaleString('en-GB', { timeZone: d.tz || 'Asia/Bangkok', hour12: true });
         let mappedDeviceName = FIREBASE_DEVICE_NAMES[d.deviceId] || d.deviceId || "Unknown";
@@ -2515,7 +2499,7 @@
         }
         
         html += `<tr class="border-b hover:bg-gray-50">
-          <td class="p-3 font-mono text-xs text-gray-600">${d.id}</td>
+          <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${d.id}</td>
           <td class="p-3 text-xs">${dateStr}</td>
           <td class="p-3 font-bold text-indigo-700 text-xs">${mappedDeviceName}</td>
           <td class="p-3 text-xs font-bold text-purple-600">${displayRate}</td>
@@ -2528,6 +2512,13 @@
       });
       list.innerHTML = html;
       
+      // Load More Button ကို ပြသမည့်အခြေအနေ စစ်ဆေးခြင်း
+      if (dataArray.length > CURRENT_DISPLAY_COUNT) {
+          if(loadMoreBtn) loadMoreBtn.classList.remove('hidden');
+      } else {
+          if(loadMoreBtn) loadMoreBtn.classList.add('hidden');
+      }
+
       if(CURRENT_ROLE === 'admin') {
           updateDashboard(dataArray);
       }
@@ -2537,6 +2528,10 @@
     const list = document.getElementById('adminHistoryList');
     list.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>';
     document.getElementById('searchInvId').value = '';
+    
+    // Load အသစ်လုပ်တိုင်း အကြောင်း ၁၅၀ ပြန်စရန်
+    CURRENT_DISPLAY_COUNT = 150; 
+    
     try {
       const snap = await firebase.firestore().collection("exchange_history").orderBy("timestamp", "desc").limit(1500).get();
       if(snap.empty) { list.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">မှတ်တမ်းမရှိသေးပါ</td></tr>'; updateDashboard([]); return; }
@@ -2545,9 +2540,12 @@
     } catch(e) { list.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-red-500">Error loading history</td></tr>'; }
   }
 
-  async function searchHistoryLocally() {
+  async function searchHistoryLocally(resetPage = false) {
+      if (resetPage) CURRENT_DISPLAY_COUNT = 150; // Search အသစ်လုပ်ရင် ၁၅၀ ကနေပြန်စ
+      
       const searchVal = document.getElementById('searchInvId').value.trim().toLowerCase();
       if(!searchVal) { renderHistoryRows(allLoadedHistory); return; }
+      
       const filtered = allLoadedHistory.filter(d => d.id.toLowerCase().includes(searchVal));
       if(filtered.length === 0 && searchVal.startsWith('inv')) {
          const list = document.getElementById('adminHistoryList');
@@ -2557,6 +2555,11 @@
              if(docRef.exists) { renderHistoryRows([docRef.data()]); } else { renderHistoryRows([]); }
          } catch(e) { renderHistoryRows([]); }
       } else { renderHistoryRows(filtered); }
+  }
+
+  window.loadMoreHistory = function() {
+      CURRENT_DISPLAY_COUNT += DISPLAY_LIMIT;
+      searchHistoryLocally(false); // လက်ရှိ Filter/Search နဲ့ပဲ ဆက်ပြဖို့
   }
 
   function exportHistoryCSV() {
@@ -2638,12 +2641,12 @@
     const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = customTexts.thanks; }
   }
 
-  // --- 🌟 🌟 🌟 BUG FIX: Save Section 🌟 🌟 🌟 ---
+  // --- 🌟 🌟 🌟 FAST EXPORT & CENTER ID SAVE 🌟 🌟 🌟 ---
   async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
     let origText = '';
     if (btnElement) {
         origText = btnElement.innerHTML;
-        btnElement.innerHTML = '⏳ Loading...';
+        btnElement.innerHTML = '⚡ Processing...';
         btnElement.disabled = true;
         await new Promise(r => setTimeout(r, 50));
     }
@@ -2733,7 +2736,6 @@
         timeDiv.textContent = getExportTimeStr(lang);
         clone.appendChild(timeDiv);
 
-        // HTML ထဲက brandHeader အဟောင်း ပြန်ခေါ်ပေးခြင်း
         const brandHeader = document.createElement('div');
         brandHeader.style.textAlign = 'center'; 
         brandHeader.style.paddingBottom = '15px'; 
@@ -2752,10 +2754,12 @@
         clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
         document.body.appendChild(clone);
         await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
-        const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: Math.min(2, window.devicePixelRatio*1.6), useCORS:true, allowTaint:true, logging:false });
+        
+        // 🚀 Fast Render (Scale 1.5 & no image timeout delay)
+        const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 1.5, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
         document.body.removeChild(clone);
         
-        const margin=18, titleHeight=30; 
+        const margin=18; 
         const out=document.createElement('canvas'); 
         out.width = canvas.width + margin*2; 
         out.height = canvas.height + margin*2;
@@ -2769,12 +2773,12 @@
         const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
         const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
         
-        // 🌟 INVOICE ID ကို Canvas ရဲ့ အပေါ်ဆုံး ဘယ်ဘက်ထောင့်တွင် ဆွဲတင်ပေးခြင်း 🌟
+        // 🌟 INVOICE ID ကို Canvas ရဲ့ အပေါ်ဆုံး အလယ်ဗဟိုမှာ ဆွဲတင်ပေးခြင်း 🌟
         ctx.fillStyle = '#64748b'; 
-        ctx.font = 'bold 20px system-ui, sans-serif'; 
-        ctx.textAlign = 'left'; 
+        ctx.font = 'bold 22px system-ui, sans-serif'; 
+        ctx.textAlign = 'center'; 
         ctx.textBaseline = 'top';
-        ctx.fillText("ID: " + invId, margin, 8);
+        ctx.fillText("ID: " + invId, out.width / 2, 8);
 
         let recType = ""; let savedRate = ""; 
         if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
@@ -2792,7 +2796,6 @@
         try { 
             await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); 
             
-            // 🌟 Telegram သို့ အသိပေးစာပို့ခြင်း 🌟
             let alertMsg = `✅ <b>ငွေလွှဲပြေစာ အသစ် (Auto)</b>\n\n`;
             alertMsg += `ID: <code>${invId}</code>\n`;
             alertMsg += `အမျိုးအစား: <b>${recType}</b>\n`;
@@ -2800,7 +2803,7 @@
             alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
             alertMsg += `နည်းလမ်း: ${paymentMethodName}\n`;
             alertMsg += `Device: ${currentDeviceId}`;
-            sendTelegramAlert(alertMsg); // default topic 2 သို့ပို့မည်
+            sendTelegramAlert(alertMsg); 
 
         } catch(e) {}
         
@@ -2837,6 +2840,10 @@
             a.click();
             setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
 
+            if (btnElement) {
+                btnElement.innerHTML = '✅ Saved!';
+            }
+
         }, mimeType, 0.92);
         
     } catch (err) {
@@ -2844,8 +2851,10 @@
         alert("Save/Share အလုပ်လုပ်ရာတွင် အခက်အခဲရှိပါသည်။ \n" + err.message);
     } finally {
         if (btnElement) {
-            btnElement.innerHTML = origText;
-            btnElement.disabled = false;
+            setTimeout(() => {
+                btnElement.innerHTML = origText;
+                btnElement.disabled = false;
+            }, 1500);
         }
     }
   }
