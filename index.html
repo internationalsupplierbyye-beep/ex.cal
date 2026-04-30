@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MMK ↔ THB & VND Calculator + Bank QR + Save PNG/JPEG</title>
+  <title>Thailand Guide - Exchange System</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -87,7 +87,6 @@
     #loginModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 60; align-items: center; justify-content: center; }
     .login-box { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
 
-    /* Admin Tabs */
     .tab-btn { padding: 10px 16px; font-weight: bold; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
     .tab-btn:hover { color: #111827; background: #f1f5f9; }
     .tab-btn.active { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
@@ -95,7 +94,6 @@
     .tab-pane { display: none !important; padding-top: 16px; flex: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
     .tab-pane.active { display: block !important; }
 
-    /* Drag and Drop List Styles */
     .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; background: #f8fafc; transition: background 0.2s; }
     .list-item.dragging { opacity: 0.5; background: #e2e8f0; border: 2px dashed #94a3b8; }
     .list-item.drag-over { border-top: 2px solid #2563eb; }
@@ -507,6 +505,7 @@
           </tbody>
         </table>
         
+        <!-- Load More Container -->
         <div id="loadMoreContainer" class="hidden p-4 text-center border-t border-gray-100">
             <button onclick="window.loadMoreHistory()" class="btn2 !bg-blue-50 !border-blue-200 !text-blue-600 w-full sm:w-1/2 font-bold py-2">
                 နောက်ထပ်မှတ်တမ်းများ ကြည့်ရန် (Load More) ➕
@@ -1026,7 +1025,7 @@
               d.setDate(nowTz.getDate() - i);
               targetDates.push(toYYYYMMDD(d));
           }
-          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${targetDates[targetDates.length-1]} မှ ${targetDates[0]} อะตี (ယခုတစ်ပတ်)`;
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${targetDates[targetDates.length-1]} မှ ${targetDates[0]} အထိ (ယခုတစ်ပတ်)`;
       } else if (filter === 'month') {
           const currentMonthStr = todayTzStr.substring(0, 7); 
           targetDates = currentMonthStr; 
@@ -1034,7 +1033,7 @@
       } else if (filter === 'custom') {
           const sd = document.getElementById('dashStartDate').value || "0000-00-00";
           const ed = document.getElementById('dashEndDate').value || "9999-99-99";
-          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${sd} မှ ${ed} อะตี`;
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${sd} မှ ${ed} အထိ`;
       }
 
       const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
@@ -1178,6 +1177,7 @@
           document.getElementById('dash_total_profit').textContent = (totalProfit >= 0 ? "+ " : "") + formatMmk(totalProfit) + " MMK";
           document.getElementById('dash_total_profit').className = totalProfit >= 0 ? "font-black text-green-700 text-xl" : "font-black text-red-700 text-xl";
 
+          // 🌟 Helper for precise Rate Display
           const formatCustomRate = (rate, curr) => {
               if (!rate || rate === 0) return '0';
               if (curr === 'THB') {
@@ -1190,18 +1190,52 @@
               return rate;
           };
 
+          // 🌟 🌟 🌟 အသစ်: Average Estimate Rate တွက်ချက်ပြီး ပြသခြင်း 🌟 🌟 🌟
           const renderLots = (longs, shorts, elementId, curr) => {
               const el = document.getElementById(elementId);
               if(!el) return;
               let html = '';
               
-              if(shorts.length === 0) {
+              // ဘယ် Array က လက်ကျန်ရှိနေလဲ (ဝယ်ထားတာလား၊ ရောင်းထားတာလား)
+              let activeArray = shorts.length > 0 ? shorts : longs;
+              let typeStr = shorts.length > 0 ? `[MMK ဝယ်ထား / ${curr} ရောင်းထား]` : `[${curr} ဝယ်ထား / MMK ရောင်းထား]`;
+
+              // Total Qty နှင့် Average Rate တွက်ချက်ခြင်း
+              let totalQty = 0; let totalMmk = 0;
+              activeArray.forEach(lot => { totalQty += lot.qty; totalMmk += (lot.qty * lot.rate); });
+              let avgRate = totalQty > 0 ? (totalMmk / totalQty) : 0;
+              
+              let estStr = '';
+              if(avgRate > 0) {
+                  if (curr === 'THB') {
+                      estStr = `Est Rate: ၁သိန်း = ${(100000 / avgRate).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2})} ဘတ်`;
+                  } else if (curr === 'VND') {
+                      estStr = `Est Rate: ၁ကျပ် = ${(1 / avgRate).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:4})} ဒေါင်`;
+                  }
+              }
+
+              // UI ပေါ်မှာ Average Estimate Rate ပြသရန် Header ကို ပြင်ဆင်ခြင်း
+              let headerEl = el.previousElementSibling;
+              if(headerEl) {
+                  if(activeArray.length === 0) {
+                      headerEl.innerHTML = `Active Lots (လက်ရှိကျန်နေသော):`;
+                  } else {
+                      headerEl.innerHTML = `
+                          <div class="flex justify-between items-center w-full">
+                              <span>Active Lots:</span>
+                              <span class="text-white bg-indigo-500 px-2 py-0.5 rounded shadow-sm text-[10px] font-bold">${estStr}</span>
+                          </div>
+                      `;
+                  }
+              }
+
+              if(activeArray.length === 0) {
                   html = '<div class="text-gray-400 italic text-center mt-2">Clear (လက်ကျန်မရှိပါ)</div>';
               } else {
-                  shorts.forEach(s => {
+                  activeArray.forEach(s => {
                       html += `<div class="flex flex-col border-b border-blue-200 last:border-0 pb-1.5 mb-1.5">
                                   <div class="flex justify-between items-center mb-1">
-                                      <span class="text-blue-700 font-bold text-[10px] uppercase tracking-wider">🔵 [MMK ဝယ်ထား / ${curr} ရောင်းထား]</span>
+                                      <span class="text-blue-700 font-bold text-[10px] uppercase tracking-wider">🔵 ${typeStr}</span>
                                   </div>
                                   <div class="flex justify-between items-center">
                                       <span class="text-blue-900 font-black text-sm">${formatMmk(s.qty)} ${curr} စာ</span>
@@ -1220,7 +1254,7 @@
       }
   }
 
-  // --- 🌟 PDF Generation Function (စာရင်းချုပ် PDF ထုတ်ရန်) ---
+  // --- 🌟 PDF Generation Function ---
   async function generatePDFReport() {
       const thbIn = document.getElementById('dash_thb_in').textContent;
       const thbOut = document.getElementById('dash_thb_out').textContent;
@@ -2218,7 +2252,7 @@
       }
   }
 
-  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt) ---
+  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt - Robust QR Match) 🌟 ---
   window.reprintReceipt = async function(invId, btnElement = null) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
@@ -2314,64 +2348,83 @@
           clone.style.border = '1px solid #e5e7eb'; 
           clone.style.background = '#fff';
 
-          if (tx.method && tx.method !== 'မပါ (None)') {
-              if (tx.method.startsWith('QR (')) {
-                  const qrNameStr = tx.method.match(/\((.*?)\)/);
-                  if (qrNameStr) {
-                      const qrName = qrNameStr[1];
-                      const foundQr = FIREBASE_QRS.find(q => {
-                          const name = typeof q === 'string' ? q.replace(/\.[^.]+$/, '') : (q.name || q.file);
-                          return name === qrName;
-                      });
+          // 🌟🌟🌟 Robust QR & Bank Matching Logic 🌟🌟🌟
+          if (tx.method && tx.method !== 'မပါ (None)' && tx.method !== '-' && tx.method !== 'None') {
+              let isQR = tx.method.includes('QR');
+              let isBank = tx.method.includes('Bank');
+              
+              if (isQR) {
+                  // Partial string match ကို သုံးထားသည်
+                  const foundQr = FIREBASE_QRS.find(q => {
+                      const name = typeof q === 'string' ? q.replace(/\.[^.]+$/, '') : (q.name || q.file);
+                      return tx.method.includes(name);
+                  });
+                  
+                  if (foundQr) {
+                      const file = typeof foundQr === 'string' ? foundQr : foundQr.file;
+                      const normalUrl = file.includes('http') ? file : 'assets/qr/' + file;
+                      const baseName = file.replace(/\.[^.]+$/,'');
+                      const bigUrl = file.includes('http') ? file : 'assets/qr/' + baseName + '_big.jpg';
+                      const owner = (typeof foundQr === 'object' && foundQr.owner) ? foundQr.owner : getOwnerFromKey(baseName);
                       
-                      if (foundQr) {
-                          const file = typeof foundQr === 'string' ? foundQr : foundQr.file;
-                          const normalUrl = file.includes('http') ? file : 'assets/qr/' + file;
-                          const baseName = file.replace(/\.[^.]+$/,'');
-                          const bigUrl = file.includes('http') ? file : 'assets/qr/' + baseName + '_big.jpg';
-                          const owner = (typeof foundQr === 'object' && foundQr.owner) ? foundQr.owner : getOwnerFromKey(baseName);
-                          
-                          let finalImgUrl = normalUrl; 
-                          const hasBig = await probeImage(bigUrl);
-                          if (hasBig) finalImgUrl = bigUrl; 
+                      let finalImgUrl = normalUrl; 
+                      const hasBig = await probeImage(bigUrl);
+                      if (hasBig) finalImgUrl = bigUrl; 
 
-                          const wrap = document.createElement('div'); wrap.className = 'export-block';
-                          const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
-                          const img = document.createElement('img'); 
-                          img.style.width = hasBig ? '500px' : '420px'; 
-                          img.style.maxWidth = '95%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '10px'; img.style.background = '#fff'; img.style.display = 'block';
-                          img.src = finalImgUrl;
-                          const ownerP = document.createElement('p'); ownerP.className = 'mt-3 text-slate-700'; ownerP.style.paddingBottom = '4px'; ownerP.style.fontSize = '20px'; 
-                          ownerP.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${owner}</span>`);
-                          wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(ownerP); clone.appendChild(wrap);
-                          await new Promise(res => { if(img.complete) return res(); img.onload=()=>res(); img.onerror=()=>res(); });
-                      } else {
-                          const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
-                      }
+                      const wrap = document.createElement('div'); wrap.className = 'export-block';
+                      const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
+                      
+                      const img = document.createElement('img'); 
+                      img.style.width = hasBig ? '500px' : '420px'; 
+                      img.style.maxWidth = '95%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '10px'; img.style.background = '#fff'; img.style.display = 'block';
+                      img.src = finalImgUrl;
+                      
+                      const ownerP = document.createElement('p'); ownerP.className = 'mt-3 text-slate-700'; ownerP.style.paddingBottom = '4px'; ownerP.style.fontSize = '20px'; 
+                      ownerP.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${owner}</span>`);
+                      
+                      wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(ownerP); clone.appendChild(wrap);
+                      
+                      // Error Handle for Image Load Failure
+                      await new Promise(res => { 
+                          if(img.complete) {
+                              if(img.naturalWidth === 0) wrap.innerHTML = `<div class="font-black text-slate-800 text-lg">${tx.method} (Image missing)</div>`;
+                              return res(); 
+                          }
+                          img.onload = () => res(); 
+                          img.onerror = () => {
+                              wrap.innerHTML = `<div class="font-black text-slate-800 text-lg">${tx.method} (Image Not Found)</div>`;
+                              res();
+                          }; 
+                      });
+                  } else {
+                      const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
                   }
-              } else if (tx.method.startsWith('Bank (')) {
-                  const bankNameStr = tx.method.match(/\((.*?)\)/);
-                  if (bankNameStr) {
-                      const bankName = bankNameStr[1];
-                      const foundBankKey = Object.keys(FIREBASE_BANKS).find(k => FIREBASE_BANKS[k].name === bankName);
-                      if (foundBankKey) {
-                          const info = FIREBASE_BANKS[foundBankKey];
-                          const wrap = document.createElement('div'); wrap.className = 'export-block';
-                          const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.bankTitle : 'ငွေလွှဲရန် ဘဏ်အချက်အလက်');
-                          const box = document.createElement('div'); box.style.maxWidth = '560px'; box.style.margin = '12px auto 0'; box.style.border = '1px solid #e5e7eb'; box.style.borderRadius = '16px'; box.style.padding = '16px'; box.style.background = '#fff'; box.style.textAlign = 'center';
-                          const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
-                          const logo = document.createElement('img'); logo.src = logoUrl; logo.style.width = '72px'; logo.style.height = '72px'; logo.style.borderRadius = '18px'; logo.style.border = '1px solid #e5e7eb'; logo.style.objectFit = 'cover';
-                          const headerRow = document.createElement('div'); headerRow.style.display = 'flex'; headerRow.style.flexDirection = 'column'; headerRow.style.alignItems = 'center'; headerRow.style.justifyContent = 'center'; headerRow.style.gap = '8px'; headerRow.style.marginBottom = '10px';
-                          const h = document.createElement('div'); h.style.textAlign = 'center'; 
-                          h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
-                          const body = document.createElement('div'); body.style.textAlign = 'center';
-                          body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
-                          headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
-                          wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
-                          await new Promise(res => { if(logo.complete) return res(); logo.onload=()=>res(); logo.onerror=()=>res(); });
-                      } else {
-                          const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
-                      }
+              } else if (isBank) {
+                  const foundBankKey = Object.keys(FIREBASE_BANKS).find(k => tx.method.includes(FIREBASE_BANKS[k].name));
+                  if (foundBankKey) {
+                      const info = FIREBASE_BANKS[foundBankKey];
+                      const wrap = document.createElement('div'); wrap.className = 'export-block';
+                      const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.bankTitle : 'ငွေလွှဲရန် ဘဏ်အချက်အလက်');
+                      const box = document.createElement('div'); box.style.maxWidth = '560px'; box.style.margin = '12px auto 0'; box.style.border = '1px solid #e5e7eb'; box.style.borderRadius = '16px'; box.style.padding = '16px'; box.style.background = '#fff'; box.style.textAlign = 'center';
+                      const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
+                      
+                      const logo = document.createElement('img'); logo.src = logoUrl; logo.style.width = '72px'; logo.style.height = '72px'; logo.style.borderRadius = '18px'; logo.style.border = '1px solid #e5e7eb'; logo.style.objectFit = 'cover';
+                      const headerRow = document.createElement('div'); headerRow.style.display = 'flex'; headerRow.style.flexDirection = 'column'; headerRow.style.alignItems = 'center'; headerRow.style.justifyContent = 'center'; headerRow.style.gap = '8px'; headerRow.style.marginBottom = '10px';
+                      const h = document.createElement('div'); h.style.textAlign = 'center'; 
+                      h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
+                      const body = document.createElement('div'); body.style.textAlign = 'center';
+                      body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
+                      
+                      headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
+                      wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
+                      
+                      await new Promise(res => { 
+                          if(logo.complete) return res(); 
+                          logo.onload = () => res(); 
+                          logo.onerror = () => res(); 
+                      });
+                  } else {
+                      const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
                   }
               } else {
                   const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
@@ -2541,7 +2594,7 @@
   }
 
   async function searchHistoryLocally(resetPage = false) {
-      if (resetPage) CURRENT_DISPLAY_COUNT = 150; // Search အသစ်လုပ်ရင် ၁၅၀ ကနေပြန်စ
+      if (resetPage) CURRENT_DISPLAY_COUNT = 150; 
       
       const searchVal = document.getElementById('searchInvId').value.trim().toLowerCase();
       if(!searchVal) { renderHistoryRows(allLoadedHistory); return; }
@@ -2559,7 +2612,7 @@
 
   window.loadMoreHistory = function() {
       CURRENT_DISPLAY_COUNT += DISPLAY_LIMIT;
-      searchHistoryLocally(false); // လက်ရှိ Filter/Search နဲ့ပဲ ဆက်ပြဖို့
+      searchHistoryLocally(false); 
   }
 
   function exportHistoryCSV() {
@@ -2641,7 +2694,7 @@
     const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = customTexts.thanks; }
   }
 
-  // --- 🌟 🌟 🌟 FAST EXPORT & CENTER ID SAVE 🌟 🌟 🌟 ---
+  // --- 🌟 FAST EXPORT & CENTER ID SAVE 🌟 ---
   async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
     let origText = '';
     if (btnElement) {
