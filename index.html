@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Thailand Guide - Exchange System</title>
+  <title>TG Excal</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1177,7 +1177,7 @@
           document.getElementById('dash_total_profit').textContent = (totalProfit >= 0 ? "+ " : "") + formatMmk(totalProfit) + " MMK";
           document.getElementById('dash_total_profit').className = totalProfit >= 0 ? "font-black text-green-700 text-xl" : "font-black text-red-700 text-xl";
 
-          // 🌟 Helper for precise Rate Display
+          // Helper for precise Rate Display
           const formatCustomRate = (rate, curr) => {
               if (!rate || rate === 0) return '0';
               if (curr === 'THB') {
@@ -1190,13 +1190,12 @@
               return rate;
           };
 
-          // 🌟 🌟 🌟 အသစ်: Average Estimate Rate တွက်ချက်ပြီး ပြသခြင်း 🌟 🌟 🌟
+          // 🌟🌟🌟 အသစ်: Average Estimate Rate နှင့် Total Qty အား တွက်ချက်ပြသခြင်း (Horizontal Layout) 🌟🌟🌟
           const renderLots = (longs, shorts, elementId, curr) => {
               const el = document.getElementById(elementId);
               if(!el) return;
               let html = '';
               
-              // ဘယ် Array က လက်ကျန်ရှိနေလဲ (ဝယ်ထားတာလား၊ ရောင်းထားတာလား)
               let activeArray = shorts.length > 0 ? shorts : longs;
               let typeStr = shorts.length > 0 ? `[MMK ဝယ်ထား / ${curr} ရောင်းထား]` : `[${curr} ဝယ်ထား / MMK ရောင်းထား]`;
 
@@ -1213,17 +1212,22 @@
                       estStr = `Est Rate: ၁ကျပ် = ${(1 / avgRate).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:4})} ဒေါင်`;
                   }
               }
+              
+              let qtyStr = totalQty > 0 ? `Total: ${formatMmk(totalQty)} ${curr}` : '';
 
-              // UI ပေါ်မှာ Average Estimate Rate ပြသရန် Header ကို ပြင်ဆင်ခြင်း
+              // UI ပေါ်မှာ Average Estimate Rate နှင့် Total Qty ပြသရန် Header ကို ပြင်ဆင်ခြင်း
               let headerEl = el.previousElementSibling;
               if(headerEl) {
                   if(activeArray.length === 0) {
                       headerEl.innerHTML = `Active Lots (လက်ရှိကျန်နေသော):`;
                   } else {
                       headerEl.innerHTML = `
-                          <div class="flex justify-between items-center w-full">
-                              <span>Active Lots:</span>
-                              <span class="text-white bg-indigo-500 px-2 py-0.5 rounded shadow-sm text-[10px] font-bold">${estStr}</span>
+                          <div class="flex justify-between items-center w-full mb-1">
+                              <span class="text-xs font-bold text-gray-700">Active Lots:</span>
+                              <div class="flex items-center gap-1.5 flex-wrap justify-end">
+                                  <span class="text-indigo-800 bg-indigo-100 px-2 py-0.5 rounded shadow-sm text-[10px] font-black border border-indigo-200">${qtyStr}</span>
+                                  <span class="text-white bg-indigo-500 px-2 py-0.5 rounded shadow-sm text-[10px] font-bold">${estStr}</span>
+                              </div>
                           </div>
                       `;
                   }
@@ -1233,7 +1237,7 @@
                   html = '<div class="text-gray-400 italic text-center mt-2">Clear (လက်ကျန်မရှိပါ)</div>';
               } else {
                   activeArray.forEach(s => {
-                      html += `<div class="flex flex-col border-b border-blue-200 last:border-0 pb-1.5 mb-1.5">
+                      html += `<div class="flex flex-col border-b border-blue-200 last:border-0 pb-1.5 mb-1.5 mt-1">
                                   <div class="flex justify-between items-center mb-1">
                                       <span class="text-blue-700 font-bold text-[10px] uppercase tracking-wider">🔵 ${typeStr}</span>
                                   </div>
@@ -1594,9 +1598,10 @@
     if(c==='y') return 'YE LYNN HTUN'; if(c==='h') return 'HEIN SET AUNG'; if(c==='t') return 'THIDAR WIN'; return '—';
   }
   
+  // 🌟 အချိန်ကြန့်ကြာမှုကို လျှော့ချရန် ProbeImage ၏ Timeout ကို 400ms သို့လျှော့ချထားသည်
   function probeImage(url) {
     return new Promise(resolve => {
-        const img = new Image(); let timer = setTimeout(() => { resolve(false); }, 1500); 
+        const img = new Image(); let timer = setTimeout(() => { resolve(false); }, 400); 
         img.onload = () => { clearTimeout(timer); resolve(true); }; img.onerror = () => { clearTimeout(timer); resolve(false); }; img.src = url; 
     });
   }
@@ -2354,7 +2359,6 @@
               let isBank = tx.method.includes('Bank');
               
               if (isQR) {
-                  // Partial string match ကို သုံးထားသည်
                   const foundQr = FIREBASE_QRS.find(q => {
                       const name = typeof q === 'string' ? q.replace(/\.[^.]+$/, '') : (q.name || q.file);
                       return tx.method.includes(name);
@@ -2384,15 +2388,18 @@
                       
                       wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(ownerP); clone.appendChild(wrap);
                       
-                      // Error Handle for Image Load Failure
+                      // 🌟 Timeout ကို 500ms ပြောင်းထားလို့ မလိုအပ်ဘဲ ကြာနေတာကို ကာကွယ်ပေးထားတယ် 🌟
                       await new Promise(res => { 
+                          let timer = setTimeout(res, 500); 
                           if(img.complete) {
                               if(img.naturalWidth === 0) wrap.innerHTML = `<div class="font-black text-slate-800 text-lg">${tx.method} (Image missing)</div>`;
+                              clearTimeout(timer);
                               return res(); 
                           }
-                          img.onload = () => res(); 
+                          img.onload = () => { clearTimeout(timer); res(); };
                           img.onerror = () => {
                               wrap.innerHTML = `<div class="font-black text-slate-800 text-lg">${tx.method} (Image Not Found)</div>`;
+                              clearTimeout(timer);
                               res();
                           }; 
                       });
@@ -2418,10 +2425,12 @@
                       headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
                       wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
                       
+                      // 🌟 Timeout ကို 500ms ပြောင်းထားတယ် 🌟
                       await new Promise(res => { 
-                          if(logo.complete) return res(); 
-                          logo.onload = () => res(); 
-                          logo.onerror = () => res(); 
+                          let timer = setTimeout(res, 500); 
+                          if(logo.complete) { clearTimeout(timer); return res(); }
+                          logo.onload = () => { clearTimeout(timer); res(); };
+                          logo.onerror = () => { clearTimeout(timer); res(); };
                       });
                   } else {
                       const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
@@ -2451,8 +2460,8 @@
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
-          // 🚀 Fast Render for Reprint (Scale 1.5 & no image timeout delay)
-          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 1.5, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
+          // 🚀 Fast Render for Reprint (Scale 1.2 ပြောင်းထားပြီး imageTimeout လုံးဝပိတ်ထားသည်)
+          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 1.2, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
           document.body.removeChild(clone);
 
           const margin=18; 
@@ -2759,7 +2768,13 @@
           const owner=document.createElement('p'); owner.className='mt-3 text-slate-700'; owner.style.paddingBottom = '4px'; owner.style.fontSize = '20px'; 
           owner.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>`);
           wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(owner); clone.appendChild(wrap);
-          await new Promise(res=>{ if(img.complete) return res(); img.onload=()=>res(); img.onerror=()=>res(); });
+          
+          await new Promise(res => { 
+              let timer = setTimeout(res, 500); 
+              if(img.complete) { clearTimeout(timer); return res(); }
+              img.onload = () => { clearTimeout(timer); res(); };
+              img.onerror = () => { clearTimeout(timer); res(); };
+          });
         }
         
         if(mode==='bank'){
@@ -2779,7 +2794,13 @@
             body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
             headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
             wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
-            await new Promise(res=>{ if(logo.complete) return res(); logo.onload=()=>res(); logo.onerror=()=>res(); });
+            
+            await new Promise(res => { 
+                let timer = setTimeout(res, 500); 
+                if(logo.complete) { clearTimeout(timer); return res(); }
+                logo.onload = () => { clearTimeout(timer); res(); };
+                logo.onerror = () => { clearTimeout(timer); res(); };
+            });
           }
         }
         
