@@ -73,7 +73,7 @@
     
     .admin-content { 
       background: white; 
-      max-width: 1100px; 
+      max-width: 1200px; 
       margin: 0 auto; 
       border-radius: 16px; 
       padding: 20px; 
@@ -243,6 +243,16 @@
             <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="qr"><span>QR ပဲပါ</span></label>
             <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="bank"><span>Bank Info ပဲပါ</span></label>
         </div>
+
+        <div class="mt-4 border-t pt-3 border-gray-200">
+            <p class="font-black mb-1 pb-1 text-xs text-purple-700">👥 Customer (မရွေးပါက ပြေစာတွင်မပါပါ)</p>
+            <div class="flex gap-2">
+                <select id="mainCustomerSelect" class="compact border rounded-lg flex-1 text-sm font-bold bg-purple-50 text-purple-800 border-purple-200">
+                    <option value="">— မထည့်ပါ —</option>
+                </select>
+                <button onclick="document.getElementById('quickCusModal').style.display='flex'" class="btn bg-purple-600 hover:bg-purple-700 !py-1 !px-3 text-xs whitespace-nowrap">➕ အမြန်ထည့်မည်</button>
+            </div>
+        </div>
       </div>
 
       <div class="card p-3">
@@ -357,6 +367,30 @@
   </div>
 </div>
 
+<div id="quickCusModal" style="display:none;" class="fixed inset-0 bg-black/60 z-[70] items-center justify-center p-4">
+  <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl">
+    <h3 class="text-lg font-black mb-4 text-purple-700">➕ Customer အမြန်ထည့်ရန်</h3>
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs font-bold text-gray-600 mb-1 block">* အမည်</label>
+        <input type="text" id="qCusName" class="admin-input-box !mb-0 text-sm" placeholder="ဥပမာ - Mg Mg">
+      </div>
+      <div>
+        <label class="text-xs font-bold text-gray-600 mb-1 block">Social Media Name (Option)</label>
+        <input type="text" id="qCusSocial" class="admin-input-box !mb-0 text-sm" placeholder="ဥပမာ - Sa">
+      </div>
+      <div>
+        <label class="text-xs font-bold text-gray-600 mb-1 block">ဖုန်းနံပါတ် (Option)</label>
+        <input type="text" id="qCusPhone" class="admin-input-box !mb-0 text-sm" placeholder="ဥပမာ - 09123456789">
+      </div>
+      <div class="flex gap-2 mt-5">
+        <button onclick="document.getElementById('quickCusModal').style.display='none'" class="btn2 w-1/2">ပိတ်မည်</button>
+        <button onclick="saveQuickCustomer(event)" class="btn bg-purple-600 hover:bg-purple-700 w-1/2">သိမ်းမည်</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="adminModal">
   <div class="admin-content relative">
     <button onclick="closeAdmin()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl z-10">✕</button>
@@ -368,6 +402,7 @@
       <button class="tab-btn" onclick="switchTab('tab-general', this)">အထွေထွေ</button>
       <button class="tab-btn" onclick="switchTab('tab-banks', this)">ဘဏ်များ</button>
       <button class="tab-btn" onclick="switchTab('tab-qrs', this)">QR များ</button>
+      <button class="tab-btn" onclick="switchTab('tab-customers', this)" id="btnTabCustomers">👥 Customers</button>
     </div>
 
     <div id="tab-dashboard" class="tab-pane active">
@@ -491,21 +526,21 @@
             <tr>
               <th class="p-3 border-b font-bold text-center">Invoice ID</th>
               <th class="p-3 border-b font-bold">ရက်စွဲ/အချိန်</th>
+              <th class="p-3 border-b font-bold text-purple-700">Customer</th>
               <th class="p-3 border-b font-bold">Device</th>
               <th class="p-3 border-b font-bold text-purple-700">Rate</th> 
               <th class="p-3 border-b font-bold">အမျိုးအစား</th>
               <th class="p-3 border-b font-bold">လွှဲငွေ ➔ ရငွေ</th>
               <th class="p-3 border-b font-bold text-center">Status</th>
-              <th class="p-3 border-b font-bold">နည်းလမ်း</th>
               <th class="p-3 border-b font-bold text-center">Action</th>
+              <th class="p-3 border-b font-bold">နည်းလမ်း</th>
             </tr>
           </thead>
           <tbody id="adminHistoryList">
-            <tr><td colspan="9" class="p-4 text-center text-gray-500">Loading...</td></tr>
+            <tr><td colspan="10" class="p-4 text-center text-gray-500">Loading...</td></tr>
           </tbody>
         </table>
         
-        <!-- Load More Container -->
         <div id="loadMoreContainer" class="hidden p-4 text-center border-t border-gray-100">
             <button onclick="window.loadMoreHistory()" class="btn2 !bg-blue-50 !border-blue-200 !text-blue-600 w-full sm:w-1/2 font-bold py-2">
                 နောက်ထပ်မှတ်တမ်းများ ကြည့်ရန် (Load More) ➕
@@ -634,6 +669,31 @@
       </div>
     </div>
 
+    <div id="tab-customers" class="tab-pane">
+      <div class="flex flex-col h-full w-full min-h-[500px]">
+          <div class="bg-purple-50 border border-purple-200 p-4 rounded-xl mb-4 shrink-0">
+            <h3 class="font-bold text-purple-800 mb-3 text-sm">👥 Customer အသစ် ထည့်ရန် / ပြင်ရန်</h3>
+            <input type="hidden" id="cusId">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+              <input id="cusName" class="admin-input-box text-sm" placeholder="*Customer အမည်">
+              <input id="cusPhone" class="admin-input-box text-sm" placeholder="ဖုန်းနံပါတ်">
+              <input id="cusSocial" class="admin-input-box text-sm" placeholder="Social Media (ဥပမာ - Sa)">
+              <input id="cusBankName" class="admin-input-box text-sm" placeholder="ဘဏ်အမည်">
+              <input id="cusBankNo" class="admin-input-box text-sm" placeholder="ဘဏ်နံပါတ်">
+            </div>
+            <div class="flex gap-2">
+                <button onclick="clearCustomerForm()" class="btn2 !py-1 w-1/3 text-sm">ရှင်းမည်</button>
+                <button onclick="saveCustomerData()" id="btnCusSave" class="btn bg-purple-600 hover:bg-purple-700 !py-1 w-2/3 text-sm">သိမ်းမည်</button>
+            </div>
+          </div>
+          <div class="flex justify-between items-center mb-2">
+              <h3 class="font-bold text-sm text-gray-600">📋 Customer စာရင်းများ</h3>
+              <input type="text" id="searchCus" class="border rounded px-2 py-1 text-xs" placeholder="အမည်ရှာရန်..." oninput="renderCustomerAdminList()">
+          </div>
+          <div id="adminCustomerList" class="overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -648,6 +708,7 @@
   let FIREBASE_BANKS = {};
   let FIREBASE_BANK_ORDER = []; 
   let FIREBASE_QRS = []; 
+  let FIREBASE_CUSTOMERS = {}; 
   let ACTIVE_BANK_INFO = {};
   let FIREBASE_DEVICE_NAMES = {}; 
   let FIREBASE_HIDDEN_DEVICES = []; 
@@ -1177,7 +1238,6 @@
           document.getElementById('dash_total_profit').textContent = (totalProfit >= 0 ? "+ " : "") + formatMmk(totalProfit) + " MMK";
           document.getElementById('dash_total_profit').className = totalProfit >= 0 ? "font-black text-green-700 text-xl" : "font-black text-red-700 text-xl";
 
-          // Helper for precise Rate Display
           const formatCustomRate = (rate, curr) => {
               if (!rate || rate === 0) return '0';
               if (curr === 'THB') {
@@ -1190,7 +1250,6 @@
               return rate;
           };
 
-          // 🌟🌟🌟 အသစ်: Average Estimate Rate နှင့် Total Qty အား တွက်ချက်ပြသခြင်း (Horizontal Layout) 🌟🌟🌟
           const renderLots = (longs, shorts, elementId, curr) => {
               const el = document.getElementById(elementId);
               if(!el) return;
@@ -1199,7 +1258,6 @@
               let activeArray = shorts.length > 0 ? shorts : longs;
               let typeStr = shorts.length > 0 ? `[MMK ဝယ်ထား / ${curr} ရောင်းထား]` : `[${curr} ဝယ်ထား / MMK ရောင်းထား]`;
 
-              // Total Qty နှင့် Average Rate တွက်ချက်ခြင်း
               let totalQty = 0; let totalMmk = 0;
               activeArray.forEach(lot => { totalQty += lot.qty; totalMmk += (lot.qty * lot.rate); });
               let avgRate = totalQty > 0 ? (totalMmk / totalQty) : 0;
@@ -1215,7 +1273,6 @@
               
               let qtyStr = totalQty > 0 ? `Total: ${formatMmk(totalQty)} ${curr}` : '';
 
-              // UI ပေါ်မှာ Average Estimate Rate နှင့် Total Qty ပြသရန် Header ကို ပြင်ဆင်ခြင်း
               let headerEl = el.previousElementSibling;
               if(headerEl) {
                   if(activeArray.length === 0) {
@@ -1453,7 +1510,7 @@
 
       const historyRecord = {
         id: invId, type: type, rate: savedRate, inAmt: inAmtStr, outAmt: outAmtStr,
-        method: "Manual Lot", profit: 0, status: 'Success', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: "Admin"
+        method: "Manual Lot", profit: 0, status: 'Success', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: "Admin", customerName: "—"
       };
 
       try {
@@ -1547,6 +1604,7 @@
       });
     }
     
+    populateCustomerDropdown();
     refreshBankInfo();
     refreshQrPreview();
   }
@@ -1597,15 +1655,8 @@
     const c=(keyNoExt||'').trim().toLowerCase()[0];
     if(c==='y') return 'YE LYNN HTUN'; if(c==='h') return 'HEIN SET AUNG'; if(c==='t') return 'THIDAR WIN'; return '—';
   }
-  
-  // 🌟 အချိန်ကြန့်ကြာမှုကို လျှော့ချရန် ProbeImage ၏ Timeout ကို 400ms သို့လျှော့ချထားသည်
-  function probeImage(url) {
-    return new Promise(resolve => {
-        const img = new Image(); let timer = setTimeout(() => { resolve(false); }, 400); 
-        img.onload = () => { clearTimeout(timer); resolve(true); }; img.onerror = () => { clearTimeout(timer); resolve(false); }; img.src = url; 
-    });
-  }
 
+  // 🌟 Normal ကို လုံးဝမယူတော့ဘဲ Big ပုံကိုပဲ တိုက်ရိုက်ပြမည့် QR Preview Function 🌟
   async function refreshQrPreview(skipRadioUpdate = false) {
     const qrSelect = document.getElementById('qrSelect');
     if(!qrSelect || qrSelect.options.length === 0 || qrSelect.selectedIndex === -1 || !qrSelect.value) {
@@ -1645,25 +1696,17 @@
         customOwner = foundQr.owner;
     }
 
-    const normalUrl = file.includes('http') ? file : 'assets/qr/' + file; 
     const baseName = file.replace(/\.[^.]+$/,''); 
     const bigUrl = file.includes('http') ? file : 'assets/qr/' + baseName + '_big.jpg'; 
     
     const owner = customOwner || getOwnerFromKey(baseName);
 
-    CURRENT_QR = { owner, normal: normalUrl, big: bigUrl, hasBig: false };
+    CURRENT_QR = { owner, normal: bigUrl, big: bigUrl, hasBig: true };
     document.getElementById('qrOwnerValue').textContent = owner;
     
-    const hasBig = await probeImage(bigUrl);
-    CURRENT_QR.hasBig = hasBig; 
-    
-    if(hasBig){
-      document.getElementById('previewTwo').classList.remove('hidden'); document.getElementById('previewOne').classList.add('hidden');
-      document.getElementById('qrPreviewNormal').src = normalUrl; document.getElementById('qrPreviewBig').src = bigUrl;
-    }else{
-      document.getElementById('previewTwo').classList.add('hidden'); document.getElementById('previewOne').classList.remove('hidden');
-      document.getElementById('qrPreviewSolo').src = normalUrl;
-    }
+    document.getElementById('previewTwo').classList.add('hidden'); 
+    document.getElementById('previewOne').classList.remove('hidden');
+    document.getElementById('qrPreviewSolo').src = bigUrl;
   }
 
   // --- Dynamic Receipt Texts UI Update ---
@@ -1696,7 +1739,6 @@
     const qrEl = document.getElementById('qrSelect');
     if(qrEl) qrEl.addEventListener('change', () => refreshQrPreview(false));
 
-    // Manual Lot Listeners
     const mlFor = document.getElementById('manualLotForeign');
     if(mlFor) {
         mlFor.addEventListener('input', () => {
@@ -1739,6 +1781,8 @@
             if (typeof q === 'string') return { file: q, name: q.replace(/\.[^.]+$/, '') };
             return q;
         });
+
+        FIREBASE_CUSTOMERS = data.customers || {};
 
         if (data.receiptTexts) {
             if (data.receiptTexts.orig) {
@@ -1785,7 +1829,7 @@
   async function updateFirebase() {
     if(dbRef) {
       try { 
-        await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES }, { merge: true }); 
+        await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES, customers: FIREBASE_CUSTOMERS }, { merge: true }); 
       } catch(err) { alert("Firebase သိမ်း၍မရပါ။"); }
     }
   }
@@ -1824,7 +1868,7 @@
       document.getElementById('btnExportCSV').style.display = 'inline-block';
       const btnClear = document.getElementById('btnClearHistory'); if(btnClear) btnClear.style.display = 'inline-block';
       switchTab('tab-dashboard', document.querySelector('.tab-btn')); 
-      renderAdminLists(); loadHistory();
+      renderAdminLists(); loadHistory(); renderCustomerAdminList();
       
     } else if(inputPass.toLowerCase() === STAFF_PASSWORD) {
       CURRENT_ROLE = 'staff';
@@ -1834,11 +1878,12 @@
       
       document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
       document.getElementById('btnTabHistory').style.display = 'inline-block';
+      document.getElementById('btnTabCustomers').style.display = 'inline-block';
       document.getElementById('btnExportCSV').style.display = 'none'; 
       const btnClear = document.getElementById('btnClearHistory'); if(btnClear) btnClear.style.display = 'none';
       
       switchTab('tab-history', document.getElementById('btnTabHistory')); 
-      loadHistory();
+      loadHistory(); renderCustomerAdminList();
       
     } else { 
       alert("စကားဝှက် မှားယွင်းနေပါသည်။"); 
@@ -1854,6 +1899,7 @@
     document.getElementById(tabId).classList.add('active'); if (btnElement) btnElement.classList.add('active');
     if (tabId === 'tab-history' || tabId === 'tab-dashboard') loadHistory();
     if (tabId === 'tab-general') loadAdminDevices(); 
+    if (tabId === 'tab-customers') renderCustomerAdminList();
   }
 
   // --- Drag & Drop (Banks/QRs) ---
@@ -1893,9 +1939,136 @@
   }
 
   // ==========================================
+  // 👥 Customer စီမံရန် Functions များ
+  // ==========================================
+  async function saveCustomerData() {
+      const idInput = document.getElementById('cusId').value;
+      const name = document.getElementById('cusName').value.trim();
+      const phone = document.getElementById('cusPhone').value.trim();
+      const social = document.getElementById('cusSocial').value.trim();
+      const bankName = document.getElementById('cusBankName').value.trim();
+      const bankNo = document.getElementById('cusBankNo').value.trim();
+
+      if(!name) return alert("Customer အမည် ထည့်ပေးပါ။");
+
+      const btn = document.getElementById('btnCusSave');
+      btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
+
+      const cusId = idInput || "CUS-" + Date.now();
+      FIREBASE_CUSTOMERS[cusId] = { id: cusId, name, phone, social, bankName, bankNo };
+
+      try {
+          await updateFirebase();
+          clearCustomerForm();
+          renderCustomerAdminList();
+          populateCustomerDropdown();
+          alert("Customer အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+      } catch(e) { alert("Error: " + e.message); } 
+      finally { btn.disabled = false; btn.textContent = "သိမ်းမည်"; }
+  }
+
+  // 🌟 အမြန်ထည့်မည် Function အသစ် 🌟
+  async function saveQuickCustomer(event) {
+      const name = document.getElementById('qCusName').value.trim();
+      const social = document.getElementById('qCusSocial').value.trim();
+      const phone = document.getElementById('qCusPhone').value.trim();
+
+      if(!name) return alert("Customer အမည် ထည့်ပေးပါ။");
+
+      const btn = event.currentTarget;
+      const originalText = btn.textContent;
+      btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
+
+      const cusId = "CUS-" + Date.now();
+      FIREBASE_CUSTOMERS[cusId] = { id: cusId, name, phone, social, bankName: '', bankNo: '' };
+
+      try {
+          await updateFirebase();
+          renderCustomerAdminList(); 
+          populateCustomerDropdown();
+          
+          document.getElementById('mainCustomerSelect').value = cusId;
+          
+          document.getElementById('quickCusModal').style.display = 'none';
+          document.getElementById('qCusName').value = '';
+          document.getElementById('qCusSocial').value = '';
+          document.getElementById('qCusPhone').value = '';
+          
+      } catch(e) { 
+          alert("Error: " + e.message); 
+      } finally { 
+          btn.disabled = false; btn.textContent = originalText; 
+      }
+  }
+
+  function clearCustomerForm() {
+      document.getElementById('cusId').value = '';
+      document.getElementById('cusName').value = '';
+      document.getElementById('cusPhone').value = '';
+      document.getElementById('cusSocial').value = '';
+      document.getElementById('cusBankName').value = '';
+      document.getElementById('cusBankNo').value = '';
+  }
+
+  function editCustomer(id) {
+      const c = FIREBASE_CUSTOMERS[id]; if(!c) return;
+      document.getElementById('cusId').value = c.id;
+      document.getElementById('cusName').value = c.name || '';
+      document.getElementById('cusPhone').value = c.phone || '';
+      document.getElementById('cusSocial').value = c.social || '';
+      document.getElementById('cusBankName').value = c.bankName || '';
+      document.getElementById('cusBankNo').value = c.bankNo || '';
+  }
+
+  async function deleteCustomer(id) {
+      if(!confirm("ဤ Customer ကို ဖျက်ရန် သေချာပါသလား?")) return;
+      delete FIREBASE_CUSTOMERS[id];
+      try {
+          await updateFirebase(); renderCustomerAdminList(); populateCustomerDropdown();
+      } catch(e) { alert("Error deleting."); }
+  }
+
+  function renderCustomerAdminList() {
+      const listDiv = document.getElementById('adminCustomerList'); listDiv.innerHTML = '';
+      const search = (document.getElementById('searchCus')?.value || '').toLowerCase();
+      let keys = Object.keys(FIREBASE_CUSTOMERS);
+      if(keys.length === 0) { listDiv.innerHTML = '<p class="text-xs text-gray-400 p-2 text-center">Customer မရှိသေးပါ</p>'; return; }
+      
+      keys.forEach(id => {
+          const c = FIREBASE_CUSTOMERS[id];
+          if(search && !c.name.toLowerCase().includes(search) && !(c.phone||'').includes(search)) return;
+          
+          let infoHtml = `<div class="text-[10px] text-gray-500 mt-0.5">`;
+          if(c.phone) infoHtml += `📞 ${c.phone} &nbsp;`;
+          if(c.bankName) infoHtml += `🏦 ${c.bankName} (${c.bankNo}) &nbsp;`;
+          infoHtml += `</div>`;
+
+          listDiv.innerHTML += `<div class="list-item bg-white flex justify-between items-center p-2 mb-1.5 border rounded">
+              <div class="truncate w-full">
+                  <div class="font-bold text-xs text-purple-800">${c.name} ${c.social ? ` <span class="text-[10px] font-normal text-blue-500">(${c.social})</span>` : ''}</div>
+                  ${infoHtml}
+              </div>
+              <div class="action-btns flex-shrink-0 ml-1">
+                  <button onclick="editCustomer('${id}')" title="ပြင်မည်" class="!text-[10px] !py-0.5 !px-1.5" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button>
+                  <button onclick="deleteCustomer('${id}')" title="ဖျက်မည်" class="btn-delete !text-[10px] !py-0.5 !px-1.5">✕</button>
+              </div>
+          </div>`;
+      });
+  }
+
+  function populateCustomerDropdown() {
+      const sel = document.getElementById('mainCustomerSelect'); if(!sel) return;
+      sel.innerHTML = '<option value="">— မထည့်ပါ —</option>';
+      Object.values(FIREBASE_CUSTOMERS).forEach(c => {
+          let text = c.name; 
+          if(c.social) text += ` (${c.social})`; 
+          const o = document.createElement('option'); o.value = c.id; o.textContent = text; sel.appendChild(o);
+      });
+  }
+
+  // ==========================================
   // 🏦 ဘဏ် နှင့် QR များ စီမံရန် Functions များ
   // ==========================================
-
   async function addCustomBank() {
       const id = document.getElementById('newBankId').value.trim();
       const name = document.getElementById('newBankName').value.trim();
@@ -2040,11 +2213,13 @@
       FIREBASE_BANKS = {};
       FIREBASE_BANK_ORDER = [];
       FIREBASE_QRS = [];
+      FIREBASE_CUSTOMERS = {};
       
       try {
           await updateFirebase();
           initDropdowns();
           renderAdminLists();
+          renderCustomerAdminList();
           alert("Data အားလုံး ရှင်းလင်းပြီးပါပြီ!");
       } catch(e) {
           alert("Error: " + e.message);
@@ -2257,7 +2432,7 @@
       }
   }
 
-  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt - Robust QR Match) 🌟 ---
+  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt - Robust QR Match & Save Fix) 🌟 ---
   window.reprintReceipt = async function(invId, btnElement = null) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
@@ -2319,20 +2494,20 @@
                       if (r > 0) {
                           const inv = 100000 / r;
                           histRateText = rTpl.replace('{r}', fmt6(r)).replace('{inv}', fmt6(inv));
+                      }
+                  }
+              } else if (histRateText.includes('1 MMK =')) {
+                  const match = histRateText.match(/1 MMK\s*=\s*([\d,.]+)/);
+                  if (match && match[1]) {
+                      const v = parseFloat(match[1].replace(/,/g, ''));
+                      if (v > 0) {
+                          histRateText = vTpl.replace('{v}', fmt6(v));
+                      }
                   }
               }
-          } else if (histRateText.includes('1 MMK =')) {
-              const match = histRateText.match(/1 MMK\s*=\s*([\d,.]+)/);
-              if (match && match[1]) {
-                  const v = parseFloat(match[1].replace(/,/g, ''));
-                  if (v > 0) {
-                      histRateText = vTpl.replace('{v}', fmt6(v));
-                  }
-              }
+              rateP.textContent = histRateText;
+              rateP.innerHTML += '<br>';
           }
-          rateP.textContent = histRateText;
-          rateP.innerHTML += '<br>';
-      }
 
           const brandHeader = document.createElement('div');
           brandHeader.style.textAlign = 'center'; 
@@ -2353,7 +2528,6 @@
           clone.style.border = '1px solid #e5e7eb'; 
           clone.style.background = '#fff';
 
-          // 🌟🌟🌟 Robust QR & Bank Matching Logic 🌟🌟🌟
           if (tx.method && tx.method !== 'မပါ (None)' && tx.method !== '-' && tx.method !== 'None') {
               let isQR = tx.method.includes('QR');
               let isBank = tx.method.includes('Bank');
@@ -2372,6 +2546,9 @@
                       const owner = (typeof foundQr === 'object' && foundQr.owner) ? foundQr.owner : getOwnerFromKey(baseName);
                       
                       let finalImgUrl = normalUrl; 
+                      // For reprint, we can still try to fetch big if available, or just use normal.
+                      // Since we are forcing Big only for new ones, old ones might still need checking if big exists.
+                      // But for simplicity, we'll try big first.
                       const hasBig = await probeImage(bigUrl);
                       if (hasBig) finalImgUrl = bigUrl; 
 
@@ -2388,7 +2565,6 @@
                       
                       wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(ownerP); clone.appendChild(wrap);
                       
-                      // 🌟 Timeout ကို 500ms ပြောင်းထားလို့ မလိုအပ်ဘဲ ကြာနေတာကို ကာကွယ်ပေးထားတယ် 🌟
                       await new Promise(res => { 
                           let timer = setTimeout(res, 500); 
                           if(img.complete) {
@@ -2425,7 +2601,6 @@
                       headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
                       wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
                       
-                      // 🌟 Timeout ကို 500ms ပြောင်းထားတယ် 🌟
                       await new Promise(res => { 
                           let timer = setTimeout(res, 500); 
                           if(logo.complete) { clearTimeout(timer); return res(); }
@@ -2456,11 +2631,30 @@
           timeDiv.textContent = timeStr;
           clone.appendChild(timeDiv);
 
+          // 🌟 Customer Info ကို ပြေစာ၏ အောက်ခြေ (Date အပေါ်) သို့ ရွှေ့ခြင်း (Reprint) 🌟
+          if (tx.customerName && tx.customerName !== "—") {
+              const cusDiv = document.createElement('div');
+              cusDiv.style.padding = '8px 12px';
+              cusDiv.style.margin = '15px auto 5px auto';
+              cusDiv.style.maxWidth = '85%';
+              cusDiv.style.backgroundColor = '#f8fafc';
+              cusDiv.style.border = '1px dashed #cbd5e1';
+              cusDiv.style.borderRadius = '8px';
+              cusDiv.style.textAlign = 'left';
+              cusDiv.style.fontSize = '12px'; 
+
+              let cHtml = `<div style="display:flex; justify-content:center; align-items:center;">`;
+              cHtml += `<div><span style="color:#64748b; font-weight:bold;">ငွေလွှဲသူ အချက်အလက် -</span> <span style="font-weight:900; color:#1e40af; font-size:14px; margin-left:4px;">${tx.customerName}</span></div>`;
+              cHtml += `</div>`;
+
+              cusDiv.innerHTML = cHtml;
+              clone.insertBefore(cusDiv, timeDiv);
+          }
+
           clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
-          // 🚀 Fast Render for Reprint (Scale 1.2 ပြောင်းထားပြီး imageTimeout လုံးဝပိတ်ထားသည်)
           const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 1.2, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
           document.body.removeChild(clone);
 
@@ -2474,7 +2668,6 @@
           
           ctx.drawImage(canvas, margin, margin);
 
-          // 🌟 INVOICE ID ကို Canvas ရဲ့ အပေါ်ဆုံး အလယ်ဗဟိုမှာ ဆွဲတင်ပေးခြင်း 🌟
           ctx.fillStyle = '#64748b'; 
           ctx.font = 'bold 22px system-ui, sans-serif'; 
           ctx.textAlign = 'center'; 
@@ -2485,14 +2678,35 @@
 
           out.toBlob(async (blob) => {
               if (!blob) return;
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = finalFileName;
-              document.body.appendChild(a);
-              a.click();
-              setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+
+              const ua = navigator.userAgent || navigator.vendor || window.opera;
+              const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+              const isInAppBrowser = /FBAN|FBAV|Line|MicroMessenger|Viber|Instagram|Snapchat/i.test(ua);
+
+              const showImagePopup = () => {
+                  const url = URL.createObjectURL(blob);
+                  const overlay = document.createElement('div');
+                  overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0'; overlay.style.width = '100vw'; overlay.style.height = '100vh'; overlay.style.backgroundColor = 'rgba(0,0,0,0.9)'; overlay.style.zIndex = '9999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+                  const closeBtn = document.createElement('button'); closeBtn.innerText = '✕ ပိတ်မည်'; closeBtn.style.position = 'absolute'; closeBtn.style.top = '20px'; closeBtn.style.right = '20px'; closeBtn.style.padding = '8px 16px'; closeBtn.style.background = '#ef4444'; closeBtn.style.color = '#fff'; closeBtn.style.border = 'none'; closeBtn.style.borderRadius = '8px'; closeBtn.style.fontWeight = 'bold';
+                  closeBtn.onclick = () => { document.body.removeChild(overlay); URL.revokeObjectURL(url); };
+                  const hint = document.createElement('div'); hint.innerText = '💡 ပုံကို ဖိထားပြီး Save Image လုပ်ပါ'; hint.style.color = '#fff'; hint.style.marginBottom = '15px'; hint.style.fontWeight = 'bold'; hint.style.fontSize = '16px';
+                  const img = document.createElement('img'); img.src = url; img.style.maxWidth = '90%'; img.style.maxHeight = '75%'; img.style.borderRadius = '12px'; img.style.border = '2px solid #fff'; img.style.pointerEvents = 'auto';
+                  overlay.appendChild(closeBtn); overlay.appendChild(hint); overlay.appendChild(img); document.body.appendChild(overlay);
+                  if (btnElement) btnElement.innerHTML = '✅ ရပါပြီ!';
+              };
+
+              if (isInAppBrowser) { showImagePopup(); return; }
+
+              if (isIOS && navigator.canShare) {
+                  const file = new File([blob], finalFileName, { type: 'image/png' });
+                  try { await navigator.share({ files: [file] }); if (btnElement) btnElement.innerHTML = '✅ Saved!'; return; } catch (e) {}
+              }
+
+              try {
+                  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = finalFileName; document.body.appendChild(a); a.click(); setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+              } catch(e) { showImagePopup(); }
           }, 'image/png', 0.92);
+
       } catch(e) {
           alert("Error: " + e.message);
       } finally {
@@ -2505,12 +2719,11 @@
       const loadMoreBtn = document.getElementById('loadMoreContainer');
       
       if(dataArray.length === 0) { 
-          list.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-red-500">ရှာဖွေထားသော မှတ်တမ်း မတွေ့ပါ</td></tr>'; 
+          list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-red-500">ရှာဖွေထားသော မှတ်တမ်း မတွေ့ပါ</td></tr>'; 
           if(loadMoreBtn) loadMoreBtn.classList.add('hidden');
           return; 
       }
       
-      // 🌟 Load More အတွက် လိုအပ်သလောက်သာ ဖြတ်ယူခြင်း
       const batch = dataArray.slice(0, CURRENT_DISPLAY_COUNT);
       let html = '';
       
@@ -2521,6 +2734,10 @@
         let displayRate = d.rate || "-";
         let status = d.status || 'Pending';
         let method = d.method || "-";
+        let cusName = d.customerName || "—";
+        
+        // 🌟 Customer Name ကို နေရာအကန့်အသတ်ဖြင့် ပြသခြင်း 🌟
+        let cusHtml = `<div class="max-w-[60px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
         
         let statusColor = status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : 
                           status === 'Success' ? 'bg-green-100 text-green-800 border-green-300' : 
@@ -2560,21 +2777,22 @@
             actionHtml += `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
         }
         
+        // 🌟 Action နှင့် Method (နည်းလမ်း) နေရာချိန်းထားသည် 🌟
         html += `<tr class="border-b hover:bg-gray-50">
           <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${d.id}</td>
           <td class="p-3 text-xs">${dateStr}</td>
+          <td class="p-3">${cusHtml}</td>
           <td class="p-3 font-bold text-indigo-700 text-xs">${mappedDeviceName}</td>
           <td class="p-3 text-xs font-bold text-purple-600">${displayRate}</td>
           <td class="p-3">${typeHtml}</td>
           <td class="p-3">${amountHtml}</td>
           <td class="p-3 text-center">${statusHtml}</td>
-          <td class="p-3 text-xs">${method}</td>
           <td class="p-3 text-center">${actionHtml}</td>
+          <td class="p-3 text-xs"><div class="max-w-[60px] truncate" title="${method}">${method}</div></td>
         </tr>`;
       });
       list.innerHTML = html;
       
-      // Load More Button ကို ပြသမည့်အခြေအနေ စစ်ဆေးခြင်း
       if (dataArray.length > CURRENT_DISPLAY_COUNT) {
           if(loadMoreBtn) loadMoreBtn.classList.remove('hidden');
       } else {
@@ -2588,18 +2806,17 @@
 
   async function loadHistory() {
     const list = document.getElementById('adminHistoryList');
-    list.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>';
+    list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>';
     document.getElementById('searchInvId').value = '';
     
-    // Load အသစ်လုပ်တိုင်း အကြောင်း ၁၅၀ ပြန်စရန်
     CURRENT_DISPLAY_COUNT = 150; 
     
     try {
       const snap = await firebase.firestore().collection("exchange_history").orderBy("timestamp", "desc").limit(1500).get();
-      if(snap.empty) { list.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-gray-500">မှတ်တမ်းမရှိသေးပါ</td></tr>'; updateDashboard([]); return; }
+      if(snap.empty) { list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500">မှတ်တမ်းမရှိသေးပါ</td></tr>'; updateDashboard([]); return; }
       allLoadedHistory = []; snap.forEach(doc => allLoadedHistory.push(doc.data()));
       renderHistoryRows(allLoadedHistory);
-    } catch(e) { list.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-red-500">Error loading history</td></tr>'; }
+    } catch(e) { list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-red-500">Error loading history</td></tr>'; }
   }
 
   async function searchHistoryLocally(resetPage = false) {
@@ -2611,7 +2828,7 @@
       const filtered = allLoadedHistory.filter(d => d.id.toLowerCase().includes(searchVal));
       if(filtered.length === 0 && searchVal.startsWith('inv')) {
          const list = document.getElementById('adminHistoryList');
-         list.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-blue-600 font-bold">🔍 Database တွင် ရှာဖွေနေပါသည်...</td></tr>';
+         list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔍 Database တွင် ရှာဖွေနေပါသည်...</td></tr>';
          try {
              const docRef = await firebase.firestore().collection("exchange_history").doc(searchVal.toUpperCase()).get();
              if(docRef.exists) { renderHistoryRows([docRef.data()]); } else { renderHistoryRows([]); }
@@ -2626,17 +2843,18 @@
 
   function exportHistoryCSV() {
       if(allLoadedHistory.length === 0) { return alert("Export ထုတ်ရန် မှတ်တမ်း မရှိသေးပါ။"); }
-      let csvContent = "Invoice ID,Date/Time,Device,Rate,Type,Amount (In -> Out),Status,Payment Method\n";
+      let csvContent = "Invoice ID,Date/Time,Customer,Device,Rate,Type,Amount (In -> Out),Status,Payment Method\n";
       allLoadedHistory.forEach(d => {
           let dateObj = new Date(d.timestamp);
           let dateStr = dateObj.toLocaleString('en-GB', { timeZone: d.tz || 'Asia/Bangkok', hour12: true }).replace(/,/g, '');
           let mappedDeviceName = FIREBASE_DEVICE_NAMES[d.deviceId] || d.deviceId || "Unknown";
           
           let id = `"${d.id}"`; let dt = `"${dateStr}"`; let dev = `"${mappedDeviceName}"`;
+          let cusName = `"${d.customerName || '-'}"`;
           let rateVal = `"${d.rate || '-'}"`; let type = `"${d.type}"`; 
           let amt = `"${d.inAmt} -> ${d.outAmt}"`; let method = `"${d.method || '-'}"`; let statusVal = `"${d.status || 'Pending'}"`;
           
-          csvContent += `${id},${dt},${dev},${rateVal},${type},${amt},${statusVal},${method}\n`;
+          csvContent += `${id},${dt},${cusName},${dev},${rateVal},${type},${amt},${statusVal},${method}\n`;
       });
       const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -2703,7 +2921,7 @@
     const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = customTexts.thanks; }
   }
 
-  // --- 🌟 FAST EXPORT & CENTER ID SAVE 🌟 ---
+  // --- 🌟 FAST EXPORT & CUSTOMER SAVE ---
   async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
     let origText = '';
     if (btnElement) {
@@ -2824,12 +3042,44 @@
         
         brandHeader.appendChild(brandTitle);
         clone.insertBefore(brandHeader, clone.firstChild);
+
+        // 🌟 Customer Info ပြေစာတွင် သိမ်းဆည်းရန်နှင့် ပေါ်စေရန် 🌟
+        let savedCustomerName = "—";
+        const cusId = document.getElementById('mainCustomerSelect')?.value;
+        if (cusId && FIREBASE_CUSTOMERS && FIREBASE_CUSTOMERS[cusId]) {
+            const cus = FIREBASE_CUSTOMERS[cusId];
+            savedCustomerName = cus.name + (cus.social ? ` (${cus.social})` : '');
+            
+            const cusDiv = document.createElement('div');
+            cusDiv.style.padding = '8px 12px';
+            cusDiv.style.margin = '15px auto 5px auto';
+            cusDiv.style.maxWidth = '85%';
+            cusDiv.style.backgroundColor = '#f8fafc';
+            cusDiv.style.border = '1px dashed #cbd5e1';
+            cusDiv.style.borderRadius = '8px';
+            cusDiv.style.textAlign = 'left';
+            cusDiv.style.fontSize = '12px'; 
+
+            let cHtml = `<div style="display:flex; justify-content:space-between; align-items:center;">`;
+            cHtml += `<div><span style="color:#64748b; font-weight:bold;">ငွေလွှဲသူ အချက်အလက် -</span> <span style="font-weight:900; color:#1e40af; font-size:14px; margin-left:4px;">${savedCustomerName}</span></div>`;
+            
+            if (cus.phone) {
+                 cHtml += `<div style="font-size:11px; color:#475569;">📞 ${cus.phone}</div>`;
+            }
+            cHtml += `</div>`;
+
+            if (cus.bankName || cus.bankNo) {
+                cHtml += `<div style="margin-top:4px; padding-top:4px; border-top:1px solid #e2e8f0; color:#475569;"><span style="font-weight:bold;">🏦 Bank:</span> ${cus.bankName || '-'} (${cus.bankNo || '-'})</div>`;
+            }
+
+            cusDiv.innerHTML = cHtml;
+            clone.insertBefore(cusDiv, timeDiv);
+        }
         
         clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
         document.body.appendChild(clone);
         await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
         
-        // 🚀 Fast Render (Scale 1.5 & no image timeout delay)
         const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 1.5, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
         document.body.removeChild(clone);
         
@@ -2847,7 +3097,6 @@
         const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
         const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
         
-        // 🌟 INVOICE ID ကို Canvas ရဲ့ အပေါ်ဆုံး အလယ်ဗဟိုမှာ ဆွဲတင်ပေးခြင်း 🌟
         ctx.fillStyle = '#64748b'; 
         ctx.font = 'bold 22px system-ui, sans-serif'; 
         ctx.textAlign = 'center'; 
@@ -2864,7 +3113,8 @@
 
         const historyRecord = { 
           id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
-          method: paymentMethodName, profit: 0, status: 'Pending', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId
+          method: paymentMethodName, profit: 0, status: 'Pending', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId,
+          customerName: savedCustomerName // 🌟 Customer မှတ်တမ်းသိမ်းခြင်း
         };
         
         try { 
@@ -2872,6 +3122,7 @@
             
             let alertMsg = `✅ <b>ငွေလွှဲပြေစာ အသစ် (Auto)</b>\n\n`;
             alertMsg += `ID: <code>${invId}</code>\n`;
+            if (savedCustomerName !== "—") alertMsg += `Customer: <b>${savedCustomerName}</b>\n`;
             alertMsg += `အမျိုးအစား: <b>${recType}</b>\n`;
             alertMsg += `ပမာဏ: <code>${inValueStr}</code> ➔ <code>${outValueStr}</code>\n`;
             alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
@@ -2888,7 +3139,28 @@
         out.toBlob(async (blob) => {
             if (!blob) return;
 
-            if (action === 'share' && navigator.canShare) {
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+            const isInAppBrowser = /FBAN|FBAV|Line|MicroMessenger|Viber|Instagram|Snapchat/i.test(ua);
+
+            const showImagePopup = () => {
+                const url = URL.createObjectURL(blob);
+                const overlay = document.createElement('div');
+                overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0'; overlay.style.width = '100vw'; overlay.style.height = '100vh'; overlay.style.backgroundColor = 'rgba(0,0,0,0.9)'; overlay.style.zIndex = '9999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+                const closeBtn = document.createElement('button'); closeBtn.innerText = '✕ ပိတ်မည်'; closeBtn.style.position = 'absolute'; closeBtn.style.top = '20px'; closeBtn.style.right = '20px'; closeBtn.style.padding = '8px 16px'; closeBtn.style.background = '#ef4444'; closeBtn.style.color = '#fff'; closeBtn.style.border = 'none'; closeBtn.style.borderRadius = '8px'; closeBtn.style.fontWeight = 'bold';
+                closeBtn.onclick = () => { document.body.removeChild(overlay); URL.revokeObjectURL(url); };
+                const hint = document.createElement('div'); hint.innerText = '💡 ပုံကို ဖိထားပြီး Save Image လုပ်ပါ'; hint.style.color = '#fff'; hint.style.marginBottom = '15px'; hint.style.fontWeight = 'bold'; hint.style.fontSize = '16px';
+                const img = document.createElement('img'); img.src = url; img.style.maxWidth = '90%'; img.style.maxHeight = '75%'; img.style.borderRadius = '12px'; img.style.border = '2px solid #fff'; img.style.pointerEvents = 'auto';
+                overlay.appendChild(closeBtn); overlay.appendChild(hint); overlay.appendChild(img); document.body.appendChild(overlay);
+                if (btnElement) btnElement.innerHTML = '✅ ရပါပြီ!';
+            };
+
+            if (isInAppBrowser) {
+                showImagePopup();
+                return; 
+            }
+
+            if ((action === 'share' || isIOS) && navigator.canShare) {
                 const file = new File([blob], finalFileName, { type: mimeType });
                 if (navigator.canShare({ files: [file] })) {
                     try {
@@ -2897,25 +3169,25 @@
                             text: 'Thailand Guide - Supplier By Ye မှ ငွေလွှဲပြေစာ',
                             files: [file]
                         });
+                        if (btnElement) btnElement.innerHTML = '✅ Saved!';
                         return; 
                     } catch (e) {
                         console.log('Share canceled or failed:', e);
                     }
-                } else {
-                    alert('သင့် Browser က ဓာတ်ပုံတိုက်ရိုက် Share ခြင်းကို မထောက်ပံ့ပါ။');
                 }
             }
 
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = finalFileName;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-
-            if (btnElement) {
-                btnElement.innerHTML = '✅ Saved!';
+            try {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = finalFileName;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+                if (btnElement) btnElement.innerHTML = '✅ Saved!';
+            } catch(e) {
+                showImagePopup();
             }
 
         }, mimeType, 0.92);
