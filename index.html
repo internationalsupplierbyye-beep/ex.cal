@@ -1696,17 +1696,19 @@
         customOwner = foundQr.owner;
     }
 
+    // မရှိတဲ့ _big.jpg ကို ဖြုတ်ပြီး ရိုးရိုးပုံနာမည်ကိုပဲ အသုံးပြုသည်
+    const imgUrl = file.includes('http') ? file : 'assets/qr/' + file; 
     const baseName = file.replace(/\.[^.]+$/,''); 
-    const bigUrl = file.includes('http') ? file : 'assets/qr/' + baseName + '_big.jpg'; 
     
     const owner = customOwner || getOwnerFromKey(baseName);
 
-    CURRENT_QR = { owner, normal: bigUrl, big: bigUrl, hasBig: true };
+    // CURRENT_QR တွင်လည်း ထိုပုံကိုသာ သုံးသည်
+    CURRENT_QR = { owner, normal: imgUrl, big: imgUrl, hasBig: true };
     document.getElementById('qrOwnerValue').textContent = owner;
     
     document.getElementById('previewTwo').classList.add('hidden'); 
     document.getElementById('previewOne').classList.remove('hidden');
-    document.getElementById('qrPreviewSolo').src = bigUrl;
+    document.getElementById('qrPreviewSolo').src = imgUrl;
   }
 
   // --- Dynamic Receipt Texts UI Update ---
@@ -2432,7 +2434,7 @@
       }
   }
 
-  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt - Robust QR Match & Save Fix) 🌟 ---
+  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt) 🌟 ---
   window.reprintReceipt = async function(invId, btnElement = null) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
@@ -2540,23 +2542,15 @@
                   
                   if (foundQr) {
                       const file = typeof foundQr === 'string' ? foundQr : foundQr.file;
-                      const normalUrl = file.includes('http') ? file : 'assets/qr/' + file;
+                      const finalImgUrl = file.includes('http') ? file : 'assets/qr/' + file; // ပြန်လည်ပြင်ဆင်ထားသည်
                       const baseName = file.replace(/\.[^.]+$/,'');
-                      const bigUrl = file.includes('http') ? file : 'assets/qr/' + baseName + '_big.jpg';
                       const owner = (typeof foundQr === 'object' && foundQr.owner) ? foundQr.owner : getOwnerFromKey(baseName);
-                      
-                      let finalImgUrl = normalUrl; 
-                      // For reprint, we can still try to fetch big if available, or just use normal.
-                      // Since we are forcing Big only for new ones, old ones might still need checking if big exists.
-                      // But for simplicity, we'll try big first.
-                      const hasBig = await probeImage(bigUrl);
-                      if (hasBig) finalImgUrl = bigUrl; 
 
                       const wrap = document.createElement('div'); wrap.className = 'export-block';
                       const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
                       
                       const img = document.createElement('img'); 
-                      img.style.width = hasBig ? '500px' : '420px'; 
+                      img.style.width = '500px'; 
                       img.style.maxWidth = '95%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '10px'; img.style.background = '#fff'; img.style.display = 'block';
                       img.src = finalImgUrl;
                       
@@ -2736,8 +2730,7 @@
         let method = d.method || "-";
         let cusName = d.customerName || "—";
         
-        // 🌟 Customer Name ကို နေရာအကန့်အသတ်ဖြင့် ပြသခြင်း 🌟
-        let cusHtml = `<div class="max-w-[60px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
+        let cusHtml = `<div class="max-w-[130px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
         
         let statusColor = status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : 
                           status === 'Success' ? 'bg-green-100 text-green-800 border-green-300' : 
@@ -2777,7 +2770,6 @@
             actionHtml += `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
         }
         
-        // 🌟 Action နှင့် Method (နည်းလမ်း) နေရာချိန်းထားသည် 🌟
         html += `<tr class="border-b hover:bg-gray-50">
           <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${d.id}</td>
           <td class="p-3 text-xs">${dateStr}</td>
@@ -2788,7 +2780,7 @@
           <td class="p-3">${amountHtml}</td>
           <td class="p-3 text-center">${statusHtml}</td>
           <td class="p-3 text-center">${actionHtml}</td>
-          <td class="p-3 text-xs"><div class="max-w-[60px] truncate" title="${method}">${method}</div></td>
+          <td class="p-3 text-xs"><div class="max-w-[160px] truncate" title="${method}">${method}</div></td>
         </tr>`;
       });
       list.innerHTML = html;
