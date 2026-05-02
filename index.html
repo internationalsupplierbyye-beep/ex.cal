@@ -2755,7 +2755,7 @@
         let cusName = d.customerName || "—";
         
         // 🌟 Customer Name ကို နေရာအကန့်အသတ်ဖြင့် ပြသခြင်း 🌟
-        let cusHtml = `<div class="max-w-[130px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
+        let cusHtml = `<div class="max-w-[60px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
         
         let statusColor = status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : 
                           status === 'Success' ? 'bg-green-100 text-green-800 border-green-300' : 
@@ -2806,7 +2806,7 @@
           <td class="p-3">${amountHtml}</td>
           <td class="p-3 text-center">${statusHtml}</td>
           <td class="p-3 text-center">${actionHtml}</td>
-          <td class="p-3 text-xs"><div class="max-w-[160px] truncate" title="${method}">${method}</div></td>
+          <td class="p-3 text-xs"><div class="max-w-[60px] truncate" title="${method}">${method}</div></td>
         </tr>`;
       });
       list.innerHTML = html;
