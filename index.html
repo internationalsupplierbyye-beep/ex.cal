@@ -2436,9 +2436,15 @@
           allLoadedHistory[index].status = newStatus;
           renderHistoryRows(allLoadedHistory);
           
-          let statusEmoji = newStatus === 'Success' ? '✅' : (newStatus === 'Cancelled' ? '❌' : '⏳');
+         let statusEmoji = newStatus === 'Success' ? '✅' : (newStatus === 'Cancelled' ? '❌' : '⏳');
           let alertMsg = `${statusEmoji} <b>မှတ်တမ်း Status ပြောင်းလဲမှု</b>\n\n`;
           alertMsg += `ID: <code>${invId}</code>\n`;
+          
+          // 🌟 Customer Name ပါရင် Telegram စာထဲ ထည့်ပြပေးမည် 🌟
+          if (tx.customerName && tx.customerName !== "—") {
+              alertMsg += `Customer: <b>${tx.customerName}</b>\n`;
+          }
+          
           alertMsg += `အမျိုးအစား: <b>${tx.type}</b>\n`;
           alertMsg += `ပမာဏ: <code>${tx.inAmt}</code> ➔ <code>${tx.outAmt}</code>\n`;
           alertMsg += `Status အသစ်: <b>${newStatus}</b>`;
