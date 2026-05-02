@@ -709,6 +709,7 @@
   let FIREBASE_BANK_ORDER = []; 
   let FIREBASE_QRS = []; 
   let FIREBASE_CUSTOMERS = {}; 
+  let FIREBASE_CUSTOMER_ORDER = []; // 🌟 Customer Order State အသစ်
   let ACTIVE_BANK_INFO = {};
   let FIREBASE_DEVICE_NAMES = {}; 
   let FIREBASE_HIDDEN_DEVICES = []; 
@@ -1696,13 +1697,11 @@
         customOwner = foundQr.owner;
     }
 
-    // မရှိတဲ့ _big.jpg ကို ဖြုတ်ပြီး ရိုးရိုးပုံနာမည်ကိုပဲ အသုံးပြုသည်
     const imgUrl = file.includes('http') ? file : 'assets/qr/' + file; 
     const baseName = file.replace(/\.[^.]+$/,''); 
     
     const owner = customOwner || getOwnerFromKey(baseName);
 
-    // CURRENT_QR တွင်လည်း ထိုပုံကိုသာ သုံးသည်
     CURRENT_QR = { owner, normal: imgUrl, big: imgUrl, hasBig: true };
     document.getElementById('qrOwnerValue').textContent = owner;
     
@@ -1785,6 +1784,7 @@
         });
 
         FIREBASE_CUSTOMERS = data.customers || {};
+        FIREBASE_CUSTOMER_ORDER = data.customerOrder || Object.keys(FIREBASE_CUSTOMERS);
 
         if (data.receiptTexts) {
             if (data.receiptTexts.orig) {
@@ -1831,7 +1831,7 @@
   async function updateFirebase() {
     if(dbRef) {
       try { 
-        await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES, customers: FIREBASE_CUSTOMERS }, { merge: true }); 
+        await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES, customers: FIREBASE_CUSTOMERS, customerOrder: FIREBASE_CUSTOMER_ORDER }, { merge: true }); 
       } catch(err) { alert("Firebase သိမ်း၍မရပါ။"); }
     }
   }
@@ -1904,7 +1904,7 @@
     if (tabId === 'tab-customers') renderCustomerAdminList();
   }
 
-  // --- Drag & Drop (Banks/QRs) ---
+  // --- Drag & Drop (Banks/QRs/Customers) ---
   let dragStartIndex = null; let dragType = null;
   function handleDragStart(e) { dragStartIndex = parseInt(e.currentTarget.getAttribute('data-index')); dragType = e.currentTarget.getAttribute('data-type'); e.dataTransfer.effectAllowed = 'move'; e.currentTarget.classList.add('dragging'); }
   function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('drag-over'); }
@@ -1915,7 +1915,8 @@
     if (dragType !== dropType || dragStartIndex === dragEndIndex) return;
     if (dragType === 'bank') { const item = FIREBASE_BANK_ORDER.splice(dragStartIndex, 1)[0]; FIREBASE_BANK_ORDER.splice(dragEndIndex, 0, item); } 
     else if (dragType === 'qr') { const item = FIREBASE_QRS.splice(dragStartIndex, 1)[0]; FIREBASE_QRS.splice(dragEndIndex, 0, item); }
-    initDropdowns(); renderAdminLists(); await updateFirebase();
+    else if (dragType === 'customer') { const item = FIREBASE_CUSTOMER_ORDER.splice(dragStartIndex, 1)[0]; FIREBASE_CUSTOMER_ORDER.splice(dragEndIndex, 0, item); }
+    initDropdowns(); renderAdminLists(); renderCustomerAdminList(); await updateFirebase();
   }
   function handleDragEnd(e) { e.currentTarget.classList.remove('dragging'); document.querySelectorAll('.list-item').forEach(el => el.classList.remove('drag-over')); }
 
@@ -1957,16 +1958,29 @@
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
       const cusId = idInput || "CUS-" + Date.now();
+      const isNew = !FIREBASE_CUSTOMERS[cusId];
+      
       FIREBASE_CUSTOMERS[cusId] = { id: cusId, name, phone, social, bankName, bankNo };
+      if(isNew) { FIREBASE_CUSTOMER_ORDER.push(cusId); }
+
+      clearCustomerForm();
+      renderCustomerAdminList();
+      populateCustomerDropdown();
 
       try {
           await updateFirebase();
-          clearCustomerForm();
-          renderCustomerAdminList();
-          populateCustomerDropdown();
-          alert("Customer အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
-      } catch(e) { alert("Error: " + e.message); } 
-      finally { btn.disabled = false; btn.textContent = "သိမ်းမည်"; }
+          btn.classList.replace('bg-purple-600', 'bg-green-600');
+          btn.textContent = "✅ သိမ်းပြီးပါပြီ";
+          setTimeout(() => { 
+              btn.classList.replace('bg-green-600', 'bg-purple-600');
+              btn.textContent = "သိမ်းမည်"; 
+              btn.disabled = false; 
+          }, 1500);
+      } catch(e) { 
+          alert("Error: " + e.message); 
+          btn.disabled = false; 
+          btn.textContent = "သိမ်းမည်"; 
+      }
   }
 
   // 🌟 အမြန်ထည့်မည် Function အသစ် 🌟
@@ -1983,19 +1997,19 @@
 
       const cusId = "CUS-" + Date.now();
       FIREBASE_CUSTOMERS[cusId] = { id: cusId, name, phone, social, bankName: '', bankNo: '' };
+      FIREBASE_CUSTOMER_ORDER.push(cusId);
+
+      renderCustomerAdminList(); 
+      populateCustomerDropdown();
+      document.getElementById('mainCustomerSelect').value = cusId;
+      
+      document.getElementById('quickCusModal').style.display = 'none';
+      document.getElementById('qCusName').value = '';
+      document.getElementById('qCusSocial').value = '';
+      document.getElementById('qCusPhone').value = '';
 
       try {
           await updateFirebase();
-          renderCustomerAdminList(); 
-          populateCustomerDropdown();
-          
-          document.getElementById('mainCustomerSelect').value = cusId;
-          
-          document.getElementById('quickCusModal').style.display = 'none';
-          document.getElementById('qCusName').value = '';
-          document.getElementById('qCusSocial').value = '';
-          document.getElementById('qCusPhone').value = '';
-          
       } catch(e) { 
           alert("Error: " + e.message); 
       } finally { 
@@ -2025,6 +2039,7 @@
   async function deleteCustomer(id) {
       if(!confirm("ဤ Customer ကို ဖျက်ရန် သေချာပါသလား?")) return;
       delete FIREBASE_CUSTOMERS[id];
+      FIREBASE_CUSTOMER_ORDER = FIREBASE_CUSTOMER_ORDER.filter(x => x !== id);
       try {
           await updateFirebase(); renderCustomerAdminList(); populateCustomerDropdown();
       } catch(e) { alert("Error deleting."); }
@@ -2033,11 +2048,12 @@
   function renderCustomerAdminList() {
       const listDiv = document.getElementById('adminCustomerList'); listDiv.innerHTML = '';
       const search = (document.getElementById('searchCus')?.value || '').toLowerCase();
-      let keys = Object.keys(FIREBASE_CUSTOMERS);
-      if(keys.length === 0) { listDiv.innerHTML = '<p class="text-xs text-gray-400 p-2 text-center">Customer မရှိသေးပါ</p>'; return; }
       
-      keys.forEach(id => {
+      if(FIREBASE_CUSTOMER_ORDER.length === 0) { listDiv.innerHTML = '<p class="text-xs text-gray-400 p-2 text-center">Customer မရှိသေးပါ</p>'; return; }
+      
+      FIREBASE_CUSTOMER_ORDER.forEach((id, index) => {
           const c = FIREBASE_CUSTOMERS[id];
+          if(!c) return;
           if(search && !c.name.toLowerCase().includes(search) && !(c.phone||'').includes(search)) return;
           
           let infoHtml = `<div class="text-[10px] text-gray-500 mt-0.5">`;
@@ -2045,10 +2061,13 @@
           if(c.bankName) infoHtml += `🏦 ${c.bankName} (${c.bankNo}) &nbsp;`;
           infoHtml += `</div>`;
 
-          listDiv.innerHTML += `<div class="list-item bg-white flex justify-between items-center p-2 mb-1.5 border rounded">
-              <div class="truncate w-full">
-                  <div class="font-bold text-xs text-purple-800">${c.name} ${c.social ? ` <span class="text-[10px] font-normal text-blue-500">(${c.social})</span>` : ''}</div>
-                  ${infoHtml}
+          listDiv.innerHTML += `<div class="list-item bg-white flex justify-between items-center p-2 mb-1.5 border rounded" draggable="true" data-index="${index}" data-type="customer" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
+              <div class="flex items-center truncate mr-2 w-full">
+                  <span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span>
+                  <div class="truncate w-full">
+                      <div class="font-bold text-xs text-purple-800">${c.name} ${c.social ? ` <span class="text-[10px] font-normal text-blue-500">(${c.social})</span>` : ''}</div>
+                      ${infoHtml}
+                  </div>
               </div>
               <div class="action-btns flex-shrink-0 ml-1">
                   <button onclick="editCustomer('${id}')" title="ပြင်မည်" class="!text-[10px] !py-0.5 !px-1.5" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button>
@@ -2061,10 +2080,13 @@
   function populateCustomerDropdown() {
       const sel = document.getElementById('mainCustomerSelect'); if(!sel) return;
       sel.innerHTML = '<option value="">— မထည့်ပါ —</option>';
-      Object.values(FIREBASE_CUSTOMERS).forEach(c => {
-          let text = c.name; 
-          if(c.social) text += ` (${c.social})`; 
-          const o = document.createElement('option'); o.value = c.id; o.textContent = text; sel.appendChild(o);
+      FIREBASE_CUSTOMER_ORDER.forEach(id => {
+          const c = FIREBASE_CUSTOMERS[id];
+          if(c) {
+              let text = c.name; 
+              if(c.social) text += ` (${c.social})`; 
+              const o = document.createElement('option'); o.value = c.id; o.textContent = text; sel.appendChild(o);
+          }
       });
   }
 
@@ -2216,6 +2238,7 @@
       FIREBASE_BANK_ORDER = [];
       FIREBASE_QRS = [];
       FIREBASE_CUSTOMERS = {};
+      FIREBASE_CUSTOMER_ORDER = [];
       
       try {
           await updateFirebase();
@@ -2434,7 +2457,7 @@
       }
   }
 
-  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt) 🌟 ---
+  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt - HD Export 🌟 ---
   window.reprintReceipt = async function(invId, btnElement = null) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
@@ -2542,7 +2565,7 @@
                   
                   if (foundQr) {
                       const file = typeof foundQr === 'string' ? foundQr : foundQr.file;
-                      const finalImgUrl = file.includes('http') ? file : 'assets/qr/' + file; // ပြန်လည်ပြင်ဆင်ထားသည်
+                      const finalImgUrl = file.includes('http') ? file : 'assets/qr/' + file; 
                       const baseName = file.replace(/\.[^.]+$/,'');
                       const owner = (typeof foundQr === 'object' && foundQr.owner) ? foundQr.owner : getOwnerFromKey(baseName);
 
@@ -2649,7 +2672,8 @@
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
-          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 1.2, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
+          // 🌟 Scale: 3 သို့ ပြောင်းထားသည် (HD Quality) 🌟
+          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
           document.body.removeChild(clone);
 
           const margin=18; 
@@ -2730,6 +2754,7 @@
         let method = d.method || "-";
         let cusName = d.customerName || "—";
         
+        // 🌟 Customer Name ကို နေရာအကန့်အသတ်ဖြင့် ပြသခြင်း 🌟
         let cusHtml = `<div class="max-w-[130px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
         
         let statusColor = status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : 
@@ -2770,6 +2795,7 @@
             actionHtml += `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
         }
         
+        // 🌟 Action နှင့် Method (နည်းလမ်း) နေရာချိန်းထားသည် 🌟
         html += `<tr class="border-b hover:bg-gray-50">
           <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${d.id}</td>
           <td class="p-3 text-xs">${dateStr}</td>
@@ -3072,7 +3098,8 @@
         document.body.appendChild(clone);
         await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
         
-        const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 1.5, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
+        // 🌟 Scale: 3 သို့ ပြောင်းထားသည် (HD Quality) 🌟
+        const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
         document.body.removeChild(clone);
         
         const margin=18; 
