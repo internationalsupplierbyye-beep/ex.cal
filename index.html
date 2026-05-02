@@ -2171,7 +2171,7 @@
           
           initDropdowns();
           renderAdminLists();
-          alert("ဘဏ်အချက်အလက် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
+          alert("ဘဏ်အချက်အလက် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) {
           alert("Error: " + e.message);
       } finally {
@@ -2230,7 +2230,7 @@
           document.getElementById('newQrOwner').value = ''; 
           initDropdowns();
           renderAdminLists();
-          alert("QR အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
+          alert("QR အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) {
           alert("Error: " + e.message);
       } finally {
@@ -2317,7 +2317,7 @@
           if(lang === 'orig') {
               updateReceiptUI();
           }
-          alert("ပြေစာ စာသားများ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
+          alert("ပြေစာ စာသားများ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) {
           alert("Error: " + e.message);
       } finally {
@@ -2412,7 +2412,7 @@
               await b.commit();
           }
 
-          alert("မှတ်တမ်းအားလုံး အောင်မြင်စွာ ဖျက်ပစ်ပြီးပါပြီ。");
+          alert("မှတ်တမ်းအားလုံး အောင်မြင်စွာ ဖျက်ပစ်ပြီးပါပြီ။");
           allLoadedHistory = [];
           renderHistoryRows([]);
           updateDashboard([]);
@@ -2436,17 +2436,27 @@
           allLoadedHistory[index].status = newStatus;
           renderHistoryRows(allLoadedHistory);
           
-         let statusEmoji = newStatus === 'Success' ? '✅' : (newStatus === 'Cancelled' ? '❌' : '⏳');
+          let statusEmoji = newStatus === 'Success' ? '✅' : (newStatus === 'Cancelled' ? '❌' : '⏳');
           let alertMsg = `${statusEmoji} <b>မှတ်တမ်း Status ပြောင်းလဲမှု</b>\n\n`;
           alertMsg += `ID: <code>${invId}</code>\n`;
           
-          // 🌟 Customer Name ပါရင် Telegram စာထဲ ထည့်ပြပေးမည် 🌟
+          // 🌟 Customer Name နှင့် ဖုန်းနံပါတ် ပါရင် Telegram စာထဲ ထည့်ပြပေးမည် 🌟
           if (tx.customerName && tx.customerName !== "—") {
               alertMsg += `Customer: <b>${tx.customerName}</b>\n`;
+              
+              const matchedCus = Object.values(FIREBASE_CUSTOMERS).find(c => {
+                  let fullName = c.name + (c.social ? ` (${c.social})` : '');
+                  return fullName === tx.customerName;
+              });
+              if (matchedCus && matchedCus.phone) {
+                  alertMsg += `Phone: <code>${matchedCus.phone}</code>\n`;
+              }
           }
           
           alertMsg += `အမျိုးအစား: <b>${tx.type}</b>\n`;
           alertMsg += `ပမာဏ: <code>${tx.inAmt}</code> ➔ <code>${tx.outAmt}</code>\n`;
+          // 🌟 နည်းလမ်း (Method) ထည့်သွင်းခြင်း 🌟
+          alertMsg += `နည်းလမ်း: <b>${tx.method || "-"}</b>\n`;
           alertMsg += `Status အသစ်: <b>${newStatus}</b>`;
           
           if(newStatus === 'Success') {
