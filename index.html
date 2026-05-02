@@ -10,6 +10,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+  <!-- 🌟 ဘာသာစကားဖိုင်ကို ချိတ်ဆက်ခြင်း 🌟 -->
+  <script src="lang.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&display=swap');
@@ -27,6 +29,14 @@
       padding: 6px 12px; font-size: 0.85rem; font-weight: bold; cursor: pointer;
     }
     .admin-btn:hover { background: rgba(255,255,255,0.3); }
+
+    .lang-switcher {
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(255,255,255,0.2); color: white;
+      border: 1px solid rgba(255,255,255,0.4); border-radius: 8px;
+      padding: 5px 8px; font-size: 0.8rem; font-weight: bold; cursor: pointer; outline: none;
+    }
+    .lang-switcher option { color: #000; }
 
     .box{ background:white; border-radius:1rem; box-shadow:0 1px 6px rgba(0,0,0,.08); padding:1rem; margin-bottom:.85rem; }
     
@@ -109,6 +119,27 @@
 
 <body class="p-3">
 
+<script>
+  function changeSystemLanguage(lang) {
+    localStorage.setItem('sys_lang_pref', lang);
+    const dict = (typeof SYS_DICT !== 'undefined') ? (SYS_DICT[lang] || SYS_DICT['my']) : {};
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (dict[key]) {
+        if (el.tagName === 'SPAN' || el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'P' || el.tagName === 'BUTTON' || el.tagName === 'OPTION') {
+           el.textContent = dict[key];
+        }
+      }
+    });
+
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+      const key = el.getAttribute('data-i18n-ph');
+      if (dict[key]) el.placeholder = dict[key];
+    });
+  }
+</script>
+
 <div id="loginModal">
   <div class="login-box">
     <h3 class="text-xl font-black mb-4 text-blue-700 pb-2">🔒 Login</h3>
@@ -121,8 +152,14 @@
 </div>
 
 <header>
-  <h1 class="text-xl sm:text-2xl font-black pb-1">MMK ↔ THB & VND ငွေလဲတွက်ချက်ခြင်း</h1>
-  <p class="text-xs sm:text-sm opacity-90 pb-1">MMK ↔ THB & VND Exchange Calculator</p>
+  <select id="sysLangSelect" onchange="changeSystemLanguage(this.value)" class="lang-switcher">
+    <option value="my" class="text-black">🇲🇲 မြန်မာ</option>
+    <option value="en" class="text-black">🇬🇧 English</option>
+    <option value="th" class="text-black">🇹🇭 ไทย</option>
+    <option value="vi" class="text-black">🇻🇳 Tiếng Việt</option>
+  </select>
+  <h1 class="text-xl sm:text-2xl font-black pb-1" data-i18n="app_title">MMK ↔ THB & VND ငွေလဲတွက်ချက်ခြင်း</h1>
+  <p class="text-xs sm:text-sm opacity-90 pb-1" data-i18n="app_sub">MMK ↔ THB & VND Exchange Calculator</p>
   <button class="admin-btn" onclick="openAdmin()">🔒 Admin / Staff</button>
 </header>
 
@@ -131,19 +168,19 @@
   <section class="box">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span>၁ သိန်း အတွက် ဘတ် (THB)</span></label>
-        <p class="sub">THB per 100,000 MMK</p>
-        <input id="rate100k" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ဥပမာ - 820">
+        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="rate_thb_100k">၁ သိန်း အတွက် ဘတ် (THB)</span></label>
+        <p class="sub" data-i18n="rate_thb_sub">THB per 100,000 MMK</p>
+        <input id="rate100k" class="amt-input w-full" type="text" inputmode="decimal" data-i18n-ph="ph_ex1" placeholder="ဥပမာ - 820">
       </div>
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span>၁ ဘတ် အတွက် ကျပ် (MMK)</span></label>
-        <p class="sub">MMK per 1 THB</p>
-        <input id="ratePerThb" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ဥပမာ - 121.95">
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="rate_mmk_1thb">၁ ဘတ် အတွက် ကျပ် (MMK)</span></label>
+        <p class="sub" data-i18n="rate_mmk_sub">MMK per 1 THB</p>
+        <input id="ratePerThb" class="amt-input w-full" type="text" inputmode="decimal" data-i18n-ph="ph_ex2" placeholder="ဥပမာ - 121.95">
       </div>
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span>၁ ကျပ် အတွက် ဒေါင် (VND)</span></label>
-        <p class="sub">VND per 1 MMK</p>
-        <input id="rateVnd" class="amt-input w-full" type="text" inputmode="decimal" placeholder="ဥပမာ - 6.5">
+        <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span data-i18n="rate_vnd_1mmk">၁ ကျပ် အတွက် ဒေါင် (VND)</span></label>
+        <p class="sub" data-i18n="rate_vnd_sub">VND per 1 MMK</p>
+        <input id="rateVnd" class="amt-input w-full" type="text" inputmode="decimal" data-i18n-ph="ph_ex3" placeholder="ဥပမာ - 6.5">
       </div>
     </div>
     
@@ -154,15 +191,15 @@
   </section>
 
   <section id="box-thb2mmk" class="box capture-target">
-    <h2 class="text-lg font-black mb-1 text-blue-700">ဘတ် → မြန်မာကျပ်</h2>
+    <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="thb_to_mmk">ဘတ် → မြန်မာကျပ်</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span>ဘတ်ငွေ</span></label>
-        <input id="thbIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
+        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="lbl_thb">ဘတ်ငွေ</span></label>
+        <input id="thbIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
       </div>
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span>မြန်မာကျပ်</span></label>
-        <input id="mmkOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
+        <input id="mmkOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
       </div>
     </div>
     <div class="text-center mt-3">
@@ -174,23 +211,23 @@
       </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
-      <button class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'download', this)">Save PNG</button>
-      <button class="btn2" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg', 'download', this)">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'share', this)">📤 Share</button>
-      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-thb2mmk', this)">📋 Copy Text</button>
+      <button class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'download', this)" data-i18n="btn_png">Save PNG</button>
+      <button class="btn2" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg', 'download', this)" data-i18n="btn_jpg">Save JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'share', this)" data-i18n="btn_share">📤 Share</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-thb2mmk', this)" data-i18n="btn_copy">📋 Copy Text</button>
     </div>
   </section>
 
   <section id="box-mmk2thb" class="box capture-target">
-    <h2 class="text-lg font-black mb-1 text-blue-700">မြန်မာကျပ် → ဘတ်</h2>
+    <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="mmk_to_thb">မြန်မာကျပ် → ဘတ်</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span>မြန်မာကျပ်</span></label>
-        <input id="mmkIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
+        <input id="mmkIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
       </div>
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span>ဘတ်ငွေ</span></label>
-        <input id="thbOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
+        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="lbl_thb">ဘတ်ငွေ</span></label>
+        <input id="thbOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
       </div>
     </div>
     <div class="text-center mt-3">
@@ -202,23 +239,23 @@
       </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
-      <button class="btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'download', this)">Save PNG</button>
-      <button class="btn2" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg', 'download', this)">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'share', this)">📤 Share</button>
-      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2thb', this)">📋 Copy Text</button>
+      <button class="btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'download', this)" data-i18n="btn_png">Save PNG</button>
+      <button class="btn2" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg', 'download', this)" data-i18n="btn_jpg">Save JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'share', this)" data-i18n="btn_share">📤 Share</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2thb', this)" data-i18n="btn_copy">📋 Copy Text</button>
     </div>
   </section>
 
   <section class="box compact">
     <div class="flex items-center justify-between gap-3">
       <div>
-        <h2 class="text-lg font-black leading-tight pb-1">Save PNG/JPEG + Bank QR</h2>
-        <p class="sub">QR / Bank Info / မပါ — တစ်ခုတည်းပဲရွေးနိုင်</p>
+        <h2 class="text-lg font-black leading-tight pb-1" data-i18n="export_st_title">Save PNG/JPEG + Bank QR</h2>
+        <p class="sub" data-i18n="export_st_sub">QR / Bank Info / မပါ — တစ်ခုတည်းပဲရွေးနိုင်</p>
       </div>
       <div class="text-right">
-        <div class="text-xs font-black text-slate-700 mb-1 pb-1">Save Export Language</div>
+        <div class="text-xs font-black text-slate-700 mb-1 pb-1" data-i18n="lbl_save_lang">Save Export Language</div>
         <select id="saveLangSelect" class="border rounded-xl px-3 py-2 font-black text-sm">
-          <option value="orig" selected>မူလ</option><option value="en">ENG</option><option value="th">TH</option>
+          <option value="orig" selected>မူလ</option><option value="en">ENG</option><option value="th">TH</option><option value="vi">VI</option>
         </select>
       </div>
     </div>
@@ -227,36 +264,36 @@
       <div class="card p-3">
         <div class="grid grid-cols-2 gap-3 mb-2">
             <div>
-                <p class="font-black mb-1 pb-1 text-xs">QR Select</p>
+                <p class="font-black mb-1 pb-1 text-xs" data-i18n="lbl_qr_sel">QR Select</p>
                 <select id="qrSelect" class="compact border rounded-lg w-full text-sm"></select>
             </div>
             <div>
-                <p class="font-black mb-1 pb-1 text-xs">Bank Select</p>
+                <p class="font-black mb-1 pb-1 text-xs" data-i18n="lbl_bank_sel">Bank Select</p>
                 <select id="bankSelect" class="compact border rounded-lg w-full text-sm"></select>
             </div>
         </div>
 
         <hr class="my-3 border-gray-200">
-        <p class="font-black mb-1 pb-1 text-sm">Export ထဲ ဘာထည့်မလဲ</p>
+        <p class="font-black mb-1 pb-1 text-sm" data-i18n="lbl_inc">Export ထဲ ဘာထည့်မလဲ</p>
         <div class="grid grid-cols-1 gap-1">
-            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="none" checked><span>မပါ (Default)</span></label>
-            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="qr"><span>QR ပဲပါ</span></label>
-            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="bank"><span>Bank Info ပဲပါ</span></label>
+            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="none" checked><span data-i18n="rad_none">မပါ (Default)</span></label>
+            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="qr"><span data-i18n="rad_qr">QR ပဲပါ</span></label>
+            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="bank"><span data-i18n="rad_bank">Bank Info ပဲပါ</span></label>
         </div>
 
         <div class="mt-4 border-t pt-3 border-gray-200">
-            <p class="font-black mb-1 pb-1 text-xs text-purple-700">👥 Customer (မရွေးပါက ပြေစာတွင်မပါပါ)</p>
+            <p class="font-black mb-1 pb-1 text-xs text-purple-700" data-i18n="lbl_cus">👥 Customer (မရွေးပါက ပြေစာတွင်မပါပါ)</p>
             <div class="flex gap-2">
                 <select id="mainCustomerSelect" class="compact border rounded-lg flex-1 text-sm font-bold bg-purple-50 text-purple-800 border-purple-200">
                     <option value="">— မထည့်ပါ —</option>
                 </select>
-                <button onclick="document.getElementById('quickCusModal').style.display='flex'" class="btn bg-purple-600 hover:bg-purple-700 !py-1 !px-3 text-xs whitespace-nowrap">➕ အမြန်ထည့်မည်</button>
+                <button onclick="document.getElementById('quickCusModal').style.display='flex'" class="btn bg-purple-600 hover:bg-purple-700 !py-1 !px-3 text-xs whitespace-nowrap" data-i18n="btn_quick_add">➕ အမြန်ထည့်မည်</button>
             </div>
         </div>
       </div>
 
       <div class="card p-3">
-        <p class="font-black text-center pb-2 text-sm">Preview</p>
+        <p class="font-black text-center pb-2 text-sm" data-i18n="preview">Preview</p>
         <div id="previewTwo" class="mt-2 hidden">
           <div class="grid grid-cols-2 gap-3">
             <div class="text-center"><div class="qrFrame"><img id="qrPreviewNormal" class="mx-auto" style="max-width:140px; max-height:140px; object-fit:contain;"></div></div>
@@ -266,9 +303,9 @@
         <div id="previewOne" class="mt-2">
           <div class="text-center"><div class="qrFrame"><img id="qrPreviewSolo" class="mx-auto" style="max-width:220px; max-height:220px; object-fit:contain;" alt="QR မရှိပါ"></div></div>
         </div>
-        <p id="qrOwnerName" class="text-center text-slate-700 mt-2 text-sm pb-1">အကောင့်နာမည်: <span class="font-black" id="qrOwnerValue">—</span></p>
+        <p id="qrOwnerName" class="text-center text-slate-700 mt-2 text-sm pb-1"><span data-i18n="owner_name">အကောင့်နာမည်:</span> <span class="font-black" id="qrOwnerValue">—</span></p>
         <div class="mt-2 border-t pt-2 text-left">
-          <p class="font-black text-center pb-1 text-sm">Bank Info Preview</p>
+          <p class="font-black text-center pb-1 text-sm" data-i18n="bank_preview">Bank Info Preview</p>
           <div id="bankPreviewMini" class="text-xs text-slate-700 mt-1 text-center pb-1">ဘဏ်မရွေးထားသေးပါ။</div>
         </div>
       </div>
@@ -276,15 +313,15 @@
   </section>
 
   <section id="box-vnd2mmk" class="box capture-target">
-    <h2 class="text-lg font-black mb-1 text-red-600">ဗီယက်နမ်ဒေါင် → မြန်မာကျပ်</h2>
+    <h2 class="text-lg font-black mb-1 text-red-600" data-i18n="vnd_to_mmk">ဗီယက်နမ်ဒေါင် → မြန်မာကျပ်</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span>ဒေါင်ငွေ</span></label>
-        <input id="vndIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
+        <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span data-i18n="lbl_vnd">ဒေါင်ငွေ</span></label>
+        <input id="vndIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
       </div>
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span>မြန်မာကျပ်</span></label>
-        <input id="mmkOut2" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
+        <input id="mmkOut2" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
       </div>
     </div>
     <div class="text-center mt-3">
@@ -296,23 +333,23 @@
       </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
-      <button class="btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'download', this)">Save PNG</button>
-      <button class="btn2" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','jpg', 'download', this)">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'share', this)">📤 Share</button>
-      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-vnd2mmk', this)">📋 Copy Text</button>
+      <button class="btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'download', this)" data-i18n="btn_png">Save PNG</button>
+      <button class="btn2" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','jpg', 'download', this)" data-i18n="btn_jpg">Save JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'share', this)" data-i18n="btn_share">📤 Share</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-vnd2mmk', this)" data-i18n="btn_copy">📋 Copy Text</button>
     </div>
   </section>
 
   <section id="box-mmk2vnd" class="box capture-target">
-    <h2 class="text-lg font-black mb-1 text-red-600">မြန်မာကျပ် → ဗီယက်နမ်ဒေါင်</h2>
+    <h2 class="text-lg font-black mb-1 text-red-600" data-i18n="mmk_to_vnd">မြန်မာကျပ် → ဗီယက်နမ်ဒေါင်</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span>မြန်မာကျပ်</span></label>
-        <input id="mmkIn2" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
+        <input id="mmkIn2" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
       </div>
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span>ဒေါင်ငွေ</span></label>
-        <input id="vndOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" placeholder="ရိုက်ထည့်ပါ">
+        <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span data-i18n="lbl_vnd">ဒေါင်ငွေ</span></label>
+        <input id="vndOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
       </div>
     </div>
     <div class="text-center mt-3">
@@ -324,10 +361,10 @@
       </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
-      <button class="btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'download', this)">Save PNG</button>
-      <button class="btn2" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','jpg', 'download', this)">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'share', this)">📤 Share</button>
-      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2vnd', this)">📋 Copy Text</button>
+      <button class="btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'download', this)" data-i18n="btn_png">Save PNG</button>
+      <button class="btn2" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','jpg', 'download', this)" data-i18n="btn_jpg">Save JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'share', this)" data-i18n="btn_share">📤 Share</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2vnd', this)" data-i18n="btn_copy">📋 Copy Text</button>
     </div>
   </section>
 
@@ -1576,6 +1613,9 @@
   }
 
   function initDropdowns() {
+    const currentLang = localStorage.getItem('sys_lang_pref') || 'my';
+    const dict = (typeof SYS_DICT !== 'undefined') ? (SYS_DICT[currentLang] || SYS_DICT['my']) : {};
+
     const useFirebaseBanks = FIREBASE_BANK_ORDER.length > 0;
     const useFirebaseQRs = FIREBASE_QRS.length > 0;
     ACTIVE_BANK_INFO = useFirebaseBanks ? FIREBASE_BANKS : DEFAULT_BANK_INFO;
@@ -1584,7 +1624,7 @@
     
     const bankSelect = document.getElementById('bankSelect');
     if(bankSelect) {
-      bankSelect.innerHTML = '<option value="">— ဘဏ်ရွေးပါ —</option>';
+      bankSelect.innerHTML = `<option value="" data-i18n="ph_bank_sel">${dict.ph_bank_sel || '— ဘဏ်ရွေးပါ —'}</option>`;
       finalBankOrder.forEach(key => {
         if(ACTIVE_BANK_INFO[key]) {
           const o = document.createElement('option'); o.value = key; o.textContent = ACTIVE_BANK_INFO[key].name; bankSelect.appendChild(o);
@@ -1594,7 +1634,7 @@
 
     const qrSelect = document.getElementById('qrSelect');
     if(qrSelect) {
-      qrSelect.innerHTML = '<option value="">— QR ရွေးပါ —</option>';
+      qrSelect.innerHTML = `<option value="" data-i18n="ph_qr_sel">${dict.ph_qr_sel || '— QR ရွေးပါ —'}</option>`;
       finalQRs.forEach(qr => {
         const val = typeof qr === 'string' ? qr : qr.file;
         const text = typeof qr === 'string' ? qr.replace(/\.[^.]+$/, '') : (qr.name || val.replace(/\.[^.]+$/, ''));
@@ -1764,6 +1804,11 @@
 
     updateReceiptUI();
     initDropdowns(); syncFrom100k(); refreshVndRateNote(); recalcVND();
+
+    // Trigger language update once on load
+    const savedLang = localStorage.getItem('sys_lang_pref') || 'my';
+    document.getElementById('sysLangSelect').value = savedLang;
+    changeSystemLanguage(savedLang);
   });
 
   // --- Firebase Connection ---
@@ -1984,6 +2029,22 @@
   }
 
   // 🌟 အမြန်ထည့်မည် Function အသစ် 🌟
+  function populateCustomerDropdown() {
+      const currentLang = localStorage.getItem('sys_lang_pref') || 'my';
+      const dict = (typeof SYS_DICT !== 'undefined') ? (SYS_DICT[currentLang] || SYS_DICT['my']) : {};
+
+      const sel = document.getElementById('mainCustomerSelect'); if(!sel) return;
+      sel.innerHTML = `<option value="" data-i18n="ph_cus_sel">${dict.ph_cus_sel || '— မထည့်ပါ —'}</option>`;
+      FIREBASE_CUSTOMER_ORDER.forEach(id => {
+          const c = FIREBASE_CUSTOMERS[id];
+          if(c) {
+              let text = c.name; 
+              if(c.social) text += ` (${c.social})`; 
+              const o = document.createElement('option'); o.value = c.id; o.textContent = text; sel.appendChild(o);
+          }
+      });
+  }
+
   async function saveQuickCustomer(event) {
       const name = document.getElementById('qCusName').value.trim();
       const social = document.getElementById('qCusSocial').value.trim();
@@ -2077,19 +2138,6 @@
       });
   }
 
-  function populateCustomerDropdown() {
-      const sel = document.getElementById('mainCustomerSelect'); if(!sel) return;
-      sel.innerHTML = '<option value="">— မထည့်ပါ —</option>';
-      FIREBASE_CUSTOMER_ORDER.forEach(id => {
-          const c = FIREBASE_CUSTOMERS[id];
-          if(c) {
-              let text = c.name; 
-              if(c.social) text += ` (${c.social})`; 
-              const o = document.createElement('option'); o.value = c.id; o.textContent = text; sel.appendChild(o);
-          }
-      });
-  }
-
   // ==========================================
   // 🏦 ဘဏ် နှင့် QR များ စီမံရန် Functions များ
   // ==========================================
@@ -2123,7 +2171,7 @@
           
           initDropdowns();
           renderAdminLists();
-          alert("ဘဏ်အချက်အလက် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+          alert("ဘဏ်အချက်အလက် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
       } catch(e) {
           alert("Error: " + e.message);
       } finally {
@@ -2182,7 +2230,7 @@
           document.getElementById('newQrOwner').value = ''; 
           initDropdowns();
           renderAdminLists();
-          alert("QR အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+          alert("QR အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
       } catch(e) {
           alert("Error: " + e.message);
       } finally {
@@ -2269,7 +2317,7 @@
           if(lang === 'orig') {
               updateReceiptUI();
           }
-          alert("ပြေစာ စာသားများ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+          alert("ပြေစာ စာသားများ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
       } catch(e) {
           alert("Error: " + e.message);
       } finally {
@@ -2364,7 +2412,7 @@
               await b.commit();
           }
 
-          alert("မှတ်တမ်းအားလုံး အောင်မြင်စွာ ဖျက်ပစ်ပြီးပါပြီ။");
+          alert("မှတ်တမ်းအားလုံး အောင်မြင်စွာ ဖျက်ပစ်ပြီးပါပြီ。");
           allLoadedHistory = [];
           renderHistoryRows([]);
           updateDashboard([]);
@@ -2457,7 +2505,7 @@
       }
   }
 
-  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt - HD Export 🌟 ---
+  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt - HD Export) 🌟 ---
   window.reprintReceipt = async function(invId, btnElement = null) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
@@ -2754,7 +2802,7 @@
         let method = d.method || "-";
         let cusName = d.customerName || "—";
         
-        // 🌟 Customer Name ကို နေရာအကန့်အသတ်ဖြင့် ပြသခြင်း 🌟
+        // 🌟 60px မူလအတိုင်း သော့ခတ်ထားသော Customer Name ပြသခြင်း 🌟
         let cusHtml = `<div class="max-w-[60px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
         
         let statusColor = status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : 
@@ -2795,7 +2843,7 @@
             actionHtml += `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
         }
         
-        // 🌟 Action နှင့် Method (နည်းလမ်း) နေရာချိန်းထားသည် 🌟
+        // 🌟 Action နှင့် Method ကို နေရာချိန်းထားပြီး 60px ဖြင့် သော့ခတ်ထားသော Method ပြသခြင်း 🌟
         html += `<tr class="border-b hover:bg-gray-50">
           <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${d.id}</td>
           <td class="p-3 text-xs">${dateStr}</td>
@@ -2883,10 +2931,7 @@
   }
 
   // --- Export Image SaveSection & Web Share API ---
-  const I18N = {
-    en: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"THB → MMK", h_mmk2thb:"MMK → THB", h_vnd2mmk:"VND → MMK", h_mmk2vnd:"MMK → VND", sub_thb2mmk:"Thai Baht to Myanmar Kyat", sub_mmk2thb:"Myanmar Kyat to Thai Baht", sub_vnd2mmk:"Vietnamese Dong to Myanmar Kyat", sub_mmk2vnd:"Myanmar Kyat to Vietnamese Dong", lbl_thb:"Amount (THB)", lbl_mmk:"Amount (MMK)", lbl_vnd:"Amount (VND)", in_thb:"Input THB", in_mmk:"Input MMK", in_vnd:"Input VND", out_mmk:"Result MMK", out_thb:"Result THB", out_vnd:"Result VND", bankTitle:"Transfer Bank Information", bankLabel:"Bank Information", accName:"Account Name", accNo:"Account Number", qrTitle:"Bank QR / Payment", owner:"Account Name", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" },
-    th: { titleTop: "Thailand Guide - Supplier By Ye", h_thb2mmk:"บาท → จ๊าด", h_mmk2thb:"จ๊าด → บาท", h_vnd2mmk:"ดอง → จ๊าด", h_mmk2vnd:"จ๊าด → ดอง", sub_thb2mmk:"แปลงเงินบาทไทยเป็นจ๊าดเมียนมา", sub_mmk2thb:"แปลงจ๊าดเมียนมาเป็นเงินบาทไทย", sub_vnd2mmk:"แปลงเงินดองเวียดนามเป็นจ๊าดเมียนมา", sub_mmk2vnd:"แปลงจ๊าดเมียนมาเป็นเงินดองเวียดนาม", lbl_thb:"จำนวนเงิน (THB)", lbl_mmk:"จำนวนเงิน (MMK)", lbl_vnd:"จำนวนเงิน (VND)", in_thb:"กรอกจำนวนบาท", in_mmk:"กรอกจำนวนจ๊าด", in_vnd:"กรอกจำนวนดอง", out_mmk:"ผลลัพธ์ (MMK)", out_thb:"ผลลัพธ์ (THB)", out_vnd:"ผลลัพธ์ (VND)", bankTitle:"ข้อมูลบัญชีสำหรับโอน", bankLabel:"ข้อมูลบัญชีธนาคาร", accName:"ชื่อบัญชี", accNo:"เลขบัญชี", qrTitle:"คิวอาร์ธนาคาร", owner:"ชื่อบัญชี", rateTpl:"100,000 MMK = {r} THB | 1 THB = {inv} MMK", rateVndTpl:"1 MMK = {v} VND" }
-  };
+  // (Note: I18N is moved to lang.js)
   
   function getExportTimeStr(lang) {
     const d = new Date(); const tz = ADMIN_TIMEZONE || 'Asia/Bangkok';
