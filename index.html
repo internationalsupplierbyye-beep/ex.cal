@@ -621,12 +621,16 @@
           <input type="text" id="adminTgChatId" class="admin-input-box text-sm" placeholder="Chat ID ထည့်ပါ (ဥပမာ: -100123456789)">
         </div>
         <div class="mb-2">
-          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (ပြေစာအသစ်များပို့ရန်)</label>
+          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (ပြေစာအသစ် နှင့် Pending များပို့ရန်)</label>
           <input type="text" id="adminTgTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 2)">
         </div>
-        <div class="mb-3">
+        <div class="mb-2">
           <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Success ဖြစ်သော မှတ်တမ်းများပို့ရန်)</label>
           <input type="text" id="adminTgSuccessTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 14)">
+        </div>
+        <div class="mb-3">
+          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Cancel ဖြစ်သော မှတ်တမ်းများပို့ရန်)</label>
+          <input type="text" id="adminTgCancelTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 16)">
         </div>
         <button onclick="saveTelegramSettings()" id="btnTgSave" class="btn bg-blue-600 hover:bg-blue-700 w-full">Telegram Settings သိမ်းမည်</button>
       </div>
@@ -756,6 +760,7 @@
   let TELEGRAM_CHAT_ID = "-1003987703326";
   let TELEGRAM_TOPIC_ID = "2";
   let TELEGRAM_SUCCESS_TOPIC_ID = "14"; 
+  let TELEGRAM_CANCEL_TOPIC_ID = ""; // 🌟 Cancel အတွက် Topic အသစ်
 
   let FIREBASE_RECEIPT_TEXTS = {
       orig: {
@@ -1545,10 +1550,12 @@
       } else {
           savedRate = `1 MMK = ${fmt6(fAmt/mAmt)} VND`;
       }
+      
+      const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
 
       const historyRecord = {
         id: invId, type: type, rate: savedRate, inAmt: inAmtStr, outAmt: outAmtStr,
-        method: "Manual Lot", profit: 0, status: 'Success', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: "Admin", customerName: "—"
+        method: "Manual Lot", profit: 0, status: 'Success', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: "—"
       };
 
       try {
@@ -1559,7 +1566,11 @@
           alertMsg += `အမျိုးအစား: <b>${type}</b>\n`;
           alertMsg += `ပမာဏ: <code>${inAmtStr}</code> ➔ <code>${outAmtStr}</code>\n`;
           alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
-          alertMsg += `Device: Admin`;
+          
+          // 🌟 Device Name ဖော်ပြခြင်း 🌟
+          let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
+          alertMsg += `Device: <b>${mappedDeviceName}</b>`;
+          
           sendTelegramAlert(alertMsg, TELEGRAM_SUCCESS_TOPIC_ID); 
 
           document.getElementById('manualLotModal').style.display='none';
@@ -1580,6 +1591,7 @@
       const chatId = document.getElementById('adminTgChatId').value.trim();
       const topicId = document.getElementById('adminTgTopicId').value.trim();
       const successTopicId = document.getElementById('adminTgSuccessTopicId').value.trim();
+      const cancelTopicId = document.getElementById('adminTgCancelTopicId').value.trim();
       
       const btn = document.getElementById('btnTgSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
@@ -1588,9 +1600,10 @@
           TELEGRAM_CHAT_ID = chatId;
           TELEGRAM_TOPIC_ID = topicId;
           TELEGRAM_SUCCESS_TOPIC_ID = successTopicId;
+          TELEGRAM_CANCEL_TOPIC_ID = cancelTopicId;
           
           if(dbRef) {
-              await dbRef.set({ telegram: { chatId: chatId, topicId: topicId, successTopicId: successTopicId } }, { merge: true });
+              await dbRef.set({ telegram: { chatId: chatId, topicId: topicId, successTopicId: successTopicId, cancelTopicId: cancelTopicId } }, { merge: true });
           }
           alert("Telegram Settings အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) {
@@ -1648,6 +1661,13 @@
     populateCustomerDropdown();
     refreshBankInfo();
     refreshQrPreview();
+
+    // Load user's saved system language
+    const savedLang = localStorage.getItem('sys_lang_pref');
+    if (savedLang) {
+      document.getElementById('sysLangSelect').value = savedLang;
+      changeSystemLanguage(savedLang);
+    }
   }
 
   // --- AUTO/MANUAL RADIO LOGIC ---
@@ -1753,6 +1773,7 @@
   // --- Dynamic Receipt Texts UI Update ---
   function loadReceiptTextsToInputs() {
       const lang = document.getElementById('adminReceiptLang').value;
+      // Fetch from lang.js objects (SYS_DICT, I18N are in lang.js)
       const texts = FIREBASE_RECEIPT_TEXTS[lang] || {warn1:'', warn2:'', thanks:'', copyBottom:''};
       document.getElementById('adminWarn1').value = texts.warn1 || '';
       document.getElementById('adminWarn2').value = texts.warn2 || '';
@@ -1857,6 +1878,8 @@
             if(data.telegram.chatId) TELEGRAM_CHAT_ID = data.telegram.chatId;
             if(data.telegram.topicId) TELEGRAM_TOPIC_ID = data.telegram.topicId;
             if(data.telegram.successTopicId) TELEGRAM_SUCCESS_TOPIC_ID = data.telegram.successTopicId;
+            // 🌟 ဤနေရာတွင် Cancel Topic ကို ထည့်သွင်းထားသည် 🌟
+            if(data.telegram.cancelTopicId) TELEGRAM_CANCEL_TOPIC_ID = data.telegram.cancelTopicId;
         }
         
         const tgChatInput = document.getElementById('adminTgChatId');
@@ -1865,6 +1888,8 @@
         if(tgTopicInput) tgTopicInput.value = TELEGRAM_TOPIC_ID;
         const tgSuccessTopicInput = document.getElementById('adminTgSuccessTopicId');
         if(tgSuccessTopicInput) tgSuccessTopicInput.value = TELEGRAM_SUCCESS_TOPIC_ID;
+        const tgCancelTopicInput = document.getElementById('adminTgCancelTopicId');
+        if(tgCancelTopicInput) tgCancelTopicInput.value = TELEGRAM_CANCEL_TOPIC_ID;
         
         loadReceiptTextsToInputs();
         updateReceiptUI();
@@ -2171,7 +2196,7 @@
           
           initDropdowns();
           renderAdminLists();
-          alert("ဘဏ်အချက်အလက် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+          alert("ဘဏ်အချက်အလက် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
       } catch(e) {
           alert("Error: " + e.message);
       } finally {
@@ -2230,7 +2255,7 @@
           document.getElementById('newQrOwner').value = ''; 
           initDropdowns();
           renderAdminLists();
-          alert("QR အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+          alert("QR အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
       } catch(e) {
           alert("Error: " + e.message);
       } finally {
@@ -2317,7 +2342,7 @@
           if(lang === 'orig') {
               updateReceiptUI();
           }
-          alert("ပြေစာ စာသားများ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+          alert("ပြေစာ စာသားများ အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
       } catch(e) {
           alert("Error: " + e.message);
       } finally {
@@ -2412,7 +2437,7 @@
               await b.commit();
           }
 
-          alert("မှတ်တမ်းအားလုံး အောင်မြင်စွာ ဖျက်ပစ်ပြီးပါပြီ။");
+          alert("မှတ်တမ်းအားလုံး အောင်မြင်စွာ ဖျက်ပစ်ပြီးပါပြီ。");
           allLoadedHistory = [];
           renderHistoryRows([]);
           updateDashboard([]);
@@ -2457,12 +2482,19 @@
           alertMsg += `ပမာဏ: <code>${tx.inAmt}</code> ➔ <code>${tx.outAmt}</code>\n`;
           // 🌟 နည်းလမ်း (Method) ထည့်သွင်းခြင်း 🌟
           alertMsg += `နည်းလမ်း: <b>${tx.method || "-"}</b>\n`;
-          alertMsg += `Status အသစ်: <b>${newStatus}</b>`;
+          alertMsg += `Status အသစ်: <b>${newStatus}</b>\n`;
           
+          // 🌟 Device Name ဖော်ပြခြင်း 🌟
+          let mappedDeviceName = FIREBASE_DEVICE_NAMES[tx.deviceId] || tx.deviceId || "Unknown";
+          alertMsg += `Device: <b>${mappedDeviceName}</b>`;
+          
+          // 🌟 Topic ၃ မျိုး ခွဲခြားပို့ဆောင်ခြင်း 🌟
           if(newStatus === 'Success') {
               sendTelegramAlert(alertMsg, TELEGRAM_SUCCESS_TOPIC_ID);
+          } else if(newStatus === 'Cancelled') {
+              sendTelegramAlert(alertMsg, TELEGRAM_CANCEL_TOPIC_ID);
           } else {
-              sendTelegramAlert(alertMsg);
+              sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID);
           }
           
       } catch(e) {
@@ -3207,8 +3239,13 @@
             alertMsg += `ပမာဏ: <code>${inValueStr}</code> ➔ <code>${outValueStr}</code>\n`;
             alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
             alertMsg += `နည်းလမ်း: ${paymentMethodName}\n`;
-            alertMsg += `Device: ${currentDeviceId}`;
-            sendTelegramAlert(alertMsg); 
+            
+            // 🌟 Device Name ဖော်ပြခြင်း 🌟
+            let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
+            alertMsg += `Device: <b>${mappedDeviceName}</b>`;
+            
+            // 🌟 Topic ခွဲ၍ပို့ခြင်း 🌟
+            sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID); 
 
         } catch(e) {}
         
