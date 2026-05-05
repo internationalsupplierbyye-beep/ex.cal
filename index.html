@@ -284,9 +284,23 @@
         <div class="mt-4 border-t pt-3 border-gray-200">
             <p class="font-black mb-1 pb-1 text-xs text-purple-700" data-i18n="lbl_cus">👥 Customer (မရွေးပါက ပြေစာတွင်မပါပါ)</p>
             <div class="flex gap-2">
-                <select id="mainCustomerSelect" class="compact border rounded-lg flex-1 text-sm font-bold bg-purple-50 text-purple-800 border-purple-200">
-                    <option value="">— မထည့်ပါ —</option>
-                </select>
+                <!-- 🌟 Custom Searchable Dropdown အသစ် စတင်ရန် 🌟 -->
+                <div class="relative flex-1">
+                    <input type="hidden" id="mainCustomerSelect" value="">
+                    <div id="customCusSelectBtn" class="compact border rounded-lg w-full text-sm font-bold bg-purple-50 text-purple-800 border-purple-200 cursor-pointer flex justify-between items-center h-full" style="padding: .6rem .75rem;" onclick="toggleCusDropdown()">
+                        <span id="customCusSelectLabel" class="truncate">— မထည့်ပါ —</span>
+                        <span class="text-xs">▼</span>
+                    </div>
+                    <div id="customCusDropdown" class="absolute z-50 w-full mt-1 bg-white border border-purple-200 rounded-lg shadow-xl hidden flex-col max-h-64">
+                        <div class="p-2 border-b border-purple-100 bg-purple-50 rounded-t-lg sticky top-0">
+                            <input type="text" id="cusSearchInput" class="w-full border border-purple-200 rounded p-1.5 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." oninput="filterCusDropdown()" onclick="event.stopPropagation()">
+                        </div>
+                        <div id="customCusOptions" class="overflow-y-auto flex-1">
+                            <!-- Options များ ဒီနေရာကို ဝင်လာပါမည် -->
+                        </div>
+                    </div>
+                </div>
+                <!-- 🌟 Custom Searchable Dropdown ပြီးဆုံး 🌟 -->
                 <button onclick="document.getElementById('quickCusModal').style.display='flex'" class="btn bg-purple-600 hover:bg-purple-700 !py-1 !px-3 text-xs whitespace-nowrap" data-i18n="btn_quick_add">➕ အမြန်ထည့်မည်</button>
             </div>
         </div>
@@ -2057,18 +2071,71 @@
   function populateCustomerDropdown() {
       const currentLang = localStorage.getItem('sys_lang_pref') || 'my';
       const dict = (typeof SYS_DICT !== 'undefined') ? (SYS_DICT[currentLang] || SYS_DICT['my']) : {};
+      const defaultText = dict.ph_cus_sel || '— မထည့်ပါ —';
 
-      const sel = document.getElementById('mainCustomerSelect'); if(!sel) return;
-      sel.innerHTML = `<option value="" data-i18n="ph_cus_sel">${dict.ph_cus_sel || '— မထည့်ပါ —'}</option>`;
+      const optionsContainer = document.getElementById('customCusOptions');
+      if(!optionsContainer) return;
+
+      let html = `<div class="cus-option p-2.5 hover:bg-purple-100 cursor-pointer text-sm text-gray-700 font-bold border-b border-gray-100" data-search="" onclick="selectCustomCustomer('', '${defaultText}')">${defaultText}</div>`;
+
       FIREBASE_CUSTOMER_ORDER.forEach(id => {
           const c = FIREBASE_CUSTOMERS[id];
           if(c) {
-              let text = c.name; 
-              if(c.social) text += ` (${c.social})`; 
-              const o = document.createElement('option'); o.value = c.id; o.textContent = text; sel.appendChild(o);
+              let text = c.name;
+              if(c.social) text += ` (${c.social})`;
+              let searchString = (c.name + " " + (c.social||"") + " " + (c.phone||"")).toLowerCase();
+
+              html += `<div class="cus-option p-2 hover:bg-purple-100 cursor-pointer border-b border-gray-100 last:border-0" data-search="${searchString}" onclick="selectCustomCustomer('${c.id}', '${text}')">
+                  <div class="font-bold text-sm text-purple-800">${text}</div>
+                  ${c.phone ? `<div class="text-[11px] text-gray-500 mt-0.5">📞 ${c.phone}</div>` : ''}
+              </div>`;
+          }
+      });
+      optionsContainer.innerHTML = html;
+
+      const currentVal = document.getElementById('mainCustomerSelect').value;
+      if(!currentVal || !FIREBASE_CUSTOMERS[currentVal]) {
+          document.getElementById('customCusSelectLabel').textContent = defaultText;
+          document.getElementById('mainCustomerSelect').value = '';
+      }
+  }
+
+  function toggleCusDropdown() {
+      const drop = document.getElementById('customCusDropdown');
+      drop.classList.toggle('hidden');
+      if(!drop.classList.contains('hidden')) {
+          document.getElementById('cusSearchInput').focus();
+      }
+  }
+
+  function filterCusDropdown() {
+      const search = document.getElementById('cusSearchInput').value.toLowerCase();
+      const options = document.querySelectorAll('.cus-option');
+      options.forEach(opt => {
+          const searchData = opt.getAttribute('data-search') || "";
+          if(search === "" || searchData.includes(search)) {
+              opt.style.display = 'block';
+          } else {
+              opt.style.display = 'none';
           }
       });
   }
+
+  function selectCustomCustomer(id, label) {
+      document.getElementById('mainCustomerSelect').value = id;
+      document.getElementById('customCusSelectLabel').textContent = label;
+      document.getElementById('customCusDropdown').classList.add('hidden');
+      document.getElementById('cusSearchInput').value = '';
+      filterCusDropdown(); 
+  }
+
+  document.addEventListener('click', function(event) {
+      const btn = document.getElementById('customCusSelectBtn');
+      const drop = document.getElementById('customCusDropdown');
+      if(btn && drop && !btn.contains(event.target) && !drop.contains(event.target)) {
+          drop.classList.add('hidden');
+      }
+  });
 
   async function saveQuickCustomer(event) {
       const name = document.getElementById('qCusName').value.trim();
@@ -2088,6 +2155,7 @@
       renderCustomerAdminList(); 
       populateCustomerDropdown();
       document.getElementById('mainCustomerSelect').value = cusId;
+      document.getElementById('customCusSelectLabel').textContent = name + (social ? ` (${social})` : '');
       
       document.getElementById('quickCusModal').style.display = 'none';
       document.getElementById('qCusName').value = '';
