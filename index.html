@@ -2699,7 +2699,7 @@
               rateP.innerHTML += '<br>';
           }
 
-          const brandHeader = document.createElement('div');
+         const brandHeader = document.createElement('div');
           brandHeader.style.textAlign = 'center'; 
           brandHeader.style.paddingBottom = '15px'; 
           brandHeader.style.marginBottom = '15px'; 
@@ -2710,8 +2710,18 @@
           brandTitle.style.fontSize = '24px'; 
           brandTitle.style.color = '#0f172a';
           brandTitle.textContent = (T && T.titleTop) ? T.titleTop : 'Thailand Guide - Supplier By Ye';
-          
           brandHeader.appendChild(brandTitle);
+
+          // 🌟 REPRINT ဖြစ်ကြောင်းပြမည့် စာသားအနီရောင် 🌟
+          const reprintBadge = document.createElement('div');
+          reprintBadge.textContent = "[ REPRINT ]";
+          reprintBadge.style.color = '#dc2626'; // အနီရောင်
+          reprintBadge.style.fontSize = '14px';
+          reprintBadge.style.fontWeight = '900';
+          reprintBadge.style.marginTop = '6px';
+          reprintBadge.style.letterSpacing = '2px';
+          brandHeader.appendChild(reprintBadge);
+          
           clone.insertBefore(brandHeader, clone.firstChild);
 
           clone.style.boxShadow = 'none'; 
@@ -2811,7 +2821,7 @@
           const footerDiv = document.createElement('div');
           footerDiv.style.display = 'flex';
           footerDiv.style.justifyContent = 'space-between';
-          footerDiv.style.alignItems = 'center';
+          footerDiv.style.alignItems = 'flex-end';
           footerDiv.style.marginTop = '12px';
           footerDiv.style.paddingTop = '12px';
           footerDiv.style.borderTop = '1px dashed #cbd5e1';
@@ -2845,9 +2855,23 @@
               cusDiv.style.textAlign = 'left';
               cusDiv.style.fontSize = '12px'; 
 
-              let cHtml = `<div style="display:flex; justify-content:center; align-items:center;">`;
+              // 🌟 Database ထဲကနေ Name နဲ့ ပြန်တိုက်ရှာပြီး Phone / Bank ကို ဆွဲထုတ်ခြင်း 🌟
+              const matchedCus = Object.values(FIREBASE_CUSTOMERS).find(c => {
+                  let fullName = c.name + (c.social ? ` (${c.social})` : '');
+                  return fullName === tx.customerName;
+              });
+
+              let cHtml = `<div style="display:flex; justify-content:space-between; align-items:center;">`;
               cHtml += `<div><span style="color:#64748b; font-weight:bold;">ငွေလွှဲသူ အချက်အလက် -</span> <span style="font-weight:900; color:#1e40af; font-size:14px; margin-left:4px;">${tx.customerName}</span></div>`;
+              
+              if (matchedCus && matchedCus.phone) {
+                   cHtml += `<div style="font-size:11px; color:#475569;">📞 ${matchedCus.phone}</div>`;
+              }
               cHtml += `</div>`;
+
+              if (matchedCus && (matchedCus.bankName || matchedCus.bankNo)) {
+                  cHtml += `<div style="margin-top:4px; padding-top:4px; border-top:1px solid #e2e8f0; color:#475569;"><span style="font-weight:bold;">🏦 Bank:</span> ${matchedCus.bankName || '-'} (${matchedCus.bankNo || '-'})</div>`;
+              }
 
               cusDiv.innerHTML = cHtml;
               clone.insertBefore(cusDiv, footerDiv); // timeDiv အစား footerDiv ကို အသုံးပြုသည်
@@ -3232,7 +3256,7 @@
         const footerDiv = document.createElement('div');
         footerDiv.style.display = 'flex';
         footerDiv.style.justifyContent = 'space-between';
-        footerDiv.style.alignItems = 'center';
+        footerDiv.style.alignItems = 'flex-end';
         footerDiv.style.marginTop = '12px';
         footerDiv.style.paddingTop = '12px';
         footerDiv.style.borderTop = '1px dashed #cbd5e1';
