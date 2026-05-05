@@ -291,11 +291,12 @@
                         <span id="customCusSelectLabel" class="truncate">— မထည့်ပါ —</span>
                         <span class="text-xs">▼</span>
                     </div>
-                    <div id="customCusDropdown" class="absolute z-50 w-full mt-1 bg-white border border-purple-200 rounded-lg shadow-xl hidden flex-col max-h-64">
-                        <div class="p-2 border-b border-purple-100 bg-purple-50 rounded-t-lg sticky top-0">
+                    <!-- 🌟 ပြင်ဆင်ထားသော Dropdown Menu (Scroll ဆွဲ၍ရသည်) 🌟 -->
+                    <div id="customCusDropdown" class="absolute z-[60] w-full mt-1 bg-white border border-purple-200 rounded-lg shadow-2xl hidden">
+                        <div class="p-2 border-b border-purple-100 bg-purple-50 rounded-t-lg">
                             <input type="text" id="cusSearchInput" class="w-full border border-purple-200 rounded p-1.5 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." oninput="filterCusDropdown()" onclick="event.stopPropagation()">
                         </div>
-                        <div id="customCusOptions" class="overflow-y-auto flex-1">
+                        <div id="customCusOptions" class="overflow-y-auto max-h-52 pb-1 rounded-b-lg">
                             <!-- Options များ ဒီနေရာကို ဝင်လာပါမည် -->
                         </div>
                     </div>
@@ -2637,7 +2638,7 @@
       try {
           await document.fonts?.ready;
           const lang = document.getElementById('saveLangSelect').value || 'orig';
-          const T = I18N[lang] || null;
+          const T = (typeof I18N !== 'undefined') ? I18N[lang] : null;
 
           let sourceId = 'box-thb2mmk';
           if (tx.type === 'MMK ➔ THB') sourceId = 'box-mmk2thb';
@@ -2708,7 +2709,7 @@
           brandTitle.style.fontWeight = '900'; 
           brandTitle.style.fontSize = '24px'; 
           brandTitle.style.color = '#0f172a';
-          brandTitle.textContent = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
+          brandTitle.textContent = (T && T.titleTop) ? T.titleTop : 'Thailand Guide - Supplier By Ye';
           
           brandHeader.appendChild(brandTitle);
           clone.insertBefore(brandHeader, clone.firstChild);
@@ -2806,11 +2807,31 @@
           
           const timeStr = `Date : ${formatterDate.format(dObj)} (${formatterTime.format(dObj).replace(/[\s\u202f]+/g, '')}) (${tzLabel})`;
           
-          const timeDiv = document.createElement('div');
-          timeDiv.style.textAlign = 'center'; timeDiv.style.marginTop = '12px'; timeDiv.style.paddingTop = '12px'; timeDiv.style.borderTop = '1px dashed #cbd5e1';
-          timeDiv.style.fontSize = '14px'; timeDiv.style.fontWeight = '900'; timeDiv.style.color = '#64748b'; timeDiv.style.paddingBottom = '8px';
-          timeDiv.textContent = timeStr;
-          clone.appendChild(timeDiv);
+          // 🌟 ဤနေရာတွင် ID နှင့် Date ကို တစ်တန်းတည်း (ဘယ်/ညာ) ပြသအောင် ပြင်ဆင်ထားသည် 🌟
+          const footerDiv = document.createElement('div');
+          footerDiv.style.display = 'flex';
+          footerDiv.style.justifyContent = 'space-between';
+          footerDiv.style.alignItems = 'center';
+          footerDiv.style.marginTop = '12px';
+          footerDiv.style.paddingTop = '12px';
+          footerDiv.style.borderTop = '1px dashed #cbd5e1';
+          footerDiv.style.paddingBottom = '8px';
+
+          const idSpan = document.createElement('span');
+          idSpan.style.fontSize = '14px'; 
+          idSpan.style.fontWeight = '900';
+          idSpan.style.color = '#334155';
+          idSpan.textContent = "ID: " + tx.id;
+
+          const timeSpan = document.createElement('span');
+          timeSpan.style.fontSize = '14px';
+          timeSpan.style.fontWeight = 'bold';
+          timeSpan.style.color = '#64748b';
+          timeSpan.textContent = timeStr;
+
+          footerDiv.appendChild(idSpan);
+          footerDiv.appendChild(timeSpan);
+          clone.appendChild(footerDiv);
 
           // 🌟 Customer Info ကို ပြေစာ၏ အောက်ခြေ (Date အပေါ်) သို့ ရွှေ့ခြင်း (Reprint) 🌟
           if (tx.customerName && tx.customerName !== "—") {
@@ -2829,7 +2850,7 @@
               cHtml += `</div>`;
 
               cusDiv.innerHTML = cHtml;
-              clone.insertBefore(cusDiv, timeDiv);
+              clone.insertBefore(cusDiv, footerDiv); // timeDiv အစား footerDiv ကို အသုံးပြုသည်
           }
 
           clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
@@ -2840,7 +2861,7 @@
           const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
           document.body.removeChild(clone);
 
-          const margin=18; 
+          const margin=18; // 🌟 နေရာလွတ်မူလအတိုင်းပြန်ထားသည်
           const out=document.createElement('canvas'); 
           out.width = canvas.width + margin*2; 
           out.height = canvas.height + margin*2; 
@@ -2850,11 +2871,7 @@
           
           ctx.drawImage(canvas, margin, margin);
 
-          ctx.fillStyle = '#64748b'; 
-          ctx.font = 'bold 22px system-ui, sans-serif'; 
-          ctx.textAlign = 'center'; 
-          ctx.textBaseline = 'top';
-          ctx.fillText("ID: " + tx.id, out.width / 2, 8);
+          // 🌟 ဤနေရာတွင် ID ကို Canvas အပေါ်မှဆွဲခြင်း (fillText) ကို ဖယ်ရှားလိုက်ပါသည် 🌟
 
           const finalFileName = 'Reprint_' + tx.id + '.png';
 
@@ -3069,7 +3086,9 @@
         return;
     }
     
-    const T=I18N[lang]; if(!T) return;
+    const T = (typeof I18N !== 'undefined') ? I18N[lang] : null; 
+    if(!T) return;
+    
     const h2=clone.querySelector('h2'); const subTop=clone.querySelector('p.sub');
     if(clone.id==='box-thb2mmk'){ if(h2) h2.textContent=T.h_thb2mmk; if(subTop) subTop.textContent=T.sub_thb2mmk; }
     else if(clone.id==='box-mmk2thb'){ if(h2) h2.textContent=T.h_mmk2thb; if(subTop) subTop.textContent=T.sub_mmk2thb; }
@@ -3115,7 +3134,8 @@
         recalc(); recalcVND();
         
         const lang = document.getElementById('saveLangSelect').value || 'orig';
-        const T = I18N[lang] || null; fmt = (fmt === 'jpg') ? 'jpg' : 'png';
+        const T = (typeof I18N !== 'undefined') ? I18N[lang] : null; 
+        fmt = (fmt === 'jpg') ? 'jpg' : 'png';
         const original=document.getElementById(sectionId); 
         const clone=original.cloneNode(true);
         
@@ -3201,11 +3221,38 @@
           }
         }
         
-        const timeDiv = document.createElement('div');
-        timeDiv.style.textAlign = 'center'; timeDiv.style.marginTop = '12px'; timeDiv.style.paddingTop = '12px'; timeDiv.style.borderTop = '1px dashed #cbd5e1';
-        timeDiv.style.fontSize = '14px'; timeDiv.style.fontWeight = '900'; timeDiv.style.color = '#64748b'; timeDiv.style.paddingBottom = '8px';
-        timeDiv.textContent = getExportTimeStr(lang);
-        clone.appendChild(timeDiv);
+        // 🌟 ဤနေရာတွင် ID ကို ကြိုတင် Generate လုပ်ပါသည် 🌟
+        const dDate = new Date();
+        const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
+        const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
+
+        const timeStr = getExportTimeStr(lang);
+        
+        // 🌟 ဤနေရာတွင် ID နှင့် Date ကို တစ်တန်းတည်း (ဘယ်/ညာ) ပြသအောင် ပြင်ဆင်ထားသည် 🌟
+        const footerDiv = document.createElement('div');
+        footerDiv.style.display = 'flex';
+        footerDiv.style.justifyContent = 'space-between';
+        footerDiv.style.alignItems = 'center';
+        footerDiv.style.marginTop = '12px';
+        footerDiv.style.paddingTop = '12px';
+        footerDiv.style.borderTop = '1px dashed #cbd5e1';
+        footerDiv.style.paddingBottom = '8px';
+
+        const idSpan = document.createElement('span');
+        idSpan.style.fontSize = '14px'; 
+        idSpan.style.fontWeight = '900';
+        idSpan.style.color = '#334155';
+        idSpan.textContent = "ID: " + invId;
+
+        const timeSpan = document.createElement('span');
+        timeSpan.style.fontSize = '14px';
+        timeSpan.style.fontWeight = 'bold';
+        timeSpan.style.color = '#64748b';
+        timeSpan.textContent = timeStr;
+
+        footerDiv.appendChild(idSpan);
+        footerDiv.appendChild(timeSpan);
+        clone.appendChild(footerDiv);
 
         const brandHeader = document.createElement('div');
         brandHeader.style.textAlign = 'center'; 
@@ -3217,7 +3264,7 @@
         brandTitle.style.fontWeight = '900'; 
         brandTitle.style.fontSize = '24px'; 
         brandTitle.style.color = '#0f172a';
-        brandTitle.textContent = (lang==='en' || lang==='th') ? (I18N[lang].titleTop) : 'Thailand Guide - Supplier By Ye';
+        brandTitle.textContent = (T && T.titleTop) ? T.titleTop : 'Thailand Guide - Supplier By Ye';
         
         brandHeader.appendChild(brandTitle);
         clone.insertBefore(brandHeader, clone.firstChild);
@@ -3252,7 +3299,7 @@
             }
 
             cusDiv.innerHTML = cHtml;
-            clone.insertBefore(cusDiv, timeDiv);
+            clone.insertBefore(cusDiv, footerDiv); // timeDiv အစား footerDiv ကို အသုံးပြုသည်
         }
         
         clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
@@ -3263,7 +3310,7 @@
         const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
         document.body.removeChild(clone);
         
-        const margin=18; 
+        const margin=18; // 🌟 နေရာလွတ်မူလအတိုင်းပြန်ထားသည်
         const out=document.createElement('canvas'); 
         out.width = canvas.width + margin*2; 
         out.height = canvas.height + margin*2;
@@ -3273,15 +3320,7 @@
         
         ctx.drawImage(canvas, margin, margin);
 
-        const dDate = new Date();
-        const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
-        const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
-        
-        ctx.fillStyle = '#64748b'; 
-        ctx.font = 'bold 22px system-ui, sans-serif'; 
-        ctx.textAlign = 'center'; 
-        ctx.textBaseline = 'top';
-        ctx.fillText("ID: " + invId, out.width / 2, 8);
+        // 🌟 ဤနေရာတွင် ID ကို Canvas အပေါ်မှဆွဲခြင်း (fillText) ကို ဖယ်ရှားလိုက်ပါသည် 🌟
 
         let recType = ""; let savedRate = ""; 
         if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
