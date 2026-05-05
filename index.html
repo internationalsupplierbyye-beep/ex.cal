@@ -2518,12 +2518,80 @@
       }
   }
 
+  // --- 🌟 ၅ ရက်ကျော်သော Pending များကို Auto Cancel လုပ်ပေးမည့် Function 🌟
+  async function autoCancelOldPendingLots(dataArray) {
+      const db = firebase.firestore();
+      const batch = db.batch();
+      const now = new Date().getTime();
+      let batchCount = 0;
+      let cancelledItems = [];
+
+      dataArray.forEach(d => {
+          if (d.status === 'Pending' && d.timestamp) {
+              const recTime = new Date(d.timestamp).getTime();
+              const diffDays = (now - recTime) / (1000 * 60 * 60 * 24); // ရက်အရေအတွက် တွက်ခြင်း
+              
+              if (diffDays >= 5) { // 🌟 ၅ ရက် နှင့် ၅ ရက်ကျော်လျှင်
+                  const docRef = db.collection("exchange_history").doc(d.id);
+                  batch.update(docRef, { status: 'Auto Cancel' }); // 🌟 Auto Cancel သို့ပြောင်းသည်
+                  d.status = 'Auto Cancel'; 
+                  batchCount++;
+                  cancelledItems.push(d); // မှတ်ထားပြီး Telegram ကို ပို့ရန်
+              }
+          }
+      });
+
+      if (batchCount > 0) {
+          try {
+              await batch.commit(); // Firebase ပေါ်သို့ တပြိုင်နက်တည်း Update လုပ်ခြင်း
+              console.log(`Auto-cancelled ${batchCount} records older than 5 days.`);
+              
+              // 🌟 Telegram သို့ Auto Cancel Alert များပို့ရန် 🌟
+              cancelledItems.forEach(tx => {
+                  let alertMsg = `🤖❌ <b>Auto Cancel (၅ ရက်ပြည့်သွားသဖြင့်)</b>\n\n`;
+                  alertMsg += `ID: <code>${tx.id}</code>\n`;
+                  
+                  if (tx.customerName && tx.customerName !== "—") {
+                      alertMsg += `Customer: <b>${tx.customerName}</b>\n`;
+                      const matchedCus = Object.values(FIREBASE_CUSTOMERS).find(c => {
+                          let fullName = c.name + (c.social ? ` (${c.social})` : '');
+                          return fullName === tx.customerName;
+                      });
+                      if (matchedCus && matchedCus.phone) {
+                          alertMsg += `Phone: <code>${matchedCus.phone}</code>\n`;
+                      }
+                  }
+                  
+                  alertMsg += `အမျိုးအစား: <b>${tx.type}</b>\n`;
+                  alertMsg += `ပမာဏ: <code>${tx.inAmt}</code> ➔ <code>${tx.outAmt}</code>\n`;
+                  alertMsg += `နည်းလမ်း: <b>${tx.method || "-"}</b>\n`;
+                  alertMsg += `Status အသစ်: <b>Auto Cancel</b>\n`;
+                  
+                  let mappedDeviceName = FIREBASE_DEVICE_NAMES[tx.deviceId] || tx.deviceId || "Unknown";
+                  alertMsg += `Device: <b>${mappedDeviceName}</b>`;
+                  
+                  sendTelegramAlert(alertMsg, TELEGRAM_CANCEL_TOPIC_ID);
+              });
+              
+          } catch(e) {
+              console.error("Auto cancel error:", e);
+          }
+      }
+  }
+
   // --- Admin History & Status Update Logic ---
-  window.updateTxStatus = async function(invId, newStatus) {
+  window.updateTxStatus = async function(invId, newStatus, selectEl) {
       const index = allLoadedHistory.findIndex(x => x.id === invId);
       if(index === -1) return;
       const tx = allLoadedHistory[index];
       if(tx.status === newStatus) return;
+
+      // 🌟 Staff က Cancelled ပြောင်းလျှင် Report Admin ပြပြီး မူလအတိုင်း ပြန်ထားမည် 🌟
+      if (CURRENT_ROLE === 'staff' && newStatus === 'Cancelled') {
+          alert("Report Admin");
+          if (selectEl) selectEl.value = tx.status;
+          return;
+      }
 
       try {
           await firebase.firestore().collection("exchange_history").doc(invId).update({ status: newStatus });
@@ -2605,6 +2673,48 @@
           renderHistoryRows(allLoadedHistory);
       } catch(e) {
           console.error(e); alert("ပမာဏ ပြောင်းလဲခြင်း မအောင်မြင်ပါ။");
+      }
+  }
+
+  // 🌟 ပမာဏ မှားယွင်းမှုအတွက် ပြန်ပြင်သည့် Function 🌟
+  window.editTxAmounts = async function(invId) {
+      const index = allLoadedHistory.findIndex(x => x.id === invId);
+      if(index === -1) return;
+      const tx = allLoadedHistory[index];
+
+      // အဝင်ငွေ ပြင်ရန်
+      let newIn = prompt(`လွှဲငွေ (In Amount) ကို ပြင်ပါ\nဥပမာ: 1000 THB (သို့) 100000 MMK`, tx.inAmt);
+      if(newIn === null) return; // Cancel နှိပ်လျှင် ရပ်မည်
+      
+      // အထွက်ငွေ ပြင်ရန်
+      let newOut = prompt(`ရငွေ (Out Amount) ကို ပြင်ပါ\nဥပမာ: 100000 MMK (သို့) 1000 THB`, tx.outAmt);
+      if(newOut === null) return; // Cancel နှိပ်လျှင် ရပ်မည်
+
+      newIn = newIn.trim();
+      newOut = newOut.trim();
+
+      if(newIn === "" || newOut === "") {
+          alert("ပမာဏ အလွတ်ထား၍ မရပါ။"); return;
+      }
+
+      try {
+          await firebase.firestore().collection("exchange_history").doc(invId).update({ 
+              inAmt: newIn,
+              outAmt: newOut
+          });
+          
+          allLoadedHistory[index].inAmt = newIn;
+          allLoadedHistory[index].outAmt = newOut;
+          
+          renderHistoryRows(allLoadedHistory); // Table ကို Refresh လုပ်မည်
+          
+          if (CURRENT_ROLE === 'admin') {
+              updateDashboard(allLoadedHistory); // Dashboard Profit များကို အသစ်ပြန်တွက်ပေးမည်
+          }
+          
+          alert("ပမာဏ အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
+      } catch(e) {
+          console.error(e); alert("ပမာဏ ပြင်ဆင်ခြင်း မအောင်မြင်ပါ။");
       }
   }
   
@@ -2699,7 +2809,7 @@
               rateP.innerHTML += '<br>';
           }
 
-         const brandHeader = document.createElement('div');
+          const brandHeader = document.createElement('div');
           brandHeader.style.textAlign = 'center'; 
           brandHeader.style.paddingBottom = '15px'; 
           brandHeader.style.marginBottom = '15px'; 
@@ -2828,13 +2938,13 @@
           footerDiv.style.paddingBottom = '8px';
 
           const idSpan = document.createElement('span');
-          idSpan.style.fontSize = '14px'; 
+          idSpan.style.fontSize = '13px'; // 🌟 Date နဲ့ Size တူအောင် ပြင်ထားသည်
           idSpan.style.fontWeight = '900';
           idSpan.style.color = '#334155';
           idSpan.textContent = "ID: " + tx.id;
 
           const timeSpan = document.createElement('span');
-          timeSpan.style.fontSize = '14px';
+          timeSpan.style.fontSize = '13px'; // 🌟 ID နဲ့ Size တူအောင် ပြင်ထားသည်
           timeSpan.style.fontWeight = 'bold';
           timeSpan.style.color = '#64748b';
           timeSpan.textContent = timeStr;
@@ -2981,17 +3091,24 @@
               <option value="MMK ➔ VND" ${d.type === 'MMK ➔ VND' ? 'selected' : ''}>MMK ➔ VND</option>
             </select>
           `;
+          
+          // 🌟 Amount ပြင်ဆင်ခွင့် (✏️) ကို Admin သာမြင်ရမည်၊ ⇄ ကို နှစ်ဦးလုံးမြင်ရမည် 🌟
+          let editBtn = CURRENT_ROLE === 'admin' ? `<button onclick="window.editTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-green-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏ ပြင်မည်">✏️</button>` : '';
+
           amountHtml = `
             <div class="flex items-center gap-2">
                 <span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>
+                ${editBtn}
                 <button onclick="window.swapTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏရှေ့နောက်လှည့်မည်">⇄</button>
             </div>
           `;
+          
           statusHtml = `
-            <select onchange="window.updateTxStatus('${d.id}', this.value)" class="border rounded px-2 py-1 text-xs font-bold ${statusColor}">
+            <select onchange="window.updateTxStatus('${d.id}', this.value, this)" class="border rounded px-2 py-1 text-xs font-bold ${statusColor}">
                 <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
                 <option value="Success" ${status === 'Success' ? 'selected' : ''}>Success</option>
                 <option value="Cancelled" ${status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                ${status === 'Auto Cancel' ? `<option value="Auto Cancel" selected>Auto Cancel</option>` : ''}
             </select>
           `;
         }
@@ -3038,6 +3155,10 @@
       const snap = await firebase.firestore().collection("exchange_history").orderBy("timestamp", "desc").limit(1500).get();
       if(snap.empty) { list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500">မှတ်တမ်းမရှိသေးပါ</td></tr>'; updateDashboard([]); return; }
       allLoadedHistory = []; snap.forEach(doc => allLoadedHistory.push(doc.data()));
+      
+      // 🌟 History ဆွဲတင်ချိန်တိုင်း ၅ ရက်ကျော် Pending များကို Auto Cancel လုပ်မည် 🌟
+      await autoCancelOldPendingLots(allLoadedHistory);
+
       renderHistoryRows(allLoadedHistory);
     } catch(e) { list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-red-500">Error loading history</td></tr>'; }
   }
@@ -3263,13 +3384,13 @@
         footerDiv.style.paddingBottom = '8px';
 
         const idSpan = document.createElement('span');
-        idSpan.style.fontSize = '14px'; 
+        idSpan.style.fontSize = '13px'; // 🌟 Date နဲ့ Size တူအောင် ပြင်ထားသည်
         idSpan.style.fontWeight = '900';
         idSpan.style.color = '#334155';
         idSpan.textContent = "ID: " + invId;
 
         const timeSpan = document.createElement('span');
-        timeSpan.style.fontSize = '14px';
+        timeSpan.style.fontSize = '13px'; // 🌟 ID နဲ့ Size တူအောင် ပြင်ထားသည်
         timeSpan.style.fontWeight = 'bold';
         timeSpan.style.color = '#64748b';
         timeSpan.textContent = timeStr;
