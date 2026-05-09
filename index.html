@@ -294,7 +294,7 @@
                             <input type="text" id="cusSearchInput" class="w-full border border-purple-200 rounded p-1.5 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." oninput="filterCusDropdown()" onclick="event.stopPropagation()">
                         </div>
                         <div id="customCusOptions" class="overflow-y-auto max-h-52 pb-1 rounded-b-lg">
-                        </div>
+                            </div>
                     </div>
                 </div>
                 <button onclick="document.getElementById('quickCusModal').style.display='flex'" class="btn bg-purple-600 hover:bg-purple-700 !py-1 !px-3 text-xs whitespace-nowrap" data-i18n="btn_quick_add">➕ အမြန်ထည့်မည်</button>
@@ -770,10 +770,10 @@
   // 🌟 စကားဝှက်များကို ဒီနေရာမှာ သတ်မှတ်ပါ
   const ADMIN_PASSWORD_1 = "158062"; 
   const ADMIN_PASSWORD_2 = "၁၅၈၀၆၂"; 
+  const STAFF_PASSWORD = "staff"; 
   let CURRENT_ROLE = null; 
 
   // --- Global States ---
-  // 🌟 Code အရှည်ကြီးမဖြစ်စေရန် မူလ Data များကို ဖယ်ရှားပြီး အလွတ်ထားပေးထားပါသည် 🌟
   const DEFAULT_BANK_INFO = {};
   const DEFAULT_BANK_ORDER = [];
   const DEFAULT_QR_FILES = [];
@@ -1636,7 +1636,14 @@
 
   window.updateTxStatus = async function(invId, newStatus, selectEl) {
       const index = allLoadedHistory.findIndex(x => x.id === invId); if(index === -1) return; const tx = allLoadedHistory[index]; if(tx.status === newStatus) return;
-      if (CURRENT_ROLE === 'staff' && newStatus === 'Cancelled') { alert("Report Admin"); if (selectEl) selectEl.value = tx.status; return; }
+      
+      // 🌟 Staff က Cancelled ပြောင်းလျှင် Alert ပြပြီး မူလအတိုင်း ပြန်ထားမည် 🌟
+      if (CURRENT_ROLE === 'staff' && newStatus === 'Cancelled') { 
+          alert("Staff များအနေဖြင့် Cancel သို့ ပြောင်းလဲခွင့် မရှိပါ။"); 
+          if (selectEl) selectEl.value = tx.status; 
+          return; 
+      }
+      
       try {
           await firebase.firestore().collection("exchange_history").doc(invId).update({ status: newStatus }); allLoadedHistory[index].status = newStatus; renderHistoryRows(allLoadedHistory);
           let statusEmoji = newStatus === 'Success' ? '✅' : (newStatus === 'Cancelled' ? '❌' : '⏳'); let alertMsg = `${statusEmoji} <b>မှတ်တမ်း Status ပြောင်းလဲမှု</b>\n\nID: <code>${invId}</code>\n`;
@@ -1652,9 +1659,34 @@
       try { await firebase.firestore().collection("exchange_history").doc(invId).update({ type: newType }); allLoadedHistory[index].type = newType; renderHistoryRows(allLoadedHistory); } catch(e) { alert("အမျိုးအစား ပြောင်းလဲခြင်း မအောင်မြင်ပါ။"); }
   }
 
+  // 🌟 ပမာဏကို Swap လုပ်လိုက်လျှင် အမျိုးအစား(Type)ကိုပါ အလိုအလျောက် Auto Swap လုပ်ပေးမည် 🌟
   window.swapTxAmounts = async function(invId) {
-      const index = allLoadedHistory.findIndex(x => x.id === invId); if(index === -1) return; const tx = allLoadedHistory[index]; const newInAmt = tx.outAmt; const newOutAmt = tx.inAmt;
-      try { await firebase.firestore().collection("exchange_history").doc(invId).update({ inAmt: newInAmt, outAmt: newOutAmt }); allLoadedHistory[index].inAmt = newInAmt; allLoadedHistory[index].outAmt = newOutAmt; renderHistoryRows(allLoadedHistory); } catch(e) { alert("ပမာဏ ပြောင်းလဲခြင်း မအောင်မြင်ပါ။"); }
+      const index = allLoadedHistory.findIndex(x => x.id === invId); if(index === -1) return; 
+      const tx = allLoadedHistory[index]; 
+      
+      const newInAmt = tx.outAmt; 
+      const newOutAmt = tx.inAmt;
+      
+      // Auto Swap Type Logic
+      let newType = tx.type;
+      if (tx.type === "THB ➔ MMK") newType = "MMK ➔ THB";
+      else if (tx.type === "MMK ➔ THB") newType = "THB ➔ MMK";
+      else if (tx.type === "VND ➔ MMK") newType = "MMK ➔ VND";
+      else if (tx.type === "MMK ➔ VND") newType = "VND ➔ MMK";
+
+      try { 
+          await firebase.firestore().collection("exchange_history").doc(invId).update({ 
+              inAmt: newInAmt, 
+              outAmt: newOutAmt,
+              type: newType
+          }); 
+          
+          allLoadedHistory[index].inAmt = newInAmt; 
+          allLoadedHistory[index].outAmt = newOutAmt; 
+          allLoadedHistory[index].type = newType;
+          
+          renderHistoryRows(allLoadedHistory); 
+      } catch(e) { alert("ပမာဏ ပြောင်းလဲခြင်း မအောင်မြင်ပါ။"); }
   }
 
   window.editTxAmounts = async function(invId) {
@@ -1671,7 +1703,6 @@
       try { await firebase.firestore().collection("exchange_history").doc(invId).delete(); const index = allLoadedHistory.findIndex(x => x.id === invId); if(index !== -1) { allLoadedHistory.splice(index, 1); } renderHistoryRows(allLoadedHistory); } catch(e) { alert("မှတ်တမ်းဖျက်ခြင်း မအောင်မြင်ပါ။"); }
   }
 
-  // 🌟 Watermark ထည့်သွင်းထားသော Reprint (Opacity 0.04) 🌟
   window.reprintReceipt = async function(invId, btnElement = null) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
@@ -1724,6 +1755,7 @@
               rateP.textContent = histRateText;
               rateP.innerHTML += '<br>';
           }
+
           const brandHeader = document.createElement('div'); brandHeader.style.textAlign = 'center'; brandHeader.style.paddingBottom = '15px'; brandHeader.style.marginBottom = '15px'; brandHeader.style.borderBottom = '2px dashed #cbd5e1';
           const brandTitle = document.createElement('div'); brandTitle.style.fontWeight = '900'; brandTitle.style.fontSize = '24px'; brandTitle.style.color = '#0f172a'; brandTitle.textContent = (T && T.titleTop) ? T.titleTop : 'Thailand Guide - Supplier By Ye';
           const reprintBadge = document.createElement('div'); reprintBadge.textContent = "[ REPRINT ]"; reprintBadge.style.color = '#dc2626'; reprintBadge.style.fontSize = '14px'; reprintBadge.style.fontWeight = '900'; reprintBadge.style.marginTop = '6px'; reprintBadge.style.letterSpacing = '2px';
@@ -1756,7 +1788,7 @@
           const watermarkLogo = document.createElement('img');
           watermarkLogo.src = 'assets/logo/main_logo.png';
           watermarkLogo.style.width = '150px';
-          watermarkLogo.style.opacity = '0.04'; // 🌟 လျှော့ချထားသည် 🌟
+          watermarkLogo.style.opacity = '0.08';
           watermarkLogo.style.margin = '0 auto 10px auto';
           watermarkLogo.style.display = 'block';
 
@@ -1765,7 +1797,7 @@
           watermarkId.style.fontSize = '36px';
           watermarkId.style.fontWeight = '900';
           watermarkId.style.color = '#000';
-          watermarkId.style.opacity = '0.04'; // 🌟 လျှော့ချထားသည် 🌟
+          watermarkId.style.opacity = '0.08';
           watermarkId.style.letterSpacing = '2px';
 
           watermarkContainer.appendChild(watermarkLogo);
@@ -1789,7 +1821,7 @@
       } catch(e) { alert("Error: " + e.message); } finally { if (btnElement) { btnElement.innerHTML = origText; btnElement.disabled = false; } }
   }
 
-  // 🌟 Staff View ကန့်သတ်ချက်များပါသော Render History 🌟
+  // 🌟 Admin နှင့် Staff ခွဲခြားထားသော ဇယား (Table) 🌟
   function renderHistoryRows(dataArray) {
       const list = document.getElementById('adminHistoryList');
       const loadMoreBtn = document.getElementById('loadMoreContainer');
@@ -1808,15 +1840,19 @@
         let amountHtml = `<span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>`;
         let actionHtml = `<button onclick="reprintReceipt('${d.id}', this)" class="btn bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 !py-1 !px-2 !text-xs whitespace-nowrap mr-1" title="ပြေစာပြန်ထုတ်မည်">🖨️</button>`;
 
-        // 🌟 Admin သာလျှင် Edit, Swap, Change Type, Change Status, Delete မြင်ရမည် 🌟
-        if(CURRENT_ROLE === 'admin') {
+        // 🌟 Admin နှင့် Staff မြင်ရမည့် အရာများ 🌟
+        if(CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
            typeHtml = `<select onchange="window.updateTxType('${d.id}', this.value)" class="border rounded px-1 py-1 text-xs font-bold bg-white text-blue-700"><option value="THB ➔ MMK" ${d.type === 'THB ➔ MMK' ? 'selected' : ''}>THB ➔ MMK</option><option value="MMK ➔ THB" ${d.type === 'MMK ➔ THB' ? 'selected' : ''}>MMK ➔ THB</option><option value="VND ➔ MMK" ${d.type === 'VND ➔ MMK' ? 'selected' : ''}>VND ➔ MMK</option><option value="MMK ➔ VND" ${d.type === 'MMK ➔ VND' ? 'selected' : ''}>MMK ➔ VND</option></select>`;
           
-          amountHtml = `<div class="flex items-center gap-2"><span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span><button onclick="window.editTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-green-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏ ပြင်မည်">✏️</button><button onclick="window.swapTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏရှေ့နောက်လှည့်မည်">⇄</button></div>`;
+          let editBtn = CURRENT_ROLE === 'admin' ? `<button onclick="window.editTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-green-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏ ပြင်မည်">✏️</button>` : '';
+
+          amountHtml = `<div class="flex items-center gap-2"><span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>${editBtn}<button onclick="window.swapTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏရှေ့နောက်လှည့်မည်">⇄</button></div>`;
           
           statusHtml = `<select onchange="window.updateTxStatus('${d.id}', this.value, this)" class="border rounded px-2 py-1 text-xs font-bold ${statusColor}"><option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option><option value="Success" ${status === 'Success' ? 'selected' : ''}>Success</option><option value="Cancelled" ${status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>${status === 'Auto Cancel' ? `<option value="Auto Cancel" selected>Auto Cancel</option>` : ''}</select>`;
-
-          actionHtml += `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
+        }
+        
+        if(CURRENT_ROLE === 'admin') {
+            actionHtml += `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
         }
         
         html += `<tr class="border-b hover:bg-gray-50"><td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${d.id}</td><td class="p-3 text-xs">${dateStr}</td><td class="p-3">${cusHtml}</td><td class="p-3 font-bold text-indigo-700 text-xs">${mappedDeviceName}</td><td class="p-3 text-xs font-bold text-purple-600">${displayRate}</td><td class="p-3">${typeHtml}</td><td class="p-3">${amountHtml}</td><td class="p-3 text-center">${statusHtml}</td><td class="p-3 text-center">${actionHtml}</td><td class="p-3 text-xs"><div class="max-w-[60px] truncate" title="${method}">${method}</div></td></tr>`;
@@ -1827,7 +1863,6 @@
       if(CURRENT_ROLE === 'admin') updateDashboard(dataArray);
   }
 
-  // 🌟 Load Limit အသစ် (150) နှင့် Date Search အသစ် 🌟
   async function loadHistory() {
     const list = document.getElementById('adminHistoryList'); list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>'; document.getElementById('searchInvId').value = '';
     CURRENT_DISPLAY_COUNT = 150; 
@@ -1933,7 +1968,6 @@
     const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = customTexts.thanks; }
   }
 
-  // 🌟 Watermark ထည့်သွင်းထားသော Save / Share (Opacity 0.04) 🌟
   async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
     let origText = ''; if (btnElement) { origText = btnElement.innerHTML; btnElement.innerHTML = '⚡ Processing...'; btnElement.disabled = true; await new Promise(r => setTimeout(r, 50)); }
 
@@ -2025,7 +2059,7 @@
         const watermarkLogo = document.createElement('img');
         watermarkLogo.src = 'assets/logo/main_logo.png';
         watermarkLogo.style.width = '150px';
-        watermarkLogo.style.opacity = '0.04'; // 🌟 လျှော့ချထားသည် 🌟
+        watermarkLogo.style.opacity = '0.08';
         watermarkLogo.style.margin = '0 auto 10px auto';
         watermarkLogo.style.display = 'block';
 
@@ -2034,7 +2068,7 @@
         watermarkId.style.fontSize = '36px';
         watermarkId.style.fontWeight = '900';
         watermarkId.style.color = '#000';
-        watermarkId.style.opacity = '0.04'; // 🌟 လျှော့ချထားသည် 🌟
+        watermarkId.style.opacity = '0.08';
         watermarkId.style.letterSpacing = '2px';
 
         watermarkContainer.appendChild(watermarkLogo);
