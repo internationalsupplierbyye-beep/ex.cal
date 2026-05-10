@@ -740,7 +740,7 @@
           </div>
           <div class="flex justify-between items-center mb-2">
               <h3 class="font-bold text-sm text-gray-600">📋 Customer စာရင်းများ</h3>
-              <input type="text" id="searchCus" class="border rounded px-2 py-1 text-xs" placeholder="အမည်ရှာရန်..." oninput="renderCustomerAdminList()">
+              <input type="text" id="searchCus" class="border rounded px-2 py-1 text-xs w-40" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." oninput="renderCustomerAdminList()">
           </div>
           <div id="adminCustomerList" class="overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1"></div>
       </div>
@@ -2237,12 +2237,45 @@
       } catch(e) { alert("Error deleting."); }
   }
 
+  // 🌟 အသေးစိတ် ဖွင့်/ပိတ် ရန် Function အသစ် 🌟
+  window.toggleCusDetails = function(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('hidden');
+  };
+
   function renderCustomerAdminList() {
       const listDiv = document.getElementById('adminCustomerList'); listDiv.innerHTML = '';
       const search = (document.getElementById('searchCus')?.value || '').toLowerCase();
       
       if(FIREBASE_CUSTOMER_ORDER.length === 0) { listDiv.innerHTML = '<p class="text-xs text-gray-400 p-2 text-center">Customer မရှိသေးပါ</p>'; return; }
       
+      // 🌟 Customer တစ်ယောက်ချင်းစီ၏ စုစုပေါင်းပမာဏ နှင့် အသေးစိတ်ကို စုဆောင်းခြင်း 🌟
+      let customerData = {};
+      const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
+
+      if (typeof allLoadedHistory !== 'undefined') {
+          allLoadedHistory.forEach(tx => {
+              if (tx.status === 'Success' && tx.customerName && tx.customerName !== "—") {
+                  if (!customerData[tx.customerName]) {
+                      customerData[tx.customerName] = {
+                          txs: [], // အသေးစိတ်မှတ်ရန်
+                          totalThb: 0,
+                          totalMmk: 0,
+                          totalVnd: 0
+                      };
+                  }
+                  const amtStr = tx.outAmt;
+                  customerData[tx.customerName].txs.push(amtStr);
+
+                  // ပေါင်းထည့်ရန် ဂဏန်းသီးသန့်ထုတ်ခြင်း
+                  let num = getCleanNum(amtStr);
+                  if (amtStr.includes('THB')) customerData[tx.customerName].totalThb += num;
+                  else if (amtStr.includes('MMK')) customerData[tx.customerName].totalMmk += num;
+                  else if (amtStr.includes('VND')) customerData[tx.customerName].totalVnd += num;
+              }
+          });
+      }
+
       FIREBASE_CUSTOMER_ORDER.forEach((id, index) => {
           const c = FIREBASE_CUSTOMERS[id];
           if(!c) return;
@@ -2253,12 +2286,44 @@
           if(c.bankName) infoHtml += `🏦 ${c.bankName} (${c.bankNo}) &nbsp;`;
           infoHtml += `</div>`;
 
+          let fullName = c.name + (c.social ? ` (${c.social})` : '');
+          let data = customerData[fullName];
+          let txHtml = '';
+
+          if (data && data.txs.length > 0) {
+              // 🌟 စုစုပေါင်း ပြမည့်အပိုင်း (နှိပ်လို့ရသည်) 🌟
+              let totalsHtml = `<div class="flex gap-1.5 mt-1.5 overflow-x-auto pb-1 items-center cursor-pointer select-none" onclick="window.toggleCusDetails('details-${id}')" style="max-width: 100%;" title="အသေးစိတ်ကြည့်ရန် နှိပ်ပါ">`;
+              
+              totalsHtml += `<span class="bg-purple-100 border border-purple-300 text-purple-800 px-1.5 py-0.5 rounded text-[10px] font-black whitespace-nowrap shadow-sm hover:bg-purple-200 transition-colors">အောင်မြင်: ${data.txs.length} ကြိမ် ▼</span>`;
+
+              if (data.totalThb > 0) totalsHtml += `<span class="border border-blue-200 bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-black whitespace-nowrap shadow-sm">🇹🇭 ${data.totalThb.toLocaleString('en-US')} THB</span>`;
+              if (data.totalMmk > 0) totalsHtml += `<span class="border border-green-200 bg-green-50 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-black whitespace-nowrap shadow-sm">🇲🇲 ${data.totalMmk.toLocaleString('en-US')} MMK</span>`;
+              if (data.totalVnd > 0) totalsHtml += `<span class="border border-orange-200 bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded text-[10px] font-black whitespace-nowrap shadow-sm">🇻🇳 ${data.totalVnd.toLocaleString('en-US')} VND</span>`;
+              
+              totalsHtml += `</div>`;
+
+              // 🌟 အသေးစိတ် တစ်ခုချင်းစီ ပြမည့်အပိုင်း (မူလက ဖျောက်ထားသည်) 🌟
+              let detailsHtml = `<div id="details-${id}" class="hidden flex gap-1.5 mt-1 overflow-x-auto pb-1 items-center pl-2 border-l-2 border-purple-300 bg-gray-50/50 p-1 rounded-r" style="max-width: 100%;">`;
+              data.txs.forEach(amt => {
+                  let colorClass = 'bg-gray-50 border-gray-200 text-gray-700';
+                  if (amt.includes('THB')) colorClass = 'bg-blue-50 border-blue-200 text-blue-700';
+                  else if (amt.includes('MMK')) colorClass = 'bg-green-50 border-green-200 text-green-700';
+                  else if (amt.includes('VND')) colorClass = 'bg-orange-50 border-orange-200 text-orange-700';
+                  
+                  detailsHtml += `<span class="border px-1.5 py-0.5 rounded text-[10px] font-black whitespace-nowrap ${colorClass}">${amt}</span>`;
+              });
+              detailsHtml += `</div>`;
+
+              txHtml = totalsHtml + detailsHtml;
+          }
+
           listDiv.innerHTML += `<div class="list-item bg-white flex justify-between items-center p-2 mb-1.5 border rounded" draggable="true" data-index="${index}" data-type="customer" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
-              <div class="flex items-center truncate mr-2 w-full">
-                  <span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span>
+              <div class="flex items-center mr-2 w-full" style="min-width: 0;">
+                  <span class="drag-handle flex-shrink-0" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span>
                   <div class="truncate w-full">
                       <div class="font-bold text-xs text-purple-800">${c.name} ${c.social ? ` <span class="text-[10px] font-normal text-blue-500">(${c.social})</span>` : ''}</div>
                       ${infoHtml}
+                      ${txHtml}
                   </div>
               </div>
               <div class="action-btns flex-shrink-0 ml-1">
