@@ -289,11 +289,11 @@
                         <span id="customCusSelectLabel" class="truncate">— မထည့်ပါ —</span>
                         <span class="text-xs">▼</span>
                     </div>
-                    <div id="customCusDropdown" class="absolute z-[60] w-full mt-1 bg-white border border-purple-200 rounded-lg shadow-2xl hidden">
-                        <div class="p-2 border-b border-purple-100 bg-purple-50 rounded-t-lg">
-                            <input type="text" id="cusSearchInput" class="w-full border border-purple-200 rounded p-1.5 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." oninput="filterCusDropdown()" onclick="event.stopPropagation()">
+                    <div id="customCusDropdown" class="absolute z-[60] w-full min-w-[280px] mt-1 bg-white border border-purple-300 rounded-xl shadow-2xl hidden">
+                        <div class="p-3 border-b border-purple-200 bg-purple-50 rounded-t-xl">
+                            <input type="text" id="cusSearchInput" class="w-full border border-purple-300 rounded-lg p-2.5 text-base font-bold outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-600" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." oninput="filterCusDropdown()" onclick="event.stopPropagation()">
                         </div>
-                        <div id="customCusOptions" class="overflow-y-auto max-h-52 pb-1 rounded-b-lg">
+                        <div id="customCusOptions" class="overflow-y-auto max-h-[50vh] pb-1 rounded-b-xl">
                             </div>
                     </div>
                 </div>
@@ -2089,7 +2089,7 @@
       const optionsContainer = document.getElementById('customCusOptions');
       if(!optionsContainer) return;
 
-      let html = `<div class="cus-option p-2.5 hover:bg-purple-100 cursor-pointer text-sm text-gray-700 font-bold border-b border-gray-100" data-search="" onclick="selectCustomCustomer('', '${defaultText}')">${defaultText}</div>`;
+      let html = `<div class="cus-option p-4 hover:bg-purple-100 cursor-pointer text-base text-gray-700 font-bold border-b border-gray-200" data-search="" onclick="selectCustomCustomer('', '${defaultText}')">${defaultText}</div>`;
 
       FIREBASE_CUSTOMER_ORDER.forEach(id => {
           const c = FIREBASE_CUSTOMERS[id];
@@ -2098,9 +2098,9 @@
               if(c.social) text += ` (${c.social})`;
               let searchString = (c.name + " " + (c.social||"") + " " + (c.phone||"")).toLowerCase();
 
-              html += `<div class="cus-option p-2 hover:bg-purple-100 cursor-pointer border-b border-gray-100 last:border-0" data-search="${searchString}" onclick="selectCustomCustomer('${c.id}', '${text}')">
-                  <div class="font-bold text-sm text-purple-800">${text}</div>
-                  ${c.phone ? `<div class="text-[11px] text-gray-500 mt-0.5">📞 ${c.phone}</div>` : ''}
+              html += `<div class="cus-option p-4 hover:bg-purple-100 cursor-pointer border-b border-gray-200 last:border-0" data-search="${searchString}" onclick="selectCustomCustomer('${c.id}', '${text}')">
+                  <div class="font-bold text-base text-purple-800">${text}</div>
+                  ${c.phone ? `<div class="text-xs font-bold text-gray-500 mt-1">📞 ${c.phone}</div>` : ''}
               </div>`;
           }
       });
@@ -2114,9 +2114,34 @@
   }
 
   function toggleCusDropdown() {
+      const btn = document.getElementById('customCusSelectBtn');
       const drop = document.getElementById('customCusDropdown');
+
       drop.classList.toggle('hidden');
+
       if(!drop.classList.contains('hidden')) {
+          // 🌟 Auto Flip (အလိုအလျောက် အပေါ်/အောက် တွက်ချက်ခြင်း) 🌟
+          const btnRect = btn.getBoundingClientRect();
+          const spaceBelow = window.innerHeight - btnRect.bottom;
+          const spaceAbove = btnRect.top;
+          
+          // Dropdown ရဲ့ အမြင့်က ခန့်မှန်း 350px လောက်ရှိလို့ အောက်ဘက်မှာ 350px အောက်နည်းနေရင် အပေါ်ကို ပြောင်းထွက်ပါမည်
+          if (spaceBelow < 350 && spaceAbove > spaceBelow) {
+              // ⬆️ အပေါ်သို့ ပြောင်းထွက်ရန်
+              drop.style.top = 'auto';
+              drop.style.bottom = '100%';
+              drop.classList.remove('mt-1');
+              drop.classList.add('mb-1');
+              drop.style.boxShadow = '0 -10px 25px rgba(0,0,0,0.15)'; // အရိပ်ကို အပေါ်ဘက် ပြောင်းပေးခြင်း
+          } else {
+              // ⬇️ အောက်သို့ ထွက်ရန် (ပုံမှန်အတိုင်း)
+              drop.style.bottom = 'auto';
+              drop.style.top = '100%';
+              drop.classList.remove('mb-1');
+              drop.classList.add('mt-1');
+              drop.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)'; // အရိပ်ကို အောက်ဘက် ထားခြင်း
+          }
+
           document.getElementById('cusSearchInput').focus();
       }
   }
