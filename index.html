@@ -10,7 +10,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
-  <!-- 🌟 ဘာသာစကားဖိုင်ကို ချိတ်ဆက်ခြင်း 🌟 -->
   <script src="lang.js"></script>
 
   <style>
@@ -284,24 +283,20 @@
         <div class="mt-4 border-t pt-3 border-gray-200">
             <p class="font-black mb-1 pb-1 text-xs text-purple-700" data-i18n="lbl_cus">👥 Customer (မရွေးပါက ပြေစာတွင်မပါပါ)</p>
             <div class="flex gap-2">
-                <!-- 🌟 Custom Searchable Dropdown အသစ် စတင်ရန် 🌟 -->
                 <div class="relative flex-1">
                     <input type="hidden" id="mainCustomerSelect" value="">
                     <div id="customCusSelectBtn" class="compact border rounded-lg w-full text-sm font-bold bg-purple-50 text-purple-800 border-purple-200 cursor-pointer flex justify-between items-center h-full" style="padding: .6rem .75rem;" onclick="toggleCusDropdown()">
                         <span id="customCusSelectLabel" class="truncate">— မထည့်ပါ —</span>
                         <span class="text-xs">▼</span>
                     </div>
-                    <!-- 🌟 ပြင်ဆင်ထားသော Dropdown Menu (Scroll ဆွဲ၍ရသည်) 🌟 -->
                     <div id="customCusDropdown" class="absolute z-[60] w-full mt-1 bg-white border border-purple-200 rounded-lg shadow-2xl hidden">
                         <div class="p-2 border-b border-purple-100 bg-purple-50 rounded-t-lg">
                             <input type="text" id="cusSearchInput" class="w-full border border-purple-200 rounded p-1.5 text-sm outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." oninput="filterCusDropdown()" onclick="event.stopPropagation()">
                         </div>
                         <div id="customCusOptions" class="overflow-y-auto max-h-52 pb-1 rounded-b-lg">
-                            <!-- Options များ ဒီနေရာကို ဝင်လာပါမည် -->
-                        </div>
+                            </div>
                     </div>
                 </div>
-                <!-- 🌟 Custom Searchable Dropdown ပြီးဆုံး 🌟 -->
                 <button onclick="document.getElementById('quickCusModal').style.display='flex'" class="btn bg-purple-600 hover:bg-purple-700 !py-1 !px-3 text-xs whitespace-nowrap" data-i18n="btn_quick_add">➕ အမြန်ထည့်မည်</button>
             </div>
         </div>
@@ -566,6 +561,7 @@
         <h3 class="font-bold text-gray-800">📜 ငွေလွှဲမှတ်တမ်းများ</h3>
         <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 overflow-x-auto">
           <input type="text" id="searchInvId" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[120px]" placeholder="ID ဖြင့်ရှာရန်" oninput="searchHistoryLocally(true)">
+          <input type="date" id="searchDate" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[130px]" onchange="searchHistoryLocally(true)" title="ရက်စွဲဖြင့်ရှာရန်">
           <button onclick="searchHistoryLocally(true)" class="btn bg-blue-600 !py-1 !px-3 !text-sm" title="ရှာရန်">🔍</button>
           <button onclick="loadHistory()" class="btn2 !py-1 !px-3 !text-sm" title="Refresh">🔄</button>
           <button id="btnExportCSV" onclick="exportHistoryCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="Excel ဖိုင်ထုတ်ရန်">📥 Export</button>
@@ -1164,6 +1160,7 @@
       let thbLongs = [], thbShorts = [];
       let vndLongs = [], vndShorts = [];
       let periodProfitThb = 0, periodProfitVnd = 0;
+      let periodProfitThbInBaht = 0; // 🌟 THB အမြတ်ကို Success Rate ဖြင့် သီးသန့်မှတ်ရန်
 
       let sortedTxs = [...dataArray].sort((a, b) => {
           let tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
@@ -1232,7 +1229,10 @@
                   
                   let profit = (s.rate - rate) * matchQty; 
                   if (includeThisRecord) {
-                      if (currency === 'THB') periodProfitThb += profit;
+                      if (currency === 'THB') {
+                          periodProfitThb += profit;
+                          periodProfitThbInBaht += (profit / rate); // 🌟 Success Rate ဖြင့် တွက်သည်
+                      }
                       else periodProfitVnd += profit;
                   }
 
@@ -1250,7 +1250,10 @@
                   
                   let profit = (rate - l.rate) * matchQty;
                   if (includeThisRecord) {
-                      if (currency === 'THB') periodProfitThb += profit;
+                      if (currency === 'THB') {
+                          periodProfitThb += profit;
+                          periodProfitThbInBaht += (profit / rate); // 🌟 Success Rate ဖြင့် တွက်သည်
+                      }
                       else periodProfitVnd += profit;
                   }
 
@@ -1288,6 +1291,15 @@
 
           document.getElementById('est_profit_thb').textContent = (periodProfitThb >= 0 ? "+ " : "") + formatMmk(periodProfitThb) + " MMK";
           document.getElementById('est_profit_thb').className = periodProfitThb >= 0 ? "text-lg text-green-600 font-black" : "text-lg text-red-600 font-black";
+
+          // 🌟 THB အမြတ်အစစ်အမှန်ကို ပြသရန် 🌟
+          if (!document.getElementById('est_profit_thb_baht')) {
+              let thbDiv = document.createElement('div');
+              thbDiv.id = 'est_profit_thb_baht';
+              document.getElementById('est_profit_thb').parentNode.insertBefore(thbDiv, document.getElementById('est_profit_thb').nextSibling);
+          }
+          document.getElementById('est_profit_thb_baht').textContent = (periodProfitThbInBaht >= 0 ? "+ " : "") + periodProfitThbInBaht.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 2}) + " THB";
+          document.getElementById('est_profit_thb_baht').className = periodProfitThbInBaht >= 0 ? "text-sm text-blue-600 font-bold" : "text-sm text-red-500 font-bold";
 
           document.getElementById('est_profit_vnd').textContent = (periodProfitVnd >= 0 ? "+ " : "") + formatMmk(periodProfitVnd) + " MMK";
           document.getElementById('est_profit_vnd').className = periodProfitVnd >= 0 ? "text-lg text-green-600 font-black" : "text-lg text-red-600 font-black";
@@ -1357,7 +1369,7 @@
                                       <span class="text-blue-700 font-bold text-[10px] uppercase tracking-wider">🔵 ${typeStr}</span>
                                   </div>
                                   <div class="flex justify-between items-center">
-                                      <span class="text-blue-900 font-black text-sm">${formatMmk(s.qty)} ${curr} စာ</span>
+                                      <span class="text-blue-900 font-black text-sm">${formatMmk(s.qty)} ${curr}</span>
                                       <span class="text-gray-800 font-black text-xs bg-blue-50 border border-blue-200 px-2 py-0.5 rounded shadow-sm">
                                           ${formatCustomRate(s.rate, curr)}
                                       </span>
@@ -2983,7 +2995,7 @@
               clone.insertBefore(cusDiv, footerDiv); 
           }
 
-          // // 🌟 Background Watermark Logo & ID (Diagonal Full Receipt) 🌟
+          // 🌟 Background Watermark Logo & ID (နေရာအနှံ့ Full Coverage) 🌟
           const watermarkDiv = document.createElement('div');
           watermarkDiv.style.position = 'absolute';
           watermarkDiv.style.top = '0';
@@ -2992,62 +3004,63 @@
           watermarkDiv.style.height = '100%';
           watermarkDiv.style.pointerEvents = 'none';
           watermarkDiv.style.zIndex = '10';
-          watermarkDiv.style.display = 'flex';
-          watermarkDiv.style.alignItems = 'center';
-          watermarkDiv.style.justifyContent = 'center';
-          watermarkDiv.style.overflow = 'hidden';
+          watermarkDiv.style.overflow = 'hidden'; 
 
-          // Center Logo (Straight)
+          // 1. Center Logo (Straight)
           const wmImg = document.createElement('img');
           wmImg.src = 'assets/logo/main_logo.png';
           wmImg.style.position = 'absolute';
+          wmImg.style.top = '50%';
+          wmImg.style.left = '50%';
+          wmImg.style.transform = 'translate(-50%, -50%)';
           wmImg.style.width = '240px'; 
           wmImg.style.opacity = '0.09'; 
           watermarkDiv.appendChild(wmImg);
 
-          // Diagonal Text Group (တစောင်းစာသားများ)
-          const textGroup = document.createElement('div');
-          textGroup.style.position = 'absolute';
-          textGroup.style.transform = 'rotate(-35deg)'; // တစောင်းလေးဖြစ်အောင်
-          textGroup.style.display = 'flex';
-          textGroup.style.flexDirection = 'column';
-          textGroup.style.alignItems = 'center';
-          textGroup.style.justifyContent = 'center';
-          textGroup.style.width = '200%';
-          textGroup.style.gap = '80px'; // စာကြောင်းတွေကြားက အကွာအဝေး
+          // 2. Diagonal Text Group (နေရာအနှံ့ ပျံ့နေအောင်)
+          const textContainer = document.createElement('div');
+          textContainer.style.position = 'absolute';
+          textContainer.style.top = '-50%';
+          textContainer.style.left = '-50%';
+          textContainer.style.width = '200%'; 
+          textContainer.style.height = '200%';
+          textContainer.style.transform = 'rotate(-30deg)'; 
+          textContainer.style.display = 'flex';
+          textContainer.style.flexWrap = 'wrap'; 
+          textContainer.style.alignContent = 'center';
+          textContainer.style.justifyContent = 'center';
+          textContainer.style.gap = '50px 80px'; 
 
-          // ပြေစာတစ်ခုလုံး ပျံ့နေအောင် ၃ ခါ ပတ်ထုတ်မည်
-          for(let i=0; i<3; i++) {
+          for(let i=0; i<50; i++) {
               const block = document.createElement('div');
               block.style.display = 'flex';
               block.style.flexDirection = 'column';
               block.style.alignItems = 'center';
+              block.style.opacity = '0.055'; 
               
               const wmId = document.createElement('div');
-              wmId.style.fontSize = '26px';
+              wmId.style.fontSize = '24px';
               wmId.style.fontWeight = '900';
               wmId.style.color = '#64748b';
-              wmId.style.opacity = '0.06'; // 🌟 အစ်ကိုလိုချင်တဲ့ အနေတော် Opacity
               wmId.style.letterSpacing = '2px';
-              wmId.textContent = "ID: " + tx.id;
+              wmId.textContent = "ID: " + tx.id; 
               block.appendChild(wmId);
 
               // နာမည်ပါရင် ဒုတိယစာကြောင်းအနေနဲ့ ထည့်မည်
-              if (tx.customerName && tx.customerName !== "—") {
+              if (tx.customerName && tx.customerName !== "—") { 
                   const wmName = document.createElement('div');
-                  wmName.style.fontSize = '22px';
+                  wmName.style.fontSize = '20px';
                   wmName.style.fontWeight = '900';
                   wmName.style.color = '#64748b';
-                  wmName.style.opacity = '0.06';
                   wmName.style.letterSpacing = '1px';
-                  wmName.style.marginTop = '8px';
-                  wmName.textContent = tx.customerName;
+                  wmName.style.marginTop = '6px';
+                  wmName.textContent = tx.customerName; 
                   block.appendChild(wmName);
               }
-              textGroup.appendChild(block);
+              textContainer.appendChild(block);
           }
 
-          watermarkDiv.appendChild(textGroup);
+          watermarkDiv.appendChild(textContainer);
           clone.appendChild(watermarkDiv);
 
           await new Promise(res => { 
@@ -3057,6 +3070,7 @@
               wmImg.onerror = () => { clearTimeout(timer); res(); };
           });
           // 🌟 ------------------------ 🌟
+
           clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
@@ -3233,18 +3247,46 @@
   async function searchHistoryLocally(resetPage = false) {
       if (resetPage) CURRENT_DISPLAY_COUNT = 150; 
       
-      const searchVal = document.getElementById('searchInvId').value.trim().toLowerCase();
-      if(!searchVal) { renderHistoryRows(allLoadedHistory); return; }
+      const searchId = document.getElementById('searchInvId').value.trim().toLowerCase();
+      const searchDate = document.getElementById('searchDate') ? document.getElementById('searchDate').value : "";
+
+      // ID ရော၊ ရက်စွဲရော မရွေးထားရင် အကုန်ပြန်ပြမည်
+      if (!searchId && !searchDate) { 
+          renderHistoryRows(allLoadedHistory); 
+          return; 
+      }
       
-      const filtered = allLoadedHistory.filter(d => d.id.toLowerCase().includes(searchVal));
-      if(filtered.length === 0 && searchVal.startsWith('inv')) {
+      let filtered = allLoadedHistory;
+
+      // ၁။ ရက်စွဲ ရွေးထားရင် ရက်စွဲနဲ့ အရင်စစ်ထုတ်မည်
+      if (searchDate) {
+          filtered = filtered.filter(d => {
+              if (!d.timestamp) return false;
+              const tz = d.tz || ADMIN_TIMEZONE || 'Asia/Bangkok';
+              let recDateObj;
+              try { recDateObj = new Date(new Date(d.timestamp).toLocaleString('en-US', { timeZone: tz })); }
+              catch(e) { recDateObj = new Date(d.timestamp); }
+              const recDateStr = recDateObj.getFullYear() + '-' + String(recDateObj.getMonth() + 1).padStart(2, '0') + '-' + String(recDateObj.getDate()).padStart(2, '0');
+              return recDateStr === searchDate;
+          });
+      }
+
+      // ၂။ ID ရိုက်ထည့်ထားရင် ID နဲ့ ထပ်စစ်ထုတ်မည်
+      if (searchId) {
+          filtered = filtered.filter(d => d.id.toLowerCase().includes(searchId));
+      }
+
+      // ID နဲ့ ရှာတာ Local မှာ မတွေ့ရင် Firebase ပေါ်လှမ်းရှာမည့်အပိုင်း
+      if(filtered.length === 0 && searchId && searchId.startsWith('inv') && !searchDate) {
          const list = document.getElementById('adminHistoryList');
          list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔍 Database တွင် ရှာဖွေနေပါသည်...</td></tr>';
          try {
-             const docRef = await firebase.firestore().collection("exchange_history").doc(searchVal.toUpperCase()).get();
+             const docRef = await firebase.firestore().collection("exchange_history").doc(searchId.toUpperCase()).get();
              if(docRef.exists) { renderHistoryRows([docRef.data()]); } else { renderHistoryRows([]); }
          } catch(e) { renderHistoryRows([]); }
-      } else { renderHistoryRows(filtered); }
+      } else { 
+         renderHistoryRows(filtered); 
+      }
   }
 
   window.loadMoreHistory = function() {
@@ -3511,7 +3553,7 @@
             clone.insertBefore(cusDiv, footerDiv); 
         }
 
-        // 🌟 Background Watermark Logo & ID (Diagonal Full Receipt) 🌟
+        // 🌟 Background Watermark Logo & ID (နေရာအနှံ့ Full Coverage) 🌟
         const watermarkDiv = document.createElement('div');
         watermarkDiv.style.position = 'absolute';
         watermarkDiv.style.top = '0';
@@ -3520,60 +3562,62 @@
         watermarkDiv.style.height = '100%';
         watermarkDiv.style.pointerEvents = 'none';
         watermarkDiv.style.zIndex = '10';
-        watermarkDiv.style.display = 'flex';
-        watermarkDiv.style.alignItems = 'center';
-        watermarkDiv.style.justifyContent = 'center';
-        watermarkDiv.style.overflow = 'hidden';
+        watermarkDiv.style.overflow = 'hidden'; 
 
-        // Center Logo (Straight)
+        // 1. Center Logo (Straight)
         const wmImg = document.createElement('img');
         wmImg.src = 'assets/logo/main_logo.png';
         wmImg.style.position = 'absolute';
+        wmImg.style.top = '50%';
+        wmImg.style.left = '50%';
+        wmImg.style.transform = 'translate(-50%, -50%)';
         wmImg.style.width = '240px'; 
         wmImg.style.opacity = '0.09'; 
         watermarkDiv.appendChild(wmImg);
 
-        // Diagonal Text Group (တစောင်းစာသားများ)
-        const textGroup = document.createElement('div');
-        textGroup.style.position = 'absolute';
-        textGroup.style.transform = 'rotate(-35deg)';
-        textGroup.style.display = 'flex';
-        textGroup.style.flexDirection = 'column';
-        textGroup.style.alignItems = 'center';
-        textGroup.style.justifyContent = 'center';
-        textGroup.style.width = '200%';
-        textGroup.style.gap = '80px'; 
+        // 2. Diagonal Text Group (နေရာအနှံ့ ပျံ့နေအောင်)
+        const textContainer = document.createElement('div');
+        textContainer.style.position = 'absolute';
+        textContainer.style.top = '-50%';
+        textContainer.style.left = '-50%';
+        textContainer.style.width = '200%'; 
+        textContainer.style.height = '200%';
+        textContainer.style.transform = 'rotate(-30deg)'; 
+        textContainer.style.display = 'flex';
+        textContainer.style.flexWrap = 'wrap'; 
+        textContainer.style.alignContent = 'center';
+        textContainer.style.justifyContent = 'center';
+        textContainer.style.gap = '50px 80px'; 
 
-        for(let i=0; i<3; i++) {
+        for(let i=0; i<50; i++) {
             const block = document.createElement('div');
             block.style.display = 'flex';
             block.style.flexDirection = 'column';
             block.style.alignItems = 'center';
+            block.style.opacity = '0.055'; 
             
             const wmId = document.createElement('div');
-            wmId.style.fontSize = '26px';
+            wmId.style.fontSize = '24px';
             wmId.style.fontWeight = '900';
             wmId.style.color = '#64748b';
-            wmId.style.opacity = '0.06'; 
             wmId.style.letterSpacing = '2px';
             wmId.textContent = "ID: " + invId;
             block.appendChild(wmId);
 
             if (savedCustomerName && savedCustomerName !== "—") {
                 const wmName = document.createElement('div');
-                wmName.style.fontSize = '22px';
+                wmName.style.fontSize = '20px';
                 wmName.style.fontWeight = '900';
                 wmName.style.color = '#64748b';
-                wmName.style.opacity = '0.06';
                 wmName.style.letterSpacing = '1px';
-                wmName.style.marginTop = '8px';
-                wmName.textContent = savedCustomerName;
+                wmName.style.marginTop = '6px';
+                wmName.textContent = savedCustomerName; 
                 block.appendChild(wmName);
             }
-            textGroup.appendChild(block);
+            textContainer.appendChild(block);
         }
 
-        watermarkDiv.appendChild(textGroup);
+        watermarkDiv.appendChild(textContainer);
         clone.appendChild(watermarkDiv);
 
         await new Promise(res => { 
