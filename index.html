@@ -2983,35 +2983,71 @@
               clone.insertBefore(cusDiv, footerDiv); 
           }
 
-          // 🌟 Background Watermark Logo & ID (အောက်ခြေ ID မဖြုတ်ပါ) 🌟
+          // // 🌟 Background Watermark Logo & ID (Diagonal Full Receipt) 🌟
           const watermarkDiv = document.createElement('div');
           watermarkDiv.style.position = 'absolute';
-          watermarkDiv.style.top = '50%';
-          watermarkDiv.style.left = '50%';
-          watermarkDiv.style.transform = 'translate(-50%, -50%)';
-          watermarkDiv.style.display = 'flex';
-          watermarkDiv.style.flexDirection = 'column';
-          watermarkDiv.style.alignItems = 'center';
-          watermarkDiv.style.justifyContent = 'center';
+          watermarkDiv.style.top = '0';
+          watermarkDiv.style.left = '0';
+          watermarkDiv.style.width = '100%';
+          watermarkDiv.style.height = '100%';
           watermarkDiv.style.pointerEvents = 'none';
           watermarkDiv.style.zIndex = '10';
+          watermarkDiv.style.display = 'flex';
+          watermarkDiv.style.alignItems = 'center';
+          watermarkDiv.style.justifyContent = 'center';
+          watermarkDiv.style.overflow = 'hidden';
 
+          // Center Logo (Straight)
           const wmImg = document.createElement('img');
           wmImg.src = 'assets/logo/main_logo.png';
+          wmImg.style.position = 'absolute';
           wmImg.style.width = '240px'; 
-          wmImg.style.opacity = '0.06'; 
-          wmImg.style.marginBottom = '10px';
-
-          const wmId = document.createElement('div');
-          wmId.style.fontSize = '24px';
-          wmId.style.fontWeight = '900';
-          wmId.style.color = '#64748b';
-          wmId.style.opacity = '0.35'; 
-          wmId.style.letterSpacing = '1px';
-          wmId.textContent = "ID: " + tx.id; 
-
+          wmImg.style.opacity = '0.09'; 
           watermarkDiv.appendChild(wmImg);
-          watermarkDiv.appendChild(wmId);
+
+          // Diagonal Text Group (တစောင်းစာသားများ)
+          const textGroup = document.createElement('div');
+          textGroup.style.position = 'absolute';
+          textGroup.style.transform = 'rotate(-35deg)'; // တစောင်းလေးဖြစ်အောင်
+          textGroup.style.display = 'flex';
+          textGroup.style.flexDirection = 'column';
+          textGroup.style.alignItems = 'center';
+          textGroup.style.justifyContent = 'center';
+          textGroup.style.width = '200%';
+          textGroup.style.gap = '80px'; // စာကြောင်းတွေကြားက အကွာအဝေး
+
+          // ပြေစာတစ်ခုလုံး ပျံ့နေအောင် ၃ ခါ ပတ်ထုတ်မည်
+          for(let i=0; i<3; i++) {
+              const block = document.createElement('div');
+              block.style.display = 'flex';
+              block.style.flexDirection = 'column';
+              block.style.alignItems = 'center';
+              
+              const wmId = document.createElement('div');
+              wmId.style.fontSize = '26px';
+              wmId.style.fontWeight = '900';
+              wmId.style.color = '#64748b';
+              wmId.style.opacity = '0.045'; // 🌟 အစ်ကိုလိုချင်တဲ့ အနေတော် Opacity
+              wmId.style.letterSpacing = '2px';
+              wmId.textContent = "ID: " + tx.id;
+              block.appendChild(wmId);
+
+              // နာမည်ပါရင် ဒုတိယစာကြောင်းအနေနဲ့ ထည့်မည်
+              if (tx.customerName && tx.customerName !== "—") {
+                  const wmName = document.createElement('div');
+                  wmName.style.fontSize = '22px';
+                  wmName.style.fontWeight = '900';
+                  wmName.style.color = '#64748b';
+                  wmName.style.opacity = '0.05';
+                  wmName.style.letterSpacing = '1px';
+                  wmName.style.marginTop = '8px';
+                  wmName.textContent = tx.customerName;
+                  block.appendChild(wmName);
+              }
+              textGroup.appendChild(block);
+          }
+
+          watermarkDiv.appendChild(textGroup);
           clone.appendChild(watermarkDiv);
 
           await new Promise(res => { 
@@ -3021,7 +3057,6 @@
               wmImg.onerror = () => { clearTimeout(timer); res(); };
           });
           // 🌟 ------------------------ 🌟
-
           clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
@@ -3476,35 +3511,69 @@
             clone.insertBefore(cusDiv, footerDiv); 
         }
 
-        // 🌟 Background Watermark Logo & ID (အောက်ခြေ ID မဖြုတ်ပါ) 🌟
+        // 🌟 Background Watermark Logo & ID (Diagonal Full Receipt) 🌟
         const watermarkDiv = document.createElement('div');
         watermarkDiv.style.position = 'absolute';
-        watermarkDiv.style.top = '50%';
-        watermarkDiv.style.left = '50%';
-        watermarkDiv.style.transform = 'translate(-50%, -50%)';
+        watermarkDiv.style.top = '0';
+        watermarkDiv.style.left = '0';
+        watermarkDiv.style.width = '100%';
+        watermarkDiv.style.height = '100%';
+        watermarkDiv.style.pointerEvents = 'none';
+        watermarkDiv.style.zIndex = '10';
         watermarkDiv.style.display = 'flex';
-        watermarkDiv.style.flexDirection = 'column';
         watermarkDiv.style.alignItems = 'center';
         watermarkDiv.style.justifyContent = 'center';
-        watermarkDiv.style.pointerEvents = 'none'; 
-        watermarkDiv.style.zIndex = '10';
+        watermarkDiv.style.overflow = 'hidden';
 
+        // Center Logo (Straight)
         const wmImg = document.createElement('img');
         wmImg.src = 'assets/logo/main_logo.png';
+        wmImg.style.position = 'absolute';
         wmImg.style.width = '240px'; 
-        wmImg.style.opacity = '0.06'; 
-        wmImg.style.marginBottom = '10px';
-
-        const wmId = document.createElement('div');
-        wmId.style.fontSize = '24px';
-        wmId.style.fontWeight = '900';
-        wmId.style.color = '#64748b';
-        wmId.style.opacity = '0.35'; 
-        wmId.style.letterSpacing = '1px';
-        wmId.textContent = "ID: " + invId; 
-
+        wmImg.style.opacity = '0.09'; 
         watermarkDiv.appendChild(wmImg);
-        watermarkDiv.appendChild(wmId);
+
+        // Diagonal Text Group (တစောင်းစာသားများ)
+        const textGroup = document.createElement('div');
+        textGroup.style.position = 'absolute';
+        textGroup.style.transform = 'rotate(-35deg)';
+        textGroup.style.display = 'flex';
+        textGroup.style.flexDirection = 'column';
+        textGroup.style.alignItems = 'center';
+        textGroup.style.justifyContent = 'center';
+        textGroup.style.width = '200%';
+        textGroup.style.gap = '80px'; 
+
+        for(let i=0; i<3; i++) {
+            const block = document.createElement('div');
+            block.style.display = 'flex';
+            block.style.flexDirection = 'column';
+            block.style.alignItems = 'center';
+            
+            const wmId = document.createElement('div');
+            wmId.style.fontSize = '26px';
+            wmId.style.fontWeight = '900';
+            wmId.style.color = '#64748b';
+            wmId.style.opacity = '0.045'; 
+            wmId.style.letterSpacing = '2px';
+            wmId.textContent = "ID: " + invId;
+            block.appendChild(wmId);
+
+            if (savedCustomerName && savedCustomerName !== "—") {
+                const wmName = document.createElement('div');
+                wmName.style.fontSize = '22px';
+                wmName.style.fontWeight = '900';
+                wmName.style.color = '#64748b';
+                wmName.style.opacity = '0.05';
+                wmName.style.letterSpacing = '1px';
+                wmName.style.marginTop = '8px';
+                wmName.textContent = savedCustomerName;
+                block.appendChild(wmName);
+            }
+            textGroup.appendChild(block);
+        }
+
+        watermarkDiv.appendChild(textGroup);
         clone.appendChild(watermarkDiv);
 
         await new Promise(res => { 
