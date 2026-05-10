@@ -2822,10 +2822,9 @@
           brandTitle.textContent = (T && T.titleTop) ? T.titleTop : 'Thailand Guide - Supplier By Ye';
           brandHeader.appendChild(brandTitle);
 
-          // 🌟 REPRINT ဖြစ်ကြောင်းပြမည့် စာသားအနီရောင် 🌟
           const reprintBadge = document.createElement('div');
           reprintBadge.textContent = "[ REPRINT ]";
-          reprintBadge.style.color = '#dc2626'; // အနီရောင်
+          reprintBadge.style.color = '#dc2626';
           reprintBadge.style.fontSize = '14px';
           reprintBadge.style.fontWeight = '900';
           reprintBadge.style.marginTop = '6px';
@@ -2927,7 +2926,6 @@
           
           const timeStr = `Date : ${formatterDate.format(dObj)} (${formatterTime.format(dObj).replace(/[\s\u202f]+/g, '')}) (${tzLabel})`;
           
-          // 🌟 ဤနေရာတွင် ID နှင့် Date ကို တစ်တန်းတည်း (ဘယ်/ညာ) ပြသအောင် ပြင်ဆင်ထားသည် 🌟
           const footerDiv = document.createElement('div');
           footerDiv.style.display = 'flex';
           footerDiv.style.justifyContent = 'space-between';
@@ -2938,13 +2936,13 @@
           footerDiv.style.paddingBottom = '8px';
 
           const idSpan = document.createElement('span');
-          idSpan.style.fontSize = '13px'; // 🌟 Date နဲ့ Size တူအောင် ပြင်ထားသည်
+          idSpan.style.fontSize = '13px'; 
           idSpan.style.fontWeight = '900';
           idSpan.style.color = '#334155';
           idSpan.textContent = "ID: " + tx.id;
 
           const timeSpan = document.createElement('span');
-          timeSpan.style.fontSize = '13px'; // 🌟 ID နဲ့ Size တူအောင် ပြင်ထားသည်
+          timeSpan.style.fontSize = '13px'; 
           timeSpan.style.fontWeight = 'bold';
           timeSpan.style.color = '#64748b';
           timeSpan.textContent = timeStr;
@@ -2953,7 +2951,6 @@
           footerDiv.appendChild(timeSpan);
           clone.appendChild(footerDiv);
 
-          // 🌟 Customer Info ကို ပြေစာ၏ အောက်ခြေ (Date အပေါ်) သို့ ရွှေ့ခြင်း (Reprint) 🌟
           if (tx.customerName && tx.customerName !== "—") {
               const cusDiv = document.createElement('div');
               cusDiv.style.padding = '8px 12px';
@@ -2965,7 +2962,6 @@
               cusDiv.style.textAlign = 'left';
               cusDiv.style.fontSize = '12px'; 
 
-              // 🌟 Database ထဲကနေ Name နဲ့ ပြန်တိုက်ရှာပြီး Phone / Bank ကို ဆွဲထုတ်ခြင်း 🌟
               const matchedCus = Object.values(FIREBASE_CUSTOMERS).find(c => {
                   let fullName = c.name + (c.social ? ` (${c.social})` : '');
                   return fullName === tx.customerName;
@@ -2984,18 +2980,56 @@
               }
 
               cusDiv.innerHTML = cHtml;
-              clone.insertBefore(cusDiv, footerDiv); // timeDiv အစား footerDiv ကို အသုံးပြုသည်
+              clone.insertBefore(cusDiv, footerDiv); 
           }
+
+          // 🌟 Background Watermark Logo & ID (အောက်ခြေ ID မဖြုတ်ပါ) 🌟
+          const watermarkDiv = document.createElement('div');
+          watermarkDiv.style.position = 'absolute';
+          watermarkDiv.style.top = '50%';
+          watermarkDiv.style.left = '50%';
+          watermarkDiv.style.transform = 'translate(-50%, -50%)';
+          watermarkDiv.style.display = 'flex';
+          watermarkDiv.style.flexDirection = 'column';
+          watermarkDiv.style.alignItems = 'center';
+          watermarkDiv.style.justifyContent = 'center';
+          watermarkDiv.style.pointerEvents = 'none';
+          watermarkDiv.style.zIndex = '10';
+
+          const wmImg = document.createElement('img');
+          wmImg.src = 'assets/logo/main_logo.png';
+          wmImg.style.width = '240px'; 
+          wmImg.style.opacity = '0.06'; 
+          wmImg.style.marginBottom = '10px';
+
+          const wmId = document.createElement('div');
+          wmId.style.fontSize = '24px';
+          wmId.style.fontWeight = '900';
+          wmId.style.color = '#64748b';
+          wmId.style.opacity = '0.35'; 
+          wmId.style.letterSpacing = '1px';
+          wmId.textContent = "ID: " + tx.id; 
+
+          watermarkDiv.appendChild(wmImg);
+          watermarkDiv.appendChild(wmId);
+          clone.appendChild(watermarkDiv);
+
+          await new Promise(res => { 
+              let timer = setTimeout(res, 500); 
+              if(wmImg.complete) { clearTimeout(timer); return res(); }
+              wmImg.onload = () => { clearTimeout(timer); res(); };
+              wmImg.onerror = () => { clearTimeout(timer); res(); };
+          });
+          // 🌟 ------------------------ 🌟
 
           clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
-          // 🌟 Scale: 3 သို့ ပြောင်းထားသည် (HD Quality) 🌟
           const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
           document.body.removeChild(clone);
 
-          const margin=18; // 🌟 နေရာလွတ်မူလအတိုင်းပြန်ထားသည်
+          const margin=18; 
           const out=document.createElement('canvas'); 
           out.width = canvas.width + margin*2; 
           out.height = canvas.height + margin*2; 
@@ -3004,8 +3038,6 @@
           ctx.fillRect(0,0,out.width,out.height); 
           
           ctx.drawImage(canvas, margin, margin);
-
-          // 🌟 ဤနေရာတွင် ID ကို Canvas အပေါ်မှဆွဲခြင်း (fillText) ကို ဖယ်ရှားလိုက်ပါသည် 🌟
 
           const finalFileName = 'Reprint_' + tx.id + '.png';
 
@@ -3264,7 +3296,7 @@
     const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = customTexts.thanks; }
   }
 
-  // --- 🌟 FAST EXPORT & CUSTOMER SAVE ---
+// --- 🌟 FAST EXPORT & CUSTOMER SAVE ---
   async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
     let origText = '';
     if (btnElement) {
@@ -3366,14 +3398,12 @@
           }
         }
         
-        // 🌟 ဤနေရာတွင် ID ကို ကြိုတင် Generate လုပ်ပါသည် 🌟
         const dDate = new Date();
         const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
         const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
 
         const timeStr = getExportTimeStr(lang);
         
-        // 🌟 ဤနေရာတွင် ID နှင့် Date ကို တစ်တန်းတည်း (ဘယ်/ညာ) ပြသအောင် ပြင်ဆင်ထားသည် 🌟
         const footerDiv = document.createElement('div');
         footerDiv.style.display = 'flex';
         footerDiv.style.justifyContent = 'space-between';
@@ -3384,13 +3414,13 @@
         footerDiv.style.paddingBottom = '8px';
 
         const idSpan = document.createElement('span');
-        idSpan.style.fontSize = '13px'; // 🌟 Date နဲ့ Size တူအောင် ပြင်ထားသည်
+        idSpan.style.fontSize = '13px'; 
         idSpan.style.fontWeight = '900';
         idSpan.style.color = '#334155';
         idSpan.textContent = "ID: " + invId;
 
         const timeSpan = document.createElement('span');
-        timeSpan.style.fontSize = '13px'; // 🌟 ID နဲ့ Size တူအောင် ပြင်ထားသည်
+        timeSpan.style.fontSize = '13px'; 
         timeSpan.style.fontWeight = 'bold';
         timeSpan.style.color = '#64748b';
         timeSpan.textContent = timeStr;
@@ -3414,7 +3444,6 @@
         brandHeader.appendChild(brandTitle);
         clone.insertBefore(brandHeader, clone.firstChild);
 
-        // 🌟 Customer Info ပြေစာတွင် သိမ်းဆည်းရန်နှင့် ပေါ်စေရန် 🌟
         let savedCustomerName = "—";
         const cusId = document.getElementById('mainCustomerSelect')?.value;
         if (cusId && FIREBASE_CUSTOMERS && FIREBASE_CUSTOMERS[cusId]) {
@@ -3444,18 +3473,56 @@
             }
 
             cusDiv.innerHTML = cHtml;
-            clone.insertBefore(cusDiv, footerDiv); // timeDiv အစား footerDiv ကို အသုံးပြုသည်
+            clone.insertBefore(cusDiv, footerDiv); 
         }
+
+        // 🌟 Background Watermark Logo & ID (အောက်ခြေ ID မဖြုတ်ပါ) 🌟
+        const watermarkDiv = document.createElement('div');
+        watermarkDiv.style.position = 'absolute';
+        watermarkDiv.style.top = '50%';
+        watermarkDiv.style.left = '50%';
+        watermarkDiv.style.transform = 'translate(-50%, -50%)';
+        watermarkDiv.style.display = 'flex';
+        watermarkDiv.style.flexDirection = 'column';
+        watermarkDiv.style.alignItems = 'center';
+        watermarkDiv.style.justifyContent = 'center';
+        watermarkDiv.style.pointerEvents = 'none'; 
+        watermarkDiv.style.zIndex = '10';
+
+        const wmImg = document.createElement('img');
+        wmImg.src = 'assets/logo/main_logo.png';
+        wmImg.style.width = '240px'; 
+        wmImg.style.opacity = '0.06'; 
+        wmImg.style.marginBottom = '10px';
+
+        const wmId = document.createElement('div');
+        wmId.style.fontSize = '24px';
+        wmId.style.fontWeight = '900';
+        wmId.style.color = '#64748b';
+        wmId.style.opacity = '0.35'; 
+        wmId.style.letterSpacing = '1px';
+        wmId.textContent = "ID: " + invId; 
+
+        watermarkDiv.appendChild(wmImg);
+        watermarkDiv.appendChild(wmId);
+        clone.appendChild(watermarkDiv);
+
+        await new Promise(res => { 
+            let timer = setTimeout(res, 500); 
+            if(wmImg.complete) { clearTimeout(timer); return res(); }
+            wmImg.onload = () => { clearTimeout(timer); res(); };
+            wmImg.onerror = () => { clearTimeout(timer); res(); };
+        });
+        // 🌟 ------------------------ 🌟
         
         clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
         document.body.appendChild(clone);
         await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
         
-        // 🌟 Scale: 3 သို့ ပြောင်းထားသည် (HD Quality) 🌟
         const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
         document.body.removeChild(clone);
         
-        const margin=18; // 🌟 နေရာလွတ်မူလအတိုင်းပြန်ထားသည်
+        const margin=18; 
         const out=document.createElement('canvas'); 
         out.width = canvas.width + margin*2; 
         out.height = canvas.height + margin*2;
@@ -3464,8 +3531,6 @@
         ctx.fillRect(0,0,out.width,out.height); 
         
         ctx.drawImage(canvas, margin, margin);
-
-        // 🌟 ဤနေရာတွင် ID ကို Canvas အပေါ်မှဆွဲခြင်း (fillText) ကို ဖယ်ရှားလိုက်ပါသည် 🌟
 
         let recType = ""; let savedRate = ""; 
         if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
@@ -3478,7 +3543,7 @@
         const historyRecord = { 
           id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
           method: paymentMethodName, profit: 0, status: 'Pending', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId,
-          customerName: savedCustomerName // 🌟 Customer မှတ်တမ်းသိမ်းခြင်း
+          customerName: savedCustomerName 
         };
         
         try { 
@@ -3492,11 +3557,9 @@
             alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
             alertMsg += `နည်းလမ်း: ${paymentMethodName}\n`;
             
-            // 🌟 Device Name ဖော်ပြခြင်း 🌟
             let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
             alertMsg += `Device: <b>${mappedDeviceName}</b>`;
             
-            // 🌟 Topic ခွဲ၍ပို့ခြင်း 🌟
             sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID); 
 
         } catch(e) {}
@@ -3573,7 +3636,6 @@
         }
     }
   }
-
 </script>
 </body>
 </html>
