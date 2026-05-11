@@ -2764,17 +2764,34 @@
       const newInAmt = tx.outAmt;
       const newOutAmt = tx.inAmt;
 
+      // 🌟 အမျိုးအစား (Type) ကိုပါ အလိုအလျောက် ပြောင်းပေးမည့် Logic 🌟
+      let newType = tx.type;
+      if (tx.type === "THB ➔ MMK") {
+          newType = "MMK ➔ THB";
+      } else if (tx.type === "MMK ➔ THB") {
+          newType = "THB ➔ MMK";
+      } else if (tx.type === "VND ➔ MMK") {
+          newType = "MMK ➔ VND";
+      } else if (tx.type === "MMK ➔ VND") {
+          newType = "VND ➔ MMK";
+      }
+
       try {
+          // Firebase ပေါ်တွင် In/Out Amount ရော၊ Type ပါ တစ်ခါတည်း Update လုပ်မည်
           await firebase.firestore().collection("exchange_history").doc(invId).update({ 
               inAmt: newInAmt,
-              outAmt: newOutAmt
+              outAmt: newOutAmt,
+              type: newType
           });
           
+          // Local Array ထဲတွင်ပါ Update လုပ်မည်
           allLoadedHistory[index].inAmt = newInAmt;
           allLoadedHistory[index].outAmt = newOutAmt;
+          allLoadedHistory[index].type = newType;
+          
           renderHistoryRows(allLoadedHistory);
       } catch(e) {
-          console.error(e); alert("ပမာဏ ပြောင်းလဲခြင်း မအောင်မြင်ပါ။");
+          console.error(e); alert("ပမာဏ နှင့် အမျိုးအစား ပြောင်းလဲခြင်း မအောင်မြင်ပါ။");
       }
   }
 
