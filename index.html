@@ -82,7 +82,7 @@
     
     .admin-content { 
       background: white; 
-      max-width: 1200px; 
+      max-width: 98%;  /* 👈 ဒီနေရာလေးကို 1200px အစား 98% လို့ ပြင်လိုက်ပါ */
       margin: 0 auto; 
       border-radius: 16px; 
       padding: 20px; 
@@ -382,6 +382,9 @@
     Device ID: <span id="displayDeviceId" class="font-bold text-gray-500 tracking-wider"></span>
   </div>
 </main>
+
+<input type="file" id="slipUploader" accept="image/*" multiple style="display: none;" onchange="handleSlipUpload(event)">
+<input type="hidden" id="uploadTargetInvId">
 
 <div id="manualLotModal" style="display:none;" class="fixed inset-0 bg-black/60 z-[70] items-center justify-center p-4">
   <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl">
@@ -748,7 +751,19 @@
 
   </div>
 </div>
-
+<div id="slipViewModal" style="display:none;" class="fixed inset-0 bg-black/80 z-[80] items-center justify-center p-4">
+  <div class="bg-white rounded-xl max-w-sm w-full p-4 shadow-2xl max-h-[85vh] flex flex-col">
+    <div class="flex justify-between items-center mb-3 border-b pb-2">
+       <h3 class="text-base font-black text-green-700">👁️ Customer စလစ်များ</h3>
+       <button onclick="document.getElementById('slipViewModal').style.display='none'" class="text-gray-500 hover:text-red-500 font-bold text-2xl leading-none">✕</button>
+    </div>
+    <div id="slipViewContent" class="overflow-y-auto flex-1 space-y-4 text-center pb-2">
+        </div>
+    <div class="mt-3 pt-2 border-t text-xs text-center text-gray-500 font-bold">
+        💡 ပုံအကြီးကြည့်လိုပါက ပုံပေါ်သို့ နှိပ်ပါ။
+    </div>
+  </div>
+</div>
 <script>
   // 🌟 စကားဝှက်များကို ဒီနေရာမှာ သတ်မှတ်ပါ
   const ADMIN_PASSWORD_1 = "158062"; 
@@ -1140,7 +1155,7 @@
               d.setDate(nowTz.getDate() - i);
               targetDates.push(toYYYYMMDD(d));
           }
-          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${targetDates[targetDates.length-1]} မှ ${targetDates[0]} အထိ (ယခုတစ်ပတ်)`;
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${targetDates[targetDates.length-1]} မှ ${targetDates[0]} อထိ (ယခုတစ်ပတ်)`;
       } else if (filter === 'month') {
           const currentMonthStr = todayTzStr.substring(0, 7); 
           targetDates = currentMonthStr; 
@@ -1148,7 +1163,7 @@
       } else if (filter === 'custom') {
           const sd = document.getElementById('dashStartDate').value || "0000-00-00";
           const ed = document.getElementById('dashEndDate').value || "9999-99-99";
-          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${sd} မှ ${ed} အထိ`;
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${sd} မှ ${ed} อထိ`;
       }
 
       const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
@@ -1160,7 +1175,7 @@
       let thbLongs = [], thbShorts = [];
       let vndLongs = [], vndShorts = [];
       let periodProfitThb = 0, periodProfitVnd = 0;
-      let periodProfitThbInBaht = 0; // 🌟 THB အမြတ်ကို Success Rate ဖြင့် သီးသန့်မှတ်ရန်
+      let periodProfitThbInBaht = 0; 
 
       let sortedTxs = [...dataArray].sort((a, b) => {
           let tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
@@ -1231,7 +1246,7 @@
                   if (includeThisRecord) {
                       if (currency === 'THB') {
                           periodProfitThb += profit;
-                          periodProfitThbInBaht += (profit / rate); // 🌟 Success Rate ဖြင့် တွက်သည်
+                          periodProfitThbInBaht += (profit / rate);
                       }
                       else periodProfitVnd += profit;
                   }
@@ -1252,7 +1267,7 @@
                   if (includeThisRecord) {
                       if (currency === 'THB') {
                           periodProfitThb += profit;
-                          periodProfitThbInBaht += (profit / rate); // 🌟 Success Rate ဖြင့် တွက်သည်
+                          periodProfitThbInBaht += (profit / rate); 
                       }
                       else periodProfitVnd += profit;
                   }
@@ -1292,7 +1307,6 @@
           document.getElementById('est_profit_thb').textContent = (periodProfitThb >= 0 ? "+ " : "") + formatMmk(periodProfitThb) + " MMK";
           document.getElementById('est_profit_thb').className = periodProfitThb >= 0 ? "text-lg text-green-600 font-black" : "text-lg text-red-600 font-black";
 
-          // 🌟 THB အမြတ်အစစ်အမှန်ကို ပြသရန် 🌟
           if (!document.getElementById('est_profit_thb_baht')) {
               let thbDiv = document.createElement('div');
               thbDiv.id = 'est_profit_thb_baht';
@@ -1594,7 +1608,6 @@
           alertMsg += `ပမာဏ: <code>${inAmtStr}</code> ➔ <code>${outAmtStr}</code>\n`;
           alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
           
-          // 🌟 Device Name ဖော်ပြခြင်း 🌟
           let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
           alertMsg += `Device: <b>${mappedDeviceName}</b>`;
           
@@ -1744,7 +1757,6 @@
     if(c==='y') return 'YE LYNN HTUN'; if(c==='h') return 'HEIN SET AUNG'; if(c==='t') return 'THIDAR WIN'; return '—';
   }
 
-  // 🌟 Normal ကို လုံးဝမယူတော့ဘဲ Big ပုံကိုပဲ တိုက်ရိုက်ပြမည့် QR Preview Function 🌟
   async function refreshQrPreview(skipRadioUpdate = false) {
     const qrSelect = document.getElementById('qrSelect');
     if(!qrSelect || qrSelect.options.length === 0 || qrSelect.selectedIndex === -1 || !qrSelect.value) {
@@ -1800,7 +1812,6 @@
   // --- Dynamic Receipt Texts UI Update ---
   function loadReceiptTextsToInputs() {
       const lang = document.getElementById('adminReceiptLang').value;
-      // Fetch from lang.js objects (SYS_DICT, I18N are in lang.js)
       const texts = FIREBASE_RECEIPT_TEXTS[lang] || {warn1:'', warn2:'', thanks:'', copyBottom:''};
       document.getElementById('adminWarn1').value = texts.warn1 || '';
       document.getElementById('adminWarn2').value = texts.warn2 || '';
@@ -1853,7 +1864,6 @@
     updateReceiptUI();
     initDropdowns(); syncFrom100k(); refreshVndRateNote(); recalcVND();
 
-    // Trigger language update once on load
     const savedLang = localStorage.getItem('sys_lang_pref') || 'my';
     document.getElementById('sysLangSelect').value = savedLang;
     changeSystemLanguage(savedLang);
@@ -1905,7 +1915,6 @@
             if(data.telegram.chatId) TELEGRAM_CHAT_ID = data.telegram.chatId;
             if(data.telegram.topicId) TELEGRAM_TOPIC_ID = data.telegram.topicId;
             if(data.telegram.successTopicId) TELEGRAM_SUCCESS_TOPIC_ID = data.telegram.successTopicId;
-            // 🌟 ဤနေရာတွင် Cancel Topic ကို ထည့်သွင်းထားသည် 🌟
             if(data.telegram.cancelTopicId) TELEGRAM_CANCEL_TOPIC_ID = data.telegram.cancelTopicId;
         }
         
@@ -2080,7 +2089,6 @@
       }
   }
 
-  // 🌟 အမြန်ထည့်မည် Function အသစ် 🌟
   function populateCustomerDropdown() {
       const currentLang = localStorage.getItem('sys_lang_pref') || 'my';
       const dict = (typeof SYS_DICT !== 'undefined') ? (SYS_DICT[currentLang] || SYS_DICT['my']) : {};
@@ -2120,26 +2128,22 @@
       drop.classList.toggle('hidden');
 
       if(!drop.classList.contains('hidden')) {
-          // 🌟 Auto Flip (အလိုအလျောက် အပေါ်/အောက် တွက်ချက်ခြင်း) 🌟
           const btnRect = btn.getBoundingClientRect();
           const spaceBelow = window.innerHeight - btnRect.bottom;
           const spaceAbove = btnRect.top;
           
-          // Dropdown ရဲ့ အမြင့်က ခန့်မှန်း 350px လောက်ရှိလို့ အောက်ဘက်မှာ 350px အောက်နည်းနေရင် အပေါ်ကို ပြောင်းထွက်ပါမည်
           if (spaceBelow < 350 && spaceAbove > spaceBelow) {
-              // ⬆️ အပေါ်သို့ ပြောင်းထွက်ရန်
               drop.style.top = 'auto';
               drop.style.bottom = '100%';
               drop.classList.remove('mt-1');
               drop.classList.add('mb-1');
-              drop.style.boxShadow = '0 -10px 25px rgba(0,0,0,0.15)'; // အရိပ်ကို အပေါ်ဘက် ပြောင်းပေးခြင်း
+              drop.style.boxShadow = '0 -10px 25px rgba(0,0,0,0.15)'; 
           } else {
-              // ⬇️ အောက်သို့ ထွက်ရန် (ပုံမှန်အတိုင်း)
               drop.style.bottom = 'auto';
               drop.style.top = '100%';
               drop.classList.remove('mb-1');
               drop.classList.add('mt-1');
-              drop.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)'; // အရိပ်ကို အောက်ဘက် ထားခြင်း
+              drop.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)'; 
           }
 
           document.getElementById('cusSearchInput').focus();
@@ -2237,7 +2241,6 @@
       } catch(e) { alert("Error deleting."); }
   }
 
-  // 🌟 အသေးစိတ် ဖွင့်/ပိတ် ရန် Function အသစ် 🌟
   window.toggleCusDetails = function(id) {
       const el = document.getElementById(id);
       if (el) el.classList.toggle('hidden');
@@ -2249,7 +2252,6 @@
       
       if(FIREBASE_CUSTOMER_ORDER.length === 0) { listDiv.innerHTML = '<p class="text-xs text-gray-400 p-2 text-center">Customer မရှိသေးပါ</p>'; return; }
       
-      // 🌟 Customer တစ်ယောက်ချင်းစီ၏ စုစုပေါင်းပမာဏ နှင့် အသေးစိတ်ကို စုဆောင်းခြင်း 🌟
       let customerData = {};
       const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
 
@@ -2258,7 +2260,7 @@
               if (tx.status === 'Success' && tx.customerName && tx.customerName !== "—") {
                   if (!customerData[tx.customerName]) {
                       customerData[tx.customerName] = {
-                          txs: [], // အသေးစိတ်မှတ်ရန်
+                          txs: [], 
                           totalThb: 0,
                           totalMmk: 0,
                           totalVnd: 0
@@ -2267,7 +2269,6 @@
                   const amtStr = tx.outAmt;
                   customerData[tx.customerName].txs.push(amtStr);
 
-                  // ပေါင်းထည့်ရန် ဂဏန်းသီးသန့်ထုတ်ခြင်း
                   let num = getCleanNum(amtStr);
                   if (amtStr.includes('THB')) customerData[tx.customerName].totalThb += num;
                   else if (amtStr.includes('MMK')) customerData[tx.customerName].totalMmk += num;
@@ -2291,7 +2292,6 @@
           let txHtml = '';
 
           if (data && data.txs.length > 0) {
-              // 🌟 စုစုပေါင်း ပြမည့်အပိုင်း (နှိပ်လို့ရသည်) 🌟
               let totalsHtml = `<div class="flex gap-1.5 mt-1.5 overflow-x-auto pb-1 items-center cursor-pointer select-none" onclick="window.toggleCusDetails('details-${id}')" style="max-width: 100%;" title="အသေးစိတ်ကြည့်ရန် နှိပ်ပါ">`;
               
               totalsHtml += `<span class="bg-purple-100 border border-purple-300 text-purple-800 px-1.5 py-0.5 rounded text-[10px] font-black whitespace-nowrap shadow-sm hover:bg-purple-200 transition-colors">အောင်မြင်: ${data.txs.length} ကြိမ် ▼</span>`;
@@ -2302,7 +2302,6 @@
               
               totalsHtml += `</div>`;
 
-              // 🌟 အသေးစိတ် တစ်ခုချင်းစီ ပြမည့်အပိုင်း (မူလက ဖျောက်ထားသည်) 🌟
               let detailsHtml = `<div id="details-${id}" class="hidden flex gap-1.5 mt-1 overflow-x-auto pb-1 items-center pl-2 border-l-2 border-purple-300 bg-gray-50/50 p-1 rounded-r" style="max-width: 100%;">`;
               data.txs.forEach(amt => {
                   let colorClass = 'bg-gray-50 border-gray-200 text-gray-700';
@@ -2620,7 +2619,6 @@
       }
   }
 
-  // --- 🌟 ၅ ရက်ကျော်သော Pending များကို Auto Cancel လုပ်ပေးမည့် Function 🌟
   async function autoCancelOldPendingLots(dataArray) {
       const db = firebase.firestore();
       const batch = db.batch();
@@ -2631,24 +2629,23 @@
       dataArray.forEach(d => {
           if (d.status === 'Pending' && d.timestamp) {
               const recTime = new Date(d.timestamp).getTime();
-              const diffDays = (now - recTime) / (1000 * 60 * 60 * 24); // ရက်အရေအတွက် တွက်ခြင်း
+              const diffDays = (now - recTime) / (1000 * 60 * 60 * 24); 
               
-              if (diffDays >= 5) { // 🌟 ၅ ရက် နှင့် ၅ ရက်ကျော်လျှင်
+              if (diffDays >= 5) { 
                   const docRef = db.collection("exchange_history").doc(d.id);
-                  batch.update(docRef, { status: 'Auto Cancel' }); // 🌟 Auto Cancel သို့ပြောင်းသည်
+                  batch.update(docRef, { status: 'Auto Cancel' }); 
                   d.status = 'Auto Cancel'; 
                   batchCount++;
-                  cancelledItems.push(d); // မှတ်ထားပြီး Telegram ကို ပို့ရန်
+                  cancelledItems.push(d); 
               }
           }
       });
 
       if (batchCount > 0) {
           try {
-              await batch.commit(); // Firebase ပေါ်သို့ တပြိုင်နက်တည်း Update လုပ်ခြင်း
+              await batch.commit(); 
               console.log(`Auto-cancelled ${batchCount} records older than 5 days.`);
               
-              // 🌟 Telegram သို့ Auto Cancel Alert များပို့ရန် 🌟
               cancelledItems.forEach(tx => {
                   let alertMsg = `🤖❌ <b>Auto Cancel (၅ ရက်ပြည့်သွားသဖြင့်)</b>\n\n`;
                   alertMsg += `ID: <code>${tx.id}</code>\n`;
@@ -2688,7 +2685,6 @@
       const tx = allLoadedHistory[index];
       if(tx.status === newStatus) return;
 
-      // 🌟 Staff က Cancelled ပြောင်းလျှင် Report Admin ပြပြီး မူလအတိုင်း ပြန်ထားမည် 🌟
       if (CURRENT_ROLE === 'staff' && newStatus === 'Cancelled') {
           alert("Report Admin");
           if (selectEl) selectEl.value = tx.status;
@@ -2704,7 +2700,6 @@
           let alertMsg = `${statusEmoji} <b>မှတ်တမ်း Status ပြောင်းလဲမှု</b>\n\n`;
           alertMsg += `ID: <code>${invId}</code>\n`;
           
-          // 🌟 Customer Name နှင့် ဖုန်းနံပါတ် ပါရင် Telegram စာထဲ ထည့်ပြပေးမည် 🌟
           if (tx.customerName && tx.customerName !== "—") {
               alertMsg += `Customer: <b>${tx.customerName}</b>\n`;
               
@@ -2719,15 +2714,14 @@
           
           alertMsg += `အမျိုးအစား: <b>${tx.type}</b>\n`;
           alertMsg += `ပမာဏ: <code>${tx.inAmt}</code> ➔ <code>${tx.outAmt}</code>\n`;
+          alertMsg += `ငွေဈေး: <code>${tx.rate || "-"}</code>\n`; // 🌟 ငွေဈေး ထပ်ထည့်ထားပါသည်
           // 🌟 နည်းလမ်း (Method) ထည့်သွင်းခြင်း 🌟
           alertMsg += `နည်းလမ်း: <b>${tx.method || "-"}</b>\n`;
           alertMsg += `Status အသစ်: <b>${newStatus}</b>\n`;
           
-          // 🌟 Device Name ဖော်ပြခြင်း 🌟
           let mappedDeviceName = FIREBASE_DEVICE_NAMES[tx.deviceId] || tx.deviceId || "Unknown";
           alertMsg += `Device: <b>${mappedDeviceName}</b>`;
           
-          // 🌟 Topic ၃ မျိုး ခွဲခြားပို့ဆောင်ခြင်း 🌟
           if(newStatus === 'Success') {
               sendTelegramAlert(alertMsg, TELEGRAM_SUCCESS_TOPIC_ID);
           } else if(newStatus === 'Cancelled') {
@@ -2764,7 +2758,6 @@
       const newInAmt = tx.outAmt;
       const newOutAmt = tx.inAmt;
 
-      // 🌟 အမျိုးအစား (Type) ကိုပါ အလိုအလျောက် ပြောင်းပေးမည့် Logic 🌟
       let newType = tx.type;
       if (tx.type === "THB ➔ MMK") {
           newType = "MMK ➔ THB";
@@ -2777,14 +2770,12 @@
       }
 
       try {
-          // Firebase ပေါ်တွင် In/Out Amount ရော၊ Type ပါ တစ်ခါတည်း Update လုပ်မည်
           await firebase.firestore().collection("exchange_history").doc(invId).update({ 
               inAmt: newInAmt,
               outAmt: newOutAmt,
               type: newType
           });
           
-          // Local Array ထဲတွင်ပါ Update လုပ်မည်
           allLoadedHistory[index].inAmt = newInAmt;
           allLoadedHistory[index].outAmt = newOutAmt;
           allLoadedHistory[index].type = newType;
@@ -2795,19 +2786,16 @@
       }
   }
 
-  // 🌟 ပမာဏ မှားယွင်းမှုအတွက် ပြန်ပြင်သည့် Function 🌟
   window.editTxAmounts = async function(invId) {
       const index = allLoadedHistory.findIndex(x => x.id === invId);
       if(index === -1) return;
       const tx = allLoadedHistory[index];
 
-      // အဝင်ငွေ ပြင်ရန်
       let newIn = prompt(`လွှဲငွေ (In Amount) ကို ပြင်ပါ\nဥပမာ: 1000 THB (သို့) 100000 MMK`, tx.inAmt);
-      if(newIn === null) return; // Cancel နှိပ်လျှင် ရပ်မည်
+      if(newIn === null) return; 
       
-      // အထွက်ငွေ ပြင်ရန်
       let newOut = prompt(`ရငွေ (Out Amount) ကို ပြင်ပါ\nဥပမာ: 100000 MMK (သို့) 1000 THB`, tx.outAmt);
-      if(newOut === null) return; // Cancel နှိပ်လျှင် ရပ်မည်
+      if(newOut === null) return; 
 
       newIn = newIn.trim();
       newOut = newOut.trim();
@@ -2825,10 +2813,10 @@
           allLoadedHistory[index].inAmt = newIn;
           allLoadedHistory[index].outAmt = newOut;
           
-          renderHistoryRows(allLoadedHistory); // Table ကို Refresh လုပ်မည်
+          renderHistoryRows(allLoadedHistory); 
           
           if (CURRENT_ROLE === 'admin') {
-              updateDashboard(allLoadedHistory); // Dashboard Profit များကို အသစ်ပြန်တွက်ပေးမည်
+              updateDashboard(allLoadedHistory); 
           }
           
           alert("ပမာဏ အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
@@ -2851,7 +2839,6 @@
       }
   }
 
-  // --- 🌟 ပြေစာဟောင်း ပြန်ထုတ်သည့် Function (Reprint Receipt - HD Export) 🌟 ---
   window.reprintReceipt = async function(invId, btnElement = null) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
@@ -3102,7 +3089,6 @@
               clone.insertBefore(cusDiv, footerDiv); 
           }
 
-          // 🌟 Background Watermark Logo & ID (နေရာအနှံ့ Full Coverage) 🌟
           const watermarkDiv = document.createElement('div');
           watermarkDiv.style.position = 'absolute';
           watermarkDiv.style.top = '0';
@@ -3113,7 +3099,6 @@
           watermarkDiv.style.zIndex = '10';
           watermarkDiv.style.overflow = 'hidden'; 
 
-          // 1. Center Logo (Straight)
           const wmImg = document.createElement('img');
           wmImg.src = 'assets/logo/main_logo.png';
           wmImg.style.position = 'absolute';
@@ -3124,7 +3109,6 @@
           wmImg.style.opacity = '0.09'; 
           watermarkDiv.appendChild(wmImg);
 
-          // 2. Diagonal Text Group (နေရာအနှံ့ ပျံ့နေအောင်)
           const textContainer = document.createElement('div');
           textContainer.style.position = 'absolute';
           textContainer.style.top = '-50%';
@@ -3153,7 +3137,6 @@
               wmId.textContent = "ID: " + tx.id; 
               block.appendChild(wmId);
 
-              // နာမည်ပါရင် ဒုတိယစာကြောင်းအနေနဲ့ ထည့်မည်
               if (tx.customerName && tx.customerName !== "—") { 
                   const wmName = document.createElement('div');
                   wmName.style.fontSize = '20px';
@@ -3176,7 +3159,6 @@
               wmImg.onload = () => { clearTimeout(timer); res(); };
               wmImg.onerror = () => { clearTimeout(timer); res(); };
           });
-          // 🌟 ------------------------ 🌟
 
           clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
           document.body.appendChild(clone);
@@ -3257,7 +3239,6 @@
         let method = d.method || "-";
         let cusName = d.customerName || "—";
         
-        // 🌟 60px မူလအတိုင်း သော့ခတ်ထားသော Customer Name ပြသခြင်း 🌟
         let cusHtml = `<div class="max-w-[60px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
         
         let statusColor = status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : 
@@ -3268,7 +3249,23 @@
         let statusHtml = `<span class="border rounded px-2 py-1 text-xs font-bold bg-white ${statusColor}">${status}</span>`;
         let amountHtml = `<span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>`;
         
+        // -----------------------------
+        // အသစ်ထည့်ထားတဲ့ စလစ်ခလုတ် အပိုင်း
+        // -----------------------------
         let actionHtml = `<button onclick="reprintReceipt('${d.id}', this)" class="btn bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 !py-1 !px-2 !text-xs whitespace-nowrap mr-1" title="ပြေစာပြန်ထုတ်မည်">🖨️</button>`;
+
+        // ---------------------------------
+        // ပုံအများကြီးအတွက် စလစ်ခလုတ် အသစ် (Compact UI - ခလုတ် ၁ ခုတည်း)
+        let slipArr = d.slipUrls || [];
+        if (d.slipUrl && slipArr.length === 0) slipArr = [d.slipUrl]; // အရင်တင်ထားတဲ့ ပုံအဟောင်းတွေအတွက်
+
+        if (slipArr.length > 0) {
+            let btnText = slipArr.length === 1 ? "👁️ စလစ်" : `👁️ စလစ် (${slipArr.length})`;
+            actionHtml += `<button onclick="openSlipModal('${d.id}')" class="btn bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 !py-1 !px-2 !text-xs whitespace-nowrap mr-1" title="Customer စလစ်ကြည့်မည်">${btnText}</button>`;
+        } else {
+            actionHtml += `<button onclick="triggerSlipUpload('${d.id}')" class="btn bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 !py-1 !px-2 !text-xs whitespace-nowrap mr-1" title="Customer စလစ် ပုံတင်မည်">📎 တင်မည်</button>`;
+        }
+        // ---------------------------------
 
         if(CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
            typeHtml = `
@@ -3280,7 +3277,6 @@
             </select>
           `;
           
-          // 🌟 Amount ပြင်ဆင်ခွင့် (✏️) ကို Admin သာမြင်ရမည်၊ ⇄ ကို နှစ်ဦးလုံးမြင်ရမည် 🌟
           let editBtn = CURRENT_ROLE === 'admin' ? `<button onclick="window.editTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-green-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏ ပြင်မည်">✏️</button>` : '';
 
           amountHtml = `
@@ -3305,7 +3301,6 @@
             actionHtml += `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
         }
         
-        // 🌟 Action နှင့် Method ကို နေရာချိန်းထားပြီး 60px ဖြင့် သော့ခတ်ထားသော Method ပြသခြင်း 🌟
         html += `<tr class="border-b hover:bg-gray-50">
           <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${d.id}</td>
           <td class="p-3 text-xs">${dateStr}</td>
@@ -3344,7 +3339,6 @@
       if(snap.empty) { list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500">မှတ်တမ်းမရှိသေးပါ</td></tr>'; updateDashboard([]); return; }
       allLoadedHistory = []; snap.forEach(doc => allLoadedHistory.push(doc.data()));
       
-      // 🌟 History ဆွဲတင်ချိန်တိုင်း ၅ ရက်ကျော် Pending များကို Auto Cancel လုပ်မည် 🌟
       await autoCancelOldPendingLots(allLoadedHistory);
 
       renderHistoryRows(allLoadedHistory);
@@ -3357,7 +3351,6 @@
       const searchId = document.getElementById('searchInvId').value.trim().toLowerCase();
       const searchDate = document.getElementById('searchDate') ? document.getElementById('searchDate').value : "";
 
-      // ID ရော၊ ရက်စွဲရော မရွေးထားရင် အကုန်ပြန်ပြမည်
       if (!searchId && !searchDate) { 
           renderHistoryRows(allLoadedHistory); 
           return; 
@@ -3365,7 +3358,6 @@
       
       let filtered = allLoadedHistory;
 
-      // ၁။ ရက်စွဲ ရွေးထားရင် ရက်စွဲနဲ့ အရင်စစ်ထုတ်မည်
       if (searchDate) {
           filtered = filtered.filter(d => {
               if (!d.timestamp) return false;
@@ -3378,12 +3370,10 @@
           });
       }
 
-      // ၂။ ID ရိုက်ထည့်ထားရင် ID နဲ့ ထပ်စစ်ထုတ်မည်
       if (searchId) {
           filtered = filtered.filter(d => d.id.toLowerCase().includes(searchId));
       }
 
-      // ID နဲ့ ရှာတာ Local မှာ မတွေ့ရင် Firebase ပေါ်လှမ်းရှာမည့်အပိုင်း
       if(filtered.length === 0 && searchId && searchId.startsWith('inv') && !searchDate) {
          const list = document.getElementById('adminHistoryList');
          list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔍 Database တွင် ရှာဖွေနေပါသည်...</td></tr>';
@@ -3424,9 +3414,6 @@
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
   }
 
-  // --- Export Image SaveSection & Web Share API ---
-  // (Note: I18N is moved to lang.js)
-  
   function getExportTimeStr(lang) {
     const d = new Date(); const tz = ADMIN_TIMEZONE || 'Asia/Bangkok';
     const formatterDate = new Intl.DateTimeFormat('en-GB', { timeZone: tz, day: '2-digit', month: 'short', year: 'numeric' });
@@ -3480,7 +3467,6 @@
     const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = customTexts.thanks; }
   }
 
-// --- 🌟 FAST EXPORT & CUSTOMER SAVE ---
   async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
     let origText = '';
     if (btnElement) {
@@ -3660,7 +3646,6 @@
             clone.insertBefore(cusDiv, footerDiv); 
         }
 
-        // 🌟 Background Watermark Logo & ID (နေရာအနှံ့ Full Coverage) 🌟
         const watermarkDiv = document.createElement('div');
         watermarkDiv.style.position = 'absolute';
         watermarkDiv.style.top = '0';
@@ -3671,7 +3656,6 @@
         watermarkDiv.style.zIndex = '10';
         watermarkDiv.style.overflow = 'hidden'; 
 
-        // 1. Center Logo (Straight)
         const wmImg = document.createElement('img');
         wmImg.src = 'assets/logo/main_logo.png';
         wmImg.style.position = 'absolute';
@@ -3682,7 +3666,6 @@
         wmImg.style.opacity = '0.09'; 
         watermarkDiv.appendChild(wmImg);
 
-        // 2. Diagonal Text Group (နေရာအနှံ့ ပျံ့နေအောင်)
         const textContainer = document.createElement('div');
         textContainer.style.position = 'absolute';
         textContainer.style.top = '-50%';
@@ -3733,7 +3716,6 @@
             wmImg.onload = () => { clearTimeout(timer); res(); };
             wmImg.onerror = () => { clearTimeout(timer); res(); };
         });
-        // 🌟 ------------------------ 🌟
         
         clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
         document.body.appendChild(clone);
@@ -3807,12 +3789,9 @@
                 if (btnElement) btnElement.innerHTML = '✅ ရပါပြီ!';
             };
 
-            if (isInAppBrowser) {
-                showImagePopup();
-                return; 
-            }
+            if (isInAppBrowser) { showImagePopup(); return; }
 
-            if ((action === 'share' || isIOS) && navigator.canShare) {
+            if (isIOS && navigator.canShare) {
                 const file = new File([blob], finalFileName, { type: mimeType });
                 if (navigator.canShare({ files: [file] })) {
                     try {
@@ -3855,6 +3834,180 @@
             }, 1500);
         }
     }
+  }
+// ==========================================
+  // 📎 စလစ်ပုံ Upload တင်ရန် Functions များ (ImgBB - Multi Upload, Add More & Delete)
+  // ==========================================
+  window.triggerSlipUpload = function(invId) {
+      document.getElementById('uploadTargetInvId').value = invId;
+      document.getElementById('slipUploader').click();
+  }
+
+  window.handleSlipUpload = async function(event) {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+      
+      const invId = document.getElementById('uploadTargetInvId').value;
+      const IMGBB_API_KEY = 'e45bc40a6e532436ca8c2c23580bb3c4'; 
+      
+      // 🌟 ယခင်တင်ထားသော ပုံအဟောင်းများကို အရင်ယူမည် 🌟
+      const index = allLoadedHistory.findIndex(x => x.id === invId);
+      let existingSlips = [];
+      if(index !== -1) {
+          let tx = allLoadedHistory[index];
+          existingSlips = tx.slipUrls || [];
+          if (tx.slipUrl && existingSlips.length === 0) existingSlips = [tx.slipUrl];
+      }
+
+      // ပုံအဟောင်းနဲ့ အသစ်ပေါင်းရင် ၁၀ ပုံကျော်မကျော် စစ်မည်
+      if (existingSlips.length + files.length > 10) {
+          alert(`ယခင်တင်ထားသောပုံနှင့် ယခုတင်မည့်ပုံ စုစုပေါင်း ၁၀ ပုံထက် ကျော်လွန်နေပါသည်။`);
+          event.target.value = '';
+          return;
+      }
+
+      console.log(`${invId} အတွက် စလစ်ပုံ ${files.length} ပုံ ထပ်တင်နေပါသည်...`);
+      let uploadedUrls = [];
+      let hasError = false;
+
+      try {
+          for (let i = 0; i < files.length; i++) {
+              const formData = new FormData();
+              formData.append("image", files[i]);
+
+              const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                  method: "POST",
+                  body: formData
+              });
+
+              const result = await response.json();
+              if (result.success) {
+                  uploadedUrls.push(result.data.url);
+              } else {
+                  hasError = true;
+              }
+          }
+
+          if (uploadedUrls.length > 0) {
+              // 🌟 အဟောင်းနဲ့ အသစ် ပေါင်းမည် 🌟
+              let combinedUrls = existingSlips.concat(uploadedUrls);
+
+              await firebase.firestore().collection("exchange_history").doc(invId).update({
+                  slipUrls: combinedUrls,
+                  slipUrl: combinedUrls[0] || null
+              });
+              
+              if (hasError) {
+                  alert(`✅ ပုံတချို့ကို သိမ်းပြီးပါပြီ။ တချို့ပုံများမှာ အခက်အခဲရှိခဲ့ပါသည်။`);
+              } else {
+                  alert(`✅ Customer စလစ်ပုံ ထပ်မံသိမ်းဆည်းပြီးပါပြီ။`);
+              }
+              
+              if(index !== -1) {
+                  allLoadedHistory[index].slipUrls = combinedUrls;
+                  allLoadedHistory[index].slipUrl = combinedUrls[0] || null;
+              }
+              renderHistoryRows(allLoadedHistory);
+              
+              // ပုံတင်ပြီးရင် Modal ကို ပြန်ဖွင့်ပေးမည်
+              openSlipModal(invId);
+          } else {
+              alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။");
+          }
+      } catch (e) {
+          console.error("Slip Upload Error: ", e);
+          alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။");
+      } finally {
+          event.target.value = ''; 
+      }
+  }
+
+  // 👁️ စလစ်ပုံများ ကြည့်ရန် Modal ဖွင့်သည့် Function
+  window.openSlipModal = function(invId) {
+      const tx = allLoadedHistory.find(x => x.id === invId);
+      if(!tx) return;
+      
+      let slipArr = tx.slipUrls || [];
+      if (tx.slipUrl && slipArr.length === 0) slipArr = [tx.slipUrl];
+      
+      const contentDiv = document.getElementById('slipViewContent');
+      contentDiv.innerHTML = '';
+      
+      if (slipArr.length === 0) {
+          contentDiv.innerHTML = '<p class="text-gray-500">ပုံမရှိပါ။</p>';
+      } else {
+          slipArr.forEach((url, i) => {
+              contentDiv.innerHTML += `
+                  <div class="mb-4 relative inline-block w-full">
+                     <div class="flex justify-between items-center mb-1 bg-gray-50 px-2 py-1 rounded-t-lg border-x border-t border-gray-200">
+                         <span class="text-gray-700 text-[11px] font-black">စလစ်ပုံ ${i + 1}</span>
+                         <button onclick="deleteSlipImage('${invId}', ${i})" class="text-red-600 hover:text-red-800 bg-red-100 hover:bg-red-200 px-2 py-0.5 rounded text-[10px] font-bold border border-red-300 transition-colors">🗑 ဖျက်မည်</button>
+                     </div>
+                     <img src="${url}" class="w-full h-auto rounded-b-lg border-x border-b border-gray-200 shadow-sm cursor-pointer hover:opacity-95" onclick="window.open('${url}', '_blank')" title="ပုံအကြီးကြည့်ရန် နှိပ်ပါ">
+                  </div>
+              `;
+          });
+      }
+      
+      // 🌟 ပုံထပ်တင်ရန် ခလုတ် (Add More) 🌟
+      contentDiv.innerHTML += `
+          <div class="mt-1 border-t pt-3 pb-1">
+              <button onclick="triggerSlipUpload('${invId}'); document.getElementById('slipViewModal').style.display='none';" class="btn bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 w-full !py-2 !text-sm flex items-center justify-center gap-2">
+                  <span class="text-lg">➕</span> စလစ်ပုံ ထပ်တင်မည်
+              </button>
+          </div>
+      `;
+      
+      document.getElementById('slipViewModal').style.display = 'flex';
+  }
+
+  // 🗑 ပုံဖျက်ရန် Function အသစ်
+  window.deleteSlipImage = async function(invId, imageIndex) {
+      if(!confirm("ဤပုံကို ဖျက်ရန် သေချာပါသလား?")) return;
+      
+      const index = allLoadedHistory.findIndex(x => x.id === invId);
+      if(index === -1) return;
+      
+      let tx = allLoadedHistory[index];
+      let slipArr = tx.slipUrls || [];
+      if (tx.slipUrl && slipArr.length === 0) slipArr = [tx.slipUrl];
+      
+      // ပုံကို Array ထဲကနေ ဖယ်ထုတ်မည်
+      slipArr.splice(imageIndex, 1);
+      
+      try {
+          if (slipArr.length === 0) {
+              // ပုံအကုန်ကုန်သွားရင် Database ကနေ Field တွေပါ ဖျက်မည်
+              await firebase.firestore().collection("exchange_history").doc(invId).update({
+                  slipUrls: firebase.firestore.FieldValue.delete(),
+                  slipUrl: firebase.firestore.FieldValue.delete()
+              });
+              tx.slipUrls = [];
+              tx.slipUrl = null;
+          } else {
+              // ပုံကျန်သေးရင် ကျန်တဲ့ Array ကို ပြန်သိမ်းမည်
+              await firebase.firestore().collection("exchange_history").doc(invId).update({
+                  slipUrls: slipArr,
+                  slipUrl: slipArr[0]
+              });
+              tx.slipUrls = slipArr;
+              tx.slipUrl = slipArr[0];
+          }
+          
+          // ဇယားကို Update လုပ်မည်
+          renderHistoryRows(allLoadedHistory);
+          
+          // Modal ထဲမှာ ပုံကုန်သွားရင် ပိတ်မည်၊ ကျန်သေးရင် ပြန်ဖွင့်ပြမည်
+          if (slipArr.length === 0) {
+              document.getElementById('slipViewModal').style.display = 'none';
+          } else {
+              openSlipModal(invId);
+          }
+          
+      } catch (e) {
+          console.error("Delete Slip Error: ", e);
+          alert("ပုံဖျက်ရာတွင် အခက်အခဲရှိပါသည်။");
+      }
   }
 </script>
 </body>
