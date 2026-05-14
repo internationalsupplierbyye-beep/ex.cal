@@ -815,9 +815,9 @@
   let calcLock = false;
   let allLoadedHistory = [];
   
-  // 🌟 Pagination States
-  let CURRENT_DISPLAY_COUNT = 150;
-  const DISPLAY_LIMIT = 150;
+  // 🌟 Database Pagination States
+  let lastVisibleDoc = null;
+  let isFetchingMore = false;
 
   const DEFAULT_BANK_INFO = {
     KTB:{ name:"Krungthai Bank - ကုံထိုင်းဘဏ်", logo:"krungthai.jpg", accName:"YE LYNN HTUN", accNo:"497-061-977-8" },
@@ -3227,10 +3227,9 @@
           return; 
       }
       
-      const batch = dataArray.slice(0, CURRENT_DISPLAY_COUNT);
       let html = '';
       
-      batch.forEach(d => {
+      dataArray.forEach(d => {
         let dateObj = new Date(d.timestamp);
         let dateStr = dateObj.toLocaleString('en-GB', { timeZone: d.tz || 'Asia/Bangkok', hour12: true });
         let mappedDeviceName = FIREBASE_DEVICE_NAMES[d.deviceId] || d.deviceId || "Unknown";
@@ -3316,7 +3315,7 @@
       });
       list.innerHTML = html;
       
-      if (dataArray.length > CURRENT_DISPLAY_COUNT) {
+      if (lastVisibleDoc) {
           if(loadMoreBtn) loadMoreBtn.classList.remove('hidden');
       } else {
           if(loadMoreBtn) loadMoreBtn.classList.add('hidden');
@@ -3328,26 +3327,88 @@
   }
 
   async function loadHistory() {
-    const list = document.getElementById('adminHistoryList');
-    list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>';
-    document.getElementById('searchInvId').value = '';
-    
-    CURRENT_DISPLAY_COUNT = 150; 
-    
-    try {
-      const snap = await firebase.firestore().collection("exchange_history").orderBy("timestamp", "desc").limit(1500).get();
-      if(snap.empty) { list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500">မှတ်တမ်းမရှိသေးပါ</td></tr>'; updateDashboard([]); return; }
-      allLoadedHistory = []; snap.forEach(doc => allLoadedHistory.push(doc.data()));
+      const list = document.getElementById('adminHistoryList');
+      list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>';
+      document.getElementById('searchInvId').value = '';
       
-      await autoCancelOldPendingLots(allLoadedHistory);
-
-      renderHistoryRows(allLoadedHistory);
-    } catch(e) { list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-red-500">Error loading history</td></tr>'; }
+      lastVisibleDoc = null; 
+      
+      try {
+          // 🌟 နောက်ဆုံး မှတ်တမ်း ၂၀၀ (ခန့်မှန်း ၃-၄ ရက်စာ) သာ Database မှ ဆွဲယူမည် 🌟
+          const snap = await firebase.firestore().collection("exchange_history")
+              .orderBy("timestamp", "desc")
+              .limit(200)
+              .get();
+              
+          if(snap.empty) { 
+              list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500">မှတ်တမ်းမရှိသေးပါ</td></tr>'; 
+              updateDashboard([]); 
+              return; 
+          }
+          
+          if (snap.docs.length < 200) lastVisibleDoc = null;
+          else lastVisibleDoc = snap.docs[snap.docs.length - 1]; 
+          
+          allLoadedHistory = []; 
+          snap.forEach(doc => allLoadedHistory.push(doc.data()));
+          
+          await autoCancelOldPendingLots(allLoadedHistory);
+          renderHistoryRows(allLoadedHistory);
+          
+      } catch(e) { 
+          console.error(e);
+          list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-red-500">Error loading history</td></tr>'; 
+      }
   }
 
-  async function searchHistoryLocally(resetPage = false) {
-      if (resetPage) CURRENT_DISPLAY_COUNT = 150; 
+  window.loadMoreHistory = async function() {
+      if (!lastVisibleDoc || isFetchingMore) return;
       
+      const btn = document.querySelector('#loadMoreContainer button');
+      const origText = btn.innerHTML;
+      btn.innerHTML = "🔄 ထပ်မံဆွဲယူနေပါသည်...";
+      btn.disabled = true;
+      isFetchingMore = true;
+
+      try {
+          // 🌟 ကျန်နေသော နောက်ထပ် မှတ်တမ်း ၂၀၀ ကို ထပ်ဆွဲမည် 🌟
+          const snap = await firebase.firestore().collection("exchange_history")
+              .orderBy("timestamp", "desc")
+              .startAfter(lastVisibleDoc)
+              .limit(200)
+              .get();
+
+          if (snap.empty) {
+              btn.innerHTML = "မှတ်တမ်းကုန်သွားပါပြီ";
+              setTimeout(() => {
+                  const container = document.getElementById('loadMoreContainer');
+                  if(container) container.classList.add('hidden');
+              }, 2000);
+              lastVisibleDoc = null;
+              isFetchingMore = false;
+              return;
+          }
+
+          if (snap.docs.length < 200) lastVisibleDoc = null;
+          else lastVisibleDoc = snap.docs[snap.docs.length - 1];
+          
+          snap.forEach(doc => {
+              allLoadedHistory.push(doc.data());
+          });
+          
+          searchHistoryLocally(); 
+          
+      } catch (e) {
+          console.error("Load more error: ", e);
+          alert("ထပ်မံဆွဲယူရာတွင် အခက်အခဲရှိပါသည်။");
+      } finally {
+          btn.innerHTML = origText;
+          btn.disabled = false;
+          isFetchingMore = false;
+      }
+  }
+
+  async function searchHistoryLocally() {
       const searchId = document.getElementById('searchInvId').value.trim().toLowerCase();
       const searchDate = document.getElementById('searchDate') ? document.getElementById('searchDate').value : "";
 
@@ -3384,11 +3445,6 @@
       } else { 
          renderHistoryRows(filtered); 
       }
-  }
-
-  window.loadMoreHistory = function() {
-      CURRENT_DISPLAY_COUNT += DISPLAY_LIMIT;
-      searchHistoryLocally(false); 
   }
 
   function exportHistoryCSV() {
