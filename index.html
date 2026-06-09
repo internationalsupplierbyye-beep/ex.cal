@@ -680,7 +680,15 @@
       </div>
 
       <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl mb-4">
-        <h3 class="font-bold text-gray-800 mb-2">🚀 System Data Management</h3>
+        <h3 class="font-bold text-gray-800 mb-2">🚀 System Data Management & Backup</h3>
+        <button onclick="exportDatabaseBackup()" class="w-full text-white bg-green-600 font-bold py-2 px-4 rounded mb-2 hover:bg-green-700">
+          💾 ဒေတာများကို Backup ယူမည် (Download JSON)
+        </button>
+        <button onclick="document.getElementById('importDbFile').click()" class="w-full text-white bg-blue-600 font-bold py-2 px-4 rounded mb-2 hover:bg-blue-700">
+          📂 Backup ဖိုင်မှ ဒေတာပြန်သွင်းမည် (Restore)
+        </button>
+        <input type="file" id="importDbFile" style="display:none" accept=".json" onchange="importDatabaseBackup(event)">
+        <hr class="my-3 border-gray-300">
         <button onclick="migrateDefaultsToFirebase()" id="btnMigrate" class="w-full text-white bg-purple-600 font-bold py-2 px-4 rounded mb-2 hover:bg-purple-700">
           မူလဒေတာများကို Firebase သို့ အလွယ်ထည့်မည်
         </button>
@@ -1918,8 +1926,15 @@
     dbRef.get().then((docSnap) => {
       if (docSnap.exists) {
         const data = docSnap.data();
-        FIREBASE_BANKS = data.banks || {}; FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS); 
         
+        FIREBASE_BANKS = data.banks || {}; 
+        FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS); 
+        
+        // 🌟 Auto-Repair: ပျောက်နေသော Bank များကို စာရင်းထဲ ပြန်ထည့်မည်
+        Object.keys(FIREBASE_BANKS).forEach(id => {
+            if(!FIREBASE_BANK_ORDER.includes(id)) FIREBASE_BANK_ORDER.push(id);
+        });
+
         let loadedQrs = data.qrs || [];
         FIREBASE_QRS = loadedQrs.map(q => {
             if (typeof q === 'string') return { file: q, name: q.replace(/\.[^.]+$/, '') };
@@ -1928,6 +1943,11 @@
 
         FIREBASE_CUSTOMERS = data.customers || {};
         FIREBASE_CUSTOMER_ORDER = data.customerOrder || Object.keys(FIREBASE_CUSTOMERS);
+        
+        // 🌟 Auto-Repair: ပျောက်နေသော Customer များကို စာရင်းထဲ ပြန်ထည့်မည်
+        Object.keys(FIREBASE_CUSTOMERS).forEach(id => {
+            if(!FIREBASE_CUSTOMER_ORDER.includes(id)) FIREBASE_CUSTOMER_ORDER.push(id);
+        });
 
         if (data.receiptTexts) {
             if (data.receiptTexts.orig) {
@@ -2117,8 +2137,9 @@
 
       const cusId = idInput || "CUS-" + Date.now();
       const isNew = !FIREBASE_CUSTOMERS[cusId];
+      const newCustomerData = { id: cusId, name, phone, social, bankName, bankNo };
       
-      FIREBASE_CUSTOMERS[cusId] = { id: cusId, name, phone, social, bankName, bankNo };
+      FIREBASE_CUSTOMERS[cusId] = newCustomerData;
       if(isNew) { FIREBASE_CUSTOMER_ORDER.push(cusId); }
 
       clearCustomerForm();
@@ -2126,7 +2147,18 @@
       populateCustomerDropdown();
 
       try {
-          await updateFirebase('customers');
+          // 🔥 တစ်စုံလုံး Overwrite မလုပ်ဘဲ Customer တစ်ယောက်ကိုသာ သီးသန့်ကွက်သိမ်းမည်
+          if (isNew) {
+              await dbRef.update({
+                  [`customers.${cusId}`]: newCustomerData,
+                  customerOrder: firebase.firestore.FieldValue.arrayUnion(cusId)
+              });
+          } else {
+              await dbRef.update({
+                  [`customers.${cusId}`]: newCustomerData
+              });
+          }
+
           btn.classList.replace('bg-purple-600', 'bg-green-600');
           btn.textContent = "✅ သိမ်းပြီးပါပြီ";
           setTimeout(() => { 
@@ -2243,7 +2275,9 @@
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
       const cusId = "CUS-" + Date.now();
-      FIREBASE_CUSTOMERS[cusId] = { id: cusId, name, phone, social, bankName: '', bankNo: '' };
+      const newCustomerData = { id: cusId, name, phone, social, bankName: '', bankNo: '' };
+      
+      FIREBASE_CUSTOMERS[cusId] = newCustomerData;
       FIREBASE_CUSTOMER_ORDER.push(cusId);
 
       renderCustomerAdminList(); 
@@ -2257,7 +2291,11 @@
       document.getElementById('qCusPhone').value = '';
 
       try {
-          await updateFirebase('customers');
+          // 🔥 သီးသန့်ကွက်သိမ်းမည်
+          await dbRef.update({
+              [`customers.${cusId}`]: newCustomerData,
+              customerOrder: firebase.firestore.FieldValue.arrayUnion(cusId)
+          });
       } catch(e) { 
           alert("Error: " + e.message); 
       } finally { 
@@ -2289,7 +2327,11 @@
       delete FIREBASE_CUSTOMERS[id];
       FIREBASE_CUSTOMER_ORDER = FIREBASE_CUSTOMER_ORDER.filter(x => x !== id);
       try {
-          await updateFirebase('customers'); 
+          // 🔥 သီးသန့် ကွက်ဖျက်မည်
+          await dbRef.update({
+              [`customers.${id}`]: firebase.firestore.FieldValue.delete(),
+              customerOrder: firebase.firestore.FieldValue.arrayRemove(id)
+          });
           renderCustomerAdminList(); populateCustomerDropdown();
       } catch(e) { alert("Error deleting."); }
   }
@@ -4056,6 +4098,51 @@
           console.error("Delete Slip Error: ", e);
           alert("ပုံဖျက်ရာတွင် အခက်အခဲရှိပါသည်။");
       }
+  }
+// ==========================================
+  // 💾 Backup & Restore Functions (အသစ်)
+  // ==========================================
+  function exportDatabaseBackup() {
+      const backupData = {
+          banks: FIREBASE_BANKS,
+          bankOrder: FIREBASE_BANK_ORDER,
+          qrs: FIREBASE_QRS,
+          customers: FIREBASE_CUSTOMERS,
+          customerOrder: FIREBASE_CUSTOMER_ORDER,
+          receiptTexts: FIREBASE_RECEIPT_TEXTS,
+          deviceNames: FIREBASE_DEVICE_NAMES,
+          hiddenDevices: FIREBASE_HIDDEN_DEVICES
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      const dateStr = new Date().toISOString().slice(0,10);
+      downloadAnchorNode.setAttribute("download", "TG_Excal_Backup_" + dateStr + ".json");
+      document.body.appendChild(downloadAnchorNode); 
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+  }
+
+  function importDatabaseBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+          try {
+              const importedData = JSON.parse(e.target.result);
+              if (!confirm("Backup ဖိုင်မှ ဒေတာများကို Restore လုပ်ပါမည်။ လက်ရှိဒေတာများ နေရာတွင် အစားထိုးသွားပါမည်။ သေချာပါသလား?")) {
+                  event.target.value = ''; // Cancelled
+                  return;
+              }
+              
+              await dbRef.set(importedData, { merge: true });
+              alert("Backup ဒေတာ အောင်မြင်စွာ Restore လုပ်ပြီးပါပြီ။ Page ကို Refresh လုပ်ပါမည်။");
+              window.location.reload();
+          } catch (err) {
+              alert("Backup ဖိုင်မှားယွင်းနေပါသည်။ (Invalid JSON)");
+          }
+      };
+      reader.readAsText(file);
   }
 </script>
 </body>
