@@ -1869,9 +1869,13 @@
 
   function updateReceiptUI() {
       const texts = FIREBASE_RECEIPT_TEXTS['orig'] || {warn1:'', warn2:'', thanks:''};
-      document.querySelectorAll('.lang-warn1').forEach(el => el.textContent = texts.warn1);
-      document.querySelectorAll('.lang-warn2').forEach(el => el.textContent = texts.warn2);
-      document.querySelectorAll('.lang-thanks').forEach(el => el.textContent = texts.thanks);
+      
+      // {id} နေရာတွင် UI ၌ XXXX ဟု အကြမ်းဖျင်းပြထားမည်
+      const replaceVars = (txt) => txt ? txt.replace(/{id}/g, 'XXXX') : '';
+
+      document.querySelectorAll('.lang-warn1').forEach(el => el.textContent = replaceVars(texts.warn1));
+      document.querySelectorAll('.lang-warn2').forEach(el => el.textContent = replaceVars(texts.warn2));
+      document.querySelectorAll('.lang-thanks').forEach(el => el.textContent = replaceVars(texts.thanks));
   }
 
   // --- Initializing ---
@@ -3018,7 +3022,7 @@
               el.style.display = 'block';
           });
 
-          applyLangToClone(clone, lang);
+          applyLangToClone(clone, lang, invId);
 
           const inputs = clone.querySelectorAll('input.amt-input');
           if (inputs.length >= 2) {
@@ -3618,13 +3622,22 @@
     return `Date : ${formatterDate.format(d)} (${formatterTime.format(d).replace(/[\s\u202f]+/g, '')}) (${tzLabel})`;
   }
   
-  function applyLangToClone(clone, lang){
+  function applyLangToClone(clone, lang, invId = ''){
     const customTexts = FIREBASE_RECEIPT_TEXTS[lang] || FIREBASE_RECEIPT_TEXTS['orig'];
     
+    const replaceVars = (txt) => {
+        if (!txt) return txt;
+        if (invId) {
+            const last4 = invId.split('-').pop(); // INV260609-8684 မှ 8684 ကိုယူမည်
+            return txt.replace(/{id}/g, last4);
+        }
+        return txt.replace(/{id}/g, 'XXXX');
+    };
+    
     if(lang==='orig') {
-        const w1 = clone.querySelector('.lang-warn1'); if(w1 && customTexts.warn1) { w1.textContent = customTexts.warn1; }
-        const w2 = clone.querySelector('.lang-warn2'); if(w2 && customTexts.warn2) { w2.textContent = customTexts.warn2; }
-        const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = customTexts.thanks; }
+        const w1 = clone.querySelector('.lang-warn1'); if(w1 && customTexts.warn1) { w1.textContent = replaceVars(customTexts.warn1); }
+        const w2 = clone.querySelector('.lang-warn2'); if(w2 && customTexts.warn2) { w2.textContent = replaceVars(customTexts.warn2); }
+        const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = replaceVars(customTexts.thanks); }
         return;
     }
     
@@ -3636,6 +3649,7 @@
     else if(clone.id==='box-mmk2thb'){ if(h2) h2.textContent=T.h_mmk2thb; if(subTop) subTop.textContent=T.sub_mmk2thb; }
     else if(clone.id==='box-vnd2mmk'){ if(h2) h2.textContent=T.h_vnd2mmk; if(subTop) subTop.textContent=T.sub_vnd2mmk; }
     else if(clone.id==='box-mmk2vnd'){ if(h2) h2.textContent=T.h_mmk2vnd; if(subTop) subTop.textContent=T.sub_mmk2vnd; }
+    
     const spans=clone.querySelectorAll('label.label span');
     if(spans.length>=2){
       if(clone.id==='box-thb2mmk'){ spans[0].textContent=T.lbl_thb; spans[1].textContent=T.lbl_mmk; }
@@ -3643,6 +3657,7 @@
       if(clone.id==='box-vnd2mmk'){ spans[0].textContent=T.lbl_vnd; spans[1].textContent=T.lbl_mmk; }
       if(clone.id==='box-mmk2vnd'){ spans[0].textContent=T.lbl_mmk; spans[1].textContent=T.lbl_vnd; }
     }
+    
     const subs=clone.querySelectorAll('.grid .sub');
     if(subs.length>=2){
       if(clone.id==='box-thb2mmk'){ subs[0].textContent=T.in_thb; subs[1].textContent=T.out_mmk; }
@@ -3650,15 +3665,16 @@
       if(clone.id==='box-vnd2mmk'){ subs[0].textContent=T.in_vnd; subs[1].textContent=T.out_mmk; }
       if(clone.id==='box-mmk2vnd'){ subs[0].textContent=T.in_mmk; subs[1].textContent=T.out_vnd; }
     }
+    
     const rateP=clone.querySelector('.rate-note');
     if(rateP) {
       if(clone.id==='box-thb2mmk' || clone.id==='box-mmk2thb'){ rateP.textContent = T.rateTpl.replace('{r}',fmt6(LAST_RATE.r)).replace('{inv}',fmt6(LAST_RATE.inv)); rateP.innerHTML += '<br>'; }
       if(clone.id==='box-vnd2mmk' || clone.id==='box-mmk2vnd'){ rateP.textContent = T.rateVndTpl.replace('{v}',fmt6(LAST_RATE.vnd)); rateP.innerHTML += '<br>'; }
     }
 
-    const w1 = clone.querySelector('.lang-warn1'); if(w1 && customTexts.warn1) { w1.textContent = customTexts.warn1; }
-    const w2 = clone.querySelector('.lang-warn2'); if(w2 && customTexts.warn2) { w2.textContent = customTexts.warn2; }
-    const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = customTexts.thanks; }
+    const w1 = clone.querySelector('.lang-warn1'); if(w1 && customTexts.warn1) { w1.textContent = replaceVars(customTexts.warn1); }
+    const w2 = clone.querySelector('.lang-warn2'); if(w2 && customTexts.warn2) { w2.textContent = replaceVars(customTexts.warn2); }
+    const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = replaceVars(customTexts.thanks); }
   }
 
   async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
@@ -3687,7 +3703,11 @@
             el.style.display = 'block';
         });
 
-        applyLangToClone(clone, lang);
+        const dDate = new Date();
+        const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
+        const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
+
+        applyLangToClone(clone, lang, invId);
         
         let inValueStr = '', outValueStr = '';
         clone.querySelectorAll('input').forEach(el=>{
@@ -3762,10 +3782,6 @@
           }
         }
         
-        const dDate = new Date();
-        const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
-        const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
-
         const timeStr = getExportTimeStr(lang);
         
         const footerDiv = document.createElement('div');
