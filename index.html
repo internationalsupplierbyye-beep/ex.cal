@@ -765,7 +765,7 @@
               <h3 class="font-bold text-sm text-gray-600">📋 Customer စာရင်းများ</h3>
               <input type="text" id="searchCus" class="border rounded px-2 py-1 text-xs w-40" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." oninput="renderCustomerAdminList()">
           </div>
-          <div id="adminCustomerList" class="overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1"></div>
+          <div id="adminCustomerList" class="overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 content-start"></div>
       </div>
     </div>
 
@@ -2080,23 +2080,69 @@
   }
 
   // --- Drag & Drop (Banks/QRs/Customers) ---
+  // --- Drag & Drop (Optimized) ---
   let dragStartIndex = null; let dragType = null;
-  function handleDragStart(e) { dragStartIndex = parseInt(e.currentTarget.getAttribute('data-index')); dragType = e.currentTarget.getAttribute('data-type'); e.dataTransfer.effectAllowed = 'move'; e.currentTarget.classList.add('dragging'); }
-  function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('drag-over'); }
-  function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
   
-  async function handleDrop(e) {
-    e.preventDefault(); e.currentTarget.classList.remove('drag-over');
-    const dragEndIndex = parseInt(e.currentTarget.getAttribute('data-index')); const dropType = e.currentTarget.getAttribute('data-type');
-    if (dragType !== dropType || dragStartIndex === dragEndIndex) return;
-    
-    if (dragType === 'bank') { const item = FIREBASE_BANK_ORDER.splice(dragStartIndex, 1)[0]; FIREBASE_BANK_ORDER.splice(dragEndIndex, 0, item); await updateFirebase('banks'); } 
-    else if (dragType === 'qr') { const item = FIREBASE_QRS.splice(dragStartIndex, 1)[0]; FIREBASE_QRS.splice(dragEndIndex, 0, item); await updateFirebase('qrs'); }
-    else if (dragType === 'customer') { const item = FIREBASE_CUSTOMER_ORDER.splice(dragStartIndex, 1)[0]; FIREBASE_CUSTOMER_ORDER.splice(dragEndIndex, 0, item); await updateFirebase('customers'); }
-    
-    initDropdowns(); renderAdminLists(); renderCustomerAdminList(); 
+  function handleDragStart(e) { 
+      dragStartIndex = parseInt(e.currentTarget.getAttribute('data-index')); 
+      dragType = e.currentTarget.getAttribute('data-type'); 
+      e.dataTransfer.effectAllowed = 'move'; 
+      setTimeout(() => e.target.classList.add('dragging'), 0);
   }
-  function handleDragEnd(e) { e.currentTarget.classList.remove('dragging'); document.querySelectorAll('.list-item').forEach(el => el.classList.remove('drag-over')); }
+  
+  function handleDragOver(e) { 
+      e.preventDefault(); 
+      e.dataTransfer.dropEffect = 'move'; 
+      const dropIndex = parseInt(e.currentTarget.getAttribute('data-index'));
+      if(dragStartIndex !== dropIndex) {
+          e.currentTarget.classList.add('drag-over'); 
+      }
+  }
+  
+  function handleDragLeave(e) { 
+      e.currentTarget.classList.remove('drag-over'); 
+  }
+  
+  function handleDrop(e) {
+      e.preventDefault(); 
+      e.currentTarget.classList.remove('drag-over');
+      
+      const dragEndIndex = parseInt(e.currentTarget.getAttribute('data-index')); 
+      const dropType = e.currentTarget.getAttribute('data-type');
+      
+      if (dragType !== dropType || dragStartIndex === dragEndIndex || isNaN(dragEndIndex)) return;
+      
+      let updateTarget = '';
+      
+      if (dragType === 'bank') { 
+          const item = FIREBASE_BANK_ORDER.splice(dragStartIndex, 1)[0]; 
+          FIREBASE_BANK_ORDER.splice(dragEndIndex, 0, item); 
+          updateTarget = 'banks';
+      } 
+      else if (dragType === 'qr') { 
+          const item = FIREBASE_QRS.splice(dragStartIndex, 1)[0]; 
+          FIREBASE_QRS.splice(dragEndIndex, 0, item); 
+          updateTarget = 'qrs';
+      }
+      else if (dragType === 'customer') { 
+          const item = FIREBASE_CUSTOMER_ORDER.splice(dragStartIndex, 1)[0]; 
+          FIREBASE_CUSTOMER_ORDER.splice(dragEndIndex, 0, item); 
+          updateTarget = 'customers';
+      }
+      
+      initDropdowns(); 
+      if (dragType === 'customer') renderCustomerAdminList();
+      else renderAdminLists(); 
+      
+      if (updateTarget !== '') {
+          updateFirebase(updateTarget).catch(err => console.error("Drag Drop Save Error:", err));
+      }
+  }
+  
+  function handleDragEnd(e) { 
+      e.currentTarget.classList.remove('dragging'); 
+      document.querySelectorAll('.list-item').forEach(el => el.classList.remove('drag-over')); 
+  }
 
   function renderAdminLists() {
     const bankListDiv = document.getElementById('adminBankList'); bankListDiv.innerHTML = '';
@@ -2345,7 +2391,8 @@
       const listDiv = document.getElementById('adminCustomerList'); listDiv.innerHTML = '';
       const search = (document.getElementById('searchCus')?.value || '').toLowerCase();
       
-      if(FIREBASE_CUSTOMER_ORDER.length === 0) { listDiv.innerHTML = '<p class="text-xs text-gray-400 p-2 text-center">Customer မရှိသေးပါ</p>'; return; }
+      // 🌟 Grid မှာ မရှိဘူးဆိုရင် တစ်ကြောင်းလုံးစာ ယူရန် (col-span-full ထည့်ထားပါသည်)
+      if(FIREBASE_CUSTOMER_ORDER.length === 0) { listDiv.innerHTML = '<p class="text-xs text-gray-400 p-2 text-center col-span-full w-full">Customer မရှိသေးပါ</p>'; return; }
       
       let customerData = {};
       const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
@@ -2354,12 +2401,7 @@
           allLoadedHistory.forEach(tx => {
               if (tx.status === 'Success' && tx.customerName && tx.customerName !== "—") {
                   if (!customerData[tx.customerName]) {
-                      customerData[tx.customerName] = {
-                          txs: [], 
-                          totalThb: 0,
-                          totalMmk: 0,
-                          totalVnd: 0
-                      };
+                      customerData[tx.customerName] = { txs: [], totalThb: 0, totalMmk: 0, totalVnd: 0 };
                   }
                   const amtStr = tx.outAmt;
                   customerData[tx.customerName].txs.push(amtStr);
@@ -2388,13 +2430,10 @@
 
           if (data && data.txs.length > 0) {
               let totalsHtml = `<div class="flex gap-1.5 mt-1.5 overflow-x-auto pb-1 items-center cursor-pointer select-none" onclick="window.toggleCusDetails('details-${id}')" style="max-width: 100%;" title="အသေးစိတ်ကြည့်ရန် နှိပ်ပါ">`;
-              
               totalsHtml += `<span class="bg-purple-100 border border-purple-300 text-purple-800 px-1.5 py-0.5 rounded text-[10px] font-black whitespace-nowrap shadow-sm hover:bg-purple-200 transition-colors">အောင်မြင်: ${data.txs.length} ကြိမ် ▼</span>`;
-
               if (data.totalThb > 0) totalsHtml += `<span class="border border-blue-200 bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-black whitespace-nowrap shadow-sm">🇹🇭 ${data.totalThb.toLocaleString('en-US')} THB</span>`;
               if (data.totalMmk > 0) totalsHtml += `<span class="border border-green-200 bg-green-50 text-green-700 px-1.5 py-0.5 rounded text-[10px] font-black whitespace-nowrap shadow-sm">🇲🇲 ${data.totalMmk.toLocaleString('en-US')} MMK</span>`;
               if (data.totalVnd > 0) totalsHtml += `<span class="border border-orange-200 bg-orange-50 text-orange-700 px-1.5 py-0.5 rounded text-[10px] font-black whitespace-nowrap shadow-sm">🇻🇳 ${data.totalVnd.toLocaleString('en-US')} VND</span>`;
-              
               totalsHtml += `</div>`;
 
               let detailsHtml = `<div id="details-${id}" class="hidden flex gap-1.5 mt-1 overflow-x-auto pb-1 items-center pl-2 border-l-2 border-purple-300 bg-gray-50/50 p-1 rounded-r" style="max-width: 100%;">`;
@@ -2403,15 +2442,14 @@
                   if (amt.includes('THB')) colorClass = 'bg-blue-50 border-blue-200 text-blue-700';
                   else if (amt.includes('MMK')) colorClass = 'bg-green-50 border-green-200 text-green-700';
                   else if (amt.includes('VND')) colorClass = 'bg-orange-50 border-orange-200 text-orange-700';
-                  
                   detailsHtml += `<span class="border px-1.5 py-0.5 rounded text-[10px] font-black whitespace-nowrap ${colorClass}">${amt}</span>`;
               });
               detailsHtml += `</div>`;
-
               txHtml = totalsHtml + detailsHtml;
           }
 
-          listDiv.innerHTML += `<div class="list-item bg-white flex justify-between items-center p-2 mb-1.5 border rounded" draggable="true" data-index="${index}" data-type="customer" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
+          // 🌟 Grid ပုံစံ ညီစေရန် mb-1.5 အစား !mb-0 h-full ကို အသုံးပြုထားပါသည် 🌟
+          listDiv.innerHTML += `<div class="list-item bg-white flex justify-between items-center p-2 !mb-0 border rounded h-full" draggable="true" data-index="${index}" data-type="customer" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
               <div class="flex items-center mr-2 w-full" style="min-width: 0;">
                   <span class="drag-handle flex-shrink-0" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span>
                   <div class="truncate w-full">
