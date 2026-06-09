@@ -82,7 +82,7 @@
     
     .admin-content { 
       background: white; 
-      max-width: 98%;  /* 👈 ဒီနေရာလေးကို 1200px အစား 98% လို့ ပြင်လိုက်ပါ */
+      max-width: 98%; 
       margin: 0 auto; 
       border-radius: 16px; 
       padding: 20px; 
@@ -1167,7 +1167,7 @@
               d.setDate(nowTz.getDate() - i);
               targetDates.push(toYYYYMMDD(d));
           }
-          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${targetDates[targetDates.length-1]} မှ ${targetDates[0]} อထိ (ယခုတစ်ပတ်)`;
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${targetDates[targetDates.length-1]} မှ ${targetDates[0]} အထိ (ယခုတစ်ပတ်)`;
       } else if (filter === 'month') {
           const currentMonthStr = todayTzStr.substring(0, 7); 
           targetDates = currentMonthStr; 
@@ -1175,7 +1175,7 @@
       } else if (filter === 'custom') {
           const sd = document.getElementById('dashStartDate').value || "0000-00-00";
           const ed = document.getElementById('dashEndDate').value || "9999-99-99";
-          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${sd} မှ ${ed} อထိ`;
+          if(periodTitle) periodTitle.textContent = `ရက်စွဲ: ${sd} မှ ${ed} အထိ`;
       }
 
       const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
@@ -1974,10 +1974,19 @@
     });
   } catch (err) {}
 
-  async function updateFirebase() {
+  // 🌟 Type အလိုက် ခွဲသိမ်းမည့် အပိုင်း (Data Overwrite မဖြစ်စေရန်)
+  async function updateFirebase(type = 'all') {
     if(dbRef) {
       try { 
-        await dbRef.set({ banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES, customers: FIREBASE_CUSTOMERS, customerOrder: FIREBASE_CUSTOMER_ORDER }, { merge: true }); 
+        let payload = {};
+        if (type === 'banks') payload = { banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER };
+        else if (type === 'qrs') payload = { qrs: FIREBASE_QRS };
+        else if (type === 'customers') payload = { customers: FIREBASE_CUSTOMERS, customerOrder: FIREBASE_CUSTOMER_ORDER };
+        else if (type === 'devices') payload = { deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES };
+        else if (type === 'receipts') payload = { receiptTexts: FIREBASE_RECEIPT_TEXTS };
+        else payload = { banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES, customers: FIREBASE_CUSTOMERS, customerOrder: FIREBASE_CUSTOMER_ORDER };
+        
+        await dbRef.set(payload, { merge: true }); 
       } catch(err) { alert("Firebase သိမ်း၍မရပါ။"); }
     }
   }
@@ -2055,14 +2064,17 @@
   function handleDragStart(e) { dragStartIndex = parseInt(e.currentTarget.getAttribute('data-index')); dragType = e.currentTarget.getAttribute('data-type'); e.dataTransfer.effectAllowed = 'move'; e.currentTarget.classList.add('dragging'); }
   function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; e.currentTarget.classList.add('drag-over'); }
   function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+  
   async function handleDrop(e) {
     e.preventDefault(); e.currentTarget.classList.remove('drag-over');
     const dragEndIndex = parseInt(e.currentTarget.getAttribute('data-index')); const dropType = e.currentTarget.getAttribute('data-type');
     if (dragType !== dropType || dragStartIndex === dragEndIndex) return;
-    if (dragType === 'bank') { const item = FIREBASE_BANK_ORDER.splice(dragStartIndex, 1)[0]; FIREBASE_BANK_ORDER.splice(dragEndIndex, 0, item); } 
-    else if (dragType === 'qr') { const item = FIREBASE_QRS.splice(dragStartIndex, 1)[0]; FIREBASE_QRS.splice(dragEndIndex, 0, item); }
-    else if (dragType === 'customer') { const item = FIREBASE_CUSTOMER_ORDER.splice(dragStartIndex, 1)[0]; FIREBASE_CUSTOMER_ORDER.splice(dragEndIndex, 0, item); }
-    initDropdowns(); renderAdminLists(); renderCustomerAdminList(); await updateFirebase();
+    
+    if (dragType === 'bank') { const item = FIREBASE_BANK_ORDER.splice(dragStartIndex, 1)[0]; FIREBASE_BANK_ORDER.splice(dragEndIndex, 0, item); await updateFirebase('banks'); } 
+    else if (dragType === 'qr') { const item = FIREBASE_QRS.splice(dragStartIndex, 1)[0]; FIREBASE_QRS.splice(dragEndIndex, 0, item); await updateFirebase('qrs'); }
+    else if (dragType === 'customer') { const item = FIREBASE_CUSTOMER_ORDER.splice(dragStartIndex, 1)[0]; FIREBASE_CUSTOMER_ORDER.splice(dragEndIndex, 0, item); await updateFirebase('customers'); }
+    
+    initDropdowns(); renderAdminLists(); renderCustomerAdminList(); 
   }
   function handleDragEnd(e) { e.currentTarget.classList.remove('dragging'); document.querySelectorAll('.list-item').forEach(el => el.classList.remove('drag-over')); }
 
@@ -2114,7 +2126,7 @@
       populateCustomerDropdown();
 
       try {
-          await updateFirebase();
+          await updateFirebase('customers');
           btn.classList.replace('bg-purple-600', 'bg-green-600');
           btn.textContent = "✅ သိမ်းပြီးပါပြီ";
           setTimeout(() => { 
@@ -2245,7 +2257,7 @@
       document.getElementById('qCusPhone').value = '';
 
       try {
-          await updateFirebase();
+          await updateFirebase('customers');
       } catch(e) { 
           alert("Error: " + e.message); 
       } finally { 
@@ -2277,7 +2289,8 @@
       delete FIREBASE_CUSTOMERS[id];
       FIREBASE_CUSTOMER_ORDER = FIREBASE_CUSTOMER_ORDER.filter(x => x !== id);
       try {
-          await updateFirebase(); renderCustomerAdminList(); populateCustomerDropdown();
+          await updateFirebase('customers'); 
+          renderCustomerAdminList(); populateCustomerDropdown();
       } catch(e) { alert("Error deleting."); }
   }
 
@@ -2430,7 +2443,7 @@
       }
 
       try {
-          await updateFirebase();
+          await updateFirebase('banks');
           clearBankForm();
           initDropdowns();
           renderAdminLists();
@@ -2443,7 +2456,7 @@
       delete FIREBASE_BANKS[id];
       FIREBASE_BANK_ORDER = FIREBASE_BANK_ORDER.filter(item => item !== id);
       try {
-          await updateFirebase();
+          await updateFirebase('banks');
           initDropdowns();
           renderAdminLists();
       } catch(e) { alert("Error deleting bank."); }
@@ -2495,7 +2508,7 @@
       }
 
       try {
-          await updateFirebase();
+          await updateFirebase('qrs');
           clearQrForm();
           initDropdowns();
           renderAdminLists();
@@ -2507,7 +2520,7 @@
       if(!confirm("ဤ QR ကို ဖျက်ရန် သေချာပါသလား?")) return;
       FIREBASE_QRS.splice(index, 1);
       try {
-          await updateFirebase();
+          await updateFirebase('qrs');
           initDropdowns();
           renderAdminLists();
       } catch(e) { alert("Error deleting QR."); }
@@ -2520,7 +2533,7 @@
       FIREBASE_QRS = DEFAULT_QR_FILES.map(f => ({ file: f, name: f.replace(/\.[^.]+$/, '') }));
       
       try {
-          await updateFirebase();
+          await updateFirebase('all');
           initDropdowns();
           renderAdminLists();
           alert("Data များ အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ!");
@@ -2538,7 +2551,7 @@
       FIREBASE_CUSTOMER_ORDER = [];
       
       try {
-          await updateFirebase();
+          await updateFirebase('all');
           initDropdowns();
           renderAdminLists();
           renderCustomerAdminList();
@@ -2562,7 +2575,7 @@
       FIREBASE_RECEIPT_TEXTS[lang] = { warn1: w1, warn2: w2, thanks: thx, copyBottom: cb };
 
       try {
-          await updateFirebase();
+          await updateFirebase('receipts');
           if(lang === 'orig') {
               updateReceiptUI();
           }
@@ -2608,7 +2621,7 @@
     const btn = nameInput.nextElementSibling; const originalText = btn.textContent;
     btn.textContent = "..."; btn.disabled = true;
     try {
-      await updateFirebase(); btn.textContent = "✔ Saved"; btn.classList.replace('bg-indigo-600', 'bg-green-600');
+      await updateFirebase('devices'); btn.textContent = "✔ Saved"; btn.classList.replace('bg-indigo-600', 'bg-green-600');
       setTimeout(() => { btn.textContent = "Save"; btn.classList.replace('bg-green-600', 'bg-indigo-600'); btn.disabled = false; }, 1500);
       if(document.getElementById('tab-history').classList.contains('active')) loadHistory();
     } catch(e) { alert("Error: " + e.message); btn.textContent = originalText; btn.disabled = false; }
@@ -2618,7 +2631,7 @@
       if(!confirm("ဤ Device ကို စာရင်းမှ ဖျက်ရန် သေချာပါသလား?")) return;
       if(!FIREBASE_HIDDEN_DEVICES.includes(id)) {
           FIREBASE_HIDDEN_DEVICES.push(id); delete FIREBASE_DEVICE_NAMES[id]; 
-          try { await updateFirebase(); loadAdminDevices(); if(document.getElementById('tab-history').classList.contains('active')) loadHistory(); } 
+          try { await updateFirebase('devices'); loadAdminDevices(); if(document.getElementById('tab-history').classList.contains('active')) loadHistory(); } 
           catch(e) { alert("Error: " + e.message); }
       }
   }
@@ -2768,8 +2781,7 @@
           
           alertMsg += `အမျိုးအစား: <b>${tx.type}</b>\n`;
           alertMsg += `ပမာဏ: <code>${tx.inAmt}</code> ➔ <code>${tx.outAmt}</code>\n`;
-          alertMsg += `ငွေဈေး: <code>${tx.rate || "-"}</code>\n`; // 🌟 ငွေဈေး ထပ်ထည့်ထားပါသည်
-          // 🌟 နည်းလမ်း (Method) ထည့်သွင်းခြင်း 🌟
+          alertMsg += `ငွေဈေး: <code>${tx.rate || "-"}</code>\n`; 
           alertMsg += `နည်းလမ်း: <b>${tx.method || "-"}</b>\n`;
           alertMsg += `Status အသစ်: <b>${newStatus}</b>\n`;
           
@@ -3302,15 +3314,10 @@
         let statusHtml = `<span class="border rounded px-2 py-1 text-xs font-bold bg-white ${statusColor}">${status}</span>`;
         let amountHtml = `<span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>`;
         
-        // -----------------------------
-        // အသစ်ထည့်ထားတဲ့ စလစ်ခလုတ် အပိုင်း
-        // -----------------------------
         let actionHtml = `<button onclick="reprintReceipt('${d.id}', this)" class="btn bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 !py-1 !px-2 !text-xs whitespace-nowrap mr-1" title="ပြေစာပြန်ထုတ်မည်">🖨️</button>`;
 
-        // ---------------------------------
-        // ပုံအများကြီးအတွက် စလစ်ခလုတ် အသစ် (Compact UI - ခလုတ် ၁ ခုတည်း)
         let slipArr = d.slipUrls || [];
-        if (d.slipUrl && slipArr.length === 0) slipArr = [d.slipUrl]; // အရင်တင်ထားတဲ့ ပုံအဟောင်းတွေအတွက်
+        if (d.slipUrl && slipArr.length === 0) slipArr = [d.slipUrl]; 
 
         if (slipArr.length > 0) {
             let btnText = slipArr.length === 1 ? "👁️ စလစ်" : `👁️ စလစ် (${slipArr.length})`;
@@ -3318,7 +3325,6 @@
         } else {
             actionHtml += `<button onclick="triggerSlipUpload('${d.id}')" class="btn bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 !py-1 !px-2 !text-xs whitespace-nowrap mr-1" title="Customer စလစ် ပုံတင်မည်">📎 တင်မည်</button>`;
         }
-        // ---------------------------------
 
         if(CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
            typeHtml = `
@@ -3388,7 +3394,6 @@
       lastVisibleDoc = null; 
       
       try {
-          // 🌟 နောက်ဆုံး မှတ်တမ်း ၂၀၀ (ခန့်မှန်း ၃-၄ ရက်စာ) သာ Database မှ ဆွဲယူမည် 🌟
           const snap = await firebase.firestore().collection("exchange_history")
               .orderBy("timestamp", "desc")
               .limit(200)
@@ -3425,7 +3430,6 @@
       isFetchingMore = true;
 
       try {
-          // 🌟 ကျန်နေသော နောက်ထပ် မှတ်တမ်း ၂၀၀ ကို ထပ်ဆွဲမည် 🌟
           const snap = await firebase.firestore().collection("exchange_history")
               .orderBy("timestamp", "desc")
               .startAfter(lastVisibleDoc)
@@ -3799,253 +3803,193 @@
             const wmId = document.createElement('div');
             wmId.style.fontSize = '24px';
             wmId.style.fontWeight = '900';
-            wmId.style.color = '#64748b';
-            wmId.style.letterSpacing = '2px';
-            wmId.textContent = "ID: " + invId;
-            block.appendChild(wmId);
+            wmId.style.color ='#64748b';
+              wmId.style.letterSpacing = '2px';
+              wmId.textContent = "ID: " + invId; 
+              block.appendChild(wmId);
 
-            if (savedCustomerName && savedCustomerName !== "—") {
-                const wmName = document.createElement('div');
-                wmName.style.fontSize = '20px';
-                wmName.style.fontWeight = '900';
-                wmName.style.color = '#64748b';
-                wmName.style.letterSpacing = '1px';
-                wmName.style.marginTop = '6px';
-                wmName.textContent = savedCustomerName; 
-                block.appendChild(wmName);
-            }
-            textContainer.appendChild(block);
-        }
+              if (savedCustomerName && savedCustomerName !== "—") { 
+                  const wmName = document.createElement('div');
+                  wmName.style.fontSize = '20px';
+                  wmName.style.fontWeight = '900';
+                  wmName.style.color = '#64748b';
+                  wmName.style.letterSpacing = '1px';
+                  wmName.style.marginTop = '6px';
+                  wmName.textContent = savedCustomerName; 
+                  block.appendChild(wmName);
+              }
+              textContainer.appendChild(block);
+          }
 
-        watermarkDiv.appendChild(textContainer);
-        clone.appendChild(watermarkDiv);
+          watermarkDiv.appendChild(textContainer);
+          clone.appendChild(watermarkDiv);
 
-        await new Promise(res => { 
-            let timer = setTimeout(res, 500); 
-            if(wmImg.complete) { clearTimeout(timer); return res(); }
-            wmImg.onload = () => { clearTimeout(timer); res(); };
-            wmImg.onerror = () => { clearTimeout(timer); res(); };
-        });
-        
-        clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
-        document.body.appendChild(clone);
-        await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
-        
-        const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
-        document.body.removeChild(clone);
-        
-        const margin=18; 
-        const out=document.createElement('canvas'); 
-        out.width = canvas.width + margin*2; 
-        out.height = canvas.height + margin*2;
-        const ctx = out.getContext('2d'); 
-        ctx.fillStyle='#fff'; 
-        ctx.fillRect(0,0,out.width,out.height); 
-        
-        ctx.drawImage(canvas, margin, margin);
+          await new Promise(res => { 
+              let timer = setTimeout(res, 500); 
+              if(wmImg.complete) { clearTimeout(timer); return res(); }
+              wmImg.onload = () => { clearTimeout(timer); res(); };
+              wmImg.onerror = () => { clearTimeout(timer); res(); };
+          });
+          
+          clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
+          document.body.appendChild(clone);
+          await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
+          
+          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
+          document.body.removeChild(clone);
 
-        let recType = ""; let savedRate = ""; 
-        if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
-        else if(sectionId==='box-mmk2thb') { recType = "MMK ➔ THB"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; }
-        else if(sectionId==='box-vnd2mmk') { recType = "VND ➔ MMK"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
-        else if(sectionId==='box-mmk2vnd') { recType = "MMK ➔ VND"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
-        
-        const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
+          const margin=18; 
+          const out=document.createElement('canvas'); 
+          out.width = canvas.width + margin*2; 
+          out.height = canvas.height + margin*2; 
+          const ctx = out.getContext('2d'); 
+          ctx.fillStyle='#fff'; 
+          ctx.fillRect(0,0,out.width,out.height); 
+          
+          ctx.drawImage(canvas, margin, margin);
 
-        const historyRecord = { 
-          id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
-          method: paymentMethodName, profit: 0, status: 'Pending', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId,
-          customerName: savedCustomerName 
-        };
-        
-        try { 
-            await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); 
-            
-            let alertMsg = `✅ <b>ငွေလွှဲပြေစာ အသစ် (Auto)</b>\n\n`;
-            alertMsg += `ID: <code>${invId}</code>\n`;
-            if (savedCustomerName !== "—") alertMsg += `Customer: <b>${savedCustomerName}</b>\n`;
-            alertMsg += `အမျိုးအစား: <b>${recType}</b>\n`;
-            alertMsg += `ပမာဏ: <code>${inValueStr}</code> ➔ <code>${outValueStr}</code>\n`;
-            alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
-            alertMsg += `နည်းလမ်း: ${paymentMethodName}\n`;
-            
-            let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
-            alertMsg += `Device: <b>${mappedDeviceName}</b>`;
-            
-            sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID); 
+          let recType = ""; let savedRate = ""; 
+          if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; } 
+          else if(sectionId==='box-mmk2thb') { recType = "MMK ➔ THB"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; } 
+          else if(sectionId==='box-vnd2mmk') { recType = "VND ➔ MMK"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; } 
+          else if(sectionId==='box-mmk2vnd') { recType = "MMK ➔ VND"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
+          
+          const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
+          const historyRecord = { 
+              id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
+              method: paymentMethodName, profit: 0, status: 'Pending', timestamp: new Date().toISOString(), 
+              tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: savedCustomerName 
+          };
+          
+          try { 
+              await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); 
+              let alertMsg = `✅ <b>ငွေလွှဲပြေစာ အသစ် (Auto)</b>\n\nID: <code>${invId}</code>\n`;
+              if (savedCustomerName !== "—") alertMsg += `Customer: <b>${savedCustomerName}</b>\n`;
+              alertMsg += `အမျိုးအစား: <b>${recType}</b>\nပမာဏ: <code>${inValueStr}</code> ➔ <code>${outValueStr}</code>\nငွေဈေး: <code>${savedRate}</code>\nနည်းလမ်း: ${paymentMethodName}\n`;
+              let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId; 
+              alertMsg += `Device: <b>${mappedDeviceName}</b>`;
+              sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID); 
+          } catch(e) {}
+          
+          const mimeType = fmt === 'jpg' ? 'image/jpeg' : 'image/png'; 
+          const fileExt = fmt === 'jpg' ? '.jpg' : '.png'; 
+          const finalFileName = filenameBase + '_' + invId + fileExt;
 
-        } catch(e) {}
-        
-        const mimeType = fmt === 'jpg' ? 'image/jpeg' : 'image/png';
-        const fileExt = fmt === 'jpg' ? '.jpg' : '.png';
-        const finalFileName = filenameBase + '_' + invId + fileExt;
+          out.toBlob(async (blob) => {
+              if (!blob) return;
 
-        out.toBlob(async (blob) => {
-            if (!blob) return;
+              const ua = navigator.userAgent || navigator.vendor || window.opera; 
+              const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream; 
+              const isInAppBrowser = /FBAN|FBAV|Line|MicroMessenger|Viber|Instagram|Snapchat/i.test(ua);
+              
+              const showImagePopup = () => {
+                  const url = URL.createObjectURL(blob);
+                  const overlay = document.createElement('div'); 
+                  overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0'; overlay.style.width = '100vw'; overlay.style.height = '100vh'; overlay.style.backgroundColor = 'rgba(0,0,0,0.9)'; overlay.style.zIndex = '9999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+                  const closeBtn = document.createElement('button'); closeBtn.innerText = '✕ ပိတ်မည်'; closeBtn.style.position = 'absolute'; closeBtn.style.top = '20px'; closeBtn.style.right = '20px'; closeBtn.style.padding = '8px 16px'; closeBtn.style.background = '#ef4444'; closeBtn.style.color = '#fff'; closeBtn.style.border = 'none'; closeBtn.style.borderRadius = '8px'; closeBtn.style.fontWeight = 'bold';
+                  closeBtn.onclick = () => { document.body.removeChild(overlay); URL.revokeObjectURL(url); };
+                  const hint = document.createElement('div'); hint.innerText = '💡 ပုံကို ဖိထားပြီး Save Image လုပ်ပါ'; hint.style.color = '#fff'; hint.style.marginBottom = '15px'; hint.style.fontWeight = 'bold'; hint.style.fontSize = '16px';
+                  const img = document.createElement('img'); img.src = url; img.style.maxWidth = '90%'; img.style.maxHeight = '75%'; img.style.borderRadius = '12px'; img.style.border = '2px solid #fff'; img.style.pointerEvents = 'auto';
+                  overlay.appendChild(closeBtn); overlay.appendChild(hint); overlay.appendChild(img); document.body.appendChild(overlay);
+                  if (btnElement) btnElement.innerHTML = '✅ ရပါပြီ!';
+              };
 
-            const ua = navigator.userAgent || navigator.vendor || window.opera;
-            const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-            const isInAppBrowser = /FBAN|FBAV|Line|MicroMessenger|Viber|Instagram|Snapchat/i.test(ua);
+              if (isInAppBrowser) { showImagePopup(); return; }
+              
+              if (isIOS && navigator.canShare) { 
+                  const file = new File([blob], finalFileName, { type: mimeType }); 
+                  if (navigator.canShare({ files: [file] })) { 
+                      try { 
+                          await navigator.share({ title: 'ငွေလွှဲပြေစာ', text: 'Thailand Guide - Supplier By Ye မှ ငွေလွှဲပြေစာ', files: [file] }); 
+                          if (btnElement) btnElement.innerHTML = '✅ Saved!'; return; 
+                      } catch (e) { console.log('Share canceled or failed:', e); } 
+                  } 
+              }
 
-            const showImagePopup = () => {
-                const url = URL.createObjectURL(blob);
-                const overlay = document.createElement('div');
-                overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0'; overlay.style.width = '100vw'; overlay.style.height = '100vh'; overlay.style.backgroundColor = 'rgba(0,0,0,0.9)'; overlay.style.zIndex = '9999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
-                const closeBtn = document.createElement('button'); closeBtn.innerText = '✕ ပိတ်မည်'; closeBtn.style.position = 'absolute'; closeBtn.style.top = '20px'; closeBtn.style.right = '20px'; closeBtn.style.padding = '8px 16px'; closeBtn.style.background = '#ef4444'; closeBtn.style.color = '#fff'; closeBtn.style.border = 'none'; closeBtn.style.borderRadius = '8px'; closeBtn.style.fontWeight = 'bold';
-                closeBtn.onclick = () => { document.body.removeChild(overlay); URL.revokeObjectURL(url); };
-                const hint = document.createElement('div'); hint.innerText = '💡 ပုံကို ဖိထားပြီး Save Image လုပ်ပါ'; hint.style.color = '#fff'; hint.style.marginBottom = '15px'; hint.style.fontWeight = 'bold'; hint.style.fontSize = '16px';
-                const img = document.createElement('img'); img.src = url; img.style.maxWidth = '90%'; img.style.maxHeight = '75%'; img.style.borderRadius = '12px'; img.style.border = '2px solid #fff'; img.style.pointerEvents = 'auto';
-                overlay.appendChild(closeBtn); overlay.appendChild(hint); overlay.appendChild(img); document.body.appendChild(overlay);
-                if (btnElement) btnElement.innerHTML = '✅ ရပါပြီ!';
-            };
-
-            if (isInAppBrowser) { showImagePopup(); return; }
-
-            if (isIOS && navigator.canShare) {
-                const file = new File([blob], finalFileName, { type: mimeType });
-                if (navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            title: 'ငွေလွှဲပြေစာ',
-                            text: 'Thailand Guide - Supplier By Ye မှ ငွေလွှဲပြေစာ',
-                            files: [file]
-                        });
-                        if (btnElement) btnElement.innerHTML = '✅ Saved!';
-                        return; 
-                    } catch (e) {
-                        console.log('Share canceled or failed:', e);
-                    }
-                }
-            }
-
-            try {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = finalFileName;
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-                if (btnElement) btnElement.innerHTML = '✅ Saved!';
-            } catch(e) {
-                showImagePopup();
-            }
-
-        }, mimeType, 0.92);
-        
-    } catch (err) {
-        console.error("Save/Share Error: ", err);
-        alert("Save/Share အလုပ်လုပ်ရာတွင် အခက်အခဲရှိပါသည်။ \n" + err.message);
-    } finally {
-        if (btnElement) {
-            setTimeout(() => {
-                btnElement.innerHTML = origText;
-                btnElement.disabled = false;
-            }, 1500);
-        }
-    }
+              try { 
+                  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = finalFileName; document.body.appendChild(a); a.click(); 
+                  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); 
+                  if (btnElement) btnElement.innerHTML = '✅ Saved!'; 
+              } 
+              catch(e) { showImagePopup(); }
+          }, mimeType, 0.92);
+          
+      } catch (err) { 
+          console.error("Save/Share Error: ", err); 
+          alert("Save/Share အလုပ်လုပ်ရာတွင် အခက်အခဲရှိပါသည်။ \n" + err.message); 
+      } 
+      finally { 
+          if (btnElement) { setTimeout(() => { btnElement.innerHTML = origText; btnElement.disabled = false; }, 1500); } 
+      }
   }
-// ==========================================
-  // 📎 စလစ်ပုံ Upload တင်ရန် Functions များ (ImgBB - Multi Upload, Add More & Delete)
-  // ==========================================
-  window.triggerSlipUpload = function(invId) {
-      document.getElementById('uploadTargetInvId').value = invId;
-      document.getElementById('slipUploader').click();
+
+  // --- Uploading Slips ---
+  window.triggerSlipUpload = function(invId) { 
+      document.getElementById('uploadTargetInvId').value = invId; 
+      document.getElementById('slipUploader').click(); 
   }
 
   window.handleSlipUpload = async function(event) {
-      const files = event.target.files;
-      if (!files || files.length === 0) return;
-      
-      const invId = document.getElementById('uploadTargetInvId').value;
+      const files = event.target.files; if (!files || files.length === 0) return;
+      const invId = document.getElementById('uploadTargetInvId').value; 
       const IMGBB_API_KEY = 'e45bc40a6e532436ca8c2c23580bb3c4'; 
       
-      // 🌟 ယခင်တင်ထားသော ပုံအဟောင်းများကို အရင်ယူမည် 🌟
-      const index = allLoadedHistory.findIndex(x => x.id === invId);
+      const index = allLoadedHistory.findIndex(x => x.id === invId); 
       let existingSlips = [];
-      if(index !== -1) {
-          let tx = allLoadedHistory[index];
-          existingSlips = tx.slipUrls || [];
-          if (tx.slipUrl && existingSlips.length === 0) existingSlips = [tx.slipUrl];
+      if(index !== -1) { 
+          let tx = allLoadedHistory[index]; 
+          existingSlips = tx.slipUrls || []; 
+          if (tx.slipUrl && existingSlips.length === 0) existingSlips = [tx.slipUrl]; 
       }
 
-      // ပုံအဟောင်းနဲ့ အသစ်ပေါင်းရင် ၁၀ ပုံကျော်မကျော် စစ်မည်
-      if (existingSlips.length + files.length > 10) {
-          alert(`ယခင်တင်ထားသောပုံနှင့် ယခုတင်မည့်ပုံ စုစုပေါင်း ၁၀ ပုံထက် ကျော်လွန်နေပါသည်။`);
-          event.target.value = '';
-          return;
+      if (existingSlips.length + files.length > 10) { 
+          alert(`ယခင်တင်ထားသောပုံနှင့် ယခုတင်မည့်ပုံ စုစုပေါင်း ၁၀ ပုံထက် ကျော်လွန်နေပါသည်။`); 
+          event.target.value = ''; return; 
       }
 
-      console.log(`${invId} အတွက် စလစ်ပုံ ${files.length} ပုံ ထပ်တင်နေပါသည်...`);
-      let uploadedUrls = [];
-      let hasError = false;
+      let uploadedUrls = []; let hasError = false;
 
       try {
           for (let i = 0; i < files.length; i++) {
-              const formData = new FormData();
-              formData.append("image", files[i]);
-
-              const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                  method: "POST",
-                  body: formData
-              });
-
-              const result = await response.json();
-              if (result.success) {
-                  uploadedUrls.push(result.data.url);
-              } else {
-                  hasError = true;
-              }
+              const formData = new FormData(); formData.append("image", files[i]);
+              const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
+              const result = await response.json(); 
+              if (result.success) uploadedUrls.push(result.data.url); 
+              else hasError = true;
           }
 
           if (uploadedUrls.length > 0) {
-              // 🌟 အဟောင်းနဲ့ အသစ် ပေါင်းမည် 🌟
               let combinedUrls = existingSlips.concat(uploadedUrls);
-
-              await firebase.firestore().collection("exchange_history").doc(invId).update({
-                  slipUrls: combinedUrls,
-                  slipUrl: combinedUrls[0] || null
+              await firebase.firestore().collection("exchange_history").doc(invId).update({ 
+                  slipUrls: combinedUrls, 
+                  slipUrl: combinedUrls[0] || null 
               });
               
-              if (hasError) {
-                  alert(`✅ ပုံတချို့ကို သိမ်းပြီးပါပြီ။ တချို့ပုံများမှာ အခက်အခဲရှိခဲ့ပါသည်။`);
-              } else {
-                  alert(`✅ Customer စလစ်ပုံ ထပ်မံသိမ်းဆည်းပြီးပါပြီ။`);
-              }
+              if (hasError) alert(`✅ ပုံတချို့ကို သိမ်းပြီးပါပြီ။ တချို့ပုံများမှာ အခက်အခဲရှိခဲ့ပါသည်။`); 
+              else alert(`✅ Customer စလစ်ပုံ ထပ်မံသိမ်းဆည်းပြီးပါပြီ။`);
               
-              if(index !== -1) {
-                  allLoadedHistory[index].slipUrls = combinedUrls;
-                  allLoadedHistory[index].slipUrl = combinedUrls[0] || null;
+              if(index !== -1) { 
+                  allLoadedHistory[index].slipUrls = combinedUrls; 
+                  allLoadedHistory[index].slipUrl = combinedUrls[0] || null; 
               }
-              renderHistoryRows(allLoadedHistory);
-              
-              // ပုံတင်ပြီးရင် Modal ကို ပြန်ဖွင့်ပေးမည်
-              openSlipModal(invId);
-          } else {
-              alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။");
-          }
-      } catch (e) {
-          console.error("Slip Upload Error: ", e);
-          alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။");
-      } finally {
-          event.target.value = ''; 
-      }
+              renderHistoryRows(allLoadedHistory); 
+ //           openSlipModal(invId);
+          } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
+      } catch (e) { 
+          console.error("Slip Upload Error: ", e); 
+          alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။"); 
+      } 
+      finally { event.target.value = '';  }
   }
 
-  // 👁️ စလစ်ပုံများ ကြည့်ရန် Modal ဖွင့်သည့် Function
+  // --- View Slips Modal ---
   window.openSlipModal = function(invId) {
-      const tx = allLoadedHistory.find(x => x.id === invId);
-      if(!tx) return;
+      const tx = allLoadedHistory.find(x => x.id === invId); if(!tx) return;
+      let slipArr = tx.slipUrls || []; if (tx.slipUrl && slipArr.length === 0) slipArr = [tx.slipUrl];
+      const contentDiv = document.getElementById('slipViewContent'); contentDiv.innerHTML = '';
       
-      let slipArr = tx.slipUrls || [];
-      if (tx.slipUrl && slipArr.length === 0) slipArr = [tx.slipUrl];
-      
-      const contentDiv = document.getElementById('slipViewContent');
-      contentDiv.innerHTML = '';
-      
-      if (slipArr.length === 0) {
-          contentDiv.innerHTML = '<p class="text-gray-500">ပုံမရှိပါ။</p>';
-      } else {
+      if (slipArr.length === 0) contentDiv.innerHTML = '<p class="text-gray-500">ပုံမရှိပါ။</p>';
+      else {
           slipArr.forEach((url, i) => {
               contentDiv.innerHTML += `
                   <div class="mb-4 relative inline-block w-full">
@@ -4059,7 +4003,6 @@
           });
       }
       
-      // 🌟 ပုံထပ်တင်ရန် ခလုတ် (Add More) 🌟
       contentDiv.innerHTML += `
           <div class="mt-1 border-t pt-3 pb-1">
               <button onclick="triggerSlipUpload('${invId}'); document.getElementById('slipViewModal').style.display='none';" class="btn bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 w-full !py-2 !text-sm flex items-center justify-center gap-2">
@@ -4071,7 +4014,7 @@
       document.getElementById('slipViewModal').style.display = 'flex';
   }
 
-  // 🗑 ပုံဖျက်ရန် Function အသစ်
+  // --- Delete Slip ---
   window.deleteSlipImage = async function(invId, imageIndex) {
       if(!confirm("ဤပုံကို ဖျက်ရန် သေချာပါသလား?")) return;
       
@@ -4082,12 +4025,10 @@
       let slipArr = tx.slipUrls || [];
       if (tx.slipUrl && slipArr.length === 0) slipArr = [tx.slipUrl];
       
-      // ပုံကို Array ထဲကနေ ဖယ်ထုတ်မည်
       slipArr.splice(imageIndex, 1);
       
       try {
           if (slipArr.length === 0) {
-              // ပုံအကုန်ကုန်သွားရင် Database ကနေ Field တွေပါ ဖျက်မည်
               await firebase.firestore().collection("exchange_history").doc(invId).update({
                   slipUrls: firebase.firestore.FieldValue.delete(),
                   slipUrl: firebase.firestore.FieldValue.delete()
@@ -4095,7 +4036,6 @@
               tx.slipUrls = [];
               tx.slipUrl = null;
           } else {
-              // ပုံကျန်သေးရင် ကျန်တဲ့ Array ကို ပြန်သိမ်းမည်
               await firebase.firestore().collection("exchange_history").doc(invId).update({
                   slipUrls: slipArr,
                   slipUrl: slipArr[0]
@@ -4104,10 +4044,8 @@
               tx.slipUrl = slipArr[0];
           }
           
-          // ဇယားကို Update လုပ်မည်
           renderHistoryRows(allLoadedHistory);
           
-          // Modal ထဲမှာ ပုံကုန်သွားရင် ပိတ်မည်၊ ကျန်သေးရင် ပြန်ဖွင့်ပြမည်
           if (slipArr.length === 0) {
               document.getElementById('slipViewModal').style.display = 'none';
           } else {
