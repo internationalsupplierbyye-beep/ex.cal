@@ -191,7 +191,7 @@
 
   <section id="box-thb2mmk" class="box capture-target">
     <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="thb_to_mmk">ဘတ် → မြန်မာကျပ်</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+    <div class="grid grid-cols-2 gap-3 mt-2">
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="lbl_thb">ဘတ်ငွေ</span></label>
         <input id="thbIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
@@ -219,7 +219,7 @@
 
   <section id="box-mmk2thb" class="box capture-target">
     <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="mmk_to_thb">မြန်မာကျပ် → ဘတ်</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+    <div class="grid grid-cols-2 gap-3 mt-2">
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
         <input id="mmkIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
@@ -324,7 +324,7 @@
 
   <section id="box-vnd2mmk" class="box capture-target">
     <h2 class="text-lg font-black mb-1 text-red-600" data-i18n="vnd_to_mmk">ဗီယက်နမ်ဒေါင် → မြန်မာကျပ်</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+    <div class="grid grid-cols-2 gap-3 mt-2">
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span data-i18n="lbl_vnd">ဒေါင်ငွေ</span></label>
         <input id="vndIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
@@ -352,7 +352,7 @@
 
   <section id="box-mmk2vnd" class="box capture-target">
     <h2 class="text-lg font-black mb-1 text-red-600" data-i18n="mmk_to_vnd">မြန်မာကျပ် → ဗီယက်နမ်ဒေါင်</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+    <div class="grid grid-cols-2 gap-3 mt-2">
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
         <input id="mmkIn2" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
@@ -646,6 +646,15 @@
           <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Cancel ဖြစ်သော မှတ်တမ်းများပို့ရန်)</label>
           <input type="text" id="adminTgCancelTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 16)">
         </div>
+	<div class="mb-3">
+          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Cancel ဖြစ်သော မှတ်တမ်းများပို့ရန်)</label>
+          <input type="text" id="adminTgCancelTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 16)">
+        </div>
+
+        <div class="mb-3">
+          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Customer စလစ်ပုံများပို့ရန်)</label>
+          <input type="text" id="adminTgSlipTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 18)">
+        </div>
         <button onclick="saveTelegramSettings()" id="btnTgSave" class="btn bg-blue-600 hover:bg-blue-700 w-full">Telegram Settings သိမ်းမည်</button>
       </div>
 
@@ -807,6 +816,7 @@
   let TELEGRAM_TOPIC_ID = "2";
   let TELEGRAM_SUCCESS_TOPIC_ID = "14"; 
   let TELEGRAM_CANCEL_TOPIC_ID = ""; // 🌟 Cancel အတွက် Topic အသစ်
+  let TELEGRAM_SLIP_TOPIC_ID = ""; // 🌟 Slip ပို့ရန် Topic အသစ်
 
   let FIREBASE_RECEIPT_TEXTS = {
       orig: {
@@ -874,6 +884,30 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
       }).catch(e => console.error("Telegram Send Error:", e));
+  }
+
+   // 🌟 (အသစ်ထည့်ရန်) Telegram သို့ ပုံပို့မည့် Function 🌟
+  function sendTelegramPhoto(photoUrl, captionText, specificTopicId = null) {
+      if(!TELEGRAM_CHAT_ID) return; 
+      
+      const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+      const payload = {
+          chat_id: TELEGRAM_CHAT_ID,
+          photo: photoUrl,
+          caption: captionText,
+          parse_mode: "HTML"
+      };
+      
+      let finalTopicId = specificTopicId || TELEGRAM_TOPIC_ID;
+      if(finalTopicId) {
+          payload.message_thread_id = finalTopicId;
+      }
+
+      fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+      }).catch(e => console.error("Telegram Photo Send Error:", e));
   }
 
   // --- Calculator Utility Functions ---
@@ -1652,6 +1686,7 @@
       const topicId = document.getElementById('adminTgTopicId').value.trim();
       const successTopicId = document.getElementById('adminTgSuccessTopicId').value.trim();
       const cancelTopicId = document.getElementById('adminTgCancelTopicId').value.trim();
+      const slipTopicId = document.getElementById('adminTgSlipTopicId').value.trim(); // 🌟 အသစ်
       
       const btn = document.getElementById('btnTgSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
@@ -1661,11 +1696,12 @@
           TELEGRAM_TOPIC_ID = topicId;
           TELEGRAM_SUCCESS_TOPIC_ID = successTopicId;
           TELEGRAM_CANCEL_TOPIC_ID = cancelTopicId;
+          TELEGRAM_SLIP_TOPIC_ID = slipTopicId; // 🌟 အသစ်
           
           if(dbRef) {
-              await dbRef.set({ telegram: { chatId: chatId, topicId: topicId, successTopicId: successTopicId, cancelTopicId: cancelTopicId } }, { merge: true });
+              await dbRef.set({ telegram: { chatId: chatId, topicId: topicId, successTopicId: successTopicId, cancelTopicId: cancelTopicId, slipTopicId: slipTopicId } }, { merge: true });
           }
-          alert("Telegram Settings အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
+          alert("Telegram Settings အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
       } catch(e) {
           alert("Error: " + e.message);
       } finally {
@@ -1926,6 +1962,17 @@
   try {
     const firebaseConfig = { apiKey: "AIzaSyDr4ada9hQah9C2ZX0xFBfxYDdXUQl3oa4", authDomain: "excal-570ed.firebaseapp.com", projectId: "excal-570ed", storageBucket: "excal-570ed.firebasestorage.app", messagingSenderId: "84544400626", appId: "1:84544400626:web:3393a4e339d3f41a60f46b", measurementId: "G-4KLYMEPPGT" };
     firebase.initializeApp(firebaseConfig);
+
+    // 🌟 အင်တာနက်မရှိချိန် အလုပ်လုပ်နိုင်ရန် Offline Persistence ကို ဖွင့်ခြင်း
+    firebase.firestore().enablePersistence()
+      .catch((err) => {
+          if (err.code == 'failed-precondition') {
+              console.warn("Tab အများကြီး ဖွင့်ထားသဖြင့် Offline စနစ်ကို Tab တစ်ခုတည်းတွင်သာ အသုံးပြုနိုင်ပါမည်။");
+          } else if (err.code == 'unimplemented') {
+              console.warn("ဤ Browser သည် Offline စနစ်ကို အထောက်အပံ့ မပေးပါ။");
+          }
+      });
+
     dbRef = firebase.firestore().collection("exchange_app").doc("admin_data");
     dbRef.get().then((docSnap) => {
       if (docSnap.exists) {
@@ -1975,11 +2022,12 @@
           if (data.lastRates.rateVnd) { document.getElementById('rateVnd').value = data.lastRates.rateVnd; formatInputThousands(document.getElementById('rateVnd'), true); refreshVndRateNote(); recalcVND(); }
         }
         
-        if (data.telegram) {
+       if (data.telegram) {
             if(data.telegram.chatId) TELEGRAM_CHAT_ID = data.telegram.chatId;
             if(data.telegram.topicId) TELEGRAM_TOPIC_ID = data.telegram.topicId;
             if(data.telegram.successTopicId) TELEGRAM_SUCCESS_TOPIC_ID = data.telegram.successTopicId;
             if(data.telegram.cancelTopicId) TELEGRAM_CANCEL_TOPIC_ID = data.telegram.cancelTopicId;
+            if(data.telegram.slipTopicId) TELEGRAM_SLIP_TOPIC_ID = data.telegram.slipTopicId; // 🌟 အသစ်
         }
         
         const tgChatInput = document.getElementById('adminTgChatId');
@@ -1990,6 +2038,9 @@
         if(tgSuccessTopicInput) tgSuccessTopicInput.value = TELEGRAM_SUCCESS_TOPIC_ID;
         const tgCancelTopicInput = document.getElementById('adminTgCancelTopicId');
         if(tgCancelTopicInput) tgCancelTopicInput.value = TELEGRAM_CANCEL_TOPIC_ID;
+        
+        const tgSlipTopicInput = document.getElementById('adminTgSlipTopicId'); // 🌟 အသစ်
+        if(tgSlipTopicInput) tgSlipTopicInput.value = TELEGRAM_SLIP_TOPIC_ID; // 🌟 အသစ်
         
         loadReceiptTextsToInputs();
         updateReceiptUI();
@@ -4060,6 +4111,21 @@
                   slipUrls: combinedUrls, 
                   slipUrl: combinedUrls[0] || null 
               });
+
+              // 🌟 Telegram သို့ စလစ်ပုံများ လှမ်းပို့ရန် 🌟
+              let txCustomerName = "—";
+              if (index !== -1 && allLoadedHistory[index].customerName) {
+                  txCustomerName = allLoadedHistory[index].customerName;
+              }
+              
+              uploadedUrls.forEach((url) => {
+                  let caption = `📎 <b>Customer Slip Uploaded</b>\nInvoice ID: <code>${invId}</code>\n`;
+                  if(txCustomerName !== "—") {
+                      caption += `Customer: <b>${txCustomerName}</b>`;
+                  }
+                  sendTelegramPhoto(url, caption, TELEGRAM_SLIP_TOPIC_ID);
+              });
+              // 🌟 ပြီးပါပြီ 🌟
               
               if (hasError) alert(`✅ ပုံတချို့ကို သိမ်းပြီးပါပြီ။ တချို့ပုံများမှာ အခက်အခဲရှိခဲ့ပါသည်။`); 
               else alert(`✅ Customer စလစ်ပုံ ထပ်မံသိမ်းဆည်းပြီးပါပြီ။`);
