@@ -1841,56 +1841,73 @@
     if(c==='y') return 'YE LYNN HTUN'; if(c==='h') return 'HEIN SET AUNG'; if(c==='t') return 'THIDAR WIN'; return '—';
   }
 
+  // 🌟 Dynamic PromptPay QR ကို System နဲ့ ချိတ်ဆက်ပေးမည့်အပိုင်း 🌟
+  let qrDebounceTimer;
   async function refreshQrPreview(skipRadioUpdate = false) {
-    const qrSelect = document.getElementById('qrSelect');
-    if(!qrSelect || qrSelect.options.length === 0 || qrSelect.selectedIndex === -1 || !qrSelect.value) {
-       document.getElementById('qrPreviewSolo').src = ''; 
-       document.getElementById('qrOwnerValue').textContent = '—'; 
-       document.getElementById('previewTwo').classList.add('hidden');
-       document.getElementById('previewOne').classList.remove('hidden');
-       
-       if(skipRadioUpdate !== true && !isAutoChanging) {
-           const bankSelect = document.getElementById('bankSelect');
-           if(!bankSelect || !bankSelect.value) {
-               const r = document.querySelector('input[name="saveMode"][value="none"]');
-               if(r) r.checked = true;
+    clearTimeout(qrDebounceTimer);
+    qrDebounceTimer = setTimeout(() => {
+        const qrSelect = document.getElementById('qrSelect');
+        if(!qrSelect || qrSelect.options.length === 0 || qrSelect.selectedIndex === -1 || !qrSelect.value) {
+           document.getElementById('qrPreviewSolo').src = ''; 
+           document.getElementById('qrOwnerValue').textContent = '—'; 
+           document.getElementById('previewTwo').classList.add('hidden');
+           document.getElementById('previewOne').classList.remove('hidden');
+           
+           if(skipRadioUpdate !== true && !isAutoChanging) {
+               const bankSelect = document.getElementById('bankSelect');
+               if(!bankSelect || !bankSelect.value) {
+                   const r = document.querySelector('input[name="saveMode"][value="none"]');
+                   if(r) r.checked = true;
+               }
            }
-       }
-       return;
-    }
-    
-    if(skipRadioUpdate !== true && !isAutoChanging) {
-        isAutoChanging = true;
-        const r = document.querySelector('input[name="saveMode"][value="qr"]');
-        if(r) r.checked = true;
-        
-        const bankSelect = document.getElementById('bankSelect');
-        if(bankSelect && bankSelect.value !== '') {
-            bankSelect.value = '';
-            refreshBankInfo(true);
+           return;
         }
-        isAutoChanging = false;
+        
+        if(skipRadioUpdate !== true && !isAutoChanging) {
+            isAutoChanging = true;
+            const r = document.querySelector('input[name="saveMode"][value="qr"]');
+            if(r) r.checked = true;
+            
+            const bankSelect = document.getElementById('bankSelect');
+            if(bankSelect && bankSelect.value !== '') {
+                bankSelect.value = '';
+                refreshBankInfo(true);
+            }
+            isAutoChanging = false;
+        }
+
+        const file = qrSelect.value; 
+
+        let customOwner = '';
+        const foundQr = FIREBASE_QRS.find(q => (typeof q === 'string' ? q : q.file) === file);
+        if(foundQr && typeof foundQr === 'object' && foundQr.owner) {
+            customOwner = foundQr.owner;
+        }
+
+        let imgUrl = '';
+        // 🌟 "PP:" ဖြင့်စလျှင် PromptPay ပမာဏ Auto ယူမည့်စနစ် 🌟
+        if (file.startsWith('PP:')) {
+        let phone = file.split(':')[1];
+        let amt = parseFloat(document.getElementById('thbIn')?.value.replace(/,/g,'')) || 0;
+        if(amt <= 0) amt = parseFloat(document.getElementById('thbOut')?.value.replace(/,/g,'')) || 0;
+        imgUrl = (amt > 0) ? `https://promptpay.io/${phone}/${amt}.png` : `https://promptpay.io/${phone}.png`;
+    } else if (file.startsWith('STATIC:')) {
+        let fileName = file.split(':')[1];
+        imgUrl = 'assets/qr/' + fileName;
+    } else {
+        imgUrl = file.includes('http') ? file : 'assets/qr/' + file; 
     }
 
-    const file = qrSelect.value; 
+        const baseName = file.replace(/\.[^.]+$/,''); 
+        const owner = customOwner || getOwnerFromKey(baseName);
 
-    let customOwner = '';
-    const foundQr = FIREBASE_QRS.find(q => (typeof q === 'string' ? q : q.file) === file);
-    if(foundQr && typeof foundQr === 'object' && foundQr.owner) {
-        customOwner = foundQr.owner;
-    }
-
-    const imgUrl = file.includes('http') ? file : 'assets/qr/' + file; 
-    const baseName = file.replace(/\.[^.]+$/,''); 
-    
-    const owner = customOwner || getOwnerFromKey(baseName);
-
-    CURRENT_QR = { owner, normal: imgUrl, big: imgUrl, hasBig: true };
-    document.getElementById('qrOwnerValue').textContent = owner;
-    
-    document.getElementById('previewTwo').classList.add('hidden'); 
-    document.getElementById('previewOne').classList.remove('hidden');
-    document.getElementById('qrPreviewSolo').src = imgUrl;
+        CURRENT_QR = { owner, normal: imgUrl, big: imgUrl, hasBig: true };
+        document.getElementById('qrOwnerValue').textContent = owner;
+        
+        document.getElementById('previewTwo').classList.add('hidden'); 
+        document.getElementById('previewOne').classList.remove('hidden');
+        document.getElementById('qrPreviewSolo').src = imgUrl;
+    }, 300); // စာရိုက်နေစဉ် မလွဲစေရန် 300ms စောင့်ပြီးမှ QR ပြောင်းမည်
   }
 
   // --- Dynamic Receipt Texts UI Update ---
@@ -1955,6 +1972,14 @@
     const savedLang = localStorage.getItem('sys_lang_pref') || 'my';
     document.getElementById('sysLangSelect').value = savedLang;
     changeSystemLanguage(savedLang);
+
+    // 🌟 ပမာဏ ပြင်ရိုက်လိုက်တိုင်း QR ကို ချက်ချင်း Update လုပ်ပေးမည်
+    document.querySelectorAll('.amt-input').forEach(el => {
+        el.addEventListener('input', () => {
+            const qr = document.getElementById('qrSelect');
+            if(qr && qr.value && qr.value.startsWith('PP:')) refreshQrPreview(true);
+        });
+    });
   });
 
   // --- Firebase Connection ---
@@ -2514,6 +2539,7 @@
                   </div>
               </div>
               <div class="action-btns flex-shrink-0 ml-1">
+                  <button onclick="generateCustomerStatement('${id}')" title="စာရင်းချုပ် PDF ထုတ်မည်" class="!text-[10px] !py-0.5 !px-1.5" style="color:#1d4ed8; border-color:#bfdbfe; background:#eff6ff;">🧾</button>
                   <button onclick="editCustomer('${id}')" title="ပြင်မည်" class="!text-[10px] !py-0.5 !px-1.5" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button>
                   <button onclick="deleteCustomer('${id}')" title="ဖျက်မည်" class="btn-delete !text-[10px] !py-0.5 !px-1.5">✕</button>
               </div>
@@ -3429,6 +3455,7 @@
       }
       
       let html = '';
+      let totalOverdue = 0; // 🌟 Overdue အရေအတွက်ရေရန်
       
       dataArray.forEach(d => {
         let dateObj = new Date(d.timestamp);
@@ -3441,9 +3468,28 @@
         
         let cusHtml = `<div class="max-w-[60px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
         
-        let statusColor = status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' : 
-                          status === 'Success' ? 'bg-green-100 text-green-800 border-green-300' : 
-                          'bg-red-100 text-red-800 border-red-300';
+        // 🌟 Pending ဖြစ်ပြီး ၁ နာရီကျော်သွားပါက အနီရောင်ဖြင့် သတိပေးရန် 🌟
+        let isOverdue = false;
+        let statusColor = '';
+        
+        if (status === 'Success') {
+            statusColor = 'bg-green-100 text-green-800 border-green-300';
+        } else if (status === 'Cancelled' || status === 'Auto Cancel') {
+            statusColor = 'bg-red-100 text-red-800 border-red-300';
+        } else {
+            // Pending ဖြစ်နေလျှင် အချိန်စစ်ဆေးမည်
+            let txTime = new Date(d.timestamp).getTime();
+            let now = Date.now();
+            let hoursDiff = (now - txTime) / (1000 * 60 * 60);
+            
+            if (hoursDiff >= 1) { // ၁ နာရီ (သို့) ၁ နာရီထက် ကျော်လွန်သွားလျှင်
+                statusColor = 'bg-red-600 text-white border-red-800 animate-pulse shadow-md font-black';
+                isOverdue = true;
+                totalOverdue++;
+            } else {
+                statusColor = 'bg-yellow-100 text-yellow-800 border-yellow-300';
+            }
+        }
                           
         let typeHtml = `<span class="font-bold text-blue-700 text-xs">${d.type}</span>`;
         let statusHtml = `<span class="border rounded px-2 py-1 text-xs font-bold bg-white ${statusColor}">${status}</span>`;
@@ -3495,7 +3541,10 @@
             actionHtml += `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
         }
         
-        html += `<tr class="border-b hover:bg-gray-50">
+        // 🌟 နောက်ခံအရောင်ကို အနီရောင်ဖျော့ဖျော့ ပြောင်းရန် 🌟
+        let rowClass = isOverdue ? "border-b bg-red-50 hover:bg-red-100 transition-colors" : "border-b hover:bg-gray-50";
+
+        html += `<tr class="${rowClass}">
           <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${d.id}</td>
           <td class="p-3 text-xs">${dateStr}</td>
           <td class="p-3">${cusHtml}</td>
@@ -3508,6 +3557,12 @@
           <td class="p-3 text-xs"><div class="max-w-[60px] truncate" title="${method}">${method}</div></td>
         </tr>`;
       });
+      
+      // 🌟 အပေါ်ဆုံးတွင် သတိပေးစာပြရန် 🌟
+      if (totalOverdue > 0) {
+          html = `<tr><td colspan="10" class="p-3 bg-red-600 text-white font-bold text-center animate-pulse shadow-inner text-sm tracking-wide border-b-4 border-red-800">⚠️ သတိပြုရန်: ငွေမဝင်သေးဘဲ Pending ဖြစ်နေသည်မှာ (၁) နာရီကျော်နေသော ပြေစာ ${totalOverdue} ခု ရှိနေပါသည်! ⚠️</td></tr>` + html;
+      }
+      
       list.innerHTML = html;
       
       if (lastVisibleDoc) {
@@ -4251,7 +4306,7 @@
           try {
               const importedData = JSON.parse(e.target.result);
               if (!confirm("Backup ဖိုင်မှ ဒေတာများကို Restore လုပ်ပါမည်။ လက်ရှိဒေတာများ နေရာတွင် အစားထိုးသွားပါမည်။ သေချာပါသလား?")) {
-                  event.target.value = ''; // Cancelled
+                  event.target.value = ''; 
                   return;
               }
               
@@ -4263,6 +4318,108 @@
           }
       };
       reader.readAsText(file);
+  }
+
+  // ==========================================
+  // 🌟 လအလိုက် နှင့် Status အလိုက် ရွေးချယ်နိုင်သော Statement စနစ်
+  window.generateCustomerStatement = async function(cusId) {
+      const c = FIREBASE_CUSTOMERS[cusId];
+      if(!c) return alert("Customer အချက်အလက် မတွေ့ပါ။");
+      
+      // ရွေးချယ်မှုများ (UI ပေါ်တွင် dropdown များထည့်ရန် လိုအပ်ပါသည်)
+      const selMonth = prompt("လရွေးပါ (YYYY-MM) ဥပမာ: 2026-06", new Date().toISOString().slice(0,7));
+      const selStatus = prompt("Status ရွေးပါ (All သို့မဟုတ် Success)", "All");
+
+      let fullName = (c.name + (c.social ? ` (${c.social})` : '')).trim();
+      
+      const txs = allLoadedHistory.filter(tx => {
+          let matchesCus = (tx.customerName || "—").trim() === fullName;
+          let matchesMonth = selMonth ? tx.timestamp.startsWith(selMonth) : true;
+          let matchesStatus = (selStatus === "All") ? true : (tx.status === selStatus);
+          return matchesCus && matchesMonth && matchesStatus;
+      });
+
+      if(txs.length === 0) return alert("သတ်မှတ်ချက်နှင့် ကိုက်ညီသော မှတ်တမ်း မရှိပါ။");
+
+      txs.sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+      let htmlRows = '';
+      txs.forEach((tx, i) => {
+          let dt = new Date(tx.timestamp);
+          let dateStr = dt.toLocaleDateString('en-GB') + " " + dt.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+          
+          // Status အရောင်
+          let sColor = tx.status === 'Success' ? '#15803d' : (tx.status === 'Cancelled' ? '#b91c1c' : '#b45309');
+          
+          htmlRows += `
+            <tr style="border-bottom: 1px solid #e2e8f0; font-size:12px;">
+                <td style="padding: 8px;">${i+1}</td>
+                <td style="padding: 8px;">${dateStr}</td>
+                <td style="padding: 8px; font-weight:bold; color:#1e40af;">${tx.id}</td>
+                <td style="padding: 8px;">${tx.type}</td>
+                <td style="padding: 8px; font-weight:bold; color:${sColor};">${tx.status || 'Pending'}</td>
+                <td style="padding: 8px; font-weight:bold; color:#15803d;">${tx.inAmt} ➔ ${tx.outAmt}</td>
+            </tr>
+          `;
+      });
+
+      const reportDiv = document.createElement('div');
+      reportDiv.style.width = '1000px'; 
+      reportDiv.style.padding = '40px';
+      reportDiv.style.background = '#ffffff';
+      reportDiv.style.color = '#0f172a';
+      reportDiv.style.fontFamily = "system-ui, -apple-system, sans-serif";
+      reportDiv.style.position = 'fixed';
+      reportDiv.style.left = '-9999px';
+      reportDiv.style.top = '0';
+
+      reportDiv.innerHTML = `
+          <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 20px;">
+              <h1 style="font-size: 28px; font-weight: 900; color: #1e40af;">Thailand Guide - Supplier By Ye</h1>
+              <h2 style="font-size: 20px; color: #475569;">Customer Statement</h2>
+          </div>
+          <div style="margin-bottom: 20px; padding: 15px; background: #f8fafc; border: 1px dashed #cbd5e1; display:flex; justify-content: space-between;">
+              <div>
+                  <p style="margin:0;">Customer: <b>${fullName}</b></p>
+                  <p style="margin:0;">Phone: <b>${c.phone || '-'}</b></p>
+              </div>
+              <div style="text-align: right;">
+                  <p style="margin:0;">Bank: <b>${c.bankName || '-'}</b></p>
+                  <p style="margin:0;">Acc: <b>${c.bankNo || '-'}</b></p>
+              </div>
+          </div>
+          <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+              <thead style="background: #f1f5f9;">
+                  <tr>
+                      <th style="width: 50px; padding: 10px;">No.</th>
+                      <th style="padding: 10px;">Date & Time</th>
+                      <th style="padding: 10px;">Invoice ID</th>
+                      <th style="padding: 10px;">Type</th>
+                      <th style="padding: 10px;">Status</th>
+                      <th style="padding: 10px;">Amount</th>
+                  </tr>
+              </thead>
+              <tbody>${htmlRows}</tbody>
+          </table>
+      `;
+
+      document.body.appendChild(reportDiv);
+      await document.fonts?.ready;
+      
+      try {
+          const canvas = await html2canvas(reportDiv, { scale: 2, useCORS: true });
+          const imgData = canvas.toDataURL('image/jpeg', 1.0);
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF('p', 'pt', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+          pdf.save(`Statement_${fullName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+      } catch(e) {
+          alert("PDF ထုတ်ရာတွင် အခက်အခဲရှိပါသည်။");
+      } finally {
+          document.body.removeChild(reportDiv);
+      }
   }
 </script>
 </body>
