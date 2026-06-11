@@ -1885,18 +1885,24 @@
         }
 
         let imgUrl = '';
-        // 🌟 "PP:" ဖြင့်စလျှင် PromptPay ပမာဏ Auto ယူမည့်စနစ် 🌟
-        if (file.startsWith('PP:')) {
-        let phone = file.split(':')[1];
-        let amt = parseFloat(document.getElementById('thbIn')?.value.replace(/,/g,'')) || 0;
-        if(amt <= 0) amt = parseFloat(document.getElementById('thbOut')?.value.replace(/,/g,'')) || 0;
-        imgUrl = (amt > 0) ? `https://promptpay.io/${phone}/${amt}.png` : `https://promptpay.io/${phone}.png`;
-    } else if (file.startsWith('STATIC:')) {
-        let fileName = file.split(':')[1];
-        imgUrl = 'assets/qr/' + fileName;
-    } else {
-        imgUrl = file.includes('http') ? file : 'assets/qr/' + file; 
-    }
+        // refreshQrPreview function ထဲရှိ imgUrl စစ်ဆေးသည့်နေရာတွင် ဤသို့ထည့်ပါ
+if (file.startsWith('PP:')) {
+    // (PromptPay အတွက် ယခင်အတိုင်းထားပါ)
+    let phone = file.split(':')[1];
+    let amt = parseFloat(document.getElementById('thbIn')?.value.replace(/,/g,'')) || 0;
+    if(amt <= 0) amt = parseFloat(document.getElementById('thbOut')?.value.replace(/,/g,'')) || 0;
+    imgUrl = (amt > 0) ? `https://promptpay.io/${phone}/${amt}.png` : `https://promptpay.io/${phone}.png`;
+} else if (file.startsWith('TM:')) {
+    // 🌟 TrueMoney အတွက် (QR Code အဖြစ်ပြောင်းရန် API ကိုသုံးမည်)
+    let amt = parseFloat(document.getElementById('thbIn')?.value.replace(/,/g,'')) || 0;
+    if(amt <= 0) amt = parseFloat(document.getElementById('thbOut')?.value.replace(/,/g,'')) || 0;
+    let tmLink = generateTrueMoneyLink(amt);
+    // Link ကို QR ပုံအဖြစ်ပြောင်းပေးမည့် API
+    imgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tmLink)}`;
+} else {
+    // (ပုံမှန် Static QR များအတွက်)
+    imgUrl = file.includes('http') ? file : 'assets/qr/' + file; 
+}
 
         const baseName = file.replace(/\.[^.]+$/,''); 
         const owner = customOwner || getOwnerFromKey(baseName);
@@ -4320,22 +4326,23 @@
       reader.readAsText(file);
   }
 
-  // ==========================================
-  // 🌟 လအလိုက် နှင့် Status အလိုက် ရွေးချယ်နိုင်သော Statement စနစ်
+ // 🌟 အဆင့်မြှင့်တင်ထားသော Customer Statement စနစ်
   window.generateCustomerStatement = async function(cusId) {
       const c = FIREBASE_CUSTOMERS[cusId];
       if(!c) return alert("Customer အချက်အလက် မတွေ့ပါ။");
       
-      // ရွေးချယ်မှုများ (UI ပေါ်တွင် dropdown များထည့်ရန် လိုအပ်ပါသည်)
+      // 🌟 လ နှင့် Status ရွေးချယ်မှု
       const selMonth = prompt("လရွေးပါ (YYYY-MM) ဥပမာ: 2026-06", new Date().toISOString().slice(0,7));
-      const selStatus = prompt("Status ရွေးပါ (All သို့မဟုတ် Success)", "All");
+      const selStatus = prompt("Status ရွေးပါ (All, Success, Pending, Cancelled)", "All");
 
       let fullName = (c.name + (c.social ? ` (${c.social})` : '')).trim();
       
+      // 🌟 Status အကုန်ပါဝင်အောင် filter ကို ပြင်ဆင်ခြင်း
       const txs = allLoadedHistory.filter(tx => {
-          let matchesCus = (tx.customerName || "—").trim() === fullName;
-          let matchesMonth = selMonth ? tx.timestamp.startsWith(selMonth) : true;
-          let matchesStatus = (selStatus === "All") ? true : (tx.status === selStatus);
+          let txCus = (tx.customerName || "—").trim();
+          let matchesCus = txCus === fullName;
+          let matchesMonth = selMonth ? (tx.timestamp && tx.timestamp.startsWith(selMonth)) : true;
+          let matchesStatus = (selStatus === "All" || selStatus === "All") ? true : (tx.status === selStatus);
           return matchesCus && matchesMonth && matchesStatus;
       });
 
@@ -4375,8 +4382,9 @@
 
       reportDiv.innerHTML = `
           <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 20px;">
+              <img src="assets/logo/main_logo.png" style="width: 80px; margin: 0 auto 10px auto;">
               <h1 style="font-size: 28px; font-weight: 900; color: #1e40af;">Thailand Guide - Supplier By Ye</h1>
-              <h2 style="font-size: 20px; color: #475569;">Customer Statement</h2>
+              <h2 style="font-size: 20px; color: #475569;">Customer Statement (${selMonth || 'All Time'})</h2>
           </div>
           <div style="margin-bottom: 20px; padding: 15px; background: #f8fafc; border: 1px dashed #cbd5e1; display:flex; justify-content: space-between;">
               <div>
@@ -4420,6 +4428,12 @@
       } finally {
           document.body.removeChild(reportDiv);
       }
+  }
+    // TrueMoney အတွက် Amount ပါသော Link ထုတ်ပေးရန်
+  window.generateTrueMoneyLink = function(amt) {
+      // သင်၏ Original TrueMoney Link ကို ဤနေရာတွင် ထည့်ပါ
+      const originalLink = "https://tmn.app.link/fcRfbMKlS3b"; 
+      return `${originalLink}?amount=${amt}`;
   }
 </script>
 </body>
