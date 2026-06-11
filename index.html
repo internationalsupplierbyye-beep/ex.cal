@@ -1893,11 +1893,14 @@ if (file.startsWith('PP:')) {
     if(amt <= 0) amt = parseFloat(document.getElementById('thbOut')?.value.replace(/,/g,'')) || 0;
     imgUrl = (amt > 0) ? `https://promptpay.io/${phone}/${amt}.png` : `https://promptpay.io/${phone}.png`;
 } else if (file.startsWith('TM:')) {
-    // 🌟 TrueMoney အတွက် (QR Code အဖြစ်ပြောင်းရန် API ကိုသုံးမည်)
+    // ပမာဏကို thbIn သို့မဟုတ် thbOut မှ ဖမ်းယူခြင်း
     let amt = parseFloat(document.getElementById('thbIn')?.value.replace(/,/g,'')) || 0;
     if(amt <= 0) amt = parseFloat(document.getElementById('thbOut')?.value.replace(/,/g,'')) || 0;
-    let tmLink = generateTrueMoneyLink(amt);
-    // Link ကို QR ပုံအဖြစ်ပြောင်းပေးမည့် API
+    
+    // ပမာဏ 0 ထက်ကြီးမှ Link အမှန်ကို Generate လုပ်မည်
+    let tmLink = (amt > 0) ? generateTrueMoneyLink(amt) : "https://tmn.app.link/fcRfbMKlS3b";
+    
+    // QR Code ထုတ်ပေးခြင်း
     imgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tmLink)}`;
 } else {
     // (ပုံမှန် Static QR များအတွက်)
@@ -4429,9 +4432,9 @@ if (file.startsWith('PP:')) {
           document.body.removeChild(reportDiv);
       }
   }
-    // TrueMoney အတွက် Amount ပါသော Link ထုတ်ပေးရန်
+   // TrueMoney အတွက် Amount ပါသော Link ထုတ်ပေးရန်
   window.generateTrueMoneyLink = function(amt) {
-      // သင်၏ Original TrueMoney Link ကို ဤနေရာတွင် ထည့်ပါ
+      // သင့် Link ၏ နောက်တွင် ?amount= ထည့်ခြင်းဖြင့် App ထဲတွင် ပမာဏအော်တိုပေါ်လာပါမည်
       const originalLink = "https://tmn.app.link/fcRfbMKlS3b"; 
       return `${originalLink}?amount=${amt}`;
   }
