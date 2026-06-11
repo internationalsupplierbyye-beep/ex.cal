@@ -2268,21 +2268,26 @@ if (file.startsWith('PP:')) {
       if(!name) return alert("Customer အမည် ထည့်ပေးပါ။");
 
       const btn = document.getElementById('btnCusSave');
+      const originalText = btn.textContent;
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
       const cusId = idInput || "CUS-" + Date.now();
       const isNew = !FIREBASE_CUSTOMERS[cusId];
+
+      // 🌟 အဟောင်းနာမည်ကို မှတ်ထားမည် (မှတ်တမ်းများ လိုက်ပြင်ရန်)
+      let oldFullName = "";
+      if (!isNew) {
+          const oldC = FIREBASE_CUSTOMERS[cusId];
+          oldFullName = (oldC.name + (oldC.social ? ` (${oldC.social})` : '')).trim();
+      }
+
       const newCustomerData = { id: cusId, name, phone, social, bankName, bankNo };
-      
+      let newFullName = (name + (social ? ` (${social})` : '')).trim();
+
       FIREBASE_CUSTOMERS[cusId] = newCustomerData;
       if(isNew) { FIREBASE_CUSTOMER_ORDER.push(cusId); }
 
-      clearCustomerForm();
-      renderCustomerAdminList();
-      populateCustomerDropdown();
-
       try {
-          // 🔥 တစ်စုံလုံး Overwrite မလုပ်ဘဲ Customer တစ်ယောက်ကိုသာ သီးသန့်ကွက်သိမ်းမည်
           if (isNew) {
               await dbRef.update({
                   [`customers.${cusId}`]: newCustomerData,
@@ -2292,19 +2297,80 @@ if (file.startsWith('PP:')) {
               await dbRef.update({
                   [`customers.${cusId}`]: newCustomerData
               });
+
+              // 🌟 နာမည်ပြောင်းသွားခဲ့ရင် မှတ်တမ်းဟောင်းတွေ (Database ထဲမှာ) ပါ လိုက်ပြောင်းပေးမည်
+              if (oldFullName !== newFullName && oldFullName !== "") {
+                  const db = firebase.firestore();
+                  const snap = await db.collection("exchange_history").where("customerName", "==", oldFullName).get();
+                  
+                  if (!snap.empty) {
+                      const batch = db.batch();
+                      snap.forEach(doc => {
+                          batch.update(doc.ref, { customerName: newFullName });
+                      });
+                      await batch.commit();
+                  }
+
+                  // 🌟 Local History (မျက်နှာပြင်ပေါ်က စာရင်း) ထဲမှာပါ လိုက်ပြောင်းပေးမည်
+                  if (typeof allLoadedHistory !== 'undefined') {
+                      allLoadedHistory.forEach(tx => {
+                          if (tx.customerName === oldFullName) {
+                              tx.customerName = newFullName;
+                          }
+                      });
+                  }
+              }
           }
 
-          btn.classList.replace('bg-purple-600', 'bg-green-600');
-          btn.textContent = "✅ သိမ်းပြီးပါပြီ";
+          clearCustomerForm();
+          renderCustomerAdminList();
+          populateCustomerDropdown();
+
+          btn.className = "btn bg-green-600 hover:bg-green-700 !py-1 w-2/3 text-sm";
+          btn.textContent = isNew ? "✅ အသစ်သိမ်းပြီးပါပြီ" : "✅ Update ပြီးပါပြီ";
+          
           setTimeout(() => { 
-              btn.classList.replace('bg-green-600', 'bg-purple-600');
-              btn.textContent = "သိမ်းမည်"; 
+              btn.className = "btn bg-purple-600 hover:bg-purple-700 !py-1 w-2/3 text-sm";
+              btn.textContent = "သိမ်းမည် (အသစ်)"; 
               btn.disabled = false; 
           }, 1500);
       } catch(e) { 
           alert("Error: " + e.message); 
           btn.disabled = false; 
-          btn.textContent = "သိမ်းမည်"; 
+          btn.textContent = originalText; 
+      }
+  }
+
+  function clearCustomerForm() {
+      document.getElementById('cusId').value = '';
+      document.getElementById('cusName').value = '';
+      document.getElementById('cusPhone').value = '';
+      document.getElementById('cusSocial').value = '';
+      document.getElementById('cusBankName').value = '';
+      document.getElementById('cusBankNo').value = '';
+      
+      // 🌟 Button ကို 'အသစ်သိမ်းမည်' အခြေအနေသို့ ပြန်ပြောင်းမည်
+      const btn = document.getElementById('btnCusSave');
+      if(btn) {
+          btn.className = "btn bg-purple-600 hover:bg-purple-700 !py-1 w-2/3 text-sm";
+          btn.textContent = "သိမ်းမည် (အသစ်)";
+      }
+  }
+
+  function editCustomer(id) {
+      const c = FIREBASE_CUSTOMERS[id]; if(!c) return;
+      document.getElementById('cusId').value = c.id;
+      document.getElementById('cusName').value = c.name || '';
+      document.getElementById('cusPhone').value = c.phone || '';
+      document.getElementById('cusSocial').value = c.social || '';
+      document.getElementById('cusBankName').value = c.bankName || '';
+      document.getElementById('cusBankNo').value = c.bankNo || '';
+      
+      // 🌟 Button ကို 'Update ပြင်မည်' အခြေအနေသို့ အရောင်နှင့်စာသား ပြောင်းမည်
+      const btn = document.getElementById('btnCusSave');
+      if(btn) {
+          btn.className = "btn bg-blue-600 hover:bg-blue-700 !py-1 w-2/3 text-sm";
+          btn.textContent = "Update (ပြင်မည်)";
       }
   }
 
