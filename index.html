@@ -1915,7 +1915,10 @@ if (file.startsWith('PP:')) {
         
         document.getElementById('previewTwo').classList.add('hidden'); 
         document.getElementById('previewOne').classList.remove('hidden');
-        document.getElementById('qrPreviewSolo').src = imgUrl;
+        
+        let soloImg = document.getElementById('qrPreviewSolo');
+        soloImg.removeAttribute('crossOrigin'); // 🌟 Preview တွင် ပုံသေချာပေါ်စေရန် လုံခြုံရေးတားမြစ်ချက်ကို ဖြုတ်သည်
+        soloImg.src = imgUrl;
     }, 300); // စာရိုက်နေစဉ် မလွဲစေရန် 300ms စောင့်ပြီးမှ QR ပြောင်းမည်
   }
 
@@ -3265,10 +3268,22 @@ if (file.startsWith('PP:')) {
                       const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
                       
                       const img = document.createElement('img'); 
-                      img.crossOrigin = "anonymous"; // 🌟 CORS Error မတက်အောင် ထည့်ပေးခြင်း
+                      img.crossOrigin = "anonymous"; 
                       img.style.width = '500px'; 
                       img.style.maxWidth = '95%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '10px'; img.style.background = '#fff'; img.style.display = 'block';
-                      img.src = finalImgUrl;
+                      
+                      let targetSrc = finalImgUrl;
+                      
+                      // 🌟 နောက်ဆုံးအကြိမ် အသေချာဆုံးနည်းလမ်း (Base64 သို့ ပြောင်းလဲခြင်း)
+                      if(targetSrc.includes('promptpay.io') || targetSrc.includes('api.qrserver.com')) {
+                          try {
+                              const res = await fetch("https://wsrv.nl/?url=" + encodeURIComponent(targetSrc));
+                              const blob = await res.blob();
+                              targetSrc = await new Promise(r => { const reader = new FileReader(); reader.onloadend = () => r(reader.result); reader.readAsDataURL(blob); });
+                          } catch(e) { console.log("QR Load Error"); }
+                      }
+                      
+                      img.src = targetSrc;
                       
                       const ownerP = document.createElement('p'); ownerP.className = 'mt-3 text-slate-700'; ownerP.style.paddingBottom = '4px'; ownerP.style.fontSize = '20px'; 
                       ownerP.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${owner}</span>`);
@@ -3470,7 +3485,7 @@ if (file.startsWith('PP:')) {
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
-          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
+          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, logging:false, imageTimeout: 3000 });
           document.body.removeChild(clone);
 
           const margin=18; 
@@ -3927,9 +3942,22 @@ if (file.startsWith('PP:')) {
           const wrap=document.createElement('div'); wrap.className='export-block';
           const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
           const img=document.createElement('img'); 
-          img.crossOrigin = "anonymous"; // 🌟 CORS Error မတက်အောင် ထည့်ပေးခြင်း
+          img.crossOrigin = "anonymous"; 
           img.style.width='420px'; img.style.maxWidth='95%'; img.style.margin='10px auto 0'; img.style.border='1px solid #e5e7eb'; img.style.borderRadius='16px'; img.style.padding='10px'; img.style.background='#fff'; img.style.display='block';
-          img.src = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
+          
+          let targetSrc = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
+          
+          // 🌟 နောက်ဆုံးအကြိမ် အသေချာဆုံးနည်းလမ်း (Base64 သို့ ပြောင်းလဲခြင်း)
+          if(targetSrc.includes('promptpay.io') || targetSrc.includes('api.qrserver.com')) {
+              try {
+                  const res = await fetch("https://wsrv.nl/?url=" + encodeURIComponent(targetSrc));
+                  const blob = await res.blob();
+                  targetSrc = await new Promise(r => { const reader = new FileReader(); reader.onloadend = () => r(reader.result); reader.readAsDataURL(blob); });
+              } catch(e) { console.log("QR Load Error"); }
+          }
+          
+          img.src = targetSrc;
+          
           const owner=document.createElement('p'); owner.className='mt-3 text-slate-700'; owner.style.paddingBottom = '4px'; owner.style.fontSize = '20px'; 
           owner.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>`);
           wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(owner); clone.appendChild(wrap);
@@ -4121,7 +4149,7 @@ if (file.startsWith('PP:')) {
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
-          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, allowTaint:true, logging:false, imageTimeout: 0 });
+          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, logging:false, imageTimeout: 3000 });
           document.body.removeChild(clone);
 
           const margin=18; 
