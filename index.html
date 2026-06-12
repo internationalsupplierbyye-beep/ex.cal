@@ -3265,6 +3265,7 @@ if (file.startsWith('PP:')) {
                       const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
                       
                       const img = document.createElement('img'); 
+                      img.crossOrigin = "anonymous"; // 🌟 CORS Error မတက်အောင် ထည့်ပေးခြင်း
                       img.style.width = '500px'; 
                       img.style.maxWidth = '95%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '10px'; img.style.background = '#fff'; img.style.display = 'block';
                       img.src = finalImgUrl;
@@ -3274,8 +3275,11 @@ if (file.startsWith('PP:')) {
                       
                       wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(ownerP); clone.appendChild(wrap);
                       
+                      // 🌟 Local လား External လား စစ်ဆေးပြီး အချိန်ခွဲသတ်မှတ်ခြင်း
+                      const waitTime = img.src.includes('http') ? 3000 : 500; 
+
                       await new Promise(res => { 
-                          let timer = setTimeout(res, 500); 
+                          let timer = setTimeout(res, waitTime); 
                           if(img.complete) {
                               if(img.naturalWidth === 0) wrap.innerHTML = `<div class="font-black text-slate-800 text-lg">${tx.method} (Image missing)</div>`;
                               clearTimeout(timer);
@@ -3922,14 +3926,19 @@ if (file.startsWith('PP:')) {
           
           const wrap=document.createElement('div'); wrap.className='export-block';
           const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
-          const img=document.createElement('img'); img.style.width='420px'; img.style.maxWidth='95%'; img.style.margin='10px auto 0'; img.style.border='1px solid #e5e7eb'; img.style.borderRadius='16px'; img.style.padding='10px'; img.style.background='#fff'; img.style.display='block';
+          const img=document.createElement('img'); 
+          img.crossOrigin = "anonymous"; // 🌟 CORS Error မတက်အောင် ထည့်ပေးခြင်း
+          img.style.width='420px'; img.style.maxWidth='95%'; img.style.margin='10px auto 0'; img.style.border='1px solid #e5e7eb'; img.style.borderRadius='16px'; img.style.padding='10px'; img.style.background='#fff'; img.style.display='block';
           img.src = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
           const owner=document.createElement('p'); owner.className='mt-3 text-slate-700'; owner.style.paddingBottom = '4px'; owner.style.fontSize = '20px'; 
           owner.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>`);
           wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(owner); clone.appendChild(wrap);
           
+          // 🌟 Local လား External လား စစ်ဆေးပြီး အချိန်ခွဲသတ်မှတ်ခြင်း
+          const waitTime = img.src.includes('http') ? 3000 : 500; 
+
           await new Promise(res => { 
-              let timer = setTimeout(res, 500); 
+              let timer = setTimeout(res, waitTime); 
               if(img.complete) { clearTimeout(timer); return res(); }
               img.onload = () => { clearTimeout(timer); res(); };
               img.onerror = () => { clearTimeout(timer); res(); };
