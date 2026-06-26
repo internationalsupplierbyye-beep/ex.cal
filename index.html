@@ -795,10 +795,10 @@
 </div>
 <script>
   // 🌟 စကားဝှက်များကို ဒီနေရာမှာ သတ်မှတ်ပါ
-  const ADMIN_PASSWORD_1 = "158062"; 
-  const ADMIN_PASSWORD_2 = "၁၅၈၀၆၂"; 
-  const STAFF_PASSWORD = "staff"; 
-  let CURRENT_ROLE = null; 
+  // 🌟 Role & Permission States (Firebase မှ ဆွဲယူမည်)
+  let CURRENT_ROLE = 'guest'; // မူလအခြေအနေ (Guest)
+  let FIREBASE_SYSTEM_PASSWORDS = { main_admin: "158062", admin: "admin123", staff: "staff" }; 
+  let FIREBASE_DEVICE_PERMISSIONS = {};
 
   // --- Global States ---
   let FIREBASE_BANKS = {};
@@ -2053,6 +2053,13 @@ if (file.startsWith('PP:')) {
         
         FIREBASE_DEVICE_NAMES = data.deviceNames || {}; FIREBASE_HIDDEN_DEVICES = data.hiddenDevices || []; 
         
+        // 🌟 အသစ်ထည့်ရန်: Password နှင့် Permission များ
+        if (data.system_passwords) FIREBASE_SYSTEM_PASSWORDS = data.system_passwords;
+        if (data.device_permissions) FIREBASE_DEVICE_PERMISSIONS = data.device_permissions;
+        
+        // 🌟 အသစ်ထည့်ရန်: Auto Login စစ်ဆေးခြင်း
+        checkDeviceBypassAndInit();
+        
         if (data.adminTimezone) { ADMIN_TIMEZONE = data.adminTimezone; const tzSelect = document.getElementById('adminTimezoneSelect'); if (tzSelect) tzSelect.value = ADMIN_TIMEZONE; }
         if (data.lastRates) {
           if (data.lastRates.rate100k) { document.getElementById('rate100k').value = data.lastRates.rate100k; formatInputThousands(document.getElementById('rate100k'), true); syncFrom100k(); }
@@ -2120,46 +2127,58 @@ if (file.startsWith('PP:')) {
       }
   });
 
-  // --- Role Based Login & Tabs ---
-  function openAdmin() { document.getElementById('loginModal').style.display = 'flex'; document.getElementById('adminPassInput').value = ''; document.getElementById('adminPassInput').focus(); }
-  function closeLogin() { document.getElementById('loginModal').style.display = 'none'; }
-  
-  function checkLogin() {
-    let inputPass = document.getElementById('adminPassInput').value.trim();
-    inputPass = inputPass.replace(/\s+/g, '');
-    
-    if(inputPass === ADMIN_PASSWORD_1 || inputPass === ADMIN_PASSWORD_2) {
-      CURRENT_ROLE = 'admin';
-      closeLogin(); 
-      document.getElementById('adminModal').style.display = 'block'; 
-      document.getElementById('adminModalTitle').innerHTML = "⚙️ Admin Settings";
-      document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'inline-block');
-      document.getElementById('btnExportCSV').style.display = 'inline-block';
-      const btnClear = document.getElementById('btnClearHistory'); if(btnClear) btnClear.style.display = 'inline-block';
-      switchTab('tab-dashboard', document.querySelector('.tab-btn')); 
-      renderAdminLists(); loadHistory(); renderCustomerAdminList();
-      
-    } else if(inputPass.toLowerCase() === STAFF_PASSWORD) {
-      CURRENT_ROLE = 'staff';
-      closeLogin(); 
-      document.getElementById('adminModal').style.display = 'block'; 
-      document.getElementById('adminModalTitle').innerHTML = "📜 ငွေလွှဲမှတ်တမ်းများ (Staff View)";
-      
-      document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
-      document.getElementById('btnTabHistory').style.display = 'inline-block';
-      document.getElementById('btnTabCustomers').style.display = 'inline-block';
-      document.getElementById('btnExportCSV').style.display = 'none'; 
-      const btnClear = document.getElementById('btnClearHistory'); if(btnClear) btnClear.style.display = 'none';
-      
-      switchTab('tab-history', document.getElementById('btnTabHistory')); 
-      loadHistory(); renderCustomerAdminList();
-      
-    } else { 
-      alert("စကားဝှက် မှားယွင်းနေပါသည်။"); 
-    }
+function openAdmin() { 
+      if (CURRENT_ROLE !== 'guest') {
+          // Bypass: Role ပေးထားပြီးသားဖြစ်၍ Password မလိုဘဲ တန်းဝင်မည်
+          document.getElementById('adminModal').style.display = 'block'; 
+          if (CURRENT_ROLE === 'staff') {
+              switchTab('tab-history', document.getElementById('btnTabHistory')); 
+          } else {
+              switchTab('tab-dashboard', document.querySelector('.tab-btn')); 
+          }
+          renderAdminLists();
+      } else {
+          // Guest ဖြစ်နေပါက Password ရိုက်ခိုင်းမည်
+          document.getElementById('loginModal').style.display = 'flex'; 
+          document.getElementById('adminPassInput').value = ''; 
+          document.getElementById('adminPassInput').focus(); 
+      }
   }
-  
-  if(document.getElementById('adminPassInput')) document.getElementById('adminPassInput').addEventListener('keypress', function (e) { if (e.key === 'Enter') checkLogin(); });
+
+  function closeLogin() { 
+      document.getElementById('loginModal').style.display = 'none'; 
+  }
+
+  function checkLogin() {
+      let inputPass = document.getElementById('adminPassInput').value.trim();
+      
+      // မြန်မာဂဏန်းများကို အင်္ဂလိပ်ဂဏန်းသို့ ပြောင်းပေးခြင်း
+      const map = {'၀':'0','၁':'1','၂':'2','၃':'3','၄':'4','၅':'5','၆':'6','၇':'7','၈':'8','၉':'9'};
+      let normalizedPass = inputPass.replace(/[၀-၉]/g, d => map[d] || d);
+
+      // "၁၅၈၀၆၂" ဖြင့် ဝင်လည်း ရအောင် စစ်ဆေးခြင်း
+      if(normalizedPass === FIREBASE_SYSTEM_PASSWORDS.main_admin || inputPass === "၁၅၈၀၆၂") {
+          CURRENT_ROLE = 'main admin';
+      } else if(normalizedPass === FIREBASE_SYSTEM_PASSWORDS.admin) {
+          CURRENT_ROLE = 'admin';
+      } else if(normalizedPass === FIREBASE_SYSTEM_PASSWORDS.staff) {
+          CURRENT_ROLE = 'staff';
+      } else {
+          alert("စကားဝှက် မှားယွင်းနေပါသည်။");
+          return;
+      }
+      
+      setupUIForRole(CURRENT_ROLE);
+      closeLogin();
+      openAdmin(); 
+  }
+
+  if(document.getElementById('adminPassInput')) {
+      document.getElementById('adminPassInput').addEventListener('keypress', function (e) { 
+          if (e.key === 'Enter') checkLogin(); 
+      });
+  }
+
   function closeAdmin() { document.getElementById('adminModal').style.display = 'none'; }
 
   function switchTab(tabId, btnElement) {
@@ -2827,160 +2846,119 @@ if (file.startsWith('PP:')) {
   }
 
   // --- Admin General: Devices & Timezone ---
+  // --- Admin General: Devices & Role Management ---
   async function loadAdminDevices() {
     const list = document.getElementById('adminDeviceMapList');
     list.innerHTML = '<p class="text-center text-sm text-blue-500 p-2">စက်အသစ်များကို ရှာဖွေနေပါသည်...</p>';
     let uniqueDevices = new Set();
     Object.keys(FIREBASE_DEVICE_NAMES).forEach(id => uniqueDevices.add(id));
+    Object.keys(FIREBASE_DEVICE_PERMISSIONS).forEach(id => uniqueDevices.add(id)); // Permission ထဲက ID တွေပါထည့်ရှာမည်
     
     try {
       const snap = await firebase.firestore().collection("exchange_history").orderBy("timestamp", "desc").limit(300).get();
       snap.forEach(doc => { const d = doc.data(); if(d.deviceId) uniqueDevices.add(d.deviceId); });
+      
       let html = ''; let visibleCount = 0;
+      
       uniqueDevices.forEach(id => {
         if(FIREBASE_HIDDEN_DEVICES.includes(id)) return;
-        visibleCount++; const currentName = FIREBASE_DEVICE_NAMES[id] || '';
+        visibleCount++; 
+        
+        const currentName = FIREBASE_DEVICE_NAMES[id] || '';
+        const currentConfig = FIREBASE_DEVICE_PERMISSIONS[id] || { role: 'guest' };
+        const currentRole = currentConfig.role.toLowerCase();
+        
+        // Main Admin မှလွဲ၍ အခြားသူများ Role ပြင်ခွင့်မရှိစေရန် (Disabled)
+        const isMainAdmin = (CURRENT_ROLE === 'main admin');
+        const disableSelect = isMainAdmin ? '' : 'disabled';
+        
         html += `
-        <div class="flex justify-between items-center border-b pb-2 mb-2 last:border-0 last:mb-0 gap-2">
-          <div class="font-mono text-sm font-bold text-gray-700 w-1/4 truncate" title="${id}">${id}</div>
-          <input type="text" id="devname_${id}" class="admin-input-box !mb-0 !py-1 flex-1 text-sm" placeholder="အမည်ပေးရန်..." value="${currentName}">
-          <button onclick="saveSingleDeviceName('${id}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-sm whitespace-nowrap">Save</button>
-          <button onclick="hideDevice('${id}')" class="btn bg-red-50 hover:bg-red-100 !py-1 !px-3 !text-sm whitespace-nowrap border border-red-500 text-red-600" title="စာရင်းမှဖျက်မည်">🗑</button>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 mb-2 gap-2 bg-white p-3 rounded-xl border border-slate-100">
+          <div class="font-mono text-xs font-bold text-slate-500 w-full sm:w-1/4 truncate" title="${id}">${id}</div>
+          <input type="text" id="devname_${id}" class="admin-input-box !mb-0 !py-1 text-sm flex-1" placeholder="အမည်ပေးရန်..." value="${currentName}">
+          
+          <select id="devrole_${id}" class="border rounded-lg px-2 py-1 text-xs font-bold bg-slate-50 text-purple-800 border-purple-200" ${disableSelect}>
+             <option value="guest" ${currentRole === 'guest' ? 'selected' : ''}>Guest (No Access)</option>
+             <option value="staff" ${currentRole === 'staff' ? 'selected' : ''}>Staff (History)</option>
+             <option value="admin" ${currentRole === 'admin' ? 'selected' : ''}>Admin (Full)</option>
+             <option value="main admin" ${currentRole === 'main admin' ? 'selected' : ''}>Main Admin</option>
+          </select>
+          
+          <div class="flex gap-1 w-full sm:w-auto mt-2 sm:mt-0 justify-end">
+             <button onclick="saveDeviceAccess('${id}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-xs whitespace-nowrap">Save</button>
+             <button onclick="hideDevice('${id}')" class="btn bg-red-50 hover:bg-red-100 !py-1 !px-3 !text-xs whitespace-nowrap border border-red-500 text-red-600" title="စာရင်းမှဖျက်မည်">🗑</button>
+          </div>
         </div>`;
       });
-      if(visibleCount === 0) list.innerHTML = '<p class="text-center text-sm text-gray-500 p-2">ငွေလွှဲမှတ်တမ်း ပြုလုပ်ထားသော Device များ မတွေ့ရှိသေးပါ။</p>';
+      
+      if(visibleCount === 0) list.innerHTML = '<p class="text-center text-sm text-gray-500 p-2">Device များ မတွေ့ရှိသေးပါ။</p>';
       else list.innerHTML = html;
+      
     } catch(e) { list.innerHTML = '<p class="text-center text-sm text-red-500 p-2">Error loading devices.</p>'; }
   }
 
-  async function saveSingleDeviceName(id) {
-    const nameInput = document.getElementById(`devname_${id}`); if(!nameInput) return;
+  async function saveDeviceAccess(id) {
+    const nameInput = document.getElementById(`devname_${id}`); 
+    const roleSelect = document.getElementById(`devrole_${id}`);
+    if(!nameInput || !roleSelect) return;
+    
     const name = nameInput.value.trim();
-    if(name === "") delete FIREBASE_DEVICE_NAMES[id]; else FIREBASE_DEVICE_NAMES[id] = name;
-    const btn = nameInput.nextElementSibling; const originalText = btn.textContent;
+    const role = roleSelect.value;
+    
+    // Name Update
+    if(name === "") delete FIREBASE_DEVICE_NAMES[id]; 
+    else FIREBASE_DEVICE_NAMES[id] = name;
+    
+    // Role Update (Main Admin သာလုပ်ခွင့်ရှိသည်)
+    if(CURRENT_ROLE === 'main admin') {
+        if(role === 'guest') {
+            delete FIREBASE_DEVICE_PERMISSIONS[id]; // Guest ဆိုလျှင် permission database ထဲမှ ဖျက်မည်
+        } else {
+            FIREBASE_DEVICE_PERMISSIONS[id] = { name: name || id, role: role };
+        }
+    }
+
+    const btn = roleSelect.nextElementSibling.querySelector('button'); 
+    const originalText = btn.textContent;
     btn.textContent = "..."; btn.disabled = true;
+    
     try {
-      await updateFirebase('devices'); btn.textContent = "✔ Saved"; btn.classList.replace('bg-indigo-600', 'bg-green-600');
+      // Firebase သို့ Name ရော Permission ပါ လှမ်းသိမ်းမည်
+      await dbRef.set({ 
+          deviceNames: FIREBASE_DEVICE_NAMES, 
+          device_permissions: FIREBASE_DEVICE_PERMISSIONS 
+      }, { merge: true });
+      
+      btn.textContent = "✔ Saved"; btn.classList.replace('bg-indigo-600', 'bg-green-600');
       setTimeout(() => { btn.textContent = "Save"; btn.classList.replace('bg-green-600', 'bg-indigo-600'); btn.disabled = false; }, 1500);
-      if(document.getElementById('tab-history').classList.contains('active')) loadHistory();
-    } catch(e) { alert("Error: " + e.message); btn.textContent = originalText; btn.disabled = false; }
+      
+      // Auto-Login Status ပြန်စစ်မည် (မိမိကိုယ်ကို Role ပြောင်းမိပါက ချက်ချင်း Effect ဖြစ်စေရန်)
+      checkDeviceBypassAndInit();
+      
+    } catch(e) { 
+        alert("Error: " + e.message); 
+        btn.textContent = originalText; btn.disabled = false; 
+    }
   }
 
   async function hideDevice(id) {
       if(!confirm("ဤ Device ကို စာရင်းမှ ဖျက်ရန် သေချာပါသလား?")) return;
       if(!FIREBASE_HIDDEN_DEVICES.includes(id)) {
-          FIREBASE_HIDDEN_DEVICES.push(id); delete FIREBASE_DEVICE_NAMES[id]; 
-          try { await updateFirebase('devices'); loadAdminDevices(); if(document.getElementById('tab-history').classList.contains('active')) loadHistory(); } 
+          FIREBASE_HIDDEN_DEVICES.push(id); 
+          delete FIREBASE_DEVICE_NAMES[id]; 
+          // ပုန်းသွားတဲ့ Device ရဲ့ Permission ပါ တစ်ခါတည်းရုပ်သိမ်းမည်
+          delete FIREBASE_DEVICE_PERMISSIONS[id]; 
+          
+          try { 
+              await dbRef.set({ 
+                  deviceNames: FIREBASE_DEVICE_NAMES, 
+                  hiddenDevices: FIREBASE_HIDDEN_DEVICES,
+                  device_permissions: FIREBASE_DEVICE_PERMISSIONS
+              }, { merge: true }); 
+              
+              loadAdminDevices(); 
+          } 
           catch(e) { alert("Error: " + e.message); }
-      }
-  }
-
-  async function updateTimezone() {
-    const tzSelect = document.getElementById('adminTimezoneSelect'); if (!tzSelect) return;
-    const newTz = tzSelect.value; ADMIN_TIMEZONE = newTz;
-    const btn = document.getElementById('btnTzSave'); if (btn) { btn.textContent = "သိမ်းနေသည်..."; btn.disabled = true; }
-    try {
-      if (dbRef) await dbRef.set({ adminTimezone: newTz }, { merge: true });
-      alert("အချိန်ဇုန် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ။ (" + newTz.split('/').pop().replace(/_/g, ' ') + ")");
-    } catch (e) { alert("Error: " + e.message); } finally { if (btn) { btn.textContent = "အချိန်ဇုန် သိမ်းမည်"; btn.disabled = false; } }
-  }
-
-  window.clearAllHistory = async function() {
-      if(!confirm("⚠️ သတိပေးချက် ⚠️\nမှတ်တမ်းအားလုံးကို ဖျက်ပစ်ရန် သေချာပါသလား?\n(ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍မရပါ။)")) return;
-
-      const btn = document.getElementById('btnClearHistory');
-      if(btn) { btn.disabled = true; btn.textContent = "ဖျက်နေသည်..."; }
-
-      try {
-          const db = firebase.firestore();
-          const snapshot = await db.collection("exchange_history").get();
-          const batches = [];
-          let currentBatch = db.batch();
-          let count = 0;
-
-          snapshot.docs.forEach(doc => {
-              currentBatch.delete(doc.ref);
-              count++;
-              if(count === 490) {
-                  batches.push(currentBatch);
-                  currentBatch = db.batch();
-                  count = 0;
-              }
-          });
-          if(count > 0) batches.push(currentBatch);
-
-          for(let b of batches) {
-              await b.commit();
-          }
-
-          alert("မှတ်တမ်းအားလုံး အောင်မြင်စွာ ဖျက်ပစ်ပြီးပါပြီ。");
-          allLoadedHistory = [];
-          renderHistoryRows([]);
-          updateDashboard([]);
-      } catch(e) {
-          console.error(e);
-          alert("ဖျက်ရာတွင် အမှားအယွင်းရှိပါသည်။");
-      } finally {
-          if(btn) { btn.disabled = false; btn.textContent = "🗑 Clear All"; }
-      }
-  }
-
-  async function autoCancelOldPendingLots(dataArray) {
-      const db = firebase.firestore();
-      const batch = db.batch();
-      const now = new Date().getTime();
-      let batchCount = 0;
-      let cancelledItems = [];
-
-      dataArray.forEach(d => {
-          if (d.status === 'Pending' && d.timestamp) {
-              const recTime = new Date(d.timestamp).getTime();
-              const diffDays = (now - recTime) / (1000 * 60 * 60 * 24); 
-              
-              if (diffDays >= 5) { 
-                  const docRef = db.collection("exchange_history").doc(d.id);
-                  batch.update(docRef, { status: 'Auto Cancel' }); 
-                  d.status = 'Auto Cancel'; 
-                  batchCount++;
-                  cancelledItems.push(d); 
-              }
-          }
-      });
-
-      if (batchCount > 0) {
-          try {
-              await batch.commit(); 
-              console.log(`Auto-cancelled ${batchCount} records older than 5 days.`);
-              
-              cancelledItems.forEach(tx => {
-                  let alertMsg = `🤖❌ <b>Auto Cancel (၅ ရက်ပြည့်သွားသဖြင့်)</b>\n\n`;
-                  alertMsg += `ID: <code>${tx.id}</code>\n`;
-                  
-                  if (tx.customerName && tx.customerName !== "—") {
-                      alertMsg += `Customer: <b>${tx.customerName}</b>\n`;
-                      const matchedCus = Object.values(FIREBASE_CUSTOMERS).find(c => {
-                          let fullName = c.name + (c.social ? ` (${c.social})` : '');
-                          return fullName === tx.customerName;
-                      });
-                      if (matchedCus && matchedCus.phone) {
-                          alertMsg += `Phone: <code>${matchedCus.phone}</code>\n`;
-                      }
-                  }
-                  
-                  alertMsg += `အမျိုးအစား: <b>${tx.type}</b>\n`;
-                  alertMsg += `ပမာဏ: <code>${tx.inAmt}</code> ➔ <code>${tx.outAmt}</code>\n`;
-                  alertMsg += `နည်းလမ်း: <b>${tx.method || "-"}</b>\n`;
-                  alertMsg += `Status အသစ်: <b>Auto Cancel</b>\n`;
-                  
-                  let mappedDeviceName = FIREBASE_DEVICE_NAMES[tx.deviceId] || tx.deviceId || "Unknown";
-                  alertMsg += `Device: <b>${mappedDeviceName}</b>`;
-                  
-                  sendTelegramAlert(alertMsg, TELEGRAM_CANCEL_TOPIC_ID);
-              });
-              
-          } catch(e) {
-              console.error("Auto cancel error:", e);
-          }
       }
   }
 
@@ -3120,9 +3098,7 @@ if (file.startsWith('PP:')) {
           
           renderHistoryRows(allLoadedHistory); 
           
-          if (CURRENT_ROLE === 'admin') {
-              updateDashboard(allLoadedHistory); 
-          }
+          if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { updateDashboard(allLoadedHistory); }
           
           alert("ပမာဏ အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
       } catch(e) {
@@ -3131,7 +3107,7 @@ if (file.startsWith('PP:')) {
   }
   
   window.deleteTxRecord = async function(invId) {
-      if(CURRENT_ROLE !== 'admin') return;
+      if(CURRENT_ROLE !== 'main admin' && CURRENT_ROLE !== 'admin') return;
       if(!confirm(`Invoice ID: ${invId} ကို ဖျက်ရန် သေချာပါသလား?\n(ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍ မရနိုင်ပါ။)`)) return;
       
       try {
@@ -3601,7 +3577,7 @@ if (file.startsWith('PP:')) {
             actionHtml += `<button onclick="triggerSlipUpload('${d.id}')" class="btn bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 !py-1 !px-2 !text-xs whitespace-nowrap mr-1" title="Customer စလစ် ပုံတင်မည်">📎 တင်မည်</button>`;
         }
 
-        if(CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
+        if(CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
            typeHtml = `
             <select onchange="window.updateTxType('${d.id}', this.value)" class="border rounded px-1 py-1 text-xs font-bold bg-white text-blue-700">
               <option value="THB ➔ MMK" ${d.type === 'THB ➔ MMK' ? 'selected' : ''}>THB ➔ MMK</option>
@@ -3611,7 +3587,7 @@ if (file.startsWith('PP:')) {
             </select>
           `;
           
-          let editBtn = CURRENT_ROLE === 'admin' ? `<button onclick="window.editTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-green-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏ ပြင်မည်">✏️</button>` : '';
+          let editBtn = (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') ? `<button onclick="window.editTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-green-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏ ပြင်မည်">✏️</button>` : '';
 
           amountHtml = `
             <div class="flex items-center gap-2">
@@ -3631,7 +3607,7 @@ if (file.startsWith('PP:')) {
           `;
         }
         
-        if(CURRENT_ROLE === 'admin') {
+        if(CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') {
             actionHtml += `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap" title="ဖျက်မည်">🗑</button>`;
         }
         
@@ -3665,9 +3641,7 @@ if (file.startsWith('PP:')) {
           if(loadMoreBtn) loadMoreBtn.classList.add('hidden');
       }
 
-      if(CURRENT_ROLE === 'admin') {
-          updateDashboard(dataArray);
-      }
+      if(CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { updateDashboard(dataArray); }
   }
 
   async function loadHistory() {
@@ -3692,11 +3666,12 @@ if (file.startsWith('PP:')) {
           if (snap.docs.length < 200) lastVisibleDoc = null;
           else lastVisibleDoc = snap.docs[snap.docs.length - 1]; 
           
-          allLoadedHistory = []; 
-          snap.forEach(doc => allLoadedHistory.push(doc.data()));
           
-          await autoCancelOldPendingLots(allLoadedHistory);
-          renderHistoryRows(allLoadedHistory);
+         allLoadedHistory = []; 
+        snap.forEach(doc => allLoadedHistory.push(doc.data()));
+        
+        // await autoCancelOldPendingLots(allLoadedHistory); 
+        renderHistoryRows(allLoadedHistory);
           
       } catch(e) { 
           console.error(e);
@@ -4550,6 +4525,45 @@ if (file.startsWith('PP:')) {
       // သင့် Link ၏ နောက်တွင် ?amount= ထည့်ခြင်းဖြင့် App ထဲတွင် ပမာဏအော်တိုပေါ်လာပါမည်
       const originalLink = "https://tmn.app.link/fcRfbMKlS3b"; 
       return `${originalLink}?amount=${amt}`;
+  }
+
+// --- 🌟 Role Based UI Setup & Auto-Login Logic ---
+  function setupUIForRole(role) {
+      const adminBtn = document.querySelector('.admin-btn');
+      const modalTitle = document.getElementById('adminModalTitle');
+      const btnExport = document.getElementById('btnExportCSV');
+      const btnClear = document.getElementById('btnClearHistory');
+      
+      document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
+      
+      if (role === 'main admin' || role === 'admin') {
+          adminBtn.innerHTML = role === 'main admin' ? "⚙️ Main Admin" : "🛡️ Admin";
+          modalTitle.innerHTML = role === 'main admin' ? "⚙️ Main Admin Settings" : "⚙️ Admin Settings";
+          document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'inline-block');
+          if(btnExport) btnExport.style.display = 'inline-block';
+          if(btnClear) btnClear.style.display = 'inline-block';
+      } else if (role === 'staff') {
+          adminBtn.innerHTML = "📜 Staff";
+          modalTitle.innerHTML = "📜 ငွေလွှဲမှတ်တမ်းများ (Staff View)";
+          document.getElementById('btnTabHistory').style.display = 'inline-block';
+          document.getElementById('btnTabCustomers').style.display = 'inline-block';
+          if(btnExport) btnExport.style.display = 'none';
+          if(btnClear) btnClear.style.display = 'none';
+      } else {
+          adminBtn.innerHTML = "🔒 Admin / Staff";
+      }
+  }
+
+  function checkDeviceBypassAndInit() {
+      const currentDeviceId = localStorage.getItem('sys_device_id');
+      const deviceConfig = FIREBASE_DEVICE_PERMISSIONS[currentDeviceId];
+      
+      if (deviceConfig && deviceConfig.role) {
+          CURRENT_ROLE = deviceConfig.role.toLowerCase();
+      } else {
+          CURRENT_ROLE = 'guest';
+      }
+      setupUIForRole(CURRENT_ROLE);
   }
 </script>
 </body>
