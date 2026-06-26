@@ -453,6 +453,8 @@
       <button class="tab-btn" onclick="switchTab('tab-banks', this)">ဘဏ်များ</button>
       <button class="tab-btn" onclick="switchTab('tab-qrs', this)">QR များ</button>
       <button class="tab-btn" onclick="switchTab('tab-customers', this)" id="btnTabCustomers">👥 Customers</button>
+      
+      <button class="tab-btn" onclick="switchTab('tab-logs', this)" id="btnTabLogs">📝 Logs</button>
     </div>
 
     <div id="tab-dashboard" class="tab-pane active">
@@ -765,6 +767,7 @@
               <input id="cusBankName" class="admin-input-box text-sm" placeholder="ဘဏ်အမည်">
               <input id="cusBankNo" class="admin-input-box text-sm" placeholder="ဘဏ်နံပါတ်">
             </div>
+            
             <div class="flex gap-2">
                 <button onclick="clearCustomerForm()" class="btn2 !py-1 w-1/3 text-sm">ရှင်းမည်</button>
                 <button onclick="saveCustomerData()" id="btnCusSave" class="btn bg-purple-600 hover:bg-purple-700 !py-1 w-2/3 text-sm">သိမ်းမည်</button>
@@ -778,8 +781,23 @@
       </div>
     </div>
 
-  </div>
-</div>
+    <div id="tab-logs" class="tab-pane">
+      <div class="flex justify-between items-center mb-3">
+        <div>
+           <h3 class="font-bold text-gray-800">📝 စနစ်အတွင်း လုပ်ဆောင်ချက် မှတ်တမ်းများ</h3>
+           <p class="text-xs text-gray-500">မှတ်တမ်းဖျက်ခြင်း၊ ပမာဏပြင်ခြင်း၊ Status ပြောင်းခြင်းများကို ဤနေရာတွင် စစ်ဆေးနိုင်ပါသည်။</p>
+        </div>
+        <button onclick="loadActivityLogs()" class="btn2 !py-1 !px-3 !text-sm">🔄 Refresh</button>
+      </div>
+      <div class="overflow-y-auto border rounded-xl bg-gray-50 p-2 shadow-sm h-[60vh]">
+         <div id="activityLogsContainer" class="space-y-2">
+            <p class="text-center text-sm text-gray-500 p-4">Loading logs...</p>
+         </div>
+      </div>
+    </div>
+
+  </div> </div> ```
+
 <div id="slipViewModal" style="display:none;" class="fixed inset-0 bg-black/80 z-[80] items-center justify-center p-4">
   <div class="bg-white rounded-xl max-w-sm w-full p-4 shadow-2xl max-h-[85vh] flex flex-col">
     <div class="flex justify-between items-center mb-3 border-b pb-2">
@@ -1679,6 +1697,74 @@
           btn.disabled = false; btn.textContent = originalText;
       }
   }
+    // --- 📝 Activity Log Functions ---
+
+  async function logActivity(actionTitle, details) {
+      const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
+      const mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
+      
+      const logEntry = {
+          action: actionTitle,
+          details: details,
+          userRole: CURRENT_ROLE.toUpperCase(),
+          deviceName: mappedDeviceName,
+          timestamp: new Date().toISOString()
+      };
+      
+      try {
+          // Firebase တွင် activity_logs ဆိုသည့် နေရာသစ်တစ်ခု ဆောက်၍ သိမ်းမည်
+          await firebase.firestore().collection("activity_logs").add(logEntry);
+      } catch (e) { console.error("Log Activity Error: ", e); }
+  }
+
+  async function loadActivityLogs() {
+      const container = document.getElementById('activityLogsContainer');
+      container.innerHTML = '<p class="text-center text-sm text-blue-500 p-4">Logs များကို ရှာဖွေနေပါသည်...</p>';
+      
+      try {
+          const snap = await firebase.firestore().collection("activity_logs")
+              .orderBy("timestamp", "desc")
+              .limit(100) // နောက်ဆုံးလုပ်ခဲ့တဲ့ ၁၀၀ ခုကိုပဲ ပြမည်
+              .get();
+              
+          if(snap.empty) {
+              container.innerHTML = '<p class="text-center text-sm text-gray-400 p-4">မှတ်တမ်းများ မရှိသေးပါ။</p>';
+              return;
+          }
+          
+          let html = '';
+          snap.forEach(doc => {
+              const data = doc.data();
+              const dateObj = new Date(data.timestamp);
+              const dateStr = dateObj.toLocaleString('en-GB', { timeZone: ADMIN_TIMEZONE || 'Asia/Bangkok', hour12: true });
+              
+              let actionColor = "text-blue-600 bg-blue-50 border-blue-200"; // Default
+              if (data.action.includes("Delete")) actionColor = "text-red-600 bg-red-50 border-red-200";
+              if (data.action.includes("Edit") || data.action.includes("Swap")) actionColor = "text-orange-600 bg-orange-50 border-orange-200";
+              if (data.action.includes("Status")) actionColor = "text-green-600 bg-green-50 border-green-200";
+
+              html += `
+              <div class="bg-white border rounded-lg p-3 shadow-sm flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                  <div>
+                      <div class="flex items-center gap-2 mb-1">
+                          <span class="text-[10px] border px-1.5 py-0.5 rounded font-black ${actionColor}">${data.action}</span>
+                          <span class="text-xs font-bold text-gray-500">${dateStr}</span>
+                      </div>
+                      <p class="text-sm font-bold text-gray-800">${data.details}</p>
+                  </div>
+                  <div class="text-right shrink-0 mt-2 sm:mt-0">
+                      <div class="text-xs font-black text-purple-700">${data.userRole}</div>
+                      <div class="text-[10px] text-gray-500">${data.deviceName}</div>
+                  </div>
+              </div>`;
+          });
+          container.innerHTML = html;
+          
+      } catch (e) {
+          console.error(e);
+          container.innerHTML = '<p class="text-center text-sm text-red-500 p-4">Error loading logs.</p>';
+      }
+  }
 
   // --- Admin General: Save Telegram Settings ---
   window.saveTelegramSettings = async function() {
@@ -2185,9 +2271,11 @@ function openAdmin() {
     document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById(tabId).classList.add('active'); if (btnElement) btnElement.classList.add('active');
+    
     if (tabId === 'tab-history' || tabId === 'tab-dashboard') loadHistory();
     if (tabId === 'tab-general') loadAdminDevices(); 
     if (tabId === 'tab-customers') renderCustomerAdminList();
+    if (tabId === 'tab-logs') loadActivityLogs(); // 🌟 အသစ်ထည့်ရန်
   }
 
   // --- Drag & Drop (Banks/QRs/Customers) ---
@@ -2975,10 +3063,16 @@ function openAdmin() {
           return;
       }
 
-      try {
+     // ✅ 1. မျက်နှာပြင် (UI) ကို ချက်ချင်း အရင် Update လုပ်ပါမည် (Delay မဖြစ်စေရန်)
+     tx.status = newStatus;
+     renderHistoryRows(allLoadedHistory);
+
+     try {
+          // ✅ 2. ထို့နောက်မှ Firebase ကို နောက်ကွယ်မှ လှမ်းပို့ပါမည်
           await firebase.firestore().collection("exchange_history").doc(invId).update({ status: newStatus });
-          allLoadedHistory[index].status = newStatus;
-          renderHistoryRows(allLoadedHistory);
+          
+          // 🌟 Log မှတ်မည် 
+          logActivity("Status Change", `ID: ${invId} ၏ Status ကို '${newStatus}' သို့ ပြောင်းလဲခဲ့သည်။`);
           
           let statusEmoji = newStatus === 'Success' ? '✅' : (newStatus === 'Cancelled' ? '❌' : '⏳');
           let alertMsg = `${statusEmoji} <b>မှတ်တမ်း Status ပြောင်းလဲမှု</b>\n\n`;
@@ -3054,10 +3148,11 @@ function openAdmin() {
 
       try {
           await firebase.firestore().collection("exchange_history").doc(invId).update({ 
-              inAmt: newInAmt,
-              outAmt: newOutAmt,
-              type: newType
+              inAmt: newInAmt, outAmt: newOutAmt, type: newType
           });
+          
+          // 🌟 Log မှတ်မည် 
+          logActivity("Swap Amounts", `ID: ${invId} ၏ ပမာဏများကို ရှေ့နောက် လှည့်ပစ်ခဲ့သည်။ (${tx.inAmt} ➔ ${tx.outAmt})`);
           
           allLoadedHistory[index].inAmt = newInAmt;
           allLoadedHistory[index].outAmt = newOutAmt;
@@ -3089,9 +3184,11 @@ function openAdmin() {
 
       try {
           await firebase.firestore().collection("exchange_history").doc(invId).update({ 
-              inAmt: newIn,
-              outAmt: newOut
+              inAmt: newIn, outAmt: newOut
           });
+          
+          // 🌟 Log မှတ်မည် 
+          logActivity("Edit Amounts", `ID: ${invId} ၏ ပမာဏများကို (${tx.inAmt} ➔ ${tx.outAmt}) မှ (${newIn} ➔ ${newOut}) သို့ ပြင်ဆင်ခဲ့သည်။`);
           
           allLoadedHistory[index].inAmt = newIn;
           allLoadedHistory[index].outAmt = newOut;
@@ -3112,6 +3209,9 @@ function openAdmin() {
       
       try {
           await firebase.firestore().collection("exchange_history").doc(invId).delete();
+          
+          // 🌟 Log မှတ်မည် 
+          logActivity("Delete Record", `ID: ${invId} မှတ်တမ်းအား ဖျက်ပစ်ခဲ့သည်။`);
           const index = allLoadedHistory.findIndex(x => x.id === invId);
           if(index !== -1) { allLoadedHistory.splice(index, 1); }
           renderHistoryRows(allLoadedHistory);
@@ -4152,6 +4252,10 @@ function openAdmin() {
           
           try { 
               await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); 
+              
+              // 🌟 ပြေစာအသစ် ထုတ်ကြောင်းကို Log ထဲ မှတ်မည်
+              logActivity("Receipt Generated", `ID: ${invId} ပြေစာအသစ် ထုတ်ယူခဲ့သည်။`);
+              
               let alertMsg = `✅ <b>ငွေလွှဲပြေစာ အသစ် (Auto)</b>\n\nID: <code>${invId}</code>\n`;
               if (savedCustomerName !== "—") alertMsg += `Customer: <b>${savedCustomerName}</b>\n`;
               alertMsg += `အမျိုးအစား: <b>${recType}</b>\nပမာဏ: <code>${inValueStr}</code> ➔ <code>${outValueStr}</code>\nငွေဈေး: <code>${savedRate}</code>\nနည်းလမ်း: ${paymentMethodName}\n`;
@@ -4276,8 +4380,12 @@ function openAdmin() {
                   allLoadedHistory[index].slipUrls = combinedUrls; 
                   allLoadedHistory[index].slipUrl = combinedUrls[0] || null; 
               }
+              
+              // 🌟 စလစ်တင်ကြောင်းကို Log ထဲ မှတ်မည်
+              logActivity("Slip Uploaded", `ID: ${invId} အတွက် Customer စလစ်ပုံ ထည့်သွင်းခဲ့သည်။`);
+              
               renderHistoryRows(allLoadedHistory); 
- //           openSlipModal(invId);
+              openSlipModal(invId); // မှားယွင်းပိတ်ထားသော Modal ကို ပြန်ဖွင့်ပေးမည်
           } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
       } catch (e) { 
           console.error("Slip Upload Error: ", e); 
