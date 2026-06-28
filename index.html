@@ -4385,7 +4385,7 @@ function openAdmin() {
               logActivity("Slip Uploaded", `ID: ${invId} အတွက် Customer စလစ်ပုံ ထည့်သွင်းခဲ့သည်။`);
               
               renderHistoryRows(allLoadedHistory); 
-              openSlipModal(invId); // မှားယွင်းပိတ်ထားသော Modal ကို ပြန်ဖွင့်ပေးမည်
+              // openSlipModal(invId);  <-- ဒီလိုလေး Comment ပိတ်လိုက်ပါ
           } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
       } catch (e) { 
           console.error("Slip Upload Error: ", e); 
