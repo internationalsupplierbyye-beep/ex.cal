@@ -2099,82 +2099,75 @@ if (file.startsWith('PP:')) {
     dbRef = firebase.firestore().collection("exchange_app").doc("admin_data");
     dbRef.get().then((docSnap) => {
       if (docSnap.exists) {
-        const data = docSnap.data();
-        
-        FIREBASE_BANKS = data.banks || {}; 
-        FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS); 
-        
-        // 🌟 Auto-Repair: ပျောက်နေသော Bank များကို စာရင်းထဲ ပြန်ထည့်မည်
-        Object.keys(FIREBASE_BANKS).forEach(id => {
-            if(!FIREBASE_BANK_ORDER.includes(id)) FIREBASE_BANK_ORDER.push(id);
-        });
+        try {
+          const data = docSnap.data();
+          
+          FIREBASE_BANKS = data.banks || {}; 
+          FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(FIREBASE_BANKS); 
+          
+          Object.keys(FIREBASE_BANKS).forEach(id => {
+              if(!FIREBASE_BANK_ORDER.includes(id)) FIREBASE_BANK_ORDER.push(id);
+          });
 
-        let loadedQrs = data.qrs || [];
-        FIREBASE_QRS = loadedQrs.map(q => {
-            if (typeof q === 'string') return { file: q, name: q.replace(/\.[^.]+$/, '') };
-            return q;
-        });
+          let loadedQrs = data.qrs || [];
+          FIREBASE_QRS = loadedQrs.map(q => {
+              if (typeof q === 'string') return { file: q, name: q.replace(/\.[^.]+$/, '') };
+              return q;
+          });
 
-        FIREBASE_CUSTOMERS = data.customers || {};
-        FIREBASE_CUSTOMER_ORDER = data.customerOrder || Object.keys(FIREBASE_CUSTOMERS);
-        
-        // 🌟 Auto-Repair: ပျောက်နေသော Customer များကို စာရင်းထဲ ပြန်ထည့်မည်
-        Object.keys(FIREBASE_CUSTOMERS).forEach(id => {
-            if(!FIREBASE_CUSTOMER_ORDER.includes(id)) FIREBASE_CUSTOMER_ORDER.push(id);
-        });
+          FIREBASE_CUSTOMERS = data.customers || {};
+          FIREBASE_CUSTOMER_ORDER = data.customerOrder || Object.keys(FIREBASE_CUSTOMERS);
+          
+          Object.keys(FIREBASE_CUSTOMERS).forEach(id => {
+              if(!FIREBASE_CUSTOMER_ORDER.includes(id)) FIREBASE_CUSTOMER_ORDER.push(id);
+          });
 
-        if (data.receiptTexts) {
-            if (data.receiptTexts.orig) {
-                FIREBASE_RECEIPT_TEXTS.orig = data.receiptTexts.orig;
-                if (!FIREBASE_RECEIPT_TEXTS.orig.copyBottom && FIREBASE_RECEIPT_TEXTS.orig.copyBottom !== "") {
-                    FIREBASE_RECEIPT_TEXTS.orig.copyBottom = "ငွေလွှဲမည်ဆိုပါက ဘဏ်အကောင့်မေးပါ ခင်ဗျ၊";
-                }
-                if (data.receiptTexts.en) FIREBASE_RECEIPT_TEXTS.en = data.receiptTexts.en;
-                if (data.receiptTexts.th) FIREBASE_RECEIPT_TEXTS.th = data.receiptTexts.th;
-            } 
-            else if (data.receiptTexts.warn1 !== undefined) {
-                FIREBASE_RECEIPT_TEXTS.orig = { warn1: data.receiptTexts.warn1, warn2: data.receiptTexts.warn2, thanks: data.receiptTexts.thanks, copyBottom: "ငွေလွှဲမည်ဆိုပါက ဘဏ်အကောင့်မေးပါ ခင်ဗျ၊" };
-            }
+          if (data.receiptTexts) {
+              if (data.receiptTexts.orig) {
+                  FIREBASE_RECEIPT_TEXTS.orig = data.receiptTexts.orig;
+                  if (data.receiptTexts.en) FIREBASE_RECEIPT_TEXTS.en = data.receiptTexts.en;
+                  if (data.receiptTexts.th) FIREBASE_RECEIPT_TEXTS.th = data.receiptTexts.th;
+              }
+          }
+          
+          FIREBASE_DEVICE_NAMES = data.deviceNames || {}; 
+          FIREBASE_HIDDEN_DEVICES = data.hiddenDevices || []; 
+          if (data.system_passwords) FIREBASE_SYSTEM_PASSWORDS = data.system_passwords;
+          if (data.device_permissions) FIREBASE_DEVICE_PERMISSIONS = data.device_permissions;
+          
+          checkDeviceBypassAndInit();
+          
+          if (data.adminTimezone) { ADMIN_TIMEZONE = data.adminTimezone; const tzSelect = document.getElementById('adminTimezoneSelect'); if (tzSelect) tzSelect.value = ADMIN_TIMEZONE; }
+          
+          // 🌟 Error မတက်အောင် Safe Check ထည့်ထားသည် 🌟
+          if (data.lastRates) {
+            try {
+              if (data.lastRates.rate100k) { 
+                  const el = document.getElementById('rate100k');
+                  if(el) { el.value = data.lastRates.rate100k; formatInputThousands(el, true); syncFrom100k(); }
+              }
+              if (data.lastRates.rateVnd) { 
+                  const elVnd = document.getElementById('rateVnd');
+                  if(elVnd) { elVnd.value = data.lastRates.rateVnd; formatInputThousands(elVnd, true); refreshVndRateNote(); recalcVND(); }
+              }
+            } catch(e) { console.error("Rate Loading Error:", e); }
+          }
+          
+          if (data.telegram) {
+                if(data.telegram.chatId) TELEGRAM_CHAT_ID = data.telegram.chatId;
+                if(data.telegram.topicId) TELEGRAM_TOPIC_ID = data.telegram.topicId;
+                if(data.telegram.successTopicId) TELEGRAM_SUCCESS_TOPIC_ID = data.telegram.successTopicId;
+                if(data.telegram.cancelTopicId) TELEGRAM_CANCEL_TOPIC_ID = data.telegram.cancelTopicId;
+                if(data.telegram.slipTopicId) TELEGRAM_SLIP_TOPIC_ID = data.telegram.slipTopicId;
+          }
+          
+          loadReceiptTextsToInputs();
+          updateReceiptUI();
+          initDropdowns(); 
+          
+        } catch (innerErr) {
+            console.error("Critical Data Load Error:", innerErr);
         }
-        
-        FIREBASE_DEVICE_NAMES = data.deviceNames || {}; FIREBASE_HIDDEN_DEVICES = data.hiddenDevices || []; 
-        
-        // 🌟 အသစ်ထည့်ရန်: Password နှင့် Permission များ
-        if (data.system_passwords) FIREBASE_SYSTEM_PASSWORDS = data.system_passwords;
-        if (data.device_permissions) FIREBASE_DEVICE_PERMISSIONS = data.device_permissions;
-        
-        // 🌟 အသစ်ထည့်ရန်: Auto Login စစ်ဆေးခြင်း
-        checkDeviceBypassAndInit();
-        
-        if (data.adminTimezone) { ADMIN_TIMEZONE = data.adminTimezone; const tzSelect = document.getElementById('adminTimezoneSelect'); if (tzSelect) tzSelect.value = ADMIN_TIMEZONE; }
-        if (data.lastRates) {
-          if (data.lastRates.rate100k) { document.getElementById('rate100k').value = data.lastRates.rate100k; formatInputThousands(document.getElementById('rate100k'), true); syncFrom100k(); }
-          if (data.lastRates.rateVnd) { document.getElementById('rateVnd').value = data.lastRates.rateVnd; formatInputThousands(document.getElementById('rateVnd'), true); refreshVndRateNote(); recalcVND(); }
-        }
-        
-       if (data.telegram) {
-            if(data.telegram.chatId) TELEGRAM_CHAT_ID = data.telegram.chatId;
-            if(data.telegram.topicId) TELEGRAM_TOPIC_ID = data.telegram.topicId;
-            if(data.telegram.successTopicId) TELEGRAM_SUCCESS_TOPIC_ID = data.telegram.successTopicId;
-            if(data.telegram.cancelTopicId) TELEGRAM_CANCEL_TOPIC_ID = data.telegram.cancelTopicId;
-            if(data.telegram.slipTopicId) TELEGRAM_SLIP_TOPIC_ID = data.telegram.slipTopicId; // 🌟 အသစ်
-        }
-        
-        const tgChatInput = document.getElementById('adminTgChatId');
-        if(tgChatInput) tgChatInput.value = TELEGRAM_CHAT_ID;
-        const tgTopicInput = document.getElementById('adminTgTopicId');
-        if(tgTopicInput) tgTopicInput.value = TELEGRAM_TOPIC_ID;
-        const tgSuccessTopicInput = document.getElementById('adminTgSuccessTopicId');
-        if(tgSuccessTopicInput) tgSuccessTopicInput.value = TELEGRAM_SUCCESS_TOPIC_ID;
-        const tgCancelTopicInput = document.getElementById('adminTgCancelTopicId');
-        if(tgCancelTopicInput) tgCancelTopicInput.value = TELEGRAM_CANCEL_TOPIC_ID;
-        
-        const tgSlipTopicInput = document.getElementById('adminTgSlipTopicId'); // 🌟 အသစ်
-        if(tgSlipTopicInput) tgSlipTopicInput.value = TELEGRAM_SLIP_TOPIC_ID; // 🌟 အသစ်
-        
-        loadReceiptTextsToInputs();
-        updateReceiptUI();
-        initDropdowns(); 
       }
     });
   } catch (err) {}
@@ -4381,16 +4374,24 @@ function openAdmin() {
               // 🌟 GAS (AI OCR) သို့ ပုံ Link လှမ်းပို့ပြီး Data ဆွဲထုတ်ခြင်း 🌟
               if(actionBtn) actionBtn.innerHTML = "🤖 AI Reading...";
               try {
-                  const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbxTI4cy8MelmvJUviM5-nWMx1HaqEG25a4kkPFEWpWcWxe7GMA7BaXYJyvdmlzRC5yPpw/exec"; // အဆင့် (၂) က ရမည့် URL ကို ဒီမှာထည့်ပါ
+                  const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbwBhXT1TMJ2lsfi2TK7tGIlqS4ipnzOSD10lk2pHpl5CTblw3Q1W8gL2l1zGw7Flz3CEQ/exec";
                   const ocrRes = await fetch(gasWebAppUrl, {
                       method: "POST",
                       body: JSON.stringify({ imageUrl: uploadedUrls[0] }) // ပထမဆုံးပုံကို AI ဖတ်ခိုင်းမည်
                   });
                   const ocrJson = await ocrRes.json();
+                  
+                  console.log("🔍 AI Response Data:", ocrJson);
+                  
                   if(ocrJson.success) {
                       ocrData = ocrJson.data;
+                  } else {
+                      console.error("❌ AI Error:", ocrJson.error);
+                      alert("AI Error: " + ocrJson.error);
                   }
-              } catch(ocrErr) { console.log("OCR Error:", ocrErr); }
+              } catch(ocrErr) { 
+                  console.error("OCR Fetch Error:", ocrErr); 
+              }
 
               // Firebase သို့ Update လုပ်ခြင်း
               let updatePayload = { 
@@ -4411,7 +4412,6 @@ function openAdmin() {
                   let caption = `📎 <b>Customer Slip Uploaded</b>\nInvoice ID: <code>${invId}</code>\n`;
                   if(txCustomerName !== "—") caption += `Customer: <b>${txCustomerName}</b>\n`;
                   
-                  // Telegram ပေါ်မှာပါ AI ဖတ်ထားတာလေး ပြချင်ရင်
                   if(ocrData) {
                       caption += `\n🤖 <b>AI Extracted Info:</b>\nBank: ${ocrData.bankName}\nName: ${ocrData.receiverName}\nAcc: ${ocrData.accNo}\nRef: ${ocrData.refNo}`;
                   }
@@ -4419,7 +4419,7 @@ function openAdmin() {
                   sendTelegramPhoto(url, caption, TELEGRAM_SLIP_TOPIC_ID);
               });
 
-              if (hasError) alert(`✅ ပုံတချို့ကို သိမ်းပြီးပါပြီ။ တချို့ပုံများမှာ အခက်အခဲရှိခဲ့ပါသည်။`); 
+              if (hasError) alert(`✅ ပုံတချို့ကို သိမ်းပြီးပါပြီ။ တချို့ပုံများမှာ အခက်эхဲရှိခဲ့ပါသည်။`); 
               else alert(`✅ Customer စလစ်ပုံ ထပ်မံသိမ်းဆည်းပြီးပါပြီ။`);
               
               if(index !== -1) { 
@@ -4430,7 +4430,6 @@ function openAdmin() {
               
               logActivity("Slip Uploaded", `ID: ${invId} အတွက် Customer စလစ်ပုံ ထည့်သွင်းခဲ့သည်။ (AI OCR: ${ocrData ? 'Success' : 'Failed'})`);
               renderHistoryRows(allLoadedHistory); 
-              // openSlipModal(invId); <-- Modal အော်တိုပွင့်တာကို ဒီနေရာမှာ ပိတ်ထားလိုက်ပါပြီ
               
           } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
       } catch (e) { 
@@ -4441,7 +4440,7 @@ function openAdmin() {
           event.target.value = '';  
           if(actionBtn) { actionBtn.innerHTML = "📎 တင်မည်"; actionBtn.disabled = false; }
       }
-  }
+  };
 
   // --- View Slips Modal ---
   window.openSlipModal = function(invId) {
