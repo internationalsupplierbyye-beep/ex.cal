@@ -3632,9 +3632,25 @@ function openAdmin() {
         let dateStr = dateObj.toLocaleString('en-GB', { timeZone: d.tz || 'Asia/Bangkok', hour12: true });
         let mappedDeviceName = FIREBASE_DEVICE_NAMES[d.deviceId] || d.deviceId || "Unknown";
         let displayRate = d.rate || "-";
+        
+        // 👇 အောက်က ၃ ကြောင်းကို ထပ်ထည့်ပေးပါ 👇
         let status = d.status || 'Pending';
         let method = d.method || "-";
         let cusName = d.customerName || "—";
+        // 👆👆👆
+
+        // 🌟 AI OCR မှ ရလာသော Data များကို UI ဖွဲ့စည်းခြင်း 🌟
+        let ocrHtml = '';
+        if (d.slipOcrData) {
+        ocrHtml = `
+        <div class="mt-1.5 bg-indigo-50 border border-indigo-100 rounded p-1.5 shadow-sm text-left w-max max-w-[180px]">
+            <div class="text-[9px] font-black text-indigo-500 mb-0.5 tracking-wider uppercase">🤖 OCR Info</div>
+            <div class="text-[10px] text-slate-700 truncate" title="${d.slipOcrData.bankName}">🏦 ${d.slipOcrData.bankName}</div>
+            <div class="text-[10px] text-slate-700 truncate" title="${d.slipOcrData.receiverName}">👤 ${d.slipOcrData.receiverName}</div>
+            <div class="text-[10px] text-slate-700 font-mono truncate" title="${d.slipOcrData.accNo}">🔢 ${d.slipOcrData.accNo}</div>
+            <div class="text-[10px] text-slate-500 font-mono truncate" title="${d.slipOcrData.refNo}">🧾 ${d.slipOcrData.refNo}</div>
+        </div>`;
+    }
         
         let cusHtml = `<div class="max-w-[60px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
         
@@ -3724,7 +3740,10 @@ function openAdmin() {
           <td class="p-3">${amountHtml}</td>
           <td class="p-3 text-center">${statusHtml}</td>
           <td class="p-3 text-center">${actionHtml}</td>
-          <td class="p-3 text-xs"><div class="max-w-[60px] truncate" title="${method}">${method}</div></td>
+          <td class="p-3 text-xs align-top">
+             <div class="max-w-[120px] truncate font-bold text-slate-700" title="${method}">${method}</div>
+             ${ocrHtml}
+          </td>
         </tr>`;
       });
       
@@ -4342,6 +4361,10 @@ function openAdmin() {
 
       let uploadedUrls = []; let hasError = false;
 
+      // ခေတ္တစောင့်ဆိုင်းရန် UI ပြသခြင်း
+      const actionBtn = document.querySelector(`button[onclick="triggerSlipUpload('${invId}')"]`);
+      if(actionBtn) { actionBtn.innerHTML = "⏳ Uploading..."; actionBtn.disabled = true; }
+
       try {
           for (let i = 0; i < files.length; i++) {
               const formData = new FormData(); formData.append("image", files[i]);
@@ -4353,10 +4376,30 @@ function openAdmin() {
 
           if (uploadedUrls.length > 0) {
               let combinedUrls = existingSlips.concat(uploadedUrls);
-              await firebase.firestore().collection("exchange_history").doc(invId).update({ 
+              let ocrData = null;
+
+              // 🌟 GAS (AI OCR) သို့ ပုံ Link လှမ်းပို့ပြီး Data ဆွဲထုတ်ခြင်း 🌟
+              if(actionBtn) actionBtn.innerHTML = "🤖 AI Reading...";
+              try {
+                  const gasWebAppUrl = "https://script.google.com/macros/s/AKfycbxTI4cy8MelmvJUviM5-nWMx1HaqEG25a4kkPFEWpWcWxe7GMA7BaXYJyvdmlzRC5yPpw/exec"; // အဆင့် (၂) က ရမည့် URL ကို ဒီမှာထည့်ပါ
+                  const ocrRes = await fetch(gasWebAppUrl, {
+                      method: "POST",
+                      body: JSON.stringify({ imageUrl: uploadedUrls[0] }) // ပထမဆုံးပုံကို AI ဖတ်ခိုင်းမည်
+                  });
+                  const ocrJson = await ocrRes.json();
+                  if(ocrJson.success) {
+                      ocrData = ocrJson.data;
+                  }
+              } catch(ocrErr) { console.log("OCR Error:", ocrErr); }
+
+              // Firebase သို့ Update လုပ်ခြင်း
+              let updatePayload = { 
                   slipUrls: combinedUrls, 
                   slipUrl: combinedUrls[0] || null 
-              });
+              };
+              if (ocrData) updatePayload.slipOcrData = ocrData; // OCR Data ရလာရင် ထည့်သိမ်းမည်
+
+              await firebase.firestore().collection("exchange_history").doc(invId).update(updatePayload);
 
               // 🌟 Telegram သို့ စလစ်ပုံများ လှမ်းပို့ရန် 🌟
               let txCustomerName = "—";
@@ -4366,32 +4409,38 @@ function openAdmin() {
               
               uploadedUrls.forEach((url) => {
                   let caption = `📎 <b>Customer Slip Uploaded</b>\nInvoice ID: <code>${invId}</code>\n`;
-                  if(txCustomerName !== "—") {
-                      caption += `Customer: <b>${txCustomerName}</b>`;
+                  if(txCustomerName !== "—") caption += `Customer: <b>${txCustomerName}</b>\n`;
+                  
+                  // Telegram ပေါ်မှာပါ AI ဖတ်ထားတာလေး ပြချင်ရင်
+                  if(ocrData) {
+                      caption += `\n🤖 <b>AI Extracted Info:</b>\nBank: ${ocrData.bankName}\nName: ${ocrData.receiverName}\nAcc: ${ocrData.accNo}\nRef: ${ocrData.refNo}`;
                   }
+                  
                   sendTelegramPhoto(url, caption, TELEGRAM_SLIP_TOPIC_ID);
               });
-              // 🌟 ပြီးပါပြီ 🌟
-              
+
               if (hasError) alert(`✅ ပုံတချို့ကို သိမ်းပြီးပါပြီ။ တချို့ပုံများမှာ အခက်အခဲရှိခဲ့ပါသည်။`); 
               else alert(`✅ Customer စလစ်ပုံ ထပ်မံသိမ်းဆည်းပြီးပါပြီ။`);
               
               if(index !== -1) { 
                   allLoadedHistory[index].slipUrls = combinedUrls; 
                   allLoadedHistory[index].slipUrl = combinedUrls[0] || null; 
+                  if(ocrData) allLoadedHistory[index].slipOcrData = ocrData;
               }
               
-              // 🌟 စလစ်တင်ကြောင်းကို Log ထဲ မှတ်မည်
-              logActivity("Slip Uploaded", `ID: ${invId} အတွက် Customer စလစ်ပုံ ထည့်သွင်းခဲ့သည်။`);
-              
+              logActivity("Slip Uploaded", `ID: ${invId} အတွက် Customer စလစ်ပုံ ထည့်သွင်းခဲ့သည်။ (AI OCR: ${ocrData ? 'Success' : 'Failed'})`);
               renderHistoryRows(allLoadedHistory); 
-              // openSlipModal(invId);  <-- ဒီလိုလေး Comment ပိတ်လိုက်ပါ
+              // openSlipModal(invId); <-- Modal အော်တိုပွင့်တာကို ဒီနေရာမှာ ပိတ်ထားလိုက်ပါပြီ
+              
           } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
       } catch (e) { 
           console.error("Slip Upload Error: ", e); 
           alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။"); 
       } 
-      finally { event.target.value = '';  }
+      finally { 
+          event.target.value = '';  
+          if(actionBtn) { actionBtn.innerHTML = "📎 တင်မည်"; actionBtn.disabled = false; }
+      }
   }
 
   // --- View Slips Modal ---
