@@ -603,9 +603,20 @@
     </div>
 
     <div id="tab-general" class="tab-pane">
-      <div class="bg-pink-50 border border-pink-200 p-4 rounded-xl mb-4">
-        <div class="flex justify-between items-center mb-3">
-            <h3 class="font-bold text-pink-800">📝 ပြေစာအောက်ခြေ စာသားများ ပြင်ရန်</h3>
+  <div id="timeSettingsBlock" style="display: none;" class="bg-red-50 border border-red-200 p-4 rounded-xl mb-4">
+    <h3 class="font-bold text-red-800 mb-3 text-sm">⏱ အချိန်သတ်မှတ်ချက်များ (Main Admin သီးသန့်)</h3>
+    <div class="mb-2">
+      <label class="text-xs font-bold text-gray-600">Pending အနီရောင်ပြရန် စောင့်ရမည့်အချိန် (နာရီ)</label>
+      <input type="number" id="adminPendingAlert" class="admin-input-box text-sm" placeholder="ဥပမာ: 1, 1.5, 2">
+    </div>
+    <div class="mb-3">
+      <label class="text-xs font-bold text-gray-600">Auto Cancel ပြုလုပ်မည့် အချိန် (ရက်)</label>
+      <input type="number" id="adminAutoCancel" class="admin-input-box text-sm" placeholder="ဥပမာ: 3, 5, 7">
+    </div>
+    <button onclick="saveTimeSettings()" id="btnTimeSave" class="btn bg-red-600 hover:bg-red-700 w-full">အချိန်သတ်မှတ်ချက်များ သိမ်းမည်</button>
+  </div>
+
+  <div class="bg-pink-50 border border-pink-200 p-4 rounded-xl mb-4">
             <select id="adminReceiptLang" class="border border-pink-300 rounded px-2 py-1 text-sm font-bold text-pink-800 bg-white" onchange="loadReceiptTextsToInputs()">
                 <option value="orig" selected>မြန်မာစာ (Default)</option>
                 <option value="en">English (ENG)</option>
@@ -860,7 +871,9 @@
   let CURRENT_QR = { owner:'', normal:null, big:null, hasBig:false };
   let LAST_RATE = { r:null, inv:null, vnd:null };
   let ADMIN_TIMEZONE = 'Asia/Bangkok'; 
-  let calcLock = false;
+  let ALERT_TIMEOUT_HOURS = 1; // Pending အချက်ပြရန် Default (၁ နာရီ)
+let AUTO_CANCEL_DAYS = 3;    // Auto Cancel ဖြစ်ရန် Default (၃ ရက်)
+let calcLock = false;
   let allLoadedHistory = [];
   
   // 🌟 Database Pagination States
@@ -1766,6 +1779,61 @@
       }
   }
 
+   window.saveTimeSettings = async function() {
+    if (CURRENT_ROLE !== 'main admin') return alert("Main Admin သီးသန့်သာ ပြင်ဆင်ခွင့်ရှိပါသည်။");
+    
+    let pendingVal = parseFloat(document.getElementById('adminPendingAlert').value);
+    let cancelVal = parseFloat(document.getElementById('adminAutoCancel').value);
+    
+    if (isNaN(pendingVal) || pendingVal <= 0 || isNaN(cancelVal) || cancelVal <= 0) {
+        return alert("အချိန်များကို မှန်ကန်စွာ ဂဏန်းဖြင့် ထည့်ပါ။");
+    }
+
+    const btn = document.getElementById('btnTimeSave');
+    btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
+
+    try {
+        ALERT_TIMEOUT_HOURS = pendingVal;
+        AUTO_CANCEL_DAYS = cancelVal;
+        
+        if(dbRef) {
+            await dbRef.set({ 
+                timeSettings: { pendingAlertHours: pendingVal, autoCancelDays: cancelVal } 
+            }, { merge: true });
+        }
+        alert("အချိန်သတ်မှတ်ချက်များကို အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
+        loadHistory(); 
+    } catch(e) {
+        alert("Error: " + e.message);
+    } finally {
+        btn.disabled = false; btn.textContent = "အချိန်သတ်မှတ်ချက်များ သိမ်းမည်";
+    }
+}
+
+window.autoCancelOldPendingLots = async function(dataArray) {
+    let hasChanges = false;
+    let now = Date.now();
+    let cancelMs = AUTO_CANCEL_DAYS * 24 * 60 * 60 * 1000; // ရက်ကို မီလီစက္ကန့်ပြောင်းလဲခြင်း
+
+    const batch = firebase.firestore().batch();
+
+    for (let tx of dataArray) {
+        if (tx.status === 'Pending') {
+            let txTime = new Date(tx.timestamp).getTime();
+            if (now - txTime >= cancelMs) {
+                const docRef = firebase.firestore().collection("exchange_history").doc(tx.id);
+                batch.update(docRef, { status: 'Auto Cancel' });
+                tx.status = 'Auto Cancel';
+                hasChanges = true;
+                logActivity("Auto Cancel", `ID: ${tx.id} သည် ${AUTO_CANCEL_DAYS} ရက်ကျော်သဖြင့် စနစ်မှ Auto Cancel လုပ်လိုက်သည်။`);
+            }
+        }
+    }
+
+    if (hasChanges) {
+        try { await batch.commit(); } catch(e) { console.error("Auto Cancel Error", e); }
+    }
+}
   // --- Admin General: Save Telegram Settings ---
   window.saveTelegramSettings = async function() {
       const chatId = document.getElementById('adminTgChatId').value.trim();
@@ -2152,8 +2220,19 @@ if (file.startsWith('PP:')) {
           if (data.lastRates.rateVnd) { document.getElementById('rateVnd').value = data.lastRates.rateVnd; formatInputThousands(document.getElementById('rateVnd'), true); refreshVndRateNote(); recalcVND(); }
         }
         
-       if (data.telegram) {
-            if(data.telegram.chatId) TELEGRAM_CHAT_ID = data.telegram.chatId;
+       if (data.timeSettings) {
+    if (data.timeSettings.pendingAlertHours) ALERT_TIMEOUT_HOURS = parseFloat(data.timeSettings.pendingAlertHours);
+    if (data.timeSettings.autoCancelDays) AUTO_CANCEL_DAYS = parseFloat(data.timeSettings.autoCancelDays);
+}
+
+// UI သေတ္တာထဲသို့ တန်ဖိုးပြန်ဖြည့်ခြင်း
+const pendingInput = document.getElementById('adminPendingAlert');
+if (pendingInput) pendingInput.value = ALERT_TIMEOUT_HOURS;
+const cancelInput = document.getElementById('adminAutoCancel');
+if (cancelInput) cancelInput.value = AUTO_CANCEL_DAYS;
+
+if (data.telegram) {
+     if(data.telegram.chatId) TELEGRAM_CHAT_ID = data.telegram.chatId;
             if(data.telegram.topicId) TELEGRAM_TOPIC_ID = data.telegram.topicId;
             if(data.telegram.successTopicId) TELEGRAM_SUCCESS_TOPIC_ID = data.telegram.successTopicId;
             if(data.telegram.cancelTopicId) TELEGRAM_CANCEL_TOPIC_ID = data.telegram.cancelTopicId;
@@ -3651,12 +3730,12 @@ function openAdmin() {
             let txTime = new Date(d.timestamp).getTime();
             let now = Date.now();
             let hoursDiff = (now - txTime) / (1000 * 60 * 60);
-            
-            if (hoursDiff >= 1) { // ၁ နာရီ (သို့) ၁ နာရီထက် ကျော်လွန်သွားလျှင်
-                statusColor = 'bg-red-600 text-white border-red-800 animate-pulse shadow-md font-black';
-                isOverdue = true;
-                totalOverdue++;
-            } else {
+
+if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်ထားသော နာရီကျော်သွားလျှင်
+    statusColor = 'bg-red-600 text-white border-red-800 animate-pulse shadow-md font-black';
+    isOverdue = true;
+    totalOverdue++;
+} else {
                 statusColor = 'bg-yellow-100 text-yellow-800 border-yellow-300';
             }
         }
@@ -3730,8 +3809,8 @@ function openAdmin() {
       
       // 🌟 အပေါ်ဆုံးတွင် သတိပေးစာပြရန် 🌟
       if (totalOverdue > 0) {
-          html = `<tr><td colspan="10" class="p-3 bg-red-600 text-white font-bold text-center animate-pulse shadow-inner text-sm tracking-wide border-b-4 border-red-800">⚠️ သတိပြုရန်: ငွေမဝင်သေးဘဲ Pending ဖြစ်နေသည်မှာ (၁) နာရီကျော်နေသော ပြေစာ ${totalOverdue} ခု ရှိနေပါသည်! ⚠️</td></tr>` + html;
-      }
+    html = `<tr><td colspan="10" class="p-3 bg-red-600 text-white font-bold text-center animate-pulse shadow-inner text-sm tracking-wide border-b-4 border-red-800">⚠️ သတိပြုရန်: ငွေမဝင်သေးဘဲ Pending ဖြစ်နေသည်မှာ (${ALERT_TIMEOUT_HOURS}) နာရီကျော်နေသော ပြေစာ ${totalOverdue} ခု ရှိနေပါသည်! ⚠️</td></tr>` + html;
+}
       
       list.innerHTML = html;
       
@@ -3768,10 +3847,11 @@ function openAdmin() {
           
           
          allLoadedHistory = []; 
-        snap.forEach(doc => allLoadedHistory.push(doc.data()));
-        
-        // await autoCancelOldPendingLots(allLoadedHistory); 
-        renderHistoryRows(allLoadedHistory);
+snap.forEach(doc => allLoadedHistory.push(doc.data()));
+
+// Auto Cancel လုပ်ဆောင်ချက်ကို ပြန်ဖွင့်လိုက်သည်
+await autoCancelOldPendingLots(allLoadedHistory); 
+renderHistoryRows(allLoadedHistory);
           
       } catch(e) { 
           console.error(e);
@@ -4659,6 +4739,12 @@ function openAdmin() {
           if(btnClear) btnClear.style.display = 'none';
       } else {
           adminBtn.innerHTML = "🔒 Admin / Staff";
+      }
+      
+      // Main Admin ဖြစ်မှသာ UI အကွက်ကို ပြသမည်
+      const timeSettingsBlock = document.getElementById('timeSettingsBlock');
+      if (timeSettingsBlock) {
+          timeSettingsBlock.style.display = (role === 'main admin') ? 'block' : 'none';
       }
   }
 
