@@ -87,7 +87,8 @@
       border-radius: 16px; 
       padding: 20px; 
       box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
-      min-height: 90vh; 
+      height: calc(100vh - 40px); /* 🌟 အမြင့်ကို သတ်မှတ်လိုက်ပါသည် */
+      overflow: hidden; /* 🌟 အပြင်ဘက် Scroll မဖြစ်အောင် ပိတ်လိုက်ပါသည် */
       display: flex; 
       flex-direction: column; 
     }
@@ -446,7 +447,7 @@
     <button onclick="closeAdmin()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl z-10">✕</button>
     <h2 id="adminModalTitle" class="text-xl font-black mb-4 flex items-center gap-2">⚙️ Admin Settings</h2>
     
-    <div class="flex border-b mb-4 overflow-x-auto shrink-0" id="adminTabsHeader">
+    <div class="flex border-b mb-4 overflow-x-auto shrink-0 pb-1" id="adminTabsHeader">
       <button class="tab-btn active" onclick="switchTab('tab-dashboard', this)">📊 Dashboard</button>
       <button class="tab-btn" onclick="switchTab('tab-history', this)" id="btnTabHistory">📜 မှတ်တမ်းများ</button>
       <button class="tab-btn" onclick="switchTab('tab-general', this)">အထွေထွေ</button>
@@ -622,8 +623,7 @@
                 <option value="en">English (ENG)</option>
                 <option value="th">Thai (TH)</option>
             </select>
-        </div>
-        <div class="mb-2">
+         <div class="mb-2">
           <label class="text-xs font-bold text-gray-600">သတိပေးချက် ၁ (Warning 1)</label>
           <input type="text" id="adminWarn1" class="admin-input-box text-sm">
         </div>
@@ -640,8 +640,7 @@
           <input type="text" id="adminCopyBottom" class="admin-input-box text-sm">
         </div>
         <button onclick="saveReceiptTexts()" id="btnReceiptTextSave" class="btn bg-pink-600 hover:bg-pink-700 w-full mb-3">စာသားများ သိမ်းမည်</button>
-        
-        <hr class="border-pink-200 my-3">
+  </div> <hr class="border-pink-200 my-3">
         <h3 class="font-bold text-pink-800 mb-3 text-sm">🤖 Telegram Bot ချိတ်ဆက်ရန်</h3>
         <div class="mb-2">
           <label class="text-xs font-bold text-gray-600">Telegram Chat ID</label>
@@ -655,11 +654,7 @@
           <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Success ဖြစ်သော မှတ်တမ်းများပို့ရန်)</label>
           <input type="text" id="adminTgSuccessTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 14)">
         </div>
-        <div class="mb-3">
-          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Cancel ဖြစ်သော မှတ်တမ်းများပို့ရန်)</label>
-          <input type="text" id="adminTgCancelTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 16)">
-        </div>
-	<div class="mb-3">
+       <div class="mb-3">
           <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Cancel ဖြစ်သော မှတ်တမ်းများပို့ရန်)</label>
           <input type="text" id="adminTgCancelTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 16)">
         </div>
@@ -669,7 +664,7 @@
           <input type="text" id="adminTgSlipTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 18)">
         </div>
         <button onclick="saveTelegramSettings()" id="btnTgSave" class="btn bg-blue-600 hover:bg-blue-700 w-full">Telegram Settings သိမ်းမည်</button>
-      </div>
+        ```
 
       <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-4">
         <div class="flex justify-between items-center mb-2">
@@ -724,12 +719,12 @@
       <div class="flex flex-col h-full w-full min-h-[500px]">
           <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-4 shrink-0">
             <h3 class="font-bold text-blue-800 mb-3">🏦 ဘဏ်အချက်အလက် ထည့်ရန် / ပြင်ရန်</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-              <input id="newBankId" class="admin-input-box" placeholder="Bank Code (ဥပမာ - KTB)">
-              <input id="newBankName" class="admin-input-box" placeholder="Bank Name (ဥပမာ - Krungthai)">
-              <input id="newBankAccName" class="admin-input-box" placeholder="Account Name (ဥပမာ - U BA)">
-              <input id="newBankAccNo" class="admin-input-box" placeholder="Account No (ဥပမာ - 123-456-789)">
-              <input id="newBankLogo" class="admin-input-box sm:col-span-2" placeholder="Logo ပုံနာမည် (ဥပမာ - ktb.jpg)">
+            <div class="flex flex-col lg:flex-row gap-2 mb-3">
+              <input id="newBankId" class="admin-input-box text-sm flex-1" placeholder="Code (KTB)">
+              <input id="newBankName" class="admin-input-box text-sm flex-1" placeholder="Bank Name">
+              <input id="newBankAccName" class="admin-input-box text-sm flex-1" placeholder="Account Name">
+              <input id="newBankAccNo" class="admin-input-box text-sm flex-1" placeholder="Account No">
+              <input id="newBankLogo" class="admin-input-box text-sm flex-1" placeholder="Logo (ktb.jpg)">
             </div>
             <input type="hidden" id="editBankOriginalId" value="">
             <div class="flex gap-2">
@@ -771,12 +766,12 @@
           <div class="bg-purple-50 border border-purple-200 p-4 rounded-xl mb-4 shrink-0">
             <h3 class="font-bold text-purple-800 mb-3 text-sm">👥 Customer အသစ် ထည့်ရန် / ပြင်ရန်</h3>
             <input type="hidden" id="cusId">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-              <input id="cusName" class="admin-input-box text-sm" placeholder="*Customer အမည်">
-              <input id="cusPhone" class="admin-input-box text-sm" placeholder="ဖုန်းနံပါတ်">
-              <input id="cusSocial" class="admin-input-box text-sm" placeholder="Social Media (ဥပမာ - Sa)">
-              <input id="cusBankName" class="admin-input-box text-sm" placeholder="ဘဏ်အမည်">
-              <input id="cusBankNo" class="admin-input-box text-sm" placeholder="ဘဏ်နံပါတ်">
+            <div class="flex flex-col lg:flex-row gap-2 mb-3">
+              <input id="cusName" class="admin-input-box text-sm flex-1" placeholder="*အမည်">
+              <input id="cusPhone" class="admin-input-box text-sm flex-1" placeholder="ဖုန်းနံပါတ်">
+              <input id="cusSocial" class="admin-input-box text-sm flex-1" placeholder="Social Media">
+              <input id="cusBankName" class="admin-input-box text-sm flex-1" placeholder="ဘဏ်အမည်">
+              <input id="cusBankNo" class="admin-input-box text-sm flex-1" placeholder="ဘဏ်နံပါတ်">
             </div>
             
             <div class="flex gap-2">
@@ -807,7 +802,7 @@
       </div>
     </div>
 
-  </div> </div> ```
+  </div>
 
 <div id="slipViewModal" style="display:none;" class="fixed inset-0 bg-black/80 z-[80] items-center justify-center p-4">
   <div class="bg-white rounded-xl max-w-sm w-full p-4 shadow-2xl max-h-[85vh] flex flex-col">
