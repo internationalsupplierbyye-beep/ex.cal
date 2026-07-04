@@ -102,7 +102,19 @@
     .tab-btn:hover { color: #111827; background: #f1f5f9; }
     .tab-btn.active { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
     
-    .tab-pane { display: none !important; padding-top: 16px; flex: 1; overflow-y: auto; overflow-x: hidden; padding-right: 5px; }
+    .tab-pane { 
+  display: none !important; 
+  padding-top: 16px; 
+  flex: 1; 
+  overflow-y: auto; 
+  overflow-x: auto; /* 🌟 ဤနေရာကို auto ပြောင်းပါ */
+}
+
+/* ဇယားကို ထိန်းချုပ်ထားသော Container */
+.overflow-auto {
+  overflow-x: auto; /* 🌟 ဘေးသို့ ရွှေ့ရန်အတွက် အရေးကြီးသည် */
+  width: 100%;
+}
     .tab-pane.active { display: block !important; }
 
     .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; background: #f8fafc; transition: background 0.2s; }
@@ -579,7 +591,7 @@
           <button id="btnClearHistory" onclick="clearAllHistory()" class="btn bg-red-600 hover:bg-red-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="မှတ်တမ်းအားလုံးကို ဖျက်မည်">🗑 Clear All</button>
         </div>
       </div>
-      <div class="overflow-auto border rounded-xl bg-white shadow-sm h-[70vh] min-h-[500px]">
+      <div class="overflow-auto border rounded-xl bg-white shadow-sm" style="max-height: 65vh;">
         <table class="w-full text-left text-sm whitespace-nowrap">
           <thead class="bg-gray-100 text-gray-600 sticky top-0 shadow-sm z-10">
             <tr>
@@ -3802,13 +3814,13 @@ function openAdmin() {
             
             // 🌟 w-[145px] သို့ ချဲ့ထားပြီး break-all သုံးကာ Scrollbar မပေါ်စေရန် ပြင်ဆင်ထားပါသည်
             aiExtractedHtml = `
-            <div class="mt-1 border-t pt-1 ${colorClass} w-[145px] flex items-start justify-between gap-1">
-                <div id="${infoId}" class="text-[10px] font-bold leading-tight overflow-hidden break-all flex-1" style="max-height: 14px; transition: max-height 0.2s ease-in-out;" title="စလစ် အချက်အလက်များ">
-                    ${formattedInfo}
-                </div>
+            <div class="mt-1 border-t pt-1 ${colorClass} w-[145px] flex items-start gap-1.5">
                 <button onclick="const el = document.getElementById('${infoId}'); if(el.style.maxHeight === '14px') { el.style.maxHeight = '200px'; this.innerHTML = '▲'; } else { el.style.maxHeight = '14px'; this.innerHTML = '▼'; }" class="text-[9px] text-gray-500 hover:text-blue-500 bg-gray-50 hover:bg-blue-50 rounded border border-gray-200 transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center w-4 h-4 mt-0.5" title="အကျယ်ကြည့်ရန်">
                     ▼
                 </button>
+                <div id="${infoId}" class="text-[10px] font-bold leading-tight overflow-hidden break-all flex-1 pt-0.5" style="max-height: 14px; transition: max-height 0.2s ease-in-out;" title="စလစ် အချက်အလက်များ">
+                    ${formattedInfo}
+                </div>
             </div>`;
         }
         
@@ -4660,9 +4672,14 @@ async function extractSlipData(imageUrl) {
       let uploadedUrls = []; let hasError = false;
       
       // Upload ခလုတ်ကို ပိတ်ထားမည် (Loading ပြရန်)
-      const uploadBtn = document.querySelector(`button[onclick="triggerSlipUpload('${invId}')"]`);
+      const uploadBtn = document.querySelector(`button[onclick*="triggerSlipUpload('${invId}')"]`);
       let origBtnText = "";
-      if (uploadBtn) { origBtnText = uploadBtn.innerHTML; uploadBtn.innerHTML = "တင်နေသည် ⏳"; uploadBtn.disabled = true; }
+      if (uploadBtn) { 
+          origBtnText = uploadBtn.innerHTML; 
+          // ခလုတ်ထဲမှာ Icon သို့မဟုတ် စာသား ဘယ်လိုပဲရှိရှိ "တင်နေသည် ⏳" လို့ အစားထိုးမည်
+          uploadBtn.innerHTML = "တင်နေသည် ⏳"; 
+          uploadBtn.disabled = true; 
+      }
 
       try {
           for (let i = 0; i < files.length; i++) {
