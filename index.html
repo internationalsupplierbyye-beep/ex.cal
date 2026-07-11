@@ -404,6 +404,28 @@
 <input type="file" id="slipUploader" accept="image/*" multiple style="display: none;" onchange="handleSlipUpload(event)">
 <input type="hidden" id="uploadTargetInvId">
 
+<div id="successTxModal" style="display:none;" class="fixed inset-0 bg-black/60 z-[70] items-center justify-center p-4">
+  <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl border-t-4 border-green-500">
+    <h3 class="text-lg font-black mb-4 text-green-700">✅ ငွေလွှဲအောင်မြင်ကြောင်း အတည်ပြုရန်</h3>
+    <div class="space-y-3">
+       <p class="text-sm text-gray-600">ပြေစာ ID: <span id="successModalInvId" class="font-bold text-black"></span></p>
+       <div>
+           <label class="text-xs font-bold text-gray-600 mb-1 block text-green-600">ငွေဝင်မည့် ပိုက်ဆံအိတ် (+)</label>
+           <select id="successInLedger" class="admin-input-box !mb-0 text-sm py-1.5"></select>
+           <p class="text-[10px] text-gray-500 mt-1">Customer လွှဲလိုက်သော ဘဏ်/QR ပေါ်မူတည်၍ အလိုအလျောက် ရွေးချယ်ပေးထားပါသည်။</p>
+       </div>
+       <div>
+           <label class="text-xs font-bold text-gray-600 mb-1 block text-red-600">ငွေထုတ်ပေးလိုက်သည့် ပိုက်ဆံအိတ် (-)</label>
+           <select id="successOutLedger" class="admin-input-box !mb-0 text-sm py-1.5"></select>
+       </div>
+       <div class="flex gap-2 mt-5">
+           <button onclick="document.getElementById('successTxModal').style.display='none'" class="btn2 w-1/2 text-sm">ပိတ်မည်</button>
+           <button onclick="confirmSuccessStatus()" class="btn bg-green-600 hover:bg-green-700 w-1/2 text-sm">အတည်ပြုမည်</button>
+       </div>
+    </div>
+  </div>
+</div>
+
 <div id="manualLotModal" style="display:none;" class="fixed inset-0 bg-black/60 z-[70] items-center justify-center p-4">
   <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl">
     <h3 class="text-lg font-black mb-4 text-indigo-700">➕ Manual Lot ထည့်ရန်</h3>
@@ -426,6 +448,16 @@
       <div>
         <label class="text-xs font-bold text-gray-600 mb-1 block">မြန်မာငွေ ပမာဏ (MMK)</label>
         <input type="text" id="manualLotMmk" class="admin-input-box !mb-0 text-sm" placeholder="ဥပမာ - 666667">
+      </div>
+      <div class="grid grid-cols-2 gap-2 mt-2">
+         <div>
+            <label class="text-xs font-bold text-gray-600 mb-1 block text-red-600">ငွေထွက်မည့် အကောင့် (-)</label>
+            <select id="manualLotFromAcc" class="admin-input-box !mb-0 text-xs py-1.5"></select>
+         </div>
+         <div>
+            <label class="text-xs font-bold text-gray-600 mb-1 block text-green-600">ငွေဝင်မည့် အကောင့် (+)</label>
+            <select id="manualLotToAcc" class="admin-input-box !mb-0 text-xs py-1.5"></select>
+         </div>
       </div>
       <div class="flex gap-2 mt-5">
         <button onclick="document.getElementById('manualLotModal').style.display='none'" class="btn2 w-1/2">ပိတ်မည်</button>
@@ -471,6 +503,7 @@
       <button class="tab-btn" onclick="switchTab('tab-banks', this)">ဘဏ်များ</button>
       <button class="tab-btn" onclick="switchTab('tab-qrs', this)">QR များ</button>
       <button class="tab-btn" onclick="switchTab('tab-customers', this)" id="btnTabCustomers">👥 Customers</button>
+      <button class="tab-btn" onclick="switchTab('tab-treasury', this)" id="btnTabTreasury">💰 လက်ကျန်ငွေ</button>
       
       <button class="tab-btn" onclick="switchTab('tab-logs', this)" id="btnTabLogs">📝 Logs</button>
     </div>
@@ -758,6 +791,7 @@
               <input id="newBankAccName" class="admin-input-box text-sm flex-1" placeholder="Account Name">
               <input id="newBankAccNo" class="admin-input-box text-sm flex-1" placeholder="Account No">
               <input id="newBankLogo" class="admin-input-box text-sm flex-1" placeholder="Logo (ktb.jpg)">
+              <select id="newBankLedger" class="admin-input-box text-sm flex-1"><option value="">ငွေသေတ္တာ (Wallet)</option></select>
             </div>
             <input type="hidden" id="editBankOriginalId" value="">
             <div class="flex gap-2">
@@ -776,10 +810,11 @@
       <div class="flex flex-col h-full w-full min-h-[500px]">
           <div class="bg-green-50 border border-green-200 p-4 rounded-xl mb-4 shrink-0">
             <h3 class="font-bold text-green-800 mb-3">🔲 QR အသစ် ထည့်ရန် / ပြင်ရန်</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-              <input id="newQrName" class="admin-input-box" placeholder="QR အမည် (ဥပမာ - KPay YLH)">
-              <input id="newQrFile" class="admin-input-box" placeholder="QR ပုံနာမည် (ဥပမာ - newqr.jpg)">
-              <input id="newQrOwner" class="admin-input-box" placeholder="ပိုင်ရှင်အမည် (ဥပမာ - U BA)">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
+              <input id="newQrName" class="admin-input-box text-sm" placeholder="QR အမည်">
+              <input id="newQrFile" class="admin-input-box text-sm" placeholder="QR ပုံနာမည်">
+              <input id="newQrOwner" class="admin-input-box text-sm" placeholder="ပိုင်ရှင်အမည်">
+              <select id="newQrLedger" class="admin-input-box text-sm"><option value="">ငွေသေတ္တာ (Wallet)</option></select>
             </div>
             <input type="hidden" id="editQrOriginalIndex" value="-1">
             <div class="flex gap-2">
@@ -818,6 +853,47 @@
           </div>
           <div id="adminCustomerList" class="overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 content-start"></div>
       </div>
+    </div>
+
+    <div id="tab-treasury" class="tab-pane">
+      <div class="flex justify-between items-center mb-3">
+        <div>
+           <h3 class="font-bold text-gray-800">💰 Master Account လက်ကျန်ငွေများ</h3>
+           <p class="text-xs text-gray-500">အကောင့်အသစ်ဖွင့်ခြင်း နှင့် လက်ကျန်ငွေ ချိန်ညှိခြင်းများကို ဤနေရာတွင် လုပ်ဆောင်ပါ။</p>
+        </div>
+        <button onclick="loadTreasuryData()" class="btn2 !py-1 !px-3 !text-sm">🔄 Refresh</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl">
+             <h4 class="font-bold text-blue-800 mb-2 text-sm">➕ Master Account အသစ်ထည့်ရန်</h4>
+             <div class="flex gap-2 mb-2">
+                 <input type="text" id="newMasterAccName" class="admin-input-box text-sm flex-1 !mb-0" placeholder="အမည် (ဥပမာ - Y_KPLUS_Main)">
+                 <select id="newMasterAccCurrency" class="admin-input-box text-sm w-24 !mb-0">
+                     <option value="THB">THB</option>
+                     <option value="MMK">MMK</option>
+                     <option value="VND">VND</option>
+                 </select>
+             </div>
+             <div class="flex gap-2">
+                 <input type="number" id="newMasterAccBalance" class="admin-input-box text-sm flex-1 !mb-0" placeholder="အဖွင့်လက်ကျန်">
+                 <button onclick="saveMasterAccount()" class="btn bg-blue-600 hover:bg-blue-700 text-sm whitespace-nowrap">သိမ်းမည်</button>
+             </div>
+          </div>
+
+          <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl">
+             <h4 class="font-bold text-indigo-800 mb-2 text-sm">🔄 ဘဏ်အချင်းချင်း ငွေရွှေ့ရန် (Internal Transfer)</h4>
+             <div class="flex gap-2 mb-2">
+                 <select id="transferFromAcc" class="admin-input-box text-sm flex-1 !mb-0"><option value="">မှ (From)</option></select>
+                 <select id="transferToAcc" class="admin-input-box text-sm flex-1 !mb-0"><option value="">သို့ (To)</option></select>
+             </div>
+             <div class="flex gap-2">
+                 <input type="number" id="transferAmt" class="admin-input-box text-sm flex-1 !mb-0" placeholder="ရွှေ့မည့် ပမာဏ">
+                 <button onclick="processInternalTransfer()" class="btn bg-indigo-600 hover:bg-indigo-700 text-sm whitespace-nowrap">လွှဲမည်</button>
+             </div>
+          </div>
+      </div>
+      <div id="treasuryAccountsList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          </div>
     </div>
 
     <div id="tab-logs" class="tab-pane">
@@ -866,6 +942,7 @@
   let ACTIVE_BANK_INFO = {};
   let FIREBASE_DEVICE_NAMES = {}; 
   let FIREBASE_HIDDEN_DEVICES = []; 
+  let FIREBASE_TREASURY = {}; // 🌟 Master Accounts များကို သိမ်းမည့် State 
   
   // 🌟 API Keys Globals 🌟
   let TELEGRAM_BOT_TOKEN = ""; // Admin Setting မှ ရောက်လာပါလိမ့်မည်
@@ -2264,6 +2341,9 @@ if (file.startsWith('PP:')) {
         if (data.system_passwords) FIREBASE_SYSTEM_PASSWORDS = data.system_passwords;
         if (data.device_permissions) FIREBASE_DEVICE_PERMISSIONS = data.device_permissions;
         
+        // 🌟 Treasury ဒေတာကို ဆွဲယူခြင်း
+        if (data.treasuryAccounts) FIREBASE_TREASURY = data.treasuryAccounts;
+        
         // 🌟 အသစ်ထည့်ရန်: Auto Login စစ်ဆေးခြင်း
         checkDeviceBypassAndInit();
         
@@ -2330,7 +2410,8 @@ if (data.telegram) {
         else if (type === 'customers') payload = { customers: FIREBASE_CUSTOMERS, customerOrder: FIREBASE_CUSTOMER_ORDER };
         else if (type === 'devices') payload = { deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES };
         else if (type === 'receipts') payload = { receiptTexts: FIREBASE_RECEIPT_TEXTS };
-        else payload = { banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES, customers: FIREBASE_CUSTOMERS, customerOrder: FIREBASE_CUSTOMER_ORDER };
+        else if (type === 'treasury') payload = { treasuryAccounts: FIREBASE_TREASURY }; // 🌟 Treasury ကို သိမ်းရန်
+        else payload = { banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES, customers: FIREBASE_CUSTOMERS, customerOrder: FIREBASE_CUSTOMER_ORDER, treasuryAccounts: FIREBASE_TREASURY };
         
         await dbRef.set(payload, { merge: true }); 
       } catch(err) { alert("Firebase သိမ်း၍မရပါ။"); }
@@ -2436,7 +2517,8 @@ function openAdmin() {
     if (tabId === 'tab-history' || tabId === 'tab-dashboard') loadHistory();
     if (tabId === 'tab-general') loadAdminDevices(); 
     if (tabId === 'tab-customers') renderCustomerAdminList();
-    if (tabId === 'tab-logs') loadActivityLogs(); // 🌟 အသစ်ထည့်ရန်
+    if (tabId === 'tab-logs') loadActivityLogs(); 
+    if (tabId === 'tab-treasury') loadTreasuryData(); // 🌟 Treasury Tab သို့သွားလျှင် Data ဆွဲတင်မည်
   }
 
   // --- Drag & Drop (Banks/QRs/Customers) ---
@@ -2510,7 +2592,11 @@ function openAdmin() {
     else {
       FIREBASE_BANK_ORDER.forEach((id, index) => {
         const bank = FIREBASE_BANKS[id]; if(!bank) return;
-        bankListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="bank" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate"><span class="font-bold text-sm">${bank.name}</span> <span class="text-xs text-gray-500">(${id})</span></div></div><div class="action-btns flex-shrink-0"><button onclick="editBank('${id}')" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteBank('${id}')" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
+        // 🌟 Wallet (Ledger) Badge လေး ဖန်တီးမည်
+        let ledgerName = bank.ledger && FIREBASE_TREASURY[bank.ledger] ? FIREBASE_TREASURY[bank.ledger].name : (bank.ledger || '');
+        let ledgerBadge = ledgerName ? `<span class="bg-indigo-50 text-indigo-700 text-[9px] px-1.5 py-0.5 rounded ml-2 border border-indigo-200 font-bold whitespace-nowrap">👛 ${ledgerName}</span>` : '';
+        
+        bankListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="bank" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate flex items-center"><span class="font-bold text-sm">${bank.name}</span> <span class="text-xs text-gray-500 ml-1">(${id})</span> ${ledgerBadge}</div></div><div class="action-btns flex-shrink-0"><button onclick="editBank('${id}')" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteBank('${id}')" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
       });
     }
     
@@ -2520,7 +2606,13 @@ function openAdmin() {
       FIREBASE_QRS.forEach((qr, index) => {
         const file = typeof qr === 'string' ? qr : qr.file;
         const name = typeof qr === 'string' ? qr.replace(/\.[^.]+$/, '') : (qr.name || file);
-        qrListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="qr" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate"><span class="font-bold text-sm">${name}</span> <span class="text-xs text-gray-500">(${file})</span></div></div><div class="action-btns flex-shrink-0"><button onclick="editQR(${index})" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteQR(${index})" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
+        
+        // 🌟 Wallet (Ledger) Badge လေး ဖန်တီးမည်
+        let ledgerId = typeof qr === 'object' ? qr.ledger : '';
+        let ledgerName = ledgerId && FIREBASE_TREASURY[ledgerId] ? FIREBASE_TREASURY[ledgerId].name : (ledgerId || '');
+        let ledgerBadge = ledgerName ? `<span class="bg-indigo-50 text-indigo-700 text-[9px] px-1.5 py-0.5 rounded ml-2 border border-indigo-200 font-bold whitespace-nowrap">👛 ${ledgerName}</span>` : '';
+
+        qrListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="qr" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate flex items-center"><span class="font-bold text-sm">${name}</span> <span class="text-xs text-gray-500 ml-1">(${file})</span> ${ledgerBadge}</div></div><div class="action-btns flex-shrink-0"><button onclick="editQR(${index})" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteQR(${index})" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
       });
     }
   }
@@ -2892,7 +2984,153 @@ function openAdmin() {
           </div>`;
       });
   }
+   // ==========================================
+  // 💰 Treasury & Master Accounts Functions
+  // ==========================================
 
+  function loadTreasuryData() {
+      if(typeof syncAllLedgerDropdowns === 'function') syncAllLedgerDropdowns(); 
+      const list = document.getElementById('treasuryAccountsList');
+      const fromSel = document.getElementById('transferFromAcc');
+      const toSel = document.getElementById('transferToAcc');
+
+      if (!list) return;
+
+      list.innerHTML = '';
+      fromSel.innerHTML = '<option value="">မှ (From)</option>';
+      toSel.innerHTML = '<option value="">သို့ (To)</option>';
+
+      if (Object.keys(FIREBASE_TREASURY).length === 0) {
+          list.innerHTML = '<p class="text-sm text-gray-500 col-span-full mt-4 text-center">Master Account များ မရှိသေးပါ။ အကောင့်အသစ် စတင်ဖွင့်လှစ်ပါ။</p>';
+          return;
+      }
+
+      for (const key in FIREBASE_TREASURY) {
+          const acc = FIREBASE_TREASURY[key];
+          let colorClass = acc.currency === 'THB' ? 'text-blue-700' : (acc.currency === 'VND' ? 'text-orange-600' : 'text-green-700');
+          let bgClass = acc.currency === 'THB' ? 'bg-blue-50' : (acc.currency === 'VND' ? 'bg-orange-50' : 'bg-green-50');
+
+          // 🌟 ဤ Wallet (Ledger) တွင် ချိတ်ဆက်ထားသော ဘဏ်နှင့် QR များကို ရှာဖွေခြင်း 🌟
+          let linkedItems = [];
+          FIREBASE_BANK_ORDER.forEach(bId => {
+              if (FIREBASE_BANKS[bId] && FIREBASE_BANKS[bId].ledger === key) {
+                  linkedItems.push(`🏦 ${FIREBASE_BANKS[bId].name}`);
+              }
+          });
+          FIREBASE_QRS.forEach(qr => {
+              if (typeof qr === 'object' && qr.ledger === key) {
+                  let qName = qr.name || qr.file;
+                  linkedItems.push(`🔲 ${qName}`);
+              }
+          });
+          
+          let linkedHtml = linkedItems.length > 0 
+              ? `<div class="text-[10px] text-gray-500 mt-3 pt-2 border-t border-gray-100 leading-relaxed font-bold">Linked: ${linkedItems.join(', ')}</div>` 
+              : `<div class="text-[10px] text-gray-400 mt-3 pt-2 border-t border-gray-100 italic">ချိတ်ဆက်ထားခြင်း မရှိသေးပါ</div>`;
+
+          // Render Account Card
+          list.innerHTML += `
+              <div class="bg-white border rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                  <div class="flex justify-between items-start border-b pb-2 mb-2">
+                      <span class="font-bold text-gray-800">${acc.name}</span>
+                      <span class="text-[10px] font-black px-2 py-0.5 rounded ${bgClass} ${colorClass} border uppercase">${acc.currency}</span>
+                  </div>
+                  <div class="flex justify-between items-center mt-2">
+                      <div class="font-black text-xl ${colorClass}">${Number(acc.balance).toLocaleString()}</div>
+                      <div class="flex gap-1">
+                          <button onclick="adjustTreasuryBalance('${key}')" class="text-[10px] bg-gray-100 border border-gray-300 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded font-bold">ပြင်မည်</button>
+                          <button onclick="deleteMasterAccount('${key}')" class="text-[10px] bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 px-2 py-1 rounded font-bold">✕</button>
+                      </div>
+                  </div>
+                  ${linkedHtml}
+              </div>
+          `;
+
+          // Populate Dropdowns for Transfer
+          fromSel.innerHTML += `<option value="${key}">${acc.name} (${acc.currency})</option>`;
+          toSel.innerHTML += `<option value="${key}">${acc.name} (${acc.currency})</option>`;
+      }
+  }
+
+  async function saveMasterAccount() {
+      const name = document.getElementById('newMasterAccName').value.trim();
+      const curr = document.getElementById('newMasterAccCurrency').value;
+      const bal = parseFloat(document.getElementById('newMasterAccBalance').value) || 0;
+
+      if (!name) return alert("အကောင့်အမည် ထည့်ပါ။");
+
+      const id = "ACC_" + Date.now();
+      FIREBASE_TREASURY[id] = { id: id, name: name, currency: curr, balance: bal };
+
+      try {
+          await updateFirebase('treasury');
+          logActivity("Treasury", `Master Account အသစ် [${name} - ${curr}] ဖန်တီးခဲ့သည်။ (အဖွင့်: ${bal})`);
+          
+          document.getElementById('newMasterAccName').value = '';
+          document.getElementById('newMasterAccBalance').value = '';
+          loadTreasuryData();
+      } catch (e) { alert("သိမ်းဆည်းရာတွင် အခက်အခဲရှိပါသည်။"); }
+  }
+
+  async function adjustTreasuryBalance(id) {
+      const acc = FIREBASE_TREASURY[id];
+      if (!acc) return;
+
+      const newBalStr = prompt(`${acc.name} (${acc.currency}) ၏ လက်ကျန်ငွေ အသစ်ကို ထည့်ပါ:`, acc.balance);
+      if (newBalStr === null) return;
+      
+      const newBal = parseFloat(newBalStr.replace(/,/g, ''));
+      if (isNaN(newBal)) return alert("ဂဏန်းသာ ထည့်သွင်းပါ။");
+
+      const oldBal = acc.balance;
+      acc.balance = newBal;
+
+      try {
+          await updateFirebase('treasury');
+          logActivity("Treasury Adjust", `${acc.name} ၏ လက်ကျန်ငွေကို (${oldBal}) မှ (${newBal}) သို့ Manual ပြင်ဆင်ခဲ့သည်။`);
+          loadTreasuryData();
+      } catch (e) { alert("ပြင်ဆင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
+  }
+
+  async function deleteMasterAccount(id) {
+      const acc = FIREBASE_TREASURY[id];
+      if (!confirm(`'${acc.name}' အကောင့်ကို ဖျက်ရန် သေချာပါသလား?`)) return;
+
+      delete FIREBASE_TREASURY[id];
+      try {
+          await updateFirebase('treasury');
+          logActivity("Treasury", `Master Account [${acc.name}] ကို ဖျက်ပစ်ခဲ့သည်။`);
+          loadTreasuryData();
+      } catch (e) { alert("ဖျက်ရာတွင် အခက်အခဲရှိပါသည်။"); }
+  }
+
+  async function processInternalTransfer() {
+      const fromId = document.getElementById('transferFromAcc').value;
+      const toId = document.getElementById('transferToAcc').value;
+      const amtStr = document.getElementById('transferAmt').value;
+      const amt = parseFloat(amtStr);
+
+      if (!fromId || !toId) return alert("လွှဲမည့် အကောင့်များကို ရွေးချယ်ပါ။");
+      if (fromId === toId) return alert("တူညီသော အကောင့်သို့ လွှဲ၍မရပါ။");
+      if (isNaN(amt) || amt <= 0) return alert("လွှဲမည့် ပမာဏကို မှန်ကန်စွာ ထည့်ပါ။");
+
+      const fromAcc = FIREBASE_TREASURY[fromId];
+      const toAcc = FIREBASE_TREASURY[toId];
+
+      if (fromAcc.currency !== toAcc.currency) return alert("ငွေကြေးအမျိုးအစား (Currency) တူညီသော အကောင့်များသာ ရွှေ့ပြောင်းနိုင်ပါသည်။");
+
+      fromAcc.balance -= amt;
+      toAcc.balance += amt;
+
+      try {
+          await updateFirebase('treasury');
+          logActivity("Internal Transfer", `[${fromAcc.name}] မှ [${toAcc.name}] သို့ ${amt.toLocaleString()} ${fromAcc.currency} ရွှေ့ပြောင်းခဲ့သည်။`);
+          
+          document.getElementById('transferAmt').value = '';
+          loadTreasuryData();
+          alert("ငွေရွှေ့ပြောင်းခြင်း အောင်မြင်ပါသည်။");
+      } catch (e) { alert("ငွေရွှေ့ရာတွင် အခက်အခဲရှိပါသည်။"); }
+  }
   // ==========================================
   // 🏦 ဘဏ် နှင့် QR များ စီမံရန် Functions များ
   // ==========================================
@@ -2904,6 +3142,7 @@ function openAdmin() {
       document.getElementById('newBankAccName').value = '';
       document.getElementById('newBankAccNo').value = '';
       document.getElementById('newBankLogo').value = '';
+      document.getElementById('newBankLedger').value = '';
   }
 
   function editBank(id) {
@@ -2915,6 +3154,7 @@ function openAdmin() {
       document.getElementById('newBankAccName').value = bank.accName || '';
       document.getElementById('newBankAccNo').value = bank.accNo || '';
       document.getElementById('newBankLogo').value = bank.logo || '';
+      document.getElementById('newBankLedger').value = bank.ledger || '';
       document.getElementById('newBankId').focus();
   }
 
@@ -2924,6 +3164,7 @@ function openAdmin() {
       const accName = document.getElementById('newBankAccName').value.trim();
       const accNo = document.getElementById('newBankAccNo').value.trim();
       const logo = document.getElementById('newBankLogo').value.trim();
+      const ledger = document.getElementById('newBankLedger').value.trim();
       const origId = document.getElementById('editBankOriginalId').value;
 
       if(!id || !name || !accName || !accNo) {
@@ -2932,7 +3173,7 @@ function openAdmin() {
 
       if (mode === 'save') {
           if (FIREBASE_BANKS[id]) return alert("ဤ Bank Code ဖြင့် ရှိပြီးသားဖြစ်နေပါသည်။ 'Update' ကို နှိပ်ပါ သို့မဟုတ် Code နာမည် အသစ်ပြောင်းပါ။");
-          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg" };
+          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg", ledger };
           FIREBASE_BANK_ORDER.push(id);
       } else if (mode === 'update') {
           if (!origId) return alert("ကျေးဇူးပြု၍ ပြင်ဆင်လိုသော ဘဏ်ကို အရင် ✏️ Edit နှိပ်ပြီးမှ Update လုပ်ပါ။");
@@ -2942,10 +3183,10 @@ function openAdmin() {
               if (index > -1) FIREBASE_BANK_ORDER[index] = id;
               delete FIREBASE_BANKS[origId];
           }
-          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg" };
+          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg", ledger };
       } else if (mode === 'duplicate') {
           if (id === origId || FIREBASE_BANKS[id]) return alert("Duplicate လုပ်ရန်အတွက် Bank Code အသစ် ပြောင်းပေးပါ။");
-          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg" };
+          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg", ledger };
           FIREBASE_BANK_ORDER.push(id);
       }
 
@@ -2976,6 +3217,7 @@ function openAdmin() {
       document.getElementById('newQrName').value = '';
       document.getElementById('newQrFile').value = '';
       document.getElementById('newQrOwner').value = '';
+      document.getElementById('newQrLedger').value = '';
   }
 
   function editQR(index) {
@@ -2989,6 +3231,7 @@ function openAdmin() {
       document.getElementById('newQrName').value = name;
       document.getElementById('newQrFile').value = file;
       document.getElementById('newQrOwner').value = owner; 
+      document.getElementById('newQrLedger').value = qr.ledger || '';
       document.getElementById('newQrName').focus();
   }
 
@@ -2996,6 +3239,7 @@ function openAdmin() {
       const name = document.getElementById('newQrName').value.trim();
       const file = document.getElementById('newQrFile').value.trim();
       const owner = document.getElementById('newQrOwner').value.trim();
+      const ledger = document.getElementById('newQrLedger').value.trim();
       const origIndex = parseInt(document.getElementById('editQrOriginalIndex').value);
       
       if(!file || !name) return alert("QR အမည် နှင့် ပုံနာမည် နှစ်ခုလုံး ထည့်ပါ။");
@@ -3004,14 +3248,14 @@ function openAdmin() {
 
       if (mode === 'save') {
           if (FIREBASE_QRS.some(q => (typeof q === 'string' ? q : q.file) === file)) return alert("ဤ ဖိုင်နာမည်ဖြင့် ရှိပြီးသားဖြစ်နေပါသည်။ 'Update' လုပ်ပါ သို့မဟုတ် ဖိုင်နာမည် ပြောင်းပါ။");
-          FIREBASE_QRS.push({ file, name, owner });
+          FIREBASE_QRS.push({ file, name, owner, ledger });
       } else if (mode === 'update') {
           if (origIndex === -1) return alert("ကျေးဇူးပြု၍ ပြင်ဆင်လိုသော QR ကို အရင် ✏️ Edit နှိပ်ပြီးမှ Update လုပ်ပါ။");
           if (isDuplicateFile) return alert("ပြောင်းလဲလိုသော ဖိုင်နာမည်သည် အခြား QR ၏ ဖိုင်နာမည်နှင့် တူညီနေပါသည်။");
-          FIREBASE_QRS[origIndex] = { file, name, owner };
+          FIREBASE_QRS[origIndex] = { file, name, owner, ledger };
       } else if (mode === 'duplicate') {
           if (FIREBASE_QRS.some(q => (typeof q === 'string' ? q : q.file) === file)) return alert("Duplicate လုပ်ရန် ဖိုင်နာမည် အသစ် ပြောင်းပေးပါ။");
-          FIREBASE_QRS.push({ file, name, owner });
+          FIREBASE_QRS.push({ file, name, owner, ledger });
       }
 
       try {
@@ -3212,6 +3456,74 @@ function openAdmin() {
   }
 
   // --- Admin History & Status Update Logic ---
+  // 🌟 (အသစ်) Ledger (ငွေသေတ္တာ) များကို Dropdown သို့ ထည့်ပေးခြင်း 🌟
+  function syncAllLedgerDropdowns() {
+      let optionsHtml = '<option value="">ငွေသေတ္တာ (Wallet)</option>';
+      
+      // 1. Master Accounts
+      for (const key in FIREBASE_TREASURY) {
+          optionsHtml += `<option value="${key}">👛 ${FIREBASE_TREASURY[key].name} (${FIREBASE_TREASURY[key].currency})</option>`;
+      }
+      
+      // 2. Standalone Banks
+      FIREBASE_BANK_ORDER.forEach(id => {
+          const b = FIREBASE_BANKS[id];
+          if (b && !b.ledger) {
+              optionsHtml += `<option value="BANK_${id}">🏦 ${b.name} (Standalone)</option>`;
+          }
+      });
+      
+      // 3. Standalone QRs
+      FIREBASE_QRS.forEach((q, index) => {
+          if (!q.ledger) {
+              let name = q.name || q.file.replace(/\.[^.]+$/, '');
+              optionsHtml += `<option value="QR_${index}">🔲 ${name} (Standalone)</option>`;
+          }
+      });
+
+      if(document.getElementById('newBankLedger')) document.getElementById('newBankLedger').innerHTML = optionsHtml;
+      if(document.getElementById('newQrLedger')) document.getElementById('newQrLedger').innerHTML = optionsHtml;
+      if(document.getElementById('successInLedger')) document.getElementById('successInLedger').innerHTML = optionsHtml;
+      if(document.getElementById('successOutLedger')) document.getElementById('successOutLedger').innerHTML = optionsHtml;
+  }
+
+  let pendingSuccessTxId = null;
+  let pendingSuccessSelectEl = null;
+
+  // // 🌟 Modal ထဲမှ အတည်ပြု (Confirm) နှိပ်သောအခါ 🌟
+  window.confirmSuccessStatus = async function() {
+      const inId = document.getElementById('successInLedger').value;
+      const outId = document.getElementById('successOutLedger').value;
+      
+      if(!inId || !outId) return alert("ငွေဝင် / ငွေထွက်မည့် ပိုက်ဆံအိတ်များကို ရွေးချယ်ပါ။");
+
+      const tx = allLoadedHistory.find(x => x.id === pendingSuccessTxId);
+      const inAcc = window.getLedgerAccount(inId);
+      const outAcc = window.getLedgerAccount(outId);
+
+      const inNum = parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0;
+      const outNum = parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0;
+
+      // Master Account သို့မဟုတ် Standalone ကို တွက်ချက်ခြင်း
+      if(inAcc) inAcc.balance = (inAcc.balance || 0) + inNum;
+      if(outAcc) outAcc.balance = (outAcc.balance || 0) - outNum;
+      
+      tx.ledgerIn = inId;
+      tx.ledgerOut = outId;
+
+      try {
+          await updateFirebase('all'); 
+          document.getElementById('successTxModal').style.display = 'none';
+          
+          if(pendingSuccessSelectEl) pendingSuccessSelectEl.value = 'Success';
+          await finalizeTxStatus(pendingSuccessTxId, 'Success', inId, outId);
+          loadTreasuryData(); 
+      } catch(e) {
+          alert("Error: " + e.message);
+      }
+  };
+
+  // 🌟 မူလ Status ပြောင်းသည့် Function (Intercept လုပ်ထားသည်) 🌟
   window.updateTxStatus = async function(invId, newStatus, selectEl) {
       const index = allLoadedHistory.findIndex(x => x.id === invId);
       if(index === -1) return;
@@ -3223,6 +3535,54 @@ function openAdmin() {
           if (selectEl) selectEl.value = tx.status;
           return;
       }
+
+      // Success ဆိုလျှင် Modal ကို အရင်ပြမည် (Auto Ledger)
+      if (newStatus === 'Success') {
+          syncAllLedgerDropdowns(); // Update Dropdowns
+          pendingSuccessTxId = invId;
+          pendingSuccessSelectEl = selectEl;
+
+          // 🌟 Customer ငွေသွင်းခဲ့သော Bank/QR ကို ပိုမိုတိကျစွာ ရှာဖွေမည် 🌟
+          let autoInboundLedger = '';
+          // tx.method သည် "QR (KPay [ASL])" ပုံစံဖြစ်နိုင်သဖြင့် includes() ဖြင့် စစ်ဆေးခြင်း
+          if(tx.method.includes('QR')) {
+              const foundQrIndex = FIREBASE_QRS.findIndex(q => {
+                  let rawName = q.name || q.file || "";
+                  if(rawName) rawName = rawName.replace(/\.[^.]+$/, '');
+                  // Method ထဲမှာ QR နာမည် ပါမပါ စစ်မယ်
+                  return tx.method.includes(rawName); 
+              });
+              if(foundQrIndex > -1) {
+                  const q = FIREBASE_QRS[foundQrIndex];
+                  if(q.ledger) autoInboundLedger = q.ledger;
+                  else autoInboundLedger = `QR_${foundQrIndex}`; // Standalone ဖြစ်ပါက ID ကိုယူမည်
+              }
+          } else if (tx.method.includes('Bank')) {
+              const foundBankKey = Object.keys(FIREBASE_BANKS).find(k => tx.method.includes(FIREBASE_BANKS[k].name));
+              if(foundBankKey) {
+                  if(FIREBASE_BANKS[foundBankKey].ledger) autoInboundLedger = FIREBASE_BANKS[foundBankKey].ledger;
+                  else autoInboundLedger = `BANK_${foundBankKey}`; // Standalone ဖြစ်ပါက ID ကိုယူမည်
+              }
+          }
+
+          document.getElementById('successModalInvId').textContent = invId;
+          document.getElementById('successInLedger').value = autoInboundLedger;
+          document.getElementById('successOutLedger').value = ''; // Outbound ကတော့ ကိုယ်တိုင်ရွေးရမည်
+
+          document.getElementById('successTxModal').style.display = 'flex';
+          
+          if(selectEl) selectEl.value = tx.status; // Confirm မလုပ်မချင်း မူလ Status ပြန်ပြထားမည်
+          return;
+      }
+
+      // Success မဟုတ်လျှင် ပုံမှန်အတိုင်း ပြောင်းမည်
+      await finalizeTxStatus(invId, newStatus, "");
+  }
+
+  // 🌟 နောက်ကွယ်တွင် Status ကို အပြီးသတ် သိမ်းဆည်းသည့် Function 🌟
+  async function finalizeTxStatus(invId, newStatus, ledgerLogNotes) {
+      const index = allLoadedHistory.findIndex(x => x.id === invId);
+      const tx = allLoadedHistory[index];
 
      // ✅ 1. မျက်နှာပြင် (UI) ကို ချက်ချင်း အရင် Update လုပ်ပါမည် (Delay မဖြစ်စေရန်)
      tx.status = newStatus;
@@ -3368,10 +3728,27 @@ function openAdmin() {
       if(CURRENT_ROLE !== 'main admin' && CURRENT_ROLE !== 'admin') return;
       if(!confirm(`Invoice ID: ${invId} ကို ဖျက်ရန် သေချာပါသလား?\n(ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍ မရနိုင်ပါ။)`)) return;
       
+      const tx = allLoadedHistory.find(x => x.id === invId);
+
       try {
+          // 🌟 Success ဖြစ်ခဲ့တဲ့ မှတ်တမ်းကို ဖျက်ရင် ပိုက်ဆံအိတ်ထဲက ငွေတွေပါ ပြန်ပြင်ပေးရမယ် (Reverse Balance) 🌟
+          if (tx && tx.status === 'Success') {
+              let inAcc = window.getLedgerAccount(tx.ledgerIn);
+              if (inAcc) {
+                  let inNum = parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0;
+                  inAcc.balance = (inAcc.balance || 0) - inNum;
+              }
+              let outAcc = window.getLedgerAccount(tx.ledgerOut);
+              if (outAcc) {
+                  let outNum = parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0;
+                  outAcc.balance = (outAcc.balance || 0) + outNum;
+              }
+              await updateFirebase('all');
+              loadTreasuryData();
+          }
+
           await firebase.firestore().collection("exchange_history").doc(invId).delete();
           
-          // 🌟 Log မှတ်မည် 
           logActivity("Delete Record", `ID: ${invId} မှတ်တမ်းအား ဖျက်ပစ်ခဲ့သည်။`);
           const index = allLoadedHistory.findIndex(x => x.id === invId);
           if(index !== -1) { allLoadedHistory.splice(index, 1); }
