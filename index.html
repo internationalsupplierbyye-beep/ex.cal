@@ -3218,13 +3218,18 @@ function openAdmin() {
       const newBal = parseFloat(newBalStr.replace(/,/g, ''));
       if (isNaN(newBal)) return alert("ဂဏန်းသာ ထည့်သွင်းပါ။");
 
-      acc.balance = newBal;
+      let change = newBal - (acc.balance || 0);
 
       try {
-          // သက်ဆိုင်ရာ Database ကိုသာ လှမ်း Update လုပ်မည်
-          await updateFirebase(updateTarget === 'all' ? 'all' : updateTarget); 
+          // 🌟 သီးသန့် Balance ကိုသာ Increment ဖြင့် လှမ်း Update လုပ်မည်
+          await window.updateBalancesSafely([{ id: id, change: change }]);
+          
+          if (isMaster && newName !== null) {
+              await updateFirebase(updateTarget === 'all' ? 'all' : updateTarget); 
+          }
+          
           loadTreasuryData();
-          if (isMaster) renderAdminLists(); // Master နာမည်ပြောင်းသွားရင် Badge တွေ Refresh လုပ်ရန်
+          if (isMaster) renderAdminLists(); 
       } catch (e) { alert("ပြင်ဆင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
   }
 
@@ -3259,8 +3264,6 @@ function openAdmin() {
       let fromAcc = FIREBASE_TREASURY[fromId];
       let toAcc = FIREBASE_TREASURY[toId];
 
-      // Standalone (Bank / QR) များသည် Master Account မဟုတ်သဖြင့် FIREBASE_TREASURY ထဲတွင် မရှိပါ။ 
-      // ၎င်းတို့ကို အမည်မျှသာ ယူထားမည်။ Balance ကို ထိန်းချုပ်မည်မဟုတ်ပါ။
       let fromName = fromAcc ? fromAcc.name : fromId;
       let toName = toAcc ? toAcc.name : toId;
       
@@ -3271,11 +3274,13 @@ function openAdmin() {
           return alert("ငွေကြေးအမျိုးအစား (Currency) တူညီသော အကောင့်များသာ ရွှေ့ပြောင်းနိုင်ပါသည်။");
       }
 
-      if (fromAcc) fromAcc.balance -= amt;
-      if (toAcc) toAcc.balance += amt;
-
       try {
-          await updateFirebase('treasury');
+          // 🌟 Balance ကိုသာ Increment ဖြင့် လုံခြုံစွာ တိုး/လျှော့မည်
+          await window.updateBalancesSafely([
+              { id: fromId, change: -amt },
+              { id: toId, change: amt }
+          ]);
+          
           logActivity("Internal Transfer", `[${fromName}] မှ [${toName}] သို့ ${amt.toLocaleString()} ရွှေ့ပြောင်းခဲ့သည်။`);
           
           document.getElementById('transferAmt').value = '';
@@ -3283,6 +3288,7 @@ function openAdmin() {
           alert("ငွေရွှေ့ပြောင်းခြင်း အောင်မြင်ပါသည်။");
       } catch (e) { alert("ငွေရွှေ့ရာတွင် အခက်အခဲရှိပါသည်။"); }
   }
+
   // ==========================================
   // 🏦 ဘဏ် နှင့် QR များ စီမံရန် Functions များ
   // ==========================================
@@ -3678,7 +3684,44 @@ function openAdmin() {
           }
       }
   };
+ 
+  // 🌟 (အသစ်) Offline / Concurrent ဖြစ်ချိန်များအတွက် လက်ကျန်ငွေကို လုံခြုံစွာ နှုတ်/ပေါင်းပေးမည့် Function 🌟
+  window.updateBalancesSafely = async function(updatesArray) {
+      let aggregated = {};
+      // တွက်ချက်မှုများ ထပ်နေပါက ပေါင်းရုံးမည်
+      updatesArray.forEach(upd => {
+          if(!upd.id) return;
+          aggregated[upd.id] = (aggregated[upd.id] || 0) + upd.change;
+      });
 
+      let dbUpdates = {};
+      let qrChanged = false;
+
+      for (let id in aggregated) {
+          let change = aggregated[id];
+          if (change === 0) continue;
+
+          let acc = window.getLedgerAccount(id);
+          if (acc) acc.balance = (acc.balance || 0) + change; // Local စက်ထဲတွင် ပြင်မည်
+
+          // Database တွင် Increment ဖြင့် သီးသန့် တိုး/လျှော့မည် (Offline ဖြစ်နေလည်း ပြဿနာမရှိပါ)
+          if (FIREBASE_TREASURY[id]) {
+              dbUpdates[`treasuryAccounts.${id}.balance`] = firebase.firestore.FieldValue.increment(change);
+          } else if (id.startsWith('BANK_')) {
+              let bId = id.replace('BANK_', '');
+              dbUpdates[`banks.${bId}.balance`] = firebase.firestore.FieldValue.increment(change);
+          } else if (id.startsWith('QR_')) {
+              qrChanged = true; 
+          }
+      }
+
+      if (Object.keys(dbUpdates).length > 0) {
+          await dbRef.update(dbUpdates);
+      }
+      if (qrChanged) {
+          await dbRef.update({ qrs: FIREBASE_QRS });
+      }
+  };
   // 🌟 Currency အလိုက် သီးသန့်စစ်ထုတ်ပေးမည့် Function 🌟
   window.filterAndInitSuccessDropdowns = function(inCurr, outCurr) {
       const buildOptions = (targetCurr) => {
@@ -3768,46 +3811,25 @@ function openAdmin() {
       if (btn) { btn.innerHTML = "Processing..."; btn.disabled = true; }
 
       try {
-          let balanceChanged = false;
+          let balanceChanges = [];
 
-          // 🌟 အကယ်၍ အရင်က Success ဖြစ်ပြီးသားကို Wallet ဝင်ပြင်တာဆိုရင် (Revert Old Balance) 🌟
           if (window.isEditingWallet) {
               let oldLedgerIn = tx.ledgerIn;
               let oldLedgerOut = tx.ledgerOut;
               
               if (oldLedgerIn !== newLedgerIn || oldLedgerOut !== newLedgerOut) {
-                  if (oldLedgerIn) {
-                      let acc = window.getLedgerAccount(oldLedgerIn);
-                      if(acc) { acc.balance -= (parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
-                  }
-                  if (oldLedgerOut) {
-                      let acc = window.getLedgerAccount(oldLedgerOut);
-                      if(acc) { acc.balance += (parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
-                  }
+                  if (oldLedgerIn) balanceChanges.push({ id: oldLedgerIn, change: -(parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0) });
+                  if (oldLedgerOut) balanceChanges.push({ id: oldLedgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
                   
-                  if (newLedgerIn) {
-                      let acc = window.getLedgerAccount(newLedgerIn);
-                      if(acc) { acc.balance += (parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
-                  }
-                  if (newLedgerOut) {
-                      let acc = window.getLedgerAccount(newLedgerOut);
-                      if(acc) { acc.balance -= (parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
-                  }
+                  if (newLedgerIn) balanceChanges.push({ id: newLedgerIn, change: +(parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0) });
+                  if (newLedgerOut) balanceChanges.push({ id: newLedgerOut, change: -(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
               }
           } 
           else {
-              // 🌟 Status အသစ်ပြောင်းတာဆိုရင် (Apply New Balance) 🌟
-              if (newLedgerIn) {
-                  let acc = window.getLedgerAccount(newLedgerIn);
-                  if(acc) { acc.balance += (parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
-              }
-              if (newLedgerOut) {
-                  let acc = window.getLedgerAccount(newLedgerOut);
-                  if(acc) { acc.balance -= (parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
-              }
+              if (newLedgerIn) balanceChanges.push({ id: newLedgerIn, change: +(parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0) });
+              if (newLedgerOut) balanceChanges.push({ id: newLedgerOut, change: -(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
           }
 
-          // Database ထဲသို့ ပိုက်ဆံအိတ်များ သိမ်းဆည်းခြင်း
           await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update({
               ledgerIn: newLedgerIn,
               ledgerOut: newLedgerOut
@@ -3816,9 +3838,9 @@ function openAdmin() {
           tx.ledgerIn = newLedgerIn;
           tx.ledgerOut = newLedgerOut;
 
-          // လက်ကျန်ငွေ ပြောင်းလဲသွားပါက Save လုပ်ခြင်း
-          if (balanceChanged) {
-              await updateFirebase('all'); 
+          // 🌟 Database တစ်ခုလုံး အုပ်မသိမ်းတော့ဘဲ Balance သီးသန့်ကိုသာ လုံခြုံစွာ တိုး/လျှော့မည်
+          if (balanceChanges.length > 0) {
+              await window.updateBalancesSafely(balanceChanges); 
               if (typeof loadTreasuryData === 'function') loadTreasuryData();
           }
 
@@ -4052,18 +4074,14 @@ function openAdmin() {
       try {
           // 🌟 Success ဖြစ်ခဲ့တဲ့ မှတ်တမ်းကို ဖျက်ရင် ပိုက်ဆံအိတ်ထဲက ငွေတွေပါ ပြန်ပြင်ပေးရမယ် (Reverse Balance) 🌟
           if (tx && tx.status === 'Success') {
-              let inAcc = window.getLedgerAccount(tx.ledgerIn);
-              if (inAcc) {
-                  let inNum = parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0;
-                  inAcc.balance = (inAcc.balance || 0) - inNum;
+              let balanceChanges = [];
+              if (tx.ledgerIn) balanceChanges.push({ id: tx.ledgerIn, change: -(parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0) });
+              if (tx.ledgerOut) balanceChanges.push({ id: tx.ledgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
+              
+              if (balanceChanges.length > 0) {
+                  await window.updateBalancesSafely(balanceChanges);
+                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
               }
-              let outAcc = window.getLedgerAccount(tx.ledgerOut);
-              if (outAcc) {
-                  let outNum = parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0;
-                  outAcc.balance = (outAcc.balance || 0) + outNum;
-              }
-              await updateFirebase('all');
-              loadTreasuryData();
           }
 
           await firebase.firestore().collection("exchange_history").doc(invId).delete();
