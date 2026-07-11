@@ -411,11 +411,13 @@
        <p class="text-sm text-gray-600">ပြေစာ ID: <span id="successModalInvId" class="font-bold text-black"></span></p>
        <div>
            <label class="text-xs font-bold text-gray-600 mb-1 block text-green-600">ငွေဝင်မည့် ပိုက်ဆံအိတ် (+)</label>
+           <input type="text" placeholder="🔍 အကောင့် ရှာရန်..." class="admin-input-box !mb-1 text-xs py-1 bg-green-50" oninput="filterNativeSelect('successInLedger', this.value)">
            <select id="successInLedger" class="admin-input-box !mb-0 text-sm py-1.5"></select>
            <p class="text-[10px] text-gray-500 mt-1">Customer လွှဲလိုက်သော ဘဏ်/QR ပေါ်မူတည်၍ အလိုအလျောက် ရွေးချယ်ပေးထားပါသည်။</p>
        </div>
-       <div>
+       <div class="mt-3">
            <label class="text-xs font-bold text-gray-600 mb-1 block text-red-600">ငွေထုတ်ပေးလိုက်သည့် ပိုက်ဆံအိတ် (-)</label>
+           <input type="text" placeholder="🔍 အကောင့် ရှာရန်..." class="admin-input-box !mb-1 text-xs py-1 bg-red-50" oninput="filterNativeSelect('successOutLedger', this.value)">
            <select id="successOutLedger" class="admin-input-box !mb-0 text-sm py-1.5"></select>
        </div>
        <div class="flex gap-2 mt-5">
@@ -3020,20 +3022,22 @@ function openAdmin() {
       const list = document.getElementById('treasuryAccountsList');
 
       if (!list) return;
-
       list.innerHTML = '';
 
-      if (FIREBASE_TREASURY_ORDER.length === 0) {
-          list.innerHTML = '<p class="text-sm text-gray-500 col-span-full mt-4 text-center">Master Account များ မရှိသေးပါ။ အကောင့်အသစ် စတင်ဖွင့်လှစ်ပါ။</p>';
-          return;
-      }
+      let hasAccounts = false;
+      let totals = { MMK: 0, THB: 0, VND: 0 };
 
+      // (၁) Master Accounts များကို ထုတ်ပြခြင်း
       FIREBASE_TREASURY_ORDER.forEach((key, index) => {
           const acc = FIREBASE_TREASURY[key];
           if(!acc) return;
+          hasAccounts = true;
           
-          let colorClass = acc.currency === 'THB' ? 'text-blue-700' : (acc.currency === 'VND' ? 'text-orange-600' : 'text-green-700');
-          let bgClass = acc.currency === 'THB' ? 'bg-blue-50' : (acc.currency === 'VND' ? 'bg-orange-50' : 'bg-green-50');
+          let curr = acc.currency || 'MMK';
+          totals[curr] = (totals[curr] || 0) + Number(acc.balance || 0);
+
+          let colorClass = curr === 'THB' ? 'text-blue-700' : (curr === 'VND' ? 'text-orange-600' : 'text-green-700');
+          let bgClass = curr === 'THB' ? 'bg-blue-50' : (curr === 'VND' ? 'bg-orange-50' : 'bg-green-50');
 
           let linkedItems = [];
           FIREBASE_BANK_ORDER.forEach(bId => {
@@ -3047,29 +3051,11 @@ function openAdmin() {
                   linkedItems.push(`🔲 ${qName}`);
               }
           });
-         // 🌟 အကောင့်များ စုစုပေါင်း တွက်ချက်ခြင်း 🌟
-      let totals = { MMK: 0, THB: 0, VND: 0 };
-      for (const key in FIREBASE_TREASURY) {
-          const acc = FIREBASE_TREASURY[key];
-          if (totals.hasOwnProperty(acc.currency)) {
-              totals[acc.currency] += Number(acc.balance);
-          }
-      }
-      
-      const totalDisplay = document.getElementById('treasuryTotals');
-      if (totalDisplay) {
-          totalDisplay.innerHTML = `
-              <span class="text-emerald-700">MMK: ${totals.MMK.toLocaleString()}</span><br>
-              <span class="text-blue-700">THB: ${totals.THB.toLocaleString()}</span><br>
-              <span class="text-orange-600">VND: ${totals.VND.toLocaleString()}</span>
-          `;
-      }
           
           let linkedHtml = linkedItems.length > 0 
               ? `<div class="text-[10px] text-gray-500 mt-3 pt-2 border-t border-gray-100 leading-relaxed font-bold">Linked: ${linkedItems.join(', ')}</div>` 
               : `<div class="text-[10px] text-gray-400 mt-3 pt-2 border-t border-gray-100 italic">ချိတ်ဆက်ထားခြင်း မရှိသေးပါ</div>`;
 
-          // 🌟 ဤနေရာတွင် draggable ဖန်တီးလိုက်ပါပြီ
           list.innerHTML += `
               <div class="list-item bg-white border rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default" draggable="true" data-index="${index}" data-type="treasury" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
                   <div class="flex justify-between items-start border-b pb-2 mb-2">
@@ -3077,10 +3063,10 @@ function openAdmin() {
                           <span class="drag-handle mr-2 text-gray-400" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span>
                           <span class="font-bold text-gray-800">${acc.name}</span>
                       </div>
-                      <span class="text-[10px] font-black px-2 py-0.5 rounded ${bgClass} ${colorClass} border uppercase">${acc.currency}</span>
+                      <span class="text-[10px] font-black px-2 py-0.5 rounded ${bgClass} ${colorClass} border uppercase">${curr}</span>
                   </div>
                   <div class="flex justify-between items-center mt-2">
-                      <div class="font-black text-xl ${colorClass}">${Number(acc.balance).toLocaleString()}</div>
+                      <div class="font-black text-xl ${colorClass}">${Number(acc.balance || 0).toLocaleString()}</div>
                       <div class="flex gap-1">
                           <button onclick="adjustTreasuryBalance('${key}')" class="text-[10px] bg-gray-100 border border-gray-300 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded font-bold">ပြင်မည်</button>
                           <button onclick="deleteMasterAccount('${key}')" class="text-[10px] bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 px-2 py-1 rounded font-bold">✕</button>
@@ -3090,9 +3076,94 @@ function openAdmin() {
               </div>
           `;
       });
-  }
 
-  async function saveMasterAccount() {
+      // (၂) Master ထဲမချိတ်ထားသော (Standalone) ဘဏ်များကို ထုတ်ပြခြင်း
+      FIREBASE_BANK_ORDER.forEach(bId => {
+          const acc = FIREBASE_BANKS[bId];
+          if (acc && !acc.ledger) {
+              hasAccounts = true;
+              let curr = acc.currency || 'MMK';
+              totals[curr] = (totals[curr] || 0) + Number(acc.balance || 0);
+
+              let colorClass = curr === 'THB' ? 'text-blue-700' : (curr === 'VND' ? 'text-orange-600' : 'text-green-700');
+              let bgClass = curr === 'THB' ? 'bg-blue-50' : (curr === 'VND' ? 'bg-orange-50' : 'bg-green-50');
+
+              list.innerHTML += `
+                  <div class="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default">
+                      <div class="flex justify-between items-start border-b border-gray-200 pb-2 mb-2">
+                          <div class="flex items-center">
+                              <span class="font-bold text-gray-700">🏦 ${acc.name} <span class="text-[10px] font-normal text-gray-500">(Standalone Bank)</span></span>
+                          </div>
+                          <span class="text-[10px] font-black px-2 py-0.5 rounded ${bgClass} ${colorClass} border uppercase">${curr}</span>
+                      </div>
+                      <div class="flex justify-between items-center mt-2">
+                          <div class="font-black text-xl ${colorClass}">${Number(acc.balance || 0).toLocaleString()}</div>
+                          <div class="flex gap-1">
+                              <button onclick="adjustTreasuryBalance('BANK_${bId}')" class="text-[10px] bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1 rounded font-bold">လက်ကျန်ပြင်မည်</button>
+                          </div>
+                      </div>
+                  </div>
+              `;
+          }
+      });
+
+      // (၃) Master ထဲမချိတ်ထားသော (Standalone) QR များကို ထုတ်ပြခြင်း
+      FIREBASE_QRS.forEach((acc, index) => {
+          if (acc && !acc.ledger) {
+              hasAccounts = true;
+              let curr = acc.currency || 'MMK';
+              totals[curr] = (totals[curr] || 0) + Number(acc.balance || 0);
+              let name = acc.name || (acc.file ? acc.file.replace(/\.[^.]+$/, '') : "Unknown QR");
+
+              let colorClass = curr === 'THB' ? 'text-blue-700' : (curr === 'VND' ? 'text-orange-600' : 'text-green-700');
+              let bgClass = curr === 'THB' ? 'bg-blue-50' : (curr === 'VND' ? 'bg-orange-50' : 'bg-green-50');
+
+              list.innerHTML += `
+                  <div class="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default">
+                      <div class="flex justify-between items-start border-b border-gray-200 pb-2 mb-2">
+                          <div class="flex items-center">
+                              <span class="font-bold text-gray-700">🔲 ${name} <span class="text-[10px] font-normal text-gray-500">(Standalone QR)</span></span>
+                          </div>
+                          <span class="text-[10px] font-black px-2 py-0.5 rounded ${bgClass} ${colorClass} border uppercase">${curr}</span>
+                      </div>
+                      <div class="flex justify-between items-center mt-2">
+                          <div class="font-black text-xl ${colorClass}">${Number(acc.balance || 0).toLocaleString()}</div>
+                          <div class="flex gap-1">
+                              <button onclick="adjustTreasuryBalance('QR_${index}')" class="text-[10px] bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1 rounded font-bold">လက်ကျန်ပြင်မည်</button>
+                          </div>
+                      </div>
+                  </div>
+              `;
+          }
+      });
+
+      if (!hasAccounts) {
+          list.innerHTML = '<p class="text-sm text-gray-500 col-span-full mt-4 text-center">Master Account / Bank / QR များ မရှိသေးပါ။</p>';
+      }
+
+      // 🌟 အကောင့်များ စုစုပေါင်း ပြသခြင်း
+      const totalDisplay = document.getElementById('treasuryTotals');
+      if (totalDisplay) {
+          totalDisplay.innerHTML = `
+              <div class="flex gap-2 justify-end flex-wrap mt-1">
+                  <div class="border-2 border-green-500 bg-green-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm">
+                      <span class="text-[10px] font-black text-green-600 uppercase">MMK</span>
+                      <span class="text-base font-black text-green-800">${(totals.MMK||0).toLocaleString()}</span>
+                  </div>
+                  <div class="border-2 border-blue-500 bg-blue-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm">
+                      <span class="text-[10px] font-black text-blue-600 uppercase">THB</span>
+                      <span class="text-base font-black text-blue-800">${(totals.THB||0).toLocaleString()}</span>
+                  </div>
+                  <div class="border-2 border-orange-500 bg-orange-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm">
+                      <span class="text-[10px] font-black text-orange-600 uppercase">VND</span>
+                      <span class="text-base font-black text-orange-800">${(totals.VND||0).toLocaleString()}</span>
+                  </div>
+                </div>
+            `;
+        }
+    } // 
+
+    async function saveMasterAccount() {
       const name = document.getElementById('newMasterAccName').value.trim();
       const curr = document.getElementById('newMasterAccCurrency').value;
       const bal = parseFloat(document.getElementById('newMasterAccBalance').value) || 0;
@@ -3114,26 +3185,46 @@ function openAdmin() {
   }
 
   async function adjustTreasuryBalance(id) {
-      const acc = FIREBASE_TREASURY[id];
+      let acc = null;
+      let isMaster = false;
+      let updateTarget = 'all';
+
+      if (FIREBASE_TREASURY[id]) {
+          acc = FIREBASE_TREASURY[id];
+          isMaster = true;
+      } else if (id.startsWith('BANK_')) {
+          const bId = id.replace('BANK_', '');
+          acc = FIREBASE_BANKS[bId];
+          updateTarget = 'banks';
+      } else if (id.startsWith('QR_')) {
+          const qId = parseInt(id.replace('QR_', ''));
+          acc = FIREBASE_QRS[qId];
+          updateTarget = 'qrs';
+      }
+
       if (!acc) return;
 
-      const newName = prompt(`Master Account နာမည်ကို ပြင်ပါ:`, acc.name);
-      if (newName === null) return;
+      // Master Account ဖြစ်မှသာ နာမည်ပြောင်းခွင့်ပြုမည်
+      if (isMaster) {
+          const newName = prompt(`Master Account နာမည်ကို ပြင်ပါ:`, acc.name);
+          if (newName === null) return;
+          acc.name = newName;
+      }
       
-      const newBalStr = prompt(`လက်ကျန်ငွေအသစ်ကို ထည့်ပါ:`, acc.balance || 0);
+      let dispName = acc.name || (acc.file ? acc.file.replace(/\.[^.]+$/, '') : "Account");
+      const newBalStr = prompt(`'${dispName}' ၏ လက်ကျန်ငွေအသစ်ကို ထည့်ပါ:`, acc.balance || 0);
       if (newBalStr === null) return;
       
       const newBal = parseFloat(newBalStr.replace(/,/g, ''));
       if (isNaN(newBal)) return alert("ဂဏန်းသာ ထည့်သွင်းပါ။");
 
-      acc.name = newName;
       acc.balance = newBal;
 
       try {
-          // 🌟 Data အားလုံးကို Update လုပ်မည် (Wallet နာမည်ပြောင်းသွားလျှင် အောက်တွင်ချိတ်ထားသည့် ဘဏ်/QR များပါ Auto ပြောင်းသွားပါမည်)
-          await updateFirebase('all'); 
+          // သက်ဆိုင်ရာ Database ကိုသာ လှမ်း Update လုပ်မည်
+          await updateFirebase(updateTarget === 'all' ? 'all' : updateTarget); 
           loadTreasuryData();
-          renderAdminLists(); // ဘဏ်/QR Tab ရှိ Badge များကို Refresh လုပ်ရန်
+          if (isMaster) renderAdminLists(); // Master နာမည်ပြောင်းသွားရင် Badge တွေ Refresh လုပ်ရန်
       } catch (e) { alert("ပြင်ဆင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
   }
 
@@ -3144,7 +3235,12 @@ function openAdmin() {
       delete FIREBASE_TREASURY[id];
       FIREBASE_TREASURY_ORDER = FIREBASE_TREASURY_ORDER.filter(item => item !== id);
       try {
-          await updateFirebase('treasury');
+          // 🔥 Firebase Database ကနေ သီးသန့် အပြီးတိုင် ဖျက်ပစ်မည့် Code အသစ်
+          await dbRef.update({
+              [`treasuryAccounts.${id}`]: firebase.firestore.FieldValue.delete(),
+              treasuryOrder: firebase.firestore.FieldValue.arrayRemove(id)
+          });
+          
           logActivity("Treasury", `Master Account [${acc.name}] ကို ဖျက်ပစ်ခဲ့သည်။`);
           loadTreasuryData();
       } catch (e) { alert("ဖျက်ရာတွင် အခက်အခဲရှိပါသည်။"); }
@@ -3520,46 +3616,31 @@ function openAdmin() {
   // --- Admin History & Status Update Logic ---
   // 🌟 (အသစ်) Ledger (ငွေသေတ္တာ) များကို Dropdown သို့ ထည့်ပေးခြင်း 🌟
   function syncAllLedgerDropdowns() {
-      // 🌟 အမြဲတမ်း Wallet အလွတ်ဖြင့် စတင်ပါ 🌟
       const optionsHtml = '<option value="">⏳ နောက်မှရွေးမည် (Select Later)</option>';
-      
-      // 1. Master Accounts
       let masterHtml = '';
-      // 🌟 ပြင်ဆင်ချက်: Treasury Order အစီအစဉ်အတိုင်း Dropdown တွင် ပေါ်စေရန်
       FIREBASE_TREASURY_ORDER.forEach(key => {
           const acc = FIREBASE_TREASURY[key];
-          if (acc) {
-              masterHtml += `<option value="${key}">👛 ${acc.name} (${acc.currency})</option>`;
-          }
+          if (acc) masterHtml += `<option value="${key}">👛 ${acc.name} (${acc.currency})</option>`;
       });
-      
-      // 2. Standalone Banks
       let bankHtml = '';
       FIREBASE_BANK_ORDER.forEach(id => {
           const b = FIREBASE_BANKS[id];
-          if (b && !b.ledger) {
-              let currTag = b.currency ? ` (${b.currency})` : '';
-              bankHtml += `<option value="BANK_${id}">🏦 ${b.name}${currTag} (Standalone)</option>`;
-          }
+          if (b && !b.ledger) bankHtml += `<option value="BANK_${id}">🏦 ${b.name}${b.currency ? ` (${b.currency})` : ''} (Standalone)</option>`;
       });
-      
-      // 3. Standalone QRs
       let qrHtml = '';
       FIREBASE_QRS.forEach((q, index) => {
-          if (!q.ledger) {
-              let name = q.name || q.file.replace(/\.[^.]+$/, '');
-              let currTag = q.currency ? ` (${q.currency})` : '';
-              qrHtml += `<option value="QR_${index}">🔲 ${name}${currTag} (Standalone)</option>`;
-          }
+          if (!q.ledger) qrHtml += `<option value="QR_${index}">🔲 ${q.name || q.file.replace(/\.[^.]+$/, '')}${q.currency ? ` (${q.currency})` : ''} (Standalone)</option>`;
       });
 
       const finalHtml = optionsHtml + masterHtml + bankHtml + qrHtml;
       
-      // Dropdown အားလုံးကို Update လုပ်ပေးမည်
       const dropdownIds = ['newBankLedger', 'newQrLedger', 'successInLedger', 'successOutLedger', 'transferFromAcc', 'transferToAcc', 'manualLotFromAcc', 'manualLotToAcc'];
       dropdownIds.forEach(id => {
           const el = document.getElementById(id);
-          if (el) el.innerHTML = finalHtml;
+          if (el) {
+              if (el.tomselect) el.tomselect.destroy(); // 🌟 Search Dropdown အဟောင်းရှိရင် ဖြုတ်မည်
+              el.innerHTML = finalHtml;
+          }
       });
   }
 
@@ -3582,83 +3663,183 @@ function openAdmin() {
       return null;
   };
 
-  // 🌟 (အသစ်) ပိုက်ဆံအိတ် ပြန်ရွေးရန် Modal ကို ဖွင့်ပေးမည့် Function 🌟
+  // // 🌟 Modal ထဲက Select ကို စာရိုက်ရှာပေးမည့် သီးသန့် Function 🌟
+  window.filterNativeSelect = function(selectId, keyword) {
+      const sel = document.getElementById(selectId);
+      if(!sel) return;
+      const kw = keyword.toLowerCase();
+      for(let i=0; i<sel.options.length; i++) {
+          const opt = sel.options[i];
+          if(opt.value === "") continue; 
+          if(opt.text.toLowerCase().includes(kw)) {
+              opt.style.display = '';
+          } else {
+              opt.style.display = 'none';
+          }
+      }
+  };
+
+  // 🌟 Currency အလိုက် သီးသန့်စစ်ထုတ်ပေးမည့် Function 🌟
+  window.filterAndInitSuccessDropdowns = function(inCurr, outCurr) {
+      const buildOptions = (targetCurr) => {
+          let html = '<option value="">⏳ နောက်မှရွေးမည် (Select Later)</option>';
+          
+          FIREBASE_TREASURY_ORDER.forEach(key => {
+              const acc = FIREBASE_TREASURY[key];
+              if (acc && (!targetCurr || acc.currency === targetCurr)) {
+                  html += `<option value="${key}">👛 ${acc.name} (${acc.currency})</option>`;
+              }
+          });
+          FIREBASE_BANK_ORDER.forEach(id => {
+              const b = FIREBASE_BANKS[id];
+              if (b && !b.ledger && (!targetCurr || b.currency === targetCurr)) {
+                  html += `<option value="BANK_${id}">🏦 ${b.name} ${b.currency ? `(${b.currency})` : ''} (Standalone)</option>`;
+              }
+          });
+          FIREBASE_QRS.forEach((q, index) => {
+              if (!q.ledger && (!targetCurr || q.currency === targetCurr)) {
+                  let name = q.name || q.file.replace(/\.[^.]+$/, '');
+                  html += `<option value="QR_${index}">🔲 ${name} ${q.currency ? `(${q.currency})` : ''} (Standalone)</option>`;
+              }
+          });
+          return html;
+      };
+
+      const inSelect = document.getElementById('successInLedger');
+      const outSelect = document.getElementById('successOutLedger');
+
+      if(inSelect) { 
+          inSelect.innerHTML = buildOptions(inCurr); 
+          if(inSelect.previousElementSibling && inSelect.previousElementSibling.tagName === 'INPUT') {
+              inSelect.previousElementSibling.value = '';
+          }
+      }
+      if(outSelect) { 
+          outSelect.innerHTML = buildOptions(outCurr); 
+          if(outSelect.previousElementSibling && outSelect.previousElementSibling.tagName === 'INPUT') {
+              outSelect.previousElementSibling.value = '';
+          }
+      }
+  };
+
+  // 🌟 ပိုက်ဆံအိတ် ပြန်ရွေးရန် Modal ကို ဖွင့်ပေးမည့် Function 🌟
   window.reopenWalletModal = function(invId) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if(!tx) return;
-      syncAllLedgerDropdowns(); 
       
+      pendingSuccessTxId = invId;
+      window.isEditingWallet = true; 
+      
+      document.getElementById('successModalInvId').textContent = invId;
+      document.getElementById('successTxModal').style.display = 'flex';
+
+      let inCurr = '', outCurr = '';
       try {
           let parts = tx.type.split(' ➔ ');
           if (parts.length === 2) {
-              let inCurr = parts[0].trim(); let outCurr = parts[1].trim();
-              const filterDropdown = (selectId, targetCurr) => {
-                  const select = document.getElementById(selectId);
-                  if (!select) return;
-                  for (let i = select.options.length - 1; i >= 1; i--) { 
-                      let text = select.options[i].text.toUpperCase();
-                      if ((text.includes('THB') && targetCurr !== 'THB') || (text.includes('MMK') && targetCurr !== 'MMK') || (text.includes('VND') && targetCurr !== 'VND')) { select.remove(i); }
-                  }
-              };
-              filterDropdown('successInLedger', inCurr);
-              filterDropdown('successOutLedger', outCurr);
+              inCurr = parts[0].trim(); outCurr = parts[1].trim();
           }
       } catch(e) {}
 
-      document.getElementById('successModalInvId').textContent = invId;
-      document.getElementById('successInLedger').value = tx.ledgerIn || '';
-      document.getElementById('successOutLedger').value = tx.ledgerOut || '';
+      filterAndInitSuccessDropdowns(inCurr, outCurr);
       
-      pendingSuccessTxId = invId;
-      window.isEditingWallet = true; // 🌟 Edit မုဒ်ဖြစ်ကြောင်း မှတ်သားမည်
-      document.getElementById('successTxModal').style.display = 'flex';
+      const inSelect = document.getElementById('successInLedger');
+      const outSelect = document.getElementById('successOutLedger');
+      
+      if(inSelect) inSelect.value = tx.ledgerIn || '';
+      if(outSelect) outSelect.value = tx.ledgerOut || '';
   };
-
-  // // 🌟 Modal ထဲမှ အတည်ပြု (Confirm) နှိပ်သောအခါ 🌟
+  
+  // 🌟 Modal ထဲမှ အတည်ပြု (Confirm) နှိပ်သောအခါ အလုပ်လုပ်မည့် Function (ပြန်လည်ဖြည့်စွက်ခြင်း) 🌟
   window.confirmSuccessStatus = async function() {
-      const inId = document.getElementById('successInLedger').value;
-      const outId = document.getElementById('successOutLedger').value;
-      
-      const tx = allLoadedHistory.find(x => x.id === pendingSuccessTxId);
-      const inNum = parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0;
-      const outNum = parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0;
+      if (!pendingSuccessTxId) return;
 
-      // 🌟 Edit လုပ်ခြင်းဖြစ်ပါက အဟောင်းများကို အရင်ပြန်နှုတ်ပေးပါမည်
-      if (window.isEditingWallet) {
-          if (tx.ledgerIn) { let oIn = window.getLedgerAccount(tx.ledgerIn); if (oIn) oIn.balance = (oIn.balance || 0) - inNum; }
-          if (tx.ledgerOut) { let oOut = window.getLedgerAccount(tx.ledgerOut); if (oOut) oOut.balance = (oOut.balance || 0) + outNum; }
-      }
+      const index = allLoadedHistory.findIndex(x => x.id === pendingSuccessTxId);
+      if (index === -1) return;
+      const tx = allLoadedHistory[index];
 
-      // အသစ်ရွေးလိုက်သော အကောင့်များသို့ ငွေပေါင်း/နှုတ်မည်
-      const inAcc = window.getLedgerAccount(inId);
-      const outAcc = window.getLedgerAccount(outId);
-      if(inAcc) inAcc.balance = (inAcc.balance || 0) + inNum;
-      if(outAcc) outAcc.balance = (outAcc.balance || 0) - outNum;
-      
-      tx.ledgerIn = inId;
-      tx.ledgerOut = outId;
+      const inSelect = document.getElementById('successInLedger');
+      const outSelect = document.getElementById('successOutLedger');
+      let newLedgerIn = inSelect ? inSelect.value : '';
+      let newLedgerOut = outSelect ? outSelect.value : '';
+
+      const btn = document.querySelector('#successTxModal .bg-green-600');
+      const origText = btn ? btn.innerHTML : "အတည်ပြုမည်";
+      if (btn) { btn.innerHTML = "Processing..."; btn.disabled = true; }
 
       try {
-          await updateFirebase('all'); 
-          await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update({ ledgerIn: inId, ledgerOut: outId });
+          let balanceChanged = false;
+
+          // 🌟 အကယ်၍ အရင်က Success ဖြစ်ပြီးသားကို Wallet ဝင်ပြင်တာဆိုရင် (Revert Old Balance) 🌟
+          if (window.isEditingWallet) {
+              let oldLedgerIn = tx.ledgerIn;
+              let oldLedgerOut = tx.ledgerOut;
+              
+              if (oldLedgerIn !== newLedgerIn || oldLedgerOut !== newLedgerOut) {
+                  if (oldLedgerIn) {
+                      let acc = window.getLedgerAccount(oldLedgerIn);
+                      if(acc) { acc.balance -= (parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
+                  }
+                  if (oldLedgerOut) {
+                      let acc = window.getLedgerAccount(oldLedgerOut);
+                      if(acc) { acc.balance += (parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
+                  }
+                  
+                  if (newLedgerIn) {
+                      let acc = window.getLedgerAccount(newLedgerIn);
+                      if(acc) { acc.balance += (parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
+                  }
+                  if (newLedgerOut) {
+                      let acc = window.getLedgerAccount(newLedgerOut);
+                      if(acc) { acc.balance -= (parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
+                  }
+              }
+          } 
+          else {
+              // 🌟 Status အသစ်ပြောင်းတာဆိုရင် (Apply New Balance) 🌟
+              if (newLedgerIn) {
+                  let acc = window.getLedgerAccount(newLedgerIn);
+                  if(acc) { acc.balance += (parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
+              }
+              if (newLedgerOut) {
+                  let acc = window.getLedgerAccount(newLedgerOut);
+                  if(acc) { acc.balance -= (parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0); balanceChanged = true; }
+              }
+          }
+
+          // Database ထဲသို့ ပိုက်ဆံအိတ်များ သိမ်းဆည်းခြင်း
+          await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update({
+              ledgerIn: newLedgerIn,
+              ledgerOut: newLedgerOut
+          });
+          
+          tx.ledgerIn = newLedgerIn;
+          tx.ledgerOut = newLedgerOut;
+
+          // လက်ကျန်ငွေ ပြောင်းလဲသွားပါက Save လုပ်ခြင်း
+          if (balanceChanged) {
+              await updateFirebase('all'); 
+              if (typeof loadTreasuryData === 'function') loadTreasuryData();
+          }
 
           document.getElementById('successTxModal').style.display = 'none';
-          
+
           if (!window.isEditingWallet) {
-              if(pendingSuccessSelectEl) pendingSuccessSelectEl.value = 'Success';
-              await finalizeTxStatus(pendingSuccessTxId, 'Success', inId, outId);
+              await finalizeTxStatus(pendingSuccessTxId, 'Success', "");
           } else {
-              logActivity("Edit Ledger", `ID: ${tx.id} ၏ ပိုက်ဆံအိတ်များကို ပြန်လည်ရွေးချယ်ခဲ့သည်။`);
-              alert("ပိုက်ဆံအိတ်ကို အောင်မြင်စွာ ပြန်လည်ရွေးချယ်ပြီးပါပြီ။");
-              window.isEditingWallet = false; // Reset လုပ်ပါမည်
+              renderHistoryRows(allLoadedHistory); 
           }
-          loadTreasuryData(); 
+          
       } catch(e) {
-          alert("Error: " + e.message);
+          console.error("Confirm Success Error:", e);
+          alert("လုပ်ဆောင်ရာတွင် အခက်အခဲရှိပါသည်။");
+      } finally {
+          if (btn) { btn.innerHTML = origText; btn.disabled = false; }
+          window.isEditingWallet = false;
+          pendingSuccessTxId = null;
       }
   };
 
-  // 🌟 မူလ Status ပြောင်းသည့် Function (Intercept လုပ်ထားသည်) 🌟
   window.updateTxStatus = async function(invId, newStatus, selectEl) {
       const index = allLoadedHistory.findIndex(x => x.id === invId);
       if(index === -1) return;
@@ -3671,64 +3852,49 @@ function openAdmin() {
           return;
       }
 
-      // Success ဆိုလျှင် Modal ကို အရင်ပြမည် (Auto Ledger)
       if (newStatus === 'Success') {
-          syncAllLedgerDropdowns(); 
           pendingSuccessTxId = invId;
           pendingSuccessSelectEl = selectEl;
 
-          // --- 🌟 ငွေကြေးအမျိုးအစားအလိုက် Dropdown ကို စစ်ထုတ်မည့်အပိုင်း (အသစ်) 🌟 ---
+          document.getElementById('successModalInvId').textContent = invId;
+          document.getElementById('successTxModal').style.display = 'flex';
+          
+          if(selectEl) selectEl.value = tx.status; 
+
+          let inCurr = '', outCurr = '';
           try {
               let parts = tx.type.split(' ➔ ');
               if (parts.length === 2) {
-                  let inCurr = parts[0].trim();  // ဥပမာ - THB
-                  let outCurr = parts[1].trim(); // ဥပမာ - MMK
-
-                  const filterDropdown = (selectId, targetCurr) => {
-                      const select = document.getElementById(selectId);
-                      if (!select) return;
-                      for (let i = select.options.length - 1; i >= 1; i--) { // ပထမဆုံးအလွတ်တစ်ခုကို ချန်ထားမည်
-                          let text = select.options[i].text.toUpperCase();
-                          // မဆိုင်တဲ့ Currency တွေ ပါနေရင် List ထဲကနေ ဖျက်ထုတ်ပါမည်
-                          if ((text.includes('THB') && targetCurr !== 'THB') ||
-                              (text.includes('MMK') && targetCurr !== 'MMK') ||
-                              (text.includes('VND') && targetCurr !== 'VND')) {
-                              select.remove(i);
-                          }
-                      }
-                  };
-
-                  filterDropdown('successInLedger', inCurr);
-                  filterDropdown('successOutLedger', outCurr);
+                  inCurr = parts[0].trim();  
+                  outCurr = parts[1].trim(); 
               }
-          } catch(e) { console.error("Dropdown Filter Error", e); }
-          // -----------------------------------------------------------------
+          } catch(e) {}
+
+          filterAndInitSuccessDropdowns(inCurr, outCurr);
 
           let autoInboundLedger = '';
-          // 🌟 ဤအပိုင်းတွင် tx.method ထဲ၌ အမှန်တကယ်ပါဝင်သည့် ဘဏ်/QR နာမည်ကို အတိအကျ စစ်ဆေးပါသည် 🌟
-          if(tx.method.includes('QR')) {
-              // 🌟 အလွန်တိကျစေရန်အတွက် QR Code အမည်ကို အရင်ဆုံး ရှာဖွေပါမည် 🌟
+          if(tx.method && tx.method.includes('QR')) {
               const foundQrIndex = FIREBASE_QRS.findIndex(q => {
                   let rawName = (q.name || q.file || "").replace(/\.[^.]+$/, '').toLowerCase();
                   return tx.method.toLowerCase().includes(rawName);
               });
               if(foundQrIndex > -1) {
                   const q = FIREBASE_QRS[foundQrIndex];
-                  autoInboundLedger = q.ledger ? q.ledger : `QR_${foundQrIndex}`;
+                  if (!q.currency || q.currency === inCurr) {
+                      autoInboundLedger = q.ledger ? q.ledger : `QR_${foundQrIndex}`;
+                  }
               }
           }
-
-          document.getElementById('successModalInvId').textContent = invId;
-          document.getElementById('successInLedger').value = autoInboundLedger;
-          document.getElementById('successOutLedger').value = ''; 
-
-          document.getElementById('successTxModal').style.display = 'flex';
           
-          if(selectEl) selectEl.value = tx.status;
+          const inSelect = document.getElementById('successInLedger');
+          const outSelect = document.getElementById('successOutLedger');
+          
+          if(inSelect) inSelect.value = autoInboundLedger;
+          if(outSelect) outSelect.value = '';
+
           return;
       }
 
-      // Success မဟုတ်လျှင် ပုံမှန်အတိုင်း ပြောင်းမည်
       await finalizeTxStatus(invId, newStatus, "");
   }
 
