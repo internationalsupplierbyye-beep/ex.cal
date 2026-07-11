@@ -863,7 +863,10 @@
            <h3 class="font-bold text-gray-800">💰 Master Account လက်ကျန်ငွေများ</h3>
            <p class="text-xs text-gray-500">အကောင့်အသစ်ဖွင့်ခြင်း နှင့် လက်ကျန်ငွေ ချိန်ညှိခြင်းများကို ဤနေရာတွင် လုပ်ဆောင်ပါ။</p>
         </div>
-        <button onclick="loadTreasuryData()" class="btn2 !py-1 !px-3 !text-sm">🔄 Refresh</button>
+        <div class="flex items-center gap-3">
+            <div id="treasuryTotals" class="text-[10px] font-black text-right leading-tight text-gray-600"></div>
+            <button onclick="loadTreasuryData()" class="btn2 !py-1 !px-3 !text-sm">🔄 Refresh</button>
+        </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl">
@@ -3044,6 +3047,23 @@ function openAdmin() {
                   linkedItems.push(`🔲 ${qName}`);
               }
           });
+         // 🌟 အကောင့်များ စုစုပေါင်း တွက်ချက်ခြင်း 🌟
+      let totals = { MMK: 0, THB: 0, VND: 0 };
+      for (const key in FIREBASE_TREASURY) {
+          const acc = FIREBASE_TREASURY[key];
+          if (totals.hasOwnProperty(acc.currency)) {
+              totals[acc.currency] += Number(acc.balance);
+          }
+      }
+      
+      const totalDisplay = document.getElementById('treasuryTotals');
+      if (totalDisplay) {
+          totalDisplay.innerHTML = `
+              <span class="text-emerald-700">MMK: ${totals.MMK.toLocaleString()}</span><br>
+              <span class="text-blue-700">THB: ${totals.THB.toLocaleString()}</span><br>
+              <span class="text-orange-600">VND: ${totals.VND.toLocaleString()}</span>
+          `;
+      }
           
           let linkedHtml = linkedItems.length > 0 
               ? `<div class="text-[10px] text-gray-500 mt-3 pt-2 border-t border-gray-100 leading-relaxed font-bold">Linked: ${linkedItems.join(', ')}</div>` 
@@ -4370,10 +4390,10 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
 
         let slipBtnHtml = '';
         if (slipArr.length > 0) {
-            let btnText = slipArr.length === 1 ? "👁️ စလစ်" : `👁️ စလစ် (${slipArr.length})`;
-            slipBtnHtml = `<button onclick="openSlipModal('${d.id}')" class="btn bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 !py-1 !px-2 !text-xs whitespace-nowrap h-full flex items-center justify-center" title="Customer စလစ်ကြည့်မည်">${btnText}</button>`;
+            let btnText = slipArr.length === 1 ? "👁️ စလစ်" : `👁️ (${slipArr.length})`;
+            slipBtnHtml = `<button onclick="openSlipModal('${d.id}')" class="bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 rounded px-2 text-xs font-bold whitespace-nowrap h-[46px] flex items-center justify-center shadow-sm" title="Customer စလစ်ကြည့်မည်">${btnText}</button>`;
         } else {
-            slipBtnHtml = `<button onclick="triggerSlipUpload('${d.id}')" class="btn bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 !py-1 !px-2 !text-xs whitespace-nowrap h-full flex items-center justify-center" title="Customer စလစ် ပုံတင်မည်">📎 တင်မည်</button>`;
+            slipBtnHtml = `<button onclick="triggerSlipUpload('${d.id}')" class="bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 rounded px-2 text-xs font-bold whitespace-nowrap h-[46px] flex items-center justify-center shadow-sm" title="Customer စလစ် ပုံတင်မည်">📎 တင်မည်</button>`;
         }
 
         if(CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
@@ -4406,27 +4426,25 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
           `;
         }
         
-        let reprintBtnHtml = `<button onclick="reprintReceipt('${d.id}', this)" class="btn bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 !py-1 !px-2 !text-xs whitespace-nowrap flex-1 flex items-center justify-center" title="ပြေစာပြန်ထုတ်မည်">🖨️</button>`;
+        let reprintBtnHtml = `<button onclick="reprintReceipt('${d.id}', this)" class="bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-600 rounded text-[10px] w-7 h-[22px] flex items-center justify-center shadow-sm" title="ပြေစာပြန်ထုတ်မည်">🖨️</button>`;
         let walletBtnHtml = '';
         let deleteBtnHtml = '';
 
         if(CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') {
             if(status === 'Success') {
-                walletBtnHtml = `<button onclick="reopenWalletModal('${d.id}')" class="btn bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 !py-1 !px-2 !text-xs whitespace-nowrap flex-1 flex items-center justify-center" title="ပိုက်ဆံအိတ် ပြန်ရွေးမည်/ပြင်မည်">👛</button>`;
+                walletBtnHtml = `<button onclick="reopenWalletModal('${d.id}')" class="bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded text-[10px] w-7 h-[22px] flex items-center justify-center shadow-sm" title="ပိုက်ဆံအိတ် ပြန်ရွေးမည်/ပြင်မည်">👛</button>`;
             }
-            deleteBtnHtml = `<button onclick="deleteTxRecord('${d.id}')" class="btn bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 !py-1 !px-2 !text-xs whitespace-nowrap h-full flex items-center justify-center" title="ဖျက်မည်">🗑</button>`;
+            deleteBtnHtml = `<button onclick="deleteTxRecord('${d.id}')" class="bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 rounded px-1.5 text-xs whitespace-nowrap h-[46px] flex items-center justify-center shadow-sm" title="ဖျက်မည်">🗑</button>`;
         }
 
         let actionHtml = `
-        <div class="flex items-stretch justify-center gap-1.5 h-full min-h-[44px]">
-            <div class="flex flex-col gap-1 w-8 shrink-0">
+        <div class="flex items-center justify-center gap-1.5">
+            <div class="flex flex-col gap-[2px] shrink-0">
                 ${reprintBtnHtml}
                 ${walletBtnHtml}
             </div>
-            <div class="flex flex-col justify-center">
-                ${slipBtnHtml}
-            </div>
-            ${deleteBtnHtml ? `<div class="flex flex-col justify-center">${deleteBtnHtml}</div>` : ''}
+            ${slipBtnHtml}
+            ${deleteBtnHtml}
         </div>
         `;
         
