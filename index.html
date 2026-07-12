@@ -519,7 +519,7 @@
         </div>
         
         <div class="flex flex-wrap gap-2 items-center bg-gray-50 p-2 rounded-xl border border-gray-200">
-           <button onclick="document.getElementById('manualLotModal').style.display='flex'" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1.5 !px-3 !text-sm whitespace-nowrap">➕ Manual Lot ထည့်ရန်</button>
+           <button onclick="if(typeof syncAllLedgerDropdowns === 'function') syncAllLedgerDropdowns(); document.getElementById('manualLotModal').style.display='flex'" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1.5 !px-3 !text-sm whitespace-nowrap">➕ Manual Lot ထည့်ရန်</button>
            <button onclick="generatePDFReport()" class="btn bg-red-600 hover:bg-red-700 !py-1.5 !px-3 !text-sm whitespace-nowrap">📄 PDF စာရင်းချုပ်</button>
            
            <select id="dashFilterSelect" class="admin-input-box !mb-0 !py-1.5 text-sm w-auto cursor-pointer" onchange="applyDashboardFilter()">
@@ -865,8 +865,9 @@
            <h3 class="font-bold text-gray-800">💰 Master Account လက်ကျန်ငွေများ</h3>
            <p class="text-xs text-gray-500">အကောင့်အသစ်ဖွင့်ခြင်း နှင့် လက်ကျန်ငွေ ချိန်ညှိခြင်းများကို ဤနေရာတွင် လုပ်ဆောင်ပါ။</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap justify-end">
             <div id="treasuryTotals" class="text-[10px] font-black text-right leading-tight text-gray-600"></div>
+            <button onclick="exportInternalTransfersCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm whitespace-nowrap">📥 Export Transfers</button>
             <button onclick="loadTreasuryData()" class="btn2 !py-1 !px-3 !text-sm">🔄 Refresh</button>
         </div>
       </div>
@@ -1763,6 +1764,9 @@ let calcLock = false;
       const fAmtStr = document.getElementById('manualLotForeign').value;
       const mAmtStr = document.getElementById('manualLotMmk').value;
       
+      const fromAcc = document.getElementById('manualLotFromAcc').value; // ငွေထွက် (-)
+      const toAcc = document.getElementById('manualLotToAcc').value; // ငွေဝင် (+)
+
       const fAmt = parseNum(fAmtStr);
       const mAmt = parseNum(mAmtStr);
 
@@ -1773,12 +1777,18 @@ let calcLock = false;
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
       let inAmtStr = "", outAmtStr = "";
+      let inNumeric = 0, outNumeric = 0;
+
       if(type === 'MMK ➔ THB' || type === 'MMK ➔ VND') {
           inAmtStr = mAmt.toLocaleString() + " MMK";
           outAmtStr = fAmt.toLocaleString() + (type.includes('THB') ? " THB" : " VND");
+          inNumeric = mAmt;
+          outNumeric = fAmt;
       } else {
           inAmtStr = fAmt.toLocaleString() + (type.includes('THB') ? " THB" : " VND");
           outAmtStr = mAmt.toLocaleString() + " MMK";
+          inNumeric = fAmt;
+          outNumeric = mAmt;
       }
 
       const dDate = new Date();
@@ -1796,11 +1806,23 @@ let calcLock = false;
 
       const historyRecord = {
         id: invId, type: type, rate: savedRate, inAmt: inAmtStr, outAmt: outAmtStr,
-        method: "Manual Lot", profit: 0, status: 'Success', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: "—"
+        method: "Manual Lot", profit: 0, status: 'Success', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: "—",
+        ledgerIn: toAcc,
+        ledgerOut: fromAcc
       };
 
       try {
           await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord);
+          
+          // 🌟 အရေးကြီးဆုံးအချက်: လက်ကျန်ငွေ တွက်ချက်ခြင်း
+          let balanceChanges = [];
+          if (toAcc) balanceChanges.push({ id: toAcc, change: inNumeric }); 
+          if (fromAcc) balanceChanges.push({ id: fromAcc, change: -outNumeric });
+
+          if (balanceChanges.length > 0) {
+              await window.updateBalancesSafely(balanceChanges);
+              if (typeof loadTreasuryData === 'function') loadTreasuryData();
+          }
           
           let alertMsg = `➕ <b>Manual Lot ထည့်သွင်းမှု အသစ်</b>\n\n`;
           alertMsg += `ID: <code>${invId}</code>\n`;
@@ -1817,6 +1839,9 @@ let calcLock = false;
           document.getElementById('manualLotForeign').value = '';
           document.getElementById('manualLotRate').value = '';
           document.getElementById('manualLotMmk').value = '';
+          document.getElementById('manualLotFromAcc').value = ''; 
+          document.getElementById('manualLotToAcc').value = ''; 
+          
           alert("Manual Lot အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ။");
           loadHistory();
       } catch(e) {
@@ -2413,6 +2438,7 @@ if (data.telegram) {
         loadReceiptTextsToInputs();
         updateReceiptUI();
         initDropdowns(); 
+        if (typeof syncAllLedgerDropdowns === 'function') syncAllLedgerDropdowns(); // 👈 ဤစာကြောင်းကို အသစ်ထပ်ထည့်ပါ
       }
     });
   } catch (err) {}
@@ -4830,11 +4856,78 @@ renderHistoryRows(allLoadedHistory);
       const link = document.createElement("a"); link.setAttribute("href", url);
       const dDate = new Date(); const dateString = dDate.getFullYear().toString() + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
       link.setAttribute("download", `Exchange_History_${dateString}.csv`);
-      document.body.appendChild(link); link.click(); document.body.removeChild(link);
-  }
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    }
 
-  function getExportTimeStr(lang) {
-    const d = new Date(); const tz = ADMIN_TIMEZONE || 'Asia/Bangkok';
+    // 👇👇👇 ဤနေရာမှ စတင်၍ Code အသစ် ကူးထည့်ပါ 👇👇👇
+    // --- 📥 Export Internal Transfers (Treasury Tab) ---
+    window.exportInternalTransfersCSV = async function() {
+        const btn = document.querySelector('button[onclick="exportInternalTransfersCSV()"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "⏳ Exporting...";
+        btn.disabled = true;
+
+        try {
+            // Logs Database ထဲမှ ဒေတာများကို ဆွဲယူခြင်း
+            const snap = await firebase.firestore().collection("activity_logs")
+                .orderBy("timestamp", "desc")
+                .get();
+
+            if (snap.empty) {
+                alert("Export ထုတ်ရန် မှတ်တမ်း မရှိသေးပါ။");
+                return;
+            }
+
+            // မြန်မာစာ မှန်ကန်စွာပေါ်စေရန် \ufeff ထည့်သွင်းခြင်း
+            let csvContent = "\ufeffDate/Time,Action,Details,User Role,Device\n"; 
+            let hasData = false;
+
+            snap.forEach(doc => {
+                const data = doc.data();
+                // Internal Transfer နှင့် Treasury (လက်ကျန်ပြင်ဆင်မှု) များကိုသာ စစ်ထုတ်မည်
+                if (data.action === "Internal Transfer" || data.action === "Treasury") {
+                    hasData = true;
+                    let dateObj = new Date(data.timestamp);
+                    let dateStr = dateObj.toLocaleString('en-GB', { timeZone: ADMIN_TIMEZONE || 'Asia/Bangkok', hour12: true }).replace(/,/g, '');
+                    
+                    let action = `"${data.action}"`;
+                    let details = `"${data.details || ''}"`;
+                    let role = `"${data.userRole || ''}"`;
+                    let device = `"${data.deviceName || ''}"`;
+
+                    csvContent += `${dateStr},${action},${details},${role},${device}\n`;
+                }
+            });
+
+            if (!hasData) {
+                alert("ဘဏ်ငွေလွှဲ (Internal Transfer) မှတ်တမ်းများ မရှိသေးပါ။");
+                return;
+            }
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a"); 
+            link.setAttribute("href", url);
+            const dDate = new Date(); 
+            const dateString = dDate.getFullYear().toString() + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
+            link.setAttribute("download", `Internal_Transfers_${dateString}.csv`);
+            
+            document.body.appendChild(link); 
+            link.click(); 
+            document.body.removeChild(link);
+
+        } catch (error) {
+            console.error("Export Error:", error);
+            alert("Export ထုတ်ရာတွင် အခက်အခဲရှိပါသည်။");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    };
+    // 👆👆👆 ဤနေရာအထိသာ ကူးထည့်ပါ 👆👆👆
+
+    function getExportTimeStr(lang) {
+        const d = new Date(); const tz = ADMIN_TIMEZONE || 'Asia/Bangkok';
     const formatterDate = new Intl.DateTimeFormat('en-GB', { timeZone: tz, day: '2-digit', month: 'short', year: 'numeric' });
     const formatterTime = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true });
     let tzLabel = tz.split('/').pop().replace(/_/g, ' ') + " Time";
