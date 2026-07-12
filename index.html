@@ -2617,7 +2617,7 @@ function openAdmin() {
         const bank = FIREBASE_BANKS[id]; if(!bank) return;
         // 🌟 Wallet (Ledger) Badge လေး ဖန်တီးမည် (နာမည်ပြင်လျှင် အော်တို ပြောင်းသွားပါမည်)
         let ledgerName = bank.ledger ? (FIREBASE_TREASURY[bank.ledger] ? FIREBASE_TREASURY[bank.ledger].name : "Unknown Wallet") : '';
-        let ledgerBadge = ledgerName ? `<span class="bg-indigo-50 text-indigo-700 text-[9px] px-1.5 py-0.5 rounded ml-2 border border-indigo-200 font-bold whitespace-nowrap">👛 ${ledgerName}</span>` : '';
+        let ledgerBadge = ledgerName ? `<span class="bg-indigo-50 text-indigo-700 text-[9px] px-1.5 py-0.5 rounded ml-2 border border-indigo-200 font-bold whitespace-nowrap">💼 ${ledgerName}</span>` : '';
         
         // 🌟 Currency Badge လေး ထပ်ထည့်ပါသည် 🌟
         let currBadge = bank.currency ? `<span class="bg-gray-100 text-gray-700 text-[9px] px-1.5 py-0.5 rounded ml-1 border border-gray-300 font-bold uppercase">${bank.currency}</span>` : '';
@@ -2636,7 +2636,7 @@ function openAdmin() {
         // 🌟 Wallet (Ledger) Badge လေး ဖန်တီးမည်
         let ledgerId = typeof qr === 'object' ? qr.ledger : '';
         let ledgerName = ledgerId && FIREBASE_TREASURY[ledgerId] ? FIREBASE_TREASURY[ledgerId].name : (ledgerId || '');
-        let ledgerBadge = ledgerName ? `<span class="bg-indigo-50 text-indigo-700 text-[9px] px-1.5 py-0.5 rounded ml-2 border border-indigo-200 font-bold whitespace-nowrap">👛 ${ledgerName}</span>` : '';
+        let ledgerBadge = ledgerName ? `<span class="bg-indigo-50 text-indigo-700 text-[9px] px-1.5 py-0.5 rounded ml-2 border border-indigo-200 font-bold whitespace-nowrap">💼 ${ledgerName}</span>` : '';
 
         // 🌟 Currency Badge လေး ထပ်ထည့်ပါသည် 🌟
         let currBadge = (typeof qr === 'object' && qr.currency) ? `<span class="bg-gray-100 text-gray-700 text-[9px] px-1.5 py-0.5 rounded ml-1 border border-gray-300 font-bold uppercase">${qr.currency}</span>` : '';
@@ -3626,7 +3626,7 @@ function openAdmin() {
       let masterHtml = '';
       FIREBASE_TREASURY_ORDER.forEach(key => {
           const acc = FIREBASE_TREASURY[key];
-          if (acc) masterHtml += `<option value="${key}">👛 ${acc.name} (${acc.currency})</option>`;
+          if (acc) masterHtml += `<option value="${key}">💼 ${acc.name} (${acc.currency})</option>`;
       });
       let bankHtml = '';
       FIREBASE_BANK_ORDER.forEach(id => {
@@ -3730,7 +3730,7 @@ function openAdmin() {
           FIREBASE_TREASURY_ORDER.forEach(key => {
               const acc = FIREBASE_TREASURY[key];
               if (acc && (!targetCurr || acc.currency === targetCurr)) {
-                  html += `<option value="${key}">👛 ${acc.name} (${acc.currency})</option>`;
+                  html += `<option value="${key}">💼 ${acc.name} (${acc.currency})</option>`;
               }
           });
           FIREBASE_BANK_ORDER.forEach(id => {
