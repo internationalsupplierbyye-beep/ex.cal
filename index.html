@@ -3230,9 +3230,12 @@ function openAdmin() {
 
       if (!acc) return;
 
+      // 🌟 newName ကို အပြင်ဘက်မှာ ကြိုတင်ကြေညာထားမှ အောက်က try block မှာ Error မတက်မှာပါ
+      let newName = null; 
+
       // Master Account ဖြစ်မှသာ နာမည်ပြောင်းခွင့်ပြုမည်
       if (isMaster) {
-          const newName = prompt(`Master Account နာမည်ကို ပြင်ပါ:`, acc.name);
+          newName = prompt(`Master Account နာမည်ကို ပြင်ပါ:`, acc.name);
           if (newName === null) return;
           acc.name = newName;
       }
@@ -3256,7 +3259,10 @@ function openAdmin() {
           
           loadTreasuryData();
           if (isMaster) renderAdminLists(); 
-      } catch (e) { alert("ပြင်ဆင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
+      } catch (e) { 
+          console.error(e); // Error ကို Console မှာ ကြည့်လို့ရအောင် ထည့်ထားပေးပါတယ်
+          alert("ပြင်ဆင်ရာတွင် အခက်အခဲရှိပါသည်။"); 
+      }
   }
 
   async function deleteMasterAccount(id) {
