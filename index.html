@@ -3062,8 +3062,9 @@ function openAdmin() {
           let curr = acc.currency || 'MMK';
           totals[curr] = (totals[curr] || 0) + Number(acc.balance || 0);
 
-          let colorClass = curr === 'THB' ? 'text-blue-700' : (curr === 'VND' ? 'text-orange-600' : 'text-green-700');
-          let bgClass = curr === 'THB' ? 'bg-blue-50' : (curr === 'VND' ? 'bg-orange-50' : 'bg-green-50');
+          let colorClass = curr === 'THB' ? 'text-blue-800' : (curr === 'VND' ? 'text-orange-800' : 'text-yellow-800');
+          let bgClass = curr === 'THB' ? 'bg-blue-100' : (curr === 'VND' ? 'bg-orange-100' : 'bg-yellow-100');
+          let borderClass = curr === 'THB' ? 'border-blue-400' : (curr === 'VND' ? 'border-orange-400' : 'border-yellow-400');
 
           let linkedItems = [];
           FIREBASE_BANK_ORDER.forEach(bId => {
@@ -3083,7 +3084,7 @@ function openAdmin() {
               : `<div class="text-[10px] text-gray-400 mt-3 pt-2 border-t border-gray-100 italic">ချိတ်ဆက်ထားခြင်း မရှိသေးပါ</div>`;
 
           list.innerHTML += `
-              <div class="list-item bg-white border rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default" draggable="true" data-index="${index}" data-type="treasury" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
+              <div class="list-item ${bgClass} border ${borderClass} rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default" draggable="true" data-index="${index}" data-type="treasury" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
                   <div class="flex justify-between items-start border-b pb-2 mb-2">
                       <div class="flex items-center">
                           <span class="drag-handle mr-2 text-gray-400" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span>
@@ -3113,9 +3114,10 @@ function openAdmin() {
 
               let colorClass = curr === 'THB' ? 'text-blue-700' : (curr === 'VND' ? 'text-orange-600' : 'text-green-700');
               let bgClass = curr === 'THB' ? 'bg-blue-50' : (curr === 'VND' ? 'bg-orange-50' : 'bg-green-50');
+              let borderClass = curr === 'THB' ? 'border-blue-300' : (curr === 'VND' ? 'border-orange-300' : 'border-green-300');
 
               list.innerHTML += `
-                  <div class="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default">
+                  <div class="${bgClass} border border-dashed ${borderClass} rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default">
                       <div class="flex justify-between items-start border-b border-gray-200 pb-2 mb-2">
                           <div class="flex items-center">
                               <span class="font-bold text-gray-700">🏦 ${acc.name} <span class="text-[10px] font-normal text-gray-500">(Standalone Bank)</span></span>
@@ -3143,9 +3145,10 @@ function openAdmin() {
 
               let colorClass = curr === 'THB' ? 'text-blue-700' : (curr === 'VND' ? 'text-orange-600' : 'text-green-700');
               let bgClass = curr === 'THB' ? 'bg-blue-50' : (curr === 'VND' ? 'bg-orange-50' : 'bg-green-50');
+              let borderClass = curr === 'THB' ? 'border-blue-300' : (curr === 'VND' ? 'border-orange-300' : 'border-green-300');
 
               list.innerHTML += `
-                  <div class="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default">
+                  <div class="${bgClass} border border-dashed ${borderClass} rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default">
                       <div class="flex justify-between items-start border-b border-gray-200 pb-2 mb-2">
                           <div class="flex items-center">
                               <span class="font-bold text-gray-700">🔲 ${name} <span class="text-[10px] font-normal text-gray-500">(Standalone QR)</span></span>
