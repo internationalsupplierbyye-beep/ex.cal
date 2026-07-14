@@ -1547,6 +1547,8 @@ let calcLock = false;
               activeArray.forEach(lot => { totalQty += lot.qty; totalMmk += (lot.qty * lot.rate); });
               let avgRate = totalQty > 0 ? (totalMmk / totalQty) : 0;
               
+              if (curr === 'THB') window.GLOBAL_EST_RATE_THB = avgRate; // 🌟 THB Est Rate ကို လက်ကျန်ငွေ တွက်ရန် မှတ်ထားမည်
+              
               let estStr = '';
               if(avgRate > 0) {
                   if (curr === 'THB') {
@@ -1597,6 +1599,11 @@ let calcLock = false;
 
           renderLots(thbLongs, thbShorts, 'thb_active_lots', 'THB');
           renderLots(vndLongs, vndShorts, 'vnd_active_lots', 'VND');
+
+          // 🌟 Dashboard Rate တွက်ပြီးသွားရင် Treasury Tab ပွင့်နေခဲ့လျှင် Auto Update လုပ်ပေးမည်
+          if (document.getElementById('tab-treasury') && document.getElementById('tab-treasury').classList.contains('active')) {
+              if (typeof loadTreasuryData === 'function') loadTreasuryData();
+          }
       }
   }
 
@@ -3083,19 +3090,30 @@ function openAdmin() {
               ? `<div class="text-[10px] text-gray-500 mt-3 pt-2 border-t border-gray-100 leading-relaxed font-bold">Linked: ${linkedItems.join(', ')}</div>` 
               : `<div class="text-[10px] text-gray-400 mt-3 pt-2 border-t border-gray-100 italic">ချိတ်ဆက်ထားခြင်း မရှိသေးပါ</div>`;
 
+          let estThbHtml = '';
+          if (curr === 'MMK') {
+              let useRate = window.GLOBAL_EST_RATE_THB || (LAST_RATE.inv || 0);
+              if (useRate > 0) {
+                  estThbHtml = `<div class="text-[11px] text-blue-600 font-bold mt-0.5">≈ ${(Number(acc.balance || 0) / useRate).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB <span class="text-[9px] text-blue-400">(Est: ${formatMmk(100000/useRate)})</span></div>`;
+              }
+          }
+
           list.innerHTML += `
               <div class="list-item ${bgClass} border ${borderClass} rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default" draggable="true" data-index="${index}" data-type="treasury" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
-                  <div class="flex justify-between items-start border-b pb-2 mb-2">
+                  <div class="flex justify-between items-start border-b border-${borderClass} pb-2 mb-2">
                       <div class="flex items-center">
                           <span class="drag-handle mr-2 text-gray-400" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span>
                           <span class="font-bold text-gray-800">${acc.name}</span>
                       </div>
-                      <span class="text-[10px] font-black px-2 py-0.5 rounded ${bgClass} ${colorClass} border uppercase">${curr}</span>
+                      <span class="text-[10px] font-black px-2 py-0.5 rounded bg-white ${colorClass} border uppercase">${curr}</span>
                   </div>
                   <div class="flex justify-between items-center mt-2">
-                      <div class="font-black text-xl ${colorClass}">${Number(acc.balance || 0).toLocaleString()}</div>
-                      <div class="flex gap-1">
-                          <button onclick="adjustTreasuryBalance('${key}')" class="text-[10px] bg-gray-100 border border-gray-300 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded font-bold">ပြင်မည်</button>
+                      <div>
+                          <div class="font-black text-xl ${colorClass}">${Number(acc.balance || 0).toLocaleString()}</div>
+                          ${estThbHtml}
+                      </div>
+                      <div class="flex gap-1 items-start">
+                          <button onclick="adjustTreasuryBalance('${key}')" class="text-[10px] bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1 rounded font-bold">ပြင်မည်</button>
                           <button onclick="deleteMasterAccount('${key}')" class="text-[10px] bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 px-2 py-1 rounded font-bold">✕</button>
                       </div>
                   </div>
@@ -3112,21 +3130,32 @@ function openAdmin() {
               let curr = acc.currency || 'MMK';
               totals[curr] = (totals[curr] || 0) + Number(acc.balance || 0);
 
-              let colorClass = curr === 'THB' ? 'text-blue-700' : (curr === 'VND' ? 'text-orange-600' : 'text-green-700');
-              let bgClass = curr === 'THB' ? 'bg-blue-50' : (curr === 'VND' ? 'bg-orange-50' : 'bg-green-50');
-              let borderClass = curr === 'THB' ? 'border-blue-300' : (curr === 'VND' ? 'border-orange-300' : 'border-green-300');
+              let colorClass = curr === 'THB' ? 'text-blue-800' : (curr === 'VND' ? 'text-orange-800' : 'text-yellow-800');
+              let bgClass = curr === 'THB' ? 'bg-blue-100' : (curr === 'VND' ? 'bg-orange-100' : 'bg-yellow-100');
+              let borderClass = curr === 'THB' ? 'border-blue-400' : (curr === 'VND' ? 'border-orange-400' : 'border-yellow-400');
+
+              let estThbHtml = '';
+              if (curr === 'MMK') {
+                  let useRate = window.GLOBAL_EST_RATE_THB || (LAST_RATE.inv || 0);
+                  if (useRate > 0) {
+                      estThbHtml = `<div class="text-[11px] text-blue-600 font-bold mt-0.5">≈ ${(Number(acc.balance || 0) / useRate).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB <span class="text-[9px] text-blue-400">(Est)</span></div>`;
+                  }
+              }
 
               list.innerHTML += `
                   <div class="${bgClass} border border-dashed ${borderClass} rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default">
-                      <div class="flex justify-between items-start border-b border-gray-200 pb-2 mb-2">
+                      <div class="flex justify-between items-start border-b border-${borderClass} pb-2 mb-2">
                           <div class="flex items-center">
                               <span class="font-bold text-gray-700">🏦 ${acc.name} <span class="text-[10px] font-normal text-gray-500">(Standalone Bank)</span></span>
                           </div>
-                          <span class="text-[10px] font-black px-2 py-0.5 rounded ${bgClass} ${colorClass} border uppercase">${curr}</span>
+                          <span class="text-[10px] font-black px-2 py-0.5 rounded bg-white ${colorClass} border uppercase">${curr}</span>
                       </div>
                       <div class="flex justify-between items-center mt-2">
-                          <div class="font-black text-xl ${colorClass}">${Number(acc.balance || 0).toLocaleString()}</div>
-                          <div class="flex gap-1">
+                          <div>
+                              <div class="font-black text-xl ${colorClass}">${Number(acc.balance || 0).toLocaleString()}</div>
+                              ${estThbHtml}
+                          </div>
+                          <div class="flex gap-1 items-start">
                               <button onclick="adjustTreasuryBalance('BANK_${bId}')" class="text-[10px] bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1 rounded font-bold">လက်ကျန်ပြင်မည်</button>
                           </div>
                       </div>
@@ -3143,21 +3172,32 @@ function openAdmin() {
               totals[curr] = (totals[curr] || 0) + Number(acc.balance || 0);
               let name = acc.name || (acc.file ? acc.file.replace(/\.[^.]+$/, '') : "Unknown QR");
 
-              let colorClass = curr === 'THB' ? 'text-blue-700' : (curr === 'VND' ? 'text-orange-600' : 'text-green-700');
-              let bgClass = curr === 'THB' ? 'bg-blue-50' : (curr === 'VND' ? 'bg-orange-50' : 'bg-green-50');
-              let borderClass = curr === 'THB' ? 'border-blue-300' : (curr === 'VND' ? 'border-orange-300' : 'border-green-300');
+              let colorClass = curr === 'THB' ? 'text-blue-800' : (curr === 'VND' ? 'text-orange-800' : 'text-yellow-800');
+              let bgClass = curr === 'THB' ? 'bg-blue-100' : (curr === 'VND' ? 'bg-orange-100' : 'bg-yellow-100');
+              let borderClass = curr === 'THB' ? 'border-blue-400' : (curr === 'VND' ? 'border-orange-400' : 'border-yellow-400');
+
+              let estThbHtml = '';
+              if (curr === 'MMK') {
+                  let useRate = window.GLOBAL_EST_RATE_THB || (LAST_RATE.inv || 0);
+                  if (useRate > 0) {
+                      estThbHtml = `<div class="text-[11px] text-blue-600 font-bold mt-0.5">≈ ${(Number(acc.balance || 0) / useRate).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB <span class="text-[9px] text-blue-400">(Est)</span></div>`;
+                  }
+              }
 
               list.innerHTML += `
                   <div class="${bgClass} border border-dashed ${borderClass} rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default">
-                      <div class="flex justify-between items-start border-b border-gray-200 pb-2 mb-2">
+                      <div class="flex justify-between items-start border-b border-${borderClass} pb-2 mb-2">
                           <div class="flex items-center">
                               <span class="font-bold text-gray-700">🔲 ${name} <span class="text-[10px] font-normal text-gray-500">(Standalone QR)</span></span>
                           </div>
-                          <span class="text-[10px] font-black px-2 py-0.5 rounded ${bgClass} ${colorClass} border uppercase">${curr}</span>
+                          <span class="text-[10px] font-black px-2 py-0.5 rounded bg-white ${colorClass} border uppercase">${curr}</span>
                       </div>
                       <div class="flex justify-between items-center mt-2">
-                          <div class="font-black text-xl ${colorClass}">${Number(acc.balance || 0).toLocaleString()}</div>
-                          <div class="flex gap-1">
+                          <div>
+                              <div class="font-black text-xl ${colorClass}">${Number(acc.balance || 0).toLocaleString()}</div>
+                              ${estThbHtml}
+                          </div>
+                          <div class="flex gap-1 items-start">
                               <button onclick="adjustTreasuryBalance('QR_${index}')" class="text-[10px] bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1 rounded font-bold">လက်ကျန်ပြင်မည်</button>
                           </div>
                       </div>
@@ -3170,27 +3210,41 @@ function openAdmin() {
           list.innerHTML = '<p class="text-sm text-gray-500 col-span-full mt-4 text-center">Master Account / Bank / QR များ မရှိသေးပါ။</p>';
       }
 
-      // 🌟 အကောင့်များ စုစုပေါင်း ပြသခြင်း
+      // // // 🌟 အကောင့်များ စုစုပေါင်း ပြသခြင်း (MMK အောက်မှာပါ THB Est ပြမည်)
       const totalDisplay = document.getElementById('treasuryTotals');
       if (totalDisplay) {
+          let estTotalThbHtml = '';
+          let useRate = window.GLOBAL_EST_RATE_THB || (LAST_RATE.inv || 0);
+          
+          if (useRate > 0 && totals.MMK > 0) {
+              let estThb = totals.MMK / useRate;
+              // (Est Rate: ***) ဆိုတဲ့ စာသားကို ဒီနေရာမှာ ဖြုတ်လိုက်ပါပြီ
+              estTotalThbHtml = `<div class="text-[11px] text-green-700 font-bold mt-1 text-right">≈ ${estThb.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB</div>`;
+          }
+
           totalDisplay.innerHTML = `
               <div class="flex gap-2 justify-end flex-wrap mt-1">
-                  <div class="border-2 border-green-500 bg-green-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm">
-                      <span class="text-[10px] font-black text-green-600 uppercase">MMK</span>
-                      <span class="text-base font-black text-green-800">${(totals.MMK||0).toLocaleString()}</span>
+                  <div class="flex flex-col items-end">
+                      <div class="border-2 border-green-500 bg-green-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm h-fit">
+                          <span class="text-[10px] font-black text-green-600 uppercase">MMK</span>
+                          <span class="text-base font-black text-green-800">${(totals.MMK||0).toLocaleString()}</span>
+                      </div>
+                      ${estTotalThbHtml}
                   </div>
-                  <div class="border-2 border-blue-500 bg-blue-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm">
+                  
+                  <div class="border-2 border-blue-500 bg-blue-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm h-fit">
                       <span class="text-[10px] font-black text-blue-600 uppercase">THB</span>
                       <span class="text-base font-black text-blue-800">${(totals.THB||0).toLocaleString()}</span>
                   </div>
-                  <div class="border-2 border-orange-500 bg-orange-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm">
+                  
+                  <div class="border-2 border-orange-500 bg-orange-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm h-fit">
                       <span class="text-[10px] font-black text-orange-600 uppercase">VND</span>
                       <span class="text-base font-black text-orange-800">${(totals.VND||0).toLocaleString()}</span>
                   </div>
                 </div>
             `;
-        }
-    } // 
+      }
+  } // 
 
     async function saveMasterAccount() {
       const name = document.getElementById('newMasterAccName').value.trim();
