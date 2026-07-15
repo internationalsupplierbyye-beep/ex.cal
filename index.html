@@ -5070,10 +5070,10 @@ renderHistoryRows(allLoadedHistory);
         const lang = document.getElementById('saveLangSelect').value || 'orig';
         const T = (typeof I18N !== 'undefined') ? I18N[lang] : null; 
         fmt = (fmt === 'jpg') ? 'jpg' : 'png';
-        const original=document.getElementById(sectionId); 
-        const clone=original.cloneNode(true);
+        const original = document.getElementById(sectionId); 
+        const clone = original.cloneNode(true);
         
-        clone.querySelectorAll('button').forEach(b=>b.remove());
+        clone.querySelectorAll('button').forEach(b => b.remove());
         
         clone.querySelectorAll('.export-only-texts').forEach(el => {
             el.classList.remove('hidden');
@@ -5087,7 +5087,7 @@ renderHistoryRows(allLoadedHistory);
         applyLangToClone(clone, lang, invId);
         
         let inValueStr = '', outValueStr = '';
-        clone.querySelectorAll('input').forEach(el=>{
+        clone.querySelectorAll('input').forEach(el => {
           if(!el.classList.contains('amt-input')) return;
           
           const isTarget = el.id.toLowerCase().includes('out');
@@ -5099,32 +5099,60 @@ renderHistoryRows(allLoadedHistory);
           else if(el.id.toLowerCase().includes('thb')) val += ' THB';
           else if(el.id.toLowerCase().includes('vnd')) val += ' VND';
 
-          const div=document.createElement('div');
-          div.className=el.className || ''; div.style.whiteSpace='nowrap'; div.style.overflow='hidden'; div.style.textOverflow='ellipsis'; div.style.display='flex'; div.style.alignItems='center'; div.style.lineHeight='1.5'; div.style.minHeight='56px'; div.style.height='56px'; div.style.paddingTop='12px'; div.style.paddingBottom='14px';
+          const div = document.createElement('div');
+          div.className = el.className || ''; 
+          div.style.whiteSpace = 'nowrap'; div.style.overflow = 'hidden'; div.style.textOverflow = 'ellipsis'; 
+          div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.justifyContent = 'center'; 
+          div.style.lineHeight = '1.5'; div.style.minHeight = '60px'; div.style.height = '60px'; 
+          div.style.fontSize = '1.3rem'; div.style.fontWeight = '900'; div.style.borderRadius = '12px';
+          div.style.margin = '4px 0';
+          div.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.02)';
+          
+          if (!isTarget) {
+              div.style.backgroundColor = '#f0fdf4'; 
+              div.style.border = '2px solid #bbf7d0'; 
+              div.style.color = '#166534';
+          } else {
+              div.style.backgroundColor = '#eff6ff'; 
+              div.style.border = '2px solid #bfdbfe'; 
+              div.style.color = '#1e40af';
+          }
           
           div.textContent = val;
           if (!isTarget) inValueStr = val; else outValueStr = val;
           el.replaceWith(div);
         });
         
-        clone.style.boxShadow='none'; clone.style.border='1px solid #e5e7eb'; clone.style.background='#fff';
+        clone.style.boxShadow = 'none'; 
+        clone.style.border = '0'; 
+        clone.style.borderRadius = '1rem'; 
+        clone.style.background = '#ffffff';
+
         const mode = document.querySelector('input[name="saveMode"]:checked')?.value || 'none';
         let paymentMethodName = "မပါ (None)";
         
-        if(mode==='qr' && CURRENT_QR && CURRENT_QR.normal){
+        if(mode === 'qr' && CURRENT_QR && CURRENT_QR.normal) {
           const selectedQrEl = document.getElementById('qrSelect');
           const selectedQrText = selectedQrEl.options[selectedQrEl.selectedIndex].text;
           paymentMethodName = `QR (${selectedQrText})`; 
           
-          const wrap=document.createElement('div'); wrap.className='export-block';
-          const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.qrTitle : 'ငွေလွှဲရန်ဘဏ် (သို့) QR');
-          const img=document.createElement('img'); 
+          const wrap = document.createElement('div'); wrap.className = 'export-block';
+          wrap.style.textAlign = 'center';
+          
+          const title = document.createElement('p'); 
+          title.className = 'text-slate-700 font-black'; 
+          title.style.paddingBottom = '4px'; 
+          title.style.fontSize = '14px'; 
+          title.textContent = "ငွေလွှဲရန်အတွက် အောက်ပါ QR ကို Scan (စကန်) ဖတ်ပါ။"; 
+          
+          const img = document.createElement('img'); 
           img.crossOrigin = "anonymous"; 
-          img.style.width='420px'; img.style.maxWidth='95%'; img.style.margin='10px auto 0'; img.style.border='1px solid #e5e7eb'; img.style.borderRadius='16px'; img.style.padding='10px'; img.style.background='#fff'; img.style.display='block';
+          img.style.width = '160px'; 
+          img.style.height = 'auto';
+          img.style.maxWidth = '100%'; img.style.margin = '10px auto 0'; img.style.border = '1px solid #e5e7eb'; img.style.borderRadius = '16px'; img.style.padding = '8px'; img.style.background = '#fff'; img.style.display = 'block';
           
           let targetSrc = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
           
-          // 🌟 နောက်ဆုံးအကြိမ် အသေချာဆုံးနည်းလမ်း (Base64 သို့ ပြောင်းလဲခြင်း)
           if(targetSrc.includes('promptpay.io') || targetSrc.includes('api.qrserver.com')) {
               try {
                   const res = await fetch("https://wsrv.nl/?url=" + encodeURIComponent(targetSrc));
@@ -5132,16 +5160,13 @@ renderHistoryRows(allLoadedHistory);
                   targetSrc = await new Promise(r => { const reader = new FileReader(); reader.onloadend = () => r(reader.result); reader.readAsDataURL(blob); });
               } catch(e) { console.log("QR Load Error"); }
           }
-          
           img.src = targetSrc;
           
-          const owner=document.createElement('p'); owner.className='mt-3 text-slate-700'; owner.style.paddingBottom = '4px'; owner.style.fontSize = '20px'; 
-          owner.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>`);
+          const owner = document.createElement('p'); owner.className = 'mt-3 text-slate-700'; owner.style.paddingBottom = '4px'; owner.style.fontSize = '16px'; 
+          owner.innerHTML = `အကောင့်နာမည်: <br><span style="font-weight:900; font-size: 20px; color: #1e40af; display: inline-block; margin-top: 4px;">${CURRENT_QR.owner}</span>`;
           wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(owner); clone.appendChild(wrap);
           
-          // 🌟 Local လား External လား စစ်ဆေးပြီး အချိန်ခွဲသတ်မှတ်ခြင်း
           const waitTime = img.src.includes('http') ? 3000 : 500; 
-
           await new Promise(res => { 
               let timer = setTimeout(res, waitTime); 
               if(img.complete) { clearTimeout(timer); return res(); }
@@ -5150,20 +5175,26 @@ renderHistoryRows(allLoadedHistory);
           });
         }
         
-        if(mode==='bank'){
-          const key=document.getElementById('bankSelect').value;
+        if(mode === 'bank') {
+          const key = document.getElementById('bankSelect').value;
           if(key && ACTIVE_BANK_INFO && ACTIVE_BANK_INFO[key]){
-            const info=ACTIVE_BANK_INFO[key];
+            const info = ACTIVE_BANK_INFO[key];
             paymentMethodName = `Bank (${info.name})`;
-            const wrap=document.createElement('div'); wrap.className='export-block';
-            const title=document.createElement('p'); title.className='text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T ? T.bankTitle : 'ငွေလွှဲရန် ဘဏ်အချက်အလက်');
-            const box=document.createElement('div'); box.style.maxWidth='560px'; box.style.margin='12px auto 0'; box.style.border='1px solid #e5e7eb'; box.style.borderRadius='16px'; box.style.padding='16px'; box.style.background='#fff'; box.style.textAlign='center';
+            const wrap = document.createElement('div'); wrap.className = 'export-block';
+            
+            const title = document.createElement('p'); 
+            title.className = 'text-slate-700 font-black'; 
+            title.style.paddingBottom = '4px'; 
+            title.style.fontSize = '14px'; 
+            title.textContent = "ငွေလွှဲရန်အတွက် အောက်ပါအချက်အလက်မှ ဘဏ်သို့ လွှဲပါ။"; 
+            
+            const box = document.createElement('div'); box.style.maxWidth = '560px'; box.style.margin = '12px auto 0'; box.style.border = '1px solid #e5e7eb'; box.style.borderRadius = '16px'; box.style.padding = '16px'; box.style.background = '#fff'; box.style.textAlign = 'center';
             const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
-            const logo=document.createElement('img'); logo.src=logoUrl; logo.style.width='72px'; logo.style.height='72px'; logo.style.borderRadius='18px'; logo.style.border='1px solid #e5e7eb'; logo.style.objectFit='cover';
-            const headerRow=document.createElement('div'); headerRow.style.display='flex'; headerRow.style.flexDirection='column'; headerRow.style.alignItems='center'; headerRow.style.justifyContent='center'; headerRow.style.gap='8px'; headerRow.style.marginBottom='10px';
-            const h=document.createElement('div'); h.style.textAlign='center'; 
+            const logo = document.createElement('img'); logo.src = logoUrl; logo.style.width = '72px'; logo.style.height = '72px'; logo.style.borderRadius = '18px'; logo.style.border = '1px solid #e5e7eb'; logo.style.objectFit = 'cover';
+            const headerRow = document.createElement('div'); headerRow.style.display = 'flex'; headerRow.style.flexDirection = 'column'; headerRow.style.alignItems = 'center'; headerRow.style.justifyContent = 'center'; headerRow.style.gap = '8px'; headerRow.style.marginBottom = '10px';
+            const h = document.createElement('div'); h.style.textAlign = 'center'; 
             h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
-            const body=document.createElement('div'); body.style.textAlign='center';
+            const body = document.createElement('div'); body.style.textAlign = 'center';
             body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
             headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
             wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
@@ -5183,10 +5214,10 @@ renderHistoryRows(allLoadedHistory);
         footerDiv.style.display = 'flex';
         footerDiv.style.justifyContent = 'space-between';
         footerDiv.style.alignItems = 'flex-end';
-        footerDiv.style.marginTop = '12px';
-        footerDiv.style.paddingTop = '12px';
-        footerDiv.style.borderTop = '1px dashed #cbd5e1';
-        footerDiv.style.paddingBottom = '8px';
+        footerDiv.style.marginTop = '20px';
+        footerDiv.style.paddingTop = '15px';
+        footerDiv.style.borderTop = '2px dashed #cbd5e1';
+        footerDiv.style.paddingBottom = '5px';
 
         const idSpan = document.createElement('span');
         idSpan.style.fontSize = '13px'; 
@@ -5204,19 +5235,31 @@ renderHistoryRows(allLoadedHistory);
         footerDiv.appendChild(timeSpan);
         clone.appendChild(footerDiv);
 
+        // 🌟 ခေါင်းစဉ် (Header) ကို ပြင်ဆင်ခြင်း
         const brandHeader = document.createElement('div');
         brandHeader.style.textAlign = 'center'; 
-        brandHeader.style.paddingBottom = '15px'; 
-        brandHeader.style.marginBottom = '15px'; 
-        brandHeader.style.borderBottom = '2px dashed #cbd5e1';
+        brandHeader.style.padding = '12px 16px'; 
+        brandHeader.style.margin = '-16px -16px 20px -16px'; 
+        brandHeader.style.background = 'linear-gradient(135deg, #1e3a8a, #2563eb)'; 
+        brandHeader.style.borderRadius = '1rem 1rem 0 0';
+        brandHeader.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
         
         const brandTitle = document.createElement('div');
         brandTitle.style.fontWeight = '900'; 
         brandTitle.style.fontSize = '24px'; 
-        brandTitle.style.color = '#0f172a';
+        brandTitle.style.color = '#ffffff';
+        brandTitle.style.letterSpacing = '0.5px';
         brandTitle.textContent = (T && T.titleTop) ? T.titleTop : 'Thailand Guide - Supplier By Ye';
-        
         brandHeader.appendChild(brandTitle);
+
+        const subTitle = document.createElement('div');
+        subTitle.style.fontSize = '11px'; 
+        subTitle.style.color = '#bfdbfe';
+        subTitle.style.marginTop = '2px';
+        subTitle.style.fontWeight = 'bold';
+        subTitle.textContent = 'Transaction Receipt';
+        brandHeader.appendChild(subTitle);
+
         clone.insertBefore(brandHeader, clone.firstChild);
 
         let savedCustomerName = "—";
@@ -5226,31 +5269,34 @@ renderHistoryRows(allLoadedHistory);
             savedCustomerName = cus.name + (cus.social ? ` (${cus.social})` : '');
             
             const cusDiv = document.createElement('div');
-            cusDiv.style.padding = '8px 12px';
-            cusDiv.style.margin = '15px auto 5px auto';
-            cusDiv.style.maxWidth = '85%';
+            cusDiv.style.padding = '12px 16px';
+            cusDiv.style.margin = '20px 0 10px 0';
+            cusDiv.style.width = '100%';
+            cusDiv.style.boxSizing = 'border-box';
             cusDiv.style.backgroundColor = '#f8fafc';
-            cusDiv.style.border = '1px dashed #cbd5e1';
-            cusDiv.style.borderRadius = '8px';
+            cusDiv.style.borderLeft = '4px solid #3b82f6';
+            cusDiv.style.borderTop = '1px solid #e2e8f0';
+            cusDiv.style.borderRight = '1px solid #e2e8f0';
+            cusDiv.style.borderBottom = '1px solid #e2e8f0';
+            cusDiv.style.borderRadius = '0 8px 8px 0';
             cusDiv.style.textAlign = 'left';
             cusDiv.style.fontSize = '12px'; 
 
             let cHtml = `<div style="display:flex; justify-content:space-between; align-items:center;">`;
             cHtml += `<div><span style="color:#64748b; font-weight:bold;">ငွေလွှဲသူ အချက်အလက် -</span> <span style="font-weight:900; color:#1e40af; font-size:14px; margin-left:4px;">${savedCustomerName}</span></div>`;
             
-            if (cus.phone) {
-                 cHtml += `<div style="font-size:11px; color:#475569;">📞 ${cus.phone}</div>`;
-            }
+            if (cus.phone) { cHtml += `<div style="font-size:11px; color:#475569; font-weight:bold;">📞 ${cus.phone}</div>`; }
             cHtml += `</div>`;
 
             if (cus.bankName || cus.bankNo) {
-                cHtml += `<div style="margin-top:4px; padding-top:4px; border-top:1px solid #e2e8f0; color:#475569;"><span style="font-weight:bold;">🏦 Bank:</span> ${cus.bankName || '-'} (${cus.bankNo || '-'})</div>`;
+                cHtml += `<div style="margin-top:6px; padding-top:6px; border-top:1px solid #e2e8f0; color:#475569;"><span style="font-weight:bold;">🏦 Bank:</span> ${cus.bankName || '-'} (${cus.bankNo || '-'})</div>`;
             }
 
             cusDiv.innerHTML = cHtml;
             clone.insertBefore(cusDiv, footerDiv); 
         }
 
+        // 🌟 Watermark Memory Optimized (Freeze မဖြစ်အောင်)
         const watermarkDiv = document.createElement('div');
         watermarkDiv.style.position = 'absolute';
         watermarkDiv.style.top = '0';
@@ -5268,385 +5314,169 @@ renderHistoryRows(allLoadedHistory);
         wmImg.style.left = '50%';
         wmImg.style.transform = 'translate(-50%, -50%)';
         wmImg.style.width = '240px'; 
-        wmImg.style.opacity = '0.09'; 
+        wmImg.style.opacity = '0.08'; 
         watermarkDiv.appendChild(wmImg);
 
         const textContainer = document.createElement('div');
         textContainer.style.position = 'absolute';
-        textContainer.style.top = '-50%';
-        textContainer.style.left = '-50%';
-        textContainer.style.width = '200%'; 
-        textContainer.style.height = '200%';
+        textContainer.style.top = '-20%';
+        textContainer.style.left = '-20%';
+        textContainer.style.width = '140%'; 
+        textContainer.style.height = '140%';
         textContainer.style.transform = 'rotate(-30deg)'; 
         textContainer.style.display = 'flex';
         textContainer.style.flexWrap = 'wrap'; 
         textContainer.style.alignContent = 'center';
         textContainer.style.justifyContent = 'center';
-        textContainer.style.gap = '50px 80px'; 
+        textContainer.style.gap = '60px 80px'; 
 
-        for(let i=0; i<50; i++) {
+        for(let i=0; i<25; i++) { // Loop ကိုလျှော့ချထားသည် (Freeze ကာကွယ်ရန်)
             const block = document.createElement('div');
             block.style.display = 'flex';
             block.style.flexDirection = 'column';
             block.style.alignItems = 'center';
-            block.style.opacity = '0.055'; 
+            block.style.opacity = '0.05'; 
             
             const wmId = document.createElement('div');
-            wmId.style.fontSize = '24px';
+            wmId.style.fontSize = '22px';
             wmId.style.fontWeight = '900';
             wmId.style.color ='#64748b';
-              wmId.style.letterSpacing = '2px';
-              wmId.textContent = "ID: " + invId; 
-              block.appendChild(wmId);
+            wmId.style.letterSpacing = '1px';
+            wmId.textContent = "ID: " + invId; 
+            block.appendChild(wmId);
 
-              if (savedCustomerName && savedCustomerName !== "—") { 
-                  const wmName = document.createElement('div');
-                  wmName.style.fontSize = '20px';
-                  wmName.style.fontWeight = '900';
-                  wmName.style.color = '#64748b';
-                  wmName.style.letterSpacing = '1px';
-                  wmName.style.marginTop = '6px';
-                  wmName.textContent = savedCustomerName; 
-                  block.appendChild(wmName);
-              }
-              textContainer.appendChild(block);
-          }
-
-          watermarkDiv.appendChild(textContainer);
-          clone.appendChild(watermarkDiv);
-
-          await new Promise(res => { 
-              let timer = setTimeout(res, 500); 
-              if(wmImg.complete) { clearTimeout(timer); return res(); }
-              wmImg.onload = () => { clearTimeout(timer); res(); };
-              wmImg.onerror = () => { clearTimeout(timer); res(); };
-          });
-          
-          clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
-          document.body.appendChild(clone);
-          await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
-          
-          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, logging:false, imageTimeout: 3000 });
-          document.body.removeChild(clone);
-
-          const margin=18; 
-          const out=document.createElement('canvas'); 
-          out.width = canvas.width + margin*2; 
-          out.height = canvas.height + margin*2; 
-          const ctx = out.getContext('2d'); 
-          ctx.fillStyle='#fff'; 
-          ctx.fillRect(0,0,out.width,out.height); 
-          
-          ctx.drawImage(canvas, margin, margin);
-
-          let recType = ""; let savedRate = ""; 
-          if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; } 
-          else if(sectionId==='box-mmk2thb') { recType = "MMK ➔ THB"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; } 
-          else if(sectionId==='box-vnd2mmk') { recType = "VND ➔ MMK"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; } 
-          else if(sectionId==='box-mmk2vnd') { recType = "MMK ➔ VND"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
-          
-          const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
-          const historyRecord = { 
-              id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
-              method: paymentMethodName, profit: 0, status: 'Pending', timestamp: new Date().toISOString(), 
-              tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: savedCustomerName 
-          };
-          
-          try { 
-              await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); 
-              
-              // 🌟 ပြေစာအသစ် ထုတ်ကြောင်းကို Log ထဲ မှတ်မည်
-              logActivity("Receipt Generated", `ID: ${invId} ပြေစာအသစ် ထုတ်ယူခဲ့သည်။`);
-              
-              let alertMsg = `✅ <b>ငွေလွှဲပြေစာ အသစ် (Auto)</b>\n\nID: <code>${invId}</code>\n`;
-              if (savedCustomerName !== "—") alertMsg += `Customer: <b>${savedCustomerName}</b>\n`;
-              alertMsg += `အမျိုးအစား: <b>${recType}</b>\nပမာဏ: <code>${inValueStr}</code> ➔ <code>${outValueStr}</code>\nငွေဈေး: <code>${savedRate}</code>\nနည်းလမ်း: ${paymentMethodName}\n`;
-              let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId; 
-              alertMsg += `Device: <b>${mappedDeviceName}</b>`;
-              sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID); 
-          } catch(e) {}
-          
-          const mimeType = fmt === 'jpg' ? 'image/jpeg' : 'image/png'; 
-          const fileExt = fmt === 'jpg' ? '.jpg' : '.png'; 
-          const finalFileName = filenameBase + '_' + invId + fileExt;
-
-          out.toBlob(async (blob) => {
-              if (!blob) return;
-
-              const ua = navigator.userAgent || navigator.vendor || window.opera; 
-              const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream; 
-              const isInAppBrowser = /FBAN|FBAV|Line|MicroMessenger|Viber|Instagram|Snapchat/i.test(ua);
-              
-              const showImagePopup = () => {
-                  const url = URL.createObjectURL(blob);
-                  const overlay = document.createElement('div'); 
-                  overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0'; overlay.style.width = '100vw'; overlay.style.height = '100vh'; overlay.style.backgroundColor = 'rgba(0,0,0,0.9)'; overlay.style.zIndex = '9999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
-                  const closeBtn = document.createElement('button'); closeBtn.innerText = '✕ ပိတ်မည်'; closeBtn.style.position = 'absolute'; closeBtn.style.top = '20px'; closeBtn.style.right = '20px'; closeBtn.style.padding = '8px 16px'; closeBtn.style.background = '#ef4444'; closeBtn.style.color = '#fff'; closeBtn.style.border = 'none'; closeBtn.style.borderRadius = '8px'; closeBtn.style.fontWeight = 'bold';
-                  closeBtn.onclick = () => { document.body.removeChild(overlay); URL.revokeObjectURL(url); };
-                  const hint = document.createElement('div'); hint.innerText = '💡 ပုံကို ဖိထားပြီး Save Image လုပ်ပါ'; hint.style.color = '#fff'; hint.style.marginBottom = '15px'; hint.style.fontWeight = 'bold'; hint.style.fontSize = '16px';
-                  const img = document.createElement('img'); img.src = url; img.style.maxWidth = '90%'; img.style.maxHeight = '75%'; img.style.borderRadius = '12px'; img.style.border = '2px solid #fff'; img.style.pointerEvents = 'auto';
-                  overlay.appendChild(closeBtn); overlay.appendChild(hint); overlay.appendChild(img); document.body.appendChild(overlay);
-                  if (btnElement) btnElement.innerHTML = '✅ ရပါပြီ!';
-              };
-
-              if (isInAppBrowser) { showImagePopup(); return; }
-              
-              if (isIOS && navigator.canShare) { 
-                  const file = new File([blob], finalFileName, { type: mimeType }); 
-                  if (navigator.canShare({ files: [file] })) { 
-                      try { 
-                          await navigator.share({ title: 'ငွေလွှဲပြေစာ', text: 'Thailand Guide - Supplier By Ye မှ ငွေလွှဲပြေစာ', files: [file] }); 
-                          if (btnElement) btnElement.innerHTML = '✅ Saved!'; return; 
-                      } catch (e) { console.log('Share canceled or failed:', e); } 
-                  } 
-              }
-
-              try { 
-                  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = finalFileName; document.body.appendChild(a); a.click(); 
-                  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); 
-                  if (btnElement) btnElement.innerHTML = '✅ Saved!'; 
-              } 
-              catch(e) { showImagePopup(); }
-          }, mimeType, 0.92);
-          
-      } catch (err) { 
-          console.error("Save/Share Error: ", err); 
-          alert("Save/Share အလုပ်လုပ်ရာတွင် အခက်အခဲရှိပါသည်။ \n" + err.message); 
-      } 
-      finally { 
-          if (btnElement) { setTimeout(() => { btnElement.innerHTML = origText; btnElement.disabled = false; }, 1500); } 
-      }
-  }
-
-   // --- AI Slip Reader (ChatGPT Vision API) ---
-async function extractSlipData(imageUrl) {
-    // ⚠️ သတိပြုရန်: API Key အသစ်ပြန်ထုတ်ပြီးမှ ဒီနေရာမှာ ပြန်ထည့်ပါ
-    const OPENAI_API_KEY = "YOUR_NEW_API_KEY_HERE"; 
-    
-    try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "gpt-4o", 
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            { 
-                                type: "text", 
-                                text: "ဒီဘဏ်စလစ်ပုံထဲက အောက်ပါအချက်အလက်တွေကို ရှာပေးပါ: လက်ခံသူအမည် (Receiver Name), ဘဏ်အမည် (Bank Name), ဘဏ်အကောင့်နံပါတ် (Account Number - အချို့ပဲပါလျှင် ပါသလောက်), နှင့် လွှဲငွေပမာဏ (Amount/Transaction ID). အောက်ပါအတိုင်း တိုတိုတုတ်တုတ် ပြန်ဖြေပေးပါ: 'KBZ Pay, U Ba, 09***, 100,000 MMK'." 
-                            },
-                            { 
-                                type: "image_url", 
-                                image_url: { url: imageUrl } 
-                            }
-                        ]
-                    }
-                ],
-                max_tokens: 150
-            })
-        });
-
-        // 🌟 Error ဘာကြောင့်တက်လဲ အတိအကျသိရန် 🌟
-        if (!response.ok) {
-            const errData = await response.json();
-            console.error("OpenAI API Error:", errData);
-            return "⚠️ စလစ်ဖတ်၍မရပါ (Console တွင် Error ကိုစစ်ပါ)";
+            if (savedCustomerName && savedCustomerName !== "—") { 
+                const wmName = document.createElement('div');
+                wmName.style.fontSize = '18px';
+                wmName.style.fontWeight = '900';
+                wmName.style.color = '#64748b';
+                wmName.style.marginTop = '4px';
+                wmName.textContent = savedCustomerName; 
+                block.appendChild(wmName);
+            }
+            textContainer.appendChild(block);
         }
 
-        const data = await response.json();
-        return data.choices[0].message.content; 
-    } catch (error) {
-        console.error("ChatGPT Fetch Error:", error);
-        return "⚠️ စလစ်ဖတ်၍မရပါ (Network Error)";
+        watermarkDiv.appendChild(textContainer);
+        clone.appendChild(watermarkDiv);
+
+        await new Promise(res => { 
+            let timer = setTimeout(res, 500); 
+            if(wmImg.complete) { clearTimeout(timer); return res(); }
+            wmImg.onload = () => { clearTimeout(timer); res(); };
+            wmImg.onerror = () => { clearTimeout(timer); res(); };
+        });
+        
+        clone.style.position='fixed'; clone.style.left='-99999px'; clone.style.top='0'; clone.style.width = original.offsetWidth + 'px'; clone.style.background='#fff';
+        
+        const outerWrapper = document.createElement('div');
+        outerWrapper.style.position = 'fixed'; outerWrapper.style.left = '-99999px'; outerWrapper.style.top = '0';
+        outerWrapper.style.padding = '20px';
+        outerWrapper.style.background = '#ffffff';
+        outerWrapper.style.borderRadius = '24px';
+        outerWrapper.style.boxShadow = '0 10px 30px rgba(0,0,0,0.08)';
+        outerWrapper.style.border = '1px solid #e2e8f0';
+        
+        brandHeader.style.margin = '0 0 20px 0';
+        brandHeader.style.borderRadius = '16px';
+        clone.style.position = 'static';
+        clone.style.border = 'none';
+        
+        outerWrapper.appendChild(clone);
+        document.body.appendChild(outerWrapper);
+        
+        await new Promise(r => requestAnimationFrame(r)); await new Promise(r => requestAnimationFrame(r));
+        
+        // 🌟 Scale ကို 2 သို့ လျှော့ချလိုက်ပါသည် (Memory Error/Freeze မဖြစ်စေရန်)
+        const canvas = await html2canvas(outerWrapper, { backgroundColor:'#ffffff', scale: 2, useCORS:true, logging:false, imageTimeout: 3000 });
+        document.body.removeChild(outerWrapper);
+
+        const margin = 18; 
+        const out = document.createElement('canvas'); 
+        out.width = canvas.width + margin*2; 
+        out.height = canvas.height + margin*2; 
+        const ctx = out.getContext('2d'); 
+        ctx.fillStyle = '#fff'; 
+        ctx.fillRect(0, 0, out.width, out.height); 
+        
+        ctx.drawImage(canvas, margin, margin);
+
+        let recType = ""; let savedRate = ""; 
+        if(sectionId === 'box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; } 
+        else if(sectionId === 'box-mmk2thb') { recType = "MMK ➔ THB"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; } 
+        else if(sectionId === 'box-vnd2mmk') { recType = "VND ➔ MMK"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; } 
+        else if(sectionId === 'box-mmk2vnd') { recType = "MMK ➔ VND"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
+        
+        const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
+        const historyRecord = { 
+            id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
+            method: paymentMethodName, profit: 0, status: 'Pending', timestamp: new Date().toISOString(), 
+            tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: savedCustomerName 
+        };
+        
+        try { 
+            await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); 
+            
+            logActivity("Receipt Generated", `ID: ${invId} ပြေစာအသစ် ထုတ်ယူခဲ့သည်။`);
+            
+            let alertMsg = `✅ <b>ငွေလွှဲပြေစာ အသစ် (Auto)</b>\n\nID: <code>${invId}</code>\n`;
+            if (savedCustomerName !== "—") alertMsg += `Customer: <b>${savedCustomerName}</b>\n`;
+            alertMsg += `အမျိုးအစား: <b>${recType}</b>\nပမာဏ: <code>${inValueStr}</code> ➔ <code>${outValueStr}</code>\nငွေဈေး: <code>${savedRate}</code>\nနည်းလမ်း: ${paymentMethodName}\n`;
+            let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId; 
+            alertMsg += `Device: <b>${mappedDeviceName}</b>`;
+            sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID); 
+        } catch(e) {}
+        
+        const mimeType = fmt === 'jpg' ? 'image/jpeg' : 'image/png'; 
+        const fileExt = fmt === 'jpg' ? '.jpg' : '.png'; 
+        const finalFileName = filenameBase + '_' + invId + fileExt;
+
+        out.toBlob(async (blob) => {
+            if (!blob) return;
+
+            const ua = navigator.userAgent || navigator.vendor || window.opera; 
+            const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream; 
+            const isInAppBrowser = /FBAN|FBAV|Line|MicroMessenger|Viber|Instagram|Snapchat/i.test(ua);
+            
+            const showImagePopup = () => {
+                const url = URL.createObjectURL(blob);
+                const overlay = document.createElement('div'); 
+                overlay.style.position = 'fixed'; overlay.style.top = '0'; overlay.style.left = '0'; overlay.style.width = '100vw'; overlay.style.height = '100vh'; overlay.style.backgroundColor = 'rgba(0,0,0,0.9)'; overlay.style.zIndex = '9999'; overlay.style.display = 'flex'; overlay.style.flexDirection = 'column'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+                const closeBtn = document.createElement('button'); closeBtn.innerText = '✕ ပိတ်မည်'; closeBtn.style.position = 'absolute'; closeBtn.style.top = '20px'; closeBtn.style.right = '20px'; closeBtn.style.padding = '8px 16px'; closeBtn.style.background = '#ef4444'; closeBtn.style.color = '#fff'; closeBtn.style.border = 'none'; closeBtn.style.borderRadius = '8px'; closeBtn.style.fontWeight = 'bold';
+                closeBtn.onclick = () => { document.body.removeChild(overlay); URL.revokeObjectURL(url); };
+                const hint = document.createElement('div'); hint.innerText = '💡 ပုံကို ဖိထားပြီး Save Image လုပ်ပါ'; hint.style.color = '#fff'; hint.style.marginBottom = '15px'; hint.style.fontWeight = 'bold'; hint.style.fontSize = '16px';
+                const img = document.createElement('img'); img.src = url; img.style.maxWidth = '90%'; img.style.maxHeight = '75%'; img.style.borderRadius = '12px'; img.style.border = '2px solid #fff'; img.style.pointerEvents = 'auto';
+                overlay.appendChild(closeBtn); overlay.appendChild(hint); overlay.appendChild(img); document.body.appendChild(overlay);
+                if (btnElement) btnElement.innerHTML = '✅ ရပါပြီ!';
+            };
+
+            if (isInAppBrowser) { showImagePopup(); return; }
+            
+            if (isIOS && navigator.canShare) { 
+                const file = new File([blob], finalFileName, { type: mimeType }); 
+                if (navigator.canShare({ files: [file] })) { 
+                    try { 
+                        await navigator.share({ title: 'ငွေလွှဲပြေစာ', text: 'Thailand Guide - Supplier By Ye မှ ငွေလွှဲပြေစာ', files: [file] }); 
+                        if (btnElement) btnElement.innerHTML = '✅ Saved!'; return; 
+                    } catch (e) { console.log('Share canceled or failed:', e); } 
+                } 
+            }
+
+            try { 
+                const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = finalFileName; document.body.appendChild(a); a.click(); 
+                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100); 
+                if (btnElement) btnElement.innerHTML = '✅ Saved!'; 
+            } 
+            catch(e) { showImagePopup(); }
+        }, mimeType, 0.92);
+        
+    } catch (err) { 
+        console.error("Save/Share Error: ", err); 
+        alert("Save/Share အလုပ်လုပ်ရာတွင် အခက်အခဲရှိပါသည်။ \n" + err.message); 
+    } 
+    finally { 
+        if (btnElement) { setTimeout(() => { btnElement.innerHTML = origText; btnElement.disabled = false; }, 1500); } 
     }
-}
-
-  // ပုံဖိုင် (File) ကို Base64 စာသားအဖြစ် ပြောင်းပေးမည့် အကူ Function
-  const fileToBase64 = (file) => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = error => reject(error);
-  });
-
-  // --- AI Slip Reader (OpenRouter API - Optimized) ---
-  async function extractSlipDataWithGemini(base64Image) {
-      if(!OPENROUTER_API_KEY) return "⚠️ API Key မထည့်ရသေးပါ။ Admin > အထွေထွေ တွင်ထည့်ပါ။"; 
-      
-      const url = "https://openrouter.ai/api/v1/chat/completions";
-
-      // 🌟 Payload ထဲတွင် max_tokens ကို ထပ်ထည့်ပေးပါ 🌟
-      const payload = {
-          "model": "google/gemini-3.5-flash", 
-          "max_tokens": 150, // ဤနေရာတွင် 150 သို့မဟုတ် 200 ထားပေးပါက အခမဲ့စာရင်းဝင်ပါမည်
-          "messages": [
-              {
-                  "role": "user",
-                  "content": [
-                      { 
-                          "type": "text", 
-                          "text": "ဒီဘဏ်စလစ်ပုံထဲက အချက်အလက်တွေကို ရှာပေးပါ။ အရေးကြီးသည်မှာ 'ဘဏ်အမည်' ဆိုသည်မှာ ငွေလွှဲသူ၏ဘဏ်မဟုတ်ဘဲ ငွေလက်ခံသူ (To / Receiver) ၏ ဘဏ်အမည် သို့မဟုတ် PromptPay ဖြစ်ရပါမည်။ ဖြေရမည့် ပုံစံမှာ - 'လက်ခံသူ၏ဘဏ်အမည် | လက်ခံသူအမည် | အကောင့်နံပါတ် | Transaction No (သို့မဟုတ် Ref No) | ပမာဏ' ဖြစ်ရပါမည်။ \nဥပမာ - 'PromptPay | BHONE MYAT THU | 094-xxx-5867 | 2026062213542623004940608 | 1,508.00 THB'. \n(သတိပြုရန်: အချက်အလက်များကို | သင်္ကေတဖြင့်သာ ခြားပေးပါ။ ပမာဏတွင်ပါသော ကော်မာများကို မဖြုတ်ပါနှင့်။ အခြားပိုသော စာသားများ လုံးဝ မရေးပါနှင့်။)" 
-                      },
-                      { 
-                          "type": "image_url", 
-                          "image_url": { 
-                              "url": `data:image/jpeg;base64,${base64Image}` 
-                          } 
-                      }
-                  ]
-              }
-          ]
-      };
-
-      try {
-          const response = await fetch(url, {
-              method: "POST",
-              headers: { 
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                  "HTTP-Referer": window.location.origin, 
-                  "X-Title": "TG Excal Slip Reader"
-              },
-              body: JSON.stringify(payload)
-          });
-          
-          const data = await response.json();
-          
-          if (data.choices && data.choices.length > 0) {
-              return data.choices[0].message.content.trim();
-          } else {
-              // 🌟 Error အသေးစိတ်ကို log ထုတ်ပေးမည်
-              console.error("OpenRouter API Error Details:", JSON.stringify(data));
-              return "⚠️ စလစ်ဖတ်၍မရပါ (Error: " + (data.error?.message || "Unknown") + ")";
-          }
-      } catch (error) {
-          console.error("Fetch Error:", error);
-          return "⚠️ Connection Error";
-      }
-  }
-  // --- Uploading Slips ---
-  window.triggerSlipUpload = function(invId) { 
-      document.getElementById('uploadTargetInvId').value = invId; 
-      document.getElementById('slipUploader').click(); 
-  }
-
-  window.handleSlipUpload = async function(event) {
-      const files = event.target.files; if (!files || files.length === 0) return;
-      const invId = document.getElementById('uploadTargetInvId').value; 
-      if(!IMGBB_API_KEY) { alert("ImgBB API Key ထည့်သွင်းထားခြင်း မရှိပါ။ Admin တွင် ထည့်ပါ။"); return; } 
-      
-      const index = allLoadedHistory.findIndex(x => x.id === invId); 
-      let existingSlips = [];
-      let previousExtractedInfo = ""; // အဟောင်းကို မှတ်ထားရန်
-      
-      if(index !== -1) { 
-          let tx = allLoadedHistory[index]; 
-          existingSlips = tx.slipUrls || []; 
-          if (tx.slipUrl && existingSlips.length === 0) existingSlips = [tx.slipUrl]; 
-          previousExtractedInfo = tx.extractedInfo || ""; // ဒေတာအဟောင်းယူရန်
-      }
-
-      if (existingSlips.length + files.length > 10) { 
-          alert(`ယခင်တင်ထားသောပုံနှင့် ယခုတင်မည့်ပုံ စုစုပေါင်း ၁၀ ပုံထက် ကျော်လွန်နေပါသည်။`); 
-          event.target.value = ''; return; 
-      }
-
-      let uploadedUrls = []; let hasError = false;
-      
-      // Upload ခလုတ်ကို ပိတ်ထားမည် (Loading ပြရန်)
-      const uploadBtn = document.querySelector(`button[onclick*="triggerSlipUpload('${invId}')"]`);
-      let origBtnText = "";
-      if (uploadBtn) { 
-          origBtnText = uploadBtn.innerHTML; 
-          // ခလုတ်ထဲမှာ Icon သို့မဟုတ် စာသား ဘယ်လိုပဲရှိရှိ "တင်နေသည် ⏳" လို့ အစားထိုးမည်
-          uploadBtn.innerHTML = "တင်နေသည် ⏳"; 
-          uploadBtn.disabled = true; 
-      }
-
-      try {
-          for (let i = 0; i < files.length; i++) {
-              const formData = new FormData(); formData.append("image", files[i]);
-              const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
-              const result = await response.json(); 
-              if (result.success) uploadedUrls.push(result.data.url); 
-              else hasError = true;
-          }
-
-         if (uploadedUrls.length > 0) {
-              let combinedUrls = existingSlips.concat(uploadedUrls);
-              
-              // 🌟 ပုံအားလုံးကို AI နဲ့ ဖတ်ပြီး စာသားတွေ ပေါင်းမည် 🌟
-              let newExtractedText = "";
-              for (let i = 0; i < files.length; i++) {
-                  let base64Img = await fileToBase64(files[i]);
-                  let data = await extractSlipDataWithGemini(base64Img);
-                  
-                  // ပုံအများကြီးဆိုလျှင် ခွဲခြားသိသာအောင် ပုံ ၁, ပုံ ၂ စသဖြင့် တပ်ပေးမည်
-                  if (files.length > 1 || existingSlips.length > 0) {
-                      newExtractedText += `[ပုံ ${existingSlips.length + i + 1}] | ${data}`;
-                  } else {
-                      newExtractedText += data;
-                  }
-                  
-                  if (i < files.length - 1) newExtractedText += " | "; 
-              }
-
-              // ဒေတာအဟောင်းရှိရင် အသစ်နဲ့ ဆက်ပေါင်းမည်
-              let finalExtractedInfo = previousExtractedInfo;
-              if (finalExtractedInfo) {
-                  finalExtractedInfo += " | " + newExtractedText;
-              } else {
-                  finalExtractedInfo = newExtractedText;
-              }
-
-              // 🌟 Firebase သို့ သိမ်းမည် 🌟
-              await firebase.firestore().collection("exchange_history").doc(invId).update({ 
-                  slipUrls: combinedUrls, 
-                  slipUrl: combinedUrls[0] || null,
-                  extractedInfo: finalExtractedInfo 
-              });
-              
-              // Local History Data ထဲမှာပါ ချက်ချင်း Update လုပ်ပေးမည်
-              if(index !== -1) { 
-                  allLoadedHistory[index].slipUrls = combinedUrls; 
-                  allLoadedHistory[index].slipUrl = combinedUrls[0] || null; 
-                  allLoadedHistory[index].extractedInfo = finalExtractedInfo; 
-              }
-
-              // 🌟 Telegram သို့ စလစ်ပုံများ လှမ်းပို့ရန် 🌟
-              let txCustomerName = "—";
-              if (index !== -1 && allLoadedHistory[index].customerName) {
-                  txCustomerName = allLoadedHistory[index].customerName;
-              }
-              
-              uploadedUrls.forEach((url) => {
-                  let caption = `📎 <b>Customer Slip Uploaded</b>\nInvoice ID: <code>${invId}</code>\n`;
-                  if(txCustomerName !== "—") {
-                      caption += `Customer: <b>${txCustomerName}</b>`;
-                  }
-                  sendTelegramPhoto(url, caption, TELEGRAM_SLIP_TOPIC_ID);
-              });
-              
-              if (hasError) alert(`✅ ပုံတချို့ကို သိမ်းပြီးပါပြီ။ တချို့ပုံများမှာ အခက်အခဲရှိခဲ့ပါသည်။`); 
-              else alert(`✅ Customer စလစ်ပုံ ထပ်မံသိမ်းဆည်းပြီးပါပြီ။`);
-              
-              logActivity("Slip Uploaded", `ID: ${invId} အတွက် Customer စလစ်ပုံ ထည့်သွင်းခဲ့သည်။`);
-              
-              renderHistoryRows(allLoadedHistory); 
-          } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
-      } catch (e) { 
-          console.error("Slip Upload Error: ", e); 
-          alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။"); 
-      } 
-      finally { 
-          event.target.value = '';  
-          if (uploadBtn) { uploadBtn.innerHTML = origBtnText; uploadBtn.disabled = false; }
-      }
   }
 
   // --- View Slips Modal ---
