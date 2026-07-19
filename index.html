@@ -4502,31 +4502,32 @@ function openAdmin() {
               block.style.display = 'flex';
               block.style.flexDirection = 'column';
               block.style.alignItems = 'center';
-              block.style.opacity = '0.035'; // 🌟 အရောင်ပိုဖျော့ရန် 0.055 မှ 0.035 သို့ လျှော့ထားပါသည်
+              block.style.opacity = '0.07'; // 🌟 စာသားတွေ ပြန်ပေါ်အောင် 0.07 သို့ တင်ထားပါသည်
               
-              // 🌟 Logo အသေးလေးများကို စာသားများအပေါ်တွင် တစောင်းပေါ်စေရန် ထည့်ခြင်း
+              // 🌟 Logo အသေးလေးများကို စာသားပေါ်တွင် ထည့်ခြင်း
               const wmSmallImg = document.createElement('img');
               wmSmallImg.src = 'assets/logo/main_logo.png';
-              wmSmallImg.style.width = '110px'; // 🌟 အလယ်က Logo အကြီး (240px) ထက် ပိုသေးထားပါသည်
-              wmSmallImg.style.marginBottom = '8px'; // Logo နှင့် စာသားကြား အကွာအဝေး
-              block.appendChild(wmSmallImg); 
-              
+              wmSmallImg.style.width = '110px'; // Logo အရွယ်အစား (အလယ်က Logo ထက် သေးပါသည်)
+              wmSmallImg.style.marginBottom = '8px';
+              wmSmallImg.style.opacity = '0.6'; // 🌟 Logo ကိုသာ သီးသန့် ထပ်ဖျော့ထားပါသည်
+              block.appendChild(wmSmallImg);
+
               const wmId = document.createElement('div');
               wmId.style.fontSize = '24px';
               wmId.style.fontWeight = '900';
-              wmId.style.color = '#64748b';
+              wmId.style.color ='#64748b';
               wmId.style.letterSpacing = '2px';
-              wmId.textContent = "ID: " + tx.id; 
+              wmId.textContent = "ID: " + invId; 
               block.appendChild(wmId);
 
-              if (tx.customerName && tx.customerName !== "—") { 
+              if (savedCustomerName && savedCustomerName !== "—") { 
                   const wmName = document.createElement('div');
                   wmName.style.fontSize = '20px';
                   wmName.style.fontWeight = '900';
                   wmName.style.color = '#64748b';
                   wmName.style.letterSpacing = '1px';
                   wmName.style.marginTop = '6px';
-                  wmName.textContent = tx.customerName; 
+                  wmName.textContent = savedCustomerName; 
                   block.appendChild(wmName);
               }
               textContainer.appendChild(block);
