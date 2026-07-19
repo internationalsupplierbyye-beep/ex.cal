@@ -4300,7 +4300,22 @@ function openAdmin() {
                   
                   if (foundQr) {
                       const file = typeof foundQr === 'string' ? foundQr : foundQr.file;
-                      const finalImgUrl = file.includes('http') ? file : 'assets/qr/' + file; 
+                      
+                      // 🌟 PromptPay / TrueMoney များကို Reprint တွင် အလုပ်လုပ်စေရန် ပြင်ဆင်ချက်
+                      let amtStr = tx.outAmt.includes('THB') ? tx.outAmt : (tx.inAmt.includes('THB') ? tx.inAmt : '0');
+                      let amt = parseFloat(amtStr.replace(/,/g, '').replace(/[^\d.]/g, '')) || 0;
+                      
+                      let finalImgUrl = '';
+                      if (file.startsWith('PP:')) {
+                          let phone = file.split(':')[1];
+                          finalImgUrl = (amt > 0) ? `https://promptpay.io/${phone}/${amt}.png` : `https://promptpay.io/${phone}.png`;
+                      } else if (file.startsWith('TM:')) {
+                          let tmLink = (amt > 0) ? window.generateTrueMoneyLink(amt) : "https://tmn.app.link/fcRfbMKlS3b";
+                          finalImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tmLink)}`;
+                      } else {
+                          finalImgUrl = file.includes('http') ? file : 'assets/qr/' + file; 
+                      }
+
                       const baseName = file.replace(/\.[^.]+$/,'');
                       const owner = (typeof foundQr === 'object' && foundQr.owner) ? foundQr.owner : getOwnerFromKey(baseName);
 
@@ -4487,7 +4502,14 @@ function openAdmin() {
               block.style.display = 'flex';
               block.style.flexDirection = 'column';
               block.style.alignItems = 'center';
-              block.style.opacity = '0.055'; 
+              block.style.opacity = '0.035'; // 🌟 အရောင်ပိုဖျော့ရန် 0.055 မှ 0.035 သို့ လျှော့ထားပါသည်
+              
+              // 🌟 Logo အသေးလေးများကို စာသားများအပေါ်တွင် တစောင်းပေါ်စေရန် ထည့်ခြင်း
+              const wmSmallImg = document.createElement('img');
+              wmSmallImg.src = 'assets/logo/main_logo.png';
+              wmSmallImg.style.width = '110px'; // 🌟 အလယ်က Logo အကြီး (240px) ထက် ပိုသေးထားပါသည်
+              wmSmallImg.style.marginBottom = '8px'; // Logo နှင့် စာသားကြား အကွာအဝေး
+              block.appendChild(wmSmallImg); 
               
               const wmId = document.createElement('div');
               wmId.style.fontSize = '24px';
