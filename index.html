@@ -934,6 +934,15 @@
     </div>
   </div>
 </div>
+
+<!-- 🔔 သူ့ဘာသာသူ ပေါ်ပြီး ပျောက်မည့် Notification Box -->
+<div id="customToast" class="fixed top-5 right-5 z-[9999] hidden transform transition-all duration-300 scale-90 opacity-0">
+  <div class="bg-slate-900 text-white font-bold px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-2 border border-slate-700">
+    <span id="toastIcon">✅</span>
+    <span id="toastMessage"></span>
+  </div>
+</div>
+
 <script>
   // 🌟 စကားဝှက်များကို ဒီနေရာမှာ သတ်မှတ်ပါ
   // 🌟 Role & Permission States (Firebase မှ ဆွဲယူမည်)
@@ -1223,6 +1232,29 @@ let calcLock = false;
   bindAutoSeparator('mmkOut', false); bindAutoSeparator('thbOut', true); bindAutoSeparator('mmkOut2', false); bindAutoSeparator('vndOut', false);
   bindAutoSeparator('rate100k', true); bindAutoSeparator('ratePerThb', true); bindAutoSeparator('rateVnd', true);
 
+// 🔔 OK နှိပ်စရာမလိုဘဲ Auto ပျောက်သွားစေမည့် Function
+window.showToast = function(message, icon = "✅") {
+    const toast = document.getElementById('customToast');
+    const toastMsg = document.getElementById('toastMessage');
+    const toastIcon = document.getElementById('toastIcon');
+    
+    if(!toast || !toastMsg) return;
+    
+    toastIcon.textContent = icon;
+    toastMsg.textContent = message;
+    
+    toast.classList.remove('hidden');
+    setTimeout(() => {
+        toast.classList.remove('scale-90', 'opacity-0');
+        toast.classList.add('scale-100', 'opacity-100');
+    }, 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('scale-100', 'opacity-100');
+        toast.classList.add('scale-90', 'opacity-0');
+        setTimeout(() => toast.classList.add('hidden'), 300);
+    }, 2500);
+};
 
   // --- 📋 Copy Text Function ---
   function copyText(sectionId, btn) {
@@ -5647,8 +5679,11 @@ async function extractSlipData(imageUrl) {
                   sendTelegramPhoto(url, caption, TELEGRAM_SLIP_TOPIC_ID);
               });
               
-              if (hasError) alert(`✅ ပုံတချို့ကို သိမ်းပြီးပါပြီ။ တချို့ပုံများမှာ အခက်အခဲရှိခဲ့ပါသည်။`); 
-              else alert(`✅ Customer စလစ်ပုံ ထပ်မံသိမ်းဆည်းပြီးပါပြီ။`);
+              if (hasError) {
+                  window.showToast("ပုံတချို့ကို သိမ်းပြီးပါပြီ။ တချို့ပုံများမှာ အခက်အခဲရှိခဲ့ပါသည်။", "⚠️");
+              } else {
+                  window.showToast("Customer စလစ်ပုံ သိမ်းဆည်းပြီးပါပြီ။", "✅");
+              }
               
               logActivity("Slip Uploaded", `ID: ${invId} အတွက် Customer စလစ်ပုံ ထည့်သွင်းခဲ့သည်။`);
               
