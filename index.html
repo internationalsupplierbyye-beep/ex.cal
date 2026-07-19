@@ -5473,16 +5473,17 @@ async function extractSlipData(imageUrl) {
       reader.onerror = error => reject(error);
   });
 
-  // --- AI Slip Reader (OpenRouter API - Optimized) ---
+  // --- AI Slip Reader (GitHub Models API - Optimized) ---
   async function extractSlipDataWithGemini(base64Image) {
       if(!OPENROUTER_API_KEY) return "⚠️ API Key မထည့်ရသေးပါ။ Admin > အထွေထွေ တွင်ထည့်ပါ။"; 
       
-      const url = "https://openrouter.ai/api/v1/chat/completions";
+      // 🌟 URL ကို GitHub Azure Endpoint သို့ ပြောင်းထားသည်
+      const url = "https://models.inference.ai.azure.com/chat/completions";
 
-      // 🌟 Payload ထဲတွင် max_tokens ကို ထပ်ထည့်ပေးပါ 🌟
+      // 🌟 Payload တွင် GitHub Model name ဖြစ်သော "gpt-4o" ကို သုံးထားသည်
       const payload = {
-          "model": "google/gemini-3.5-flash", 
-          "max_tokens": 150, // ဤနေရာတွင် 150 သို့မဟုတ် 200 ထားပေးပါက အခမဲ့စာရင်းဝင်ပါမည်
+          "model": "gpt-4o", 
+          "max_tokens": 150, 
           "messages": [
               {
                   "role": "user",
