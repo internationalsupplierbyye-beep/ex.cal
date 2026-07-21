@@ -4700,14 +4700,34 @@ function openAdmin() {
           watermarkDiv.style.overflow = 'hidden'; 
 
           const wmImg = document.createElement('img');
-          wmImg.src = window.getThemeWatermarkUrl(CURRENT_RECEIPT_THEME);
-          wmImg.style.position = 'absolute';
-          wmImg.style.top = '50%';
-          wmImg.style.left = '50%';
-          wmImg.style.transform = 'translate(-50%, -50%)';
-          wmImg.style.width = (CURRENT_RECEIPT_THEME === 'default') ? '240px' : '350px'; 
-          wmImg.style.opacity = (CURRENT_RECEIPT_THEME === 'default') ? '0.09' : '0.15'; 
-          watermarkDiv.appendChild(wmImg);
+        wmImg.src = window.getThemeWatermarkUrl(CURRENT_RECEIPT_THEME);
+        
+        // 🌟 Custom ဆိုလျှင် နောက်ခံအပြည့် (Cover) ပြမည်၊ ကျန်တာတွေက အလယ်မှာပြမည် 🌟
+        if (CURRENT_RECEIPT_THEME === 'custom') {
+            wmImg.style.position = 'absolute';
+            wmImg.style.top = '0';
+            wmImg.style.left = '0';
+            wmImg.style.width = '100%';
+            wmImg.style.height = '100%';
+            wmImg.style.objectFit = 'cover'; 
+            wmImg.style.opacity = '0.12';  
+        } else if (CURRENT_RECEIPT_THEME === 'default') {
+            wmImg.style.position = 'absolute';
+            wmImg.style.top = '50%';
+            wmImg.style.left = '50%';
+            wmImg.style.transform = 'translate(-50%, -50%)';
+            wmImg.style.width = '240px';
+            wmImg.style.opacity = '0.09';
+        } else {
+            wmImg.style.position = 'absolute';
+            wmImg.style.top = '50%';
+            wmImg.style.left = '50%';
+            wmImg.style.transform = 'translate(-50%, -50%)';
+            wmImg.style.width = '350px';
+            wmImg.style.opacity = '0.15';
+        }
+        
+        watermarkDiv.appendChild(wmImg);
 
           const textContainer = document.createElement('div');
           textContainer.style.position = 'absolute';
@@ -5501,14 +5521,34 @@ renderHistoryRows(allLoadedHistory);
         watermarkDiv.style.overflow = 'hidden'; 
 
         const wmImg = document.createElement('img');
-        wmImg.src = window.getThemeWatermarkUrl(CURRENT_RECEIPT_THEME);
-        wmImg.style.position = 'absolute';
-        wmImg.style.top = '50%';
-        wmImg.style.left = '50%';
-        wmImg.style.transform = 'translate(-50%, -50%)';
-        wmImg.style.width = (CURRENT_RECEIPT_THEME === 'default') ? '240px' : '350px'; 
-        wmImg.style.opacity = (CURRENT_RECEIPT_THEME === 'default') ? '0.09' : '0.15'; 
-        watermarkDiv.appendChild(wmImg);
+          wmImg.src = window.getThemeWatermarkUrl(CURRENT_RECEIPT_THEME);
+          
+          // 🌟 Custom ဆိုလျှင် နောက်ခံအပြည့် (Cover) ပြမည်၊ ကျန်တာတွေက အလယ်မှာပြမည် 🌟
+          if (CURRENT_RECEIPT_THEME === 'custom') {
+              wmImg.style.position = 'absolute';
+              wmImg.style.top = '0';
+              wmImg.style.left = '0';
+              wmImg.style.width = '100%';
+              wmImg.style.height = '100%';
+              wmImg.style.objectFit = 'cover'; 
+              wmImg.style.opacity = '0.12';  
+          } else if (CURRENT_RECEIPT_THEME === 'default') {
+              wmImg.style.position = 'absolute';
+              wmImg.style.top = '50%';
+              wmImg.style.left = '50%';
+              wmImg.style.transform = 'translate(-50%, -50%)';
+              wmImg.style.width = '240px';
+              wmImg.style.opacity = '0.09';
+          } else {
+              wmImg.style.position = 'absolute';
+              wmImg.style.top = '50%';
+              wmImg.style.left = '50%';
+              wmImg.style.transform = 'translate(-50%, -50%)';
+              wmImg.style.width = '350px';
+              wmImg.style.opacity = '0.15';
+          }
+          
+          watermarkDiv.appendChild(wmImg);
 
         const textContainer = document.createElement('div');
         textContainer.style.position = 'absolute';
