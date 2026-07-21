@@ -507,6 +507,9 @@
       <button class="tab-btn" onclick="switchTab('tab-customers', this)" id="btnTabCustomers">👥 Customers</button>
       <button class="tab-btn" onclick="switchTab('tab-treasury', this)" id="btnTabTreasury">💰 လက်ကျန်ငွေ</button>
       
+      <!-- Expense Tab အသစ် ထည့်သွင်းရန် -->
+      <button class="tab-btn" onclick="switchTab('tab-expenses', this)" id="btnTabExpenses">💸 အသုံးစရိတ်</button>
+      
       <button class="tab-btn" onclick="switchTab('tab-logs', this)" id="btnTabLogs">📝 Logs</button>
     </div>
 
@@ -670,6 +673,22 @@
   </div>
 
   <div class="bg-pink-50 border border-pink-200 p-4 rounded-xl mb-4">
+        <!-- 🎨 Theme Select အသစ်စတင်ရန် -->
+        <div class="mb-3 border-b border-pink-200 pb-3">
+          <div class="flex justify-between items-center">
+             <label class="text-xs font-bold text-pink-800">🎨 ပြေစာ နောက်ခံဒီဇိုင်း (Receipt Theme)</label>
+             <select id="adminReceiptTheme" class="admin-input-box !mb-0 !py-1 w-auto text-sm font-bold bg-white text-pink-800" onchange="toggleCustomThemeInput(); saveReceiptTheme();">
+                <option value="default" selected>မူလ အဖြူရောင် (Default)</option>
+                <option value="thingyan">သင်္ကြန် (Thingyan)</option>
+                <option value="thadingyut">သီတင်းကျွတ် (Thadingyut)</option>
+                <option value="newyear">နှစ်သစ်ကူး (New Year)</option>
+                <option value="custom">✨ စိတ်ကြိုက်ပုံ (Custom URL)</option>
+             </select>
+          </div>
+          <!-- စိတ်ကြိုက်ပုံရွေးမှ ပေါ်လာမည့် အကွက် -->
+          <input type="text" id="customThemeUrlInput" class="admin-input-box text-sm mt-2 hidden" placeholder="ပုံ Link ကို ဒီမှာထည့်ပါ (ဥပမာ - https://i.ibb.co/.../bg.png)" onchange="saveReceiptTheme()">
+        </div>
+        <!-- 🎨 Theme Select ပြီးဆုံးပါပြီ -->
             <select id="adminReceiptLang" class="border border-pink-300 rounded px-2 py-1 text-sm font-bold text-pink-800 bg-white" onchange="loadReceiptTextsToInputs()">
                 <option value="orig" selected>မြန်မာစာ (Default)</option>
                 <option value="en">English (ENG)</option>
@@ -904,6 +923,43 @@
           </div>
     </div>
 
+    <!-- 💸 Expense Tab UI အသစ်စတင်ရန် -->
+    <div id="tab-expenses" class="tab-pane">
+      <div class="flex justify-between items-center mb-3">
+        <div>
+           <h3 class="font-bold text-gray-800">💸 အထွေထွေ ကုန်ကျစရိတ် မှတ်တမ်း</h3>
+           <p class="text-xs text-gray-500">လုပ်ငန်း၏ နေ့စဉ်အသုံးစရိတ်များကို မှတ်သားပြီး ငွေသေတ္တာမှ တိုက်ရိုက်နှုတ်နိုင်ပါသည်။</p>
+        </div>
+      </div>
+      
+      <div class="bg-red-50 border border-red-200 p-4 rounded-xl mb-4">
+        <h4 class="font-bold text-red-800 mb-2 text-sm">➕ အသုံးစရိတ် အသစ်ထည့်ရန်</h4>
+        <div class="flex flex-col sm:flex-row gap-2 mb-2">
+           <input type="text" id="expDesc" class="admin-input-box text-sm flex-1 !mb-0" placeholder="အကြောင်းအရာ (ဥပမာ - ဘဏ်လွှဲခ၊ လစာ)">
+           <input type="number" id="expAmt" class="admin-input-box text-sm w-full sm:w-32 !mb-0" placeholder="ပမာဏ">
+           <select id="expCurrency" class="admin-input-box text-sm w-full sm:w-24 !mb-0">
+               <option value="MMK">MMK</option>
+               <option value="THB">THB</option>
+               <option value="VND">VND</option>
+           </select>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2">
+           <select id="expLedger" class="admin-input-box text-sm flex-1 !mb-0">
+               <option value="">ငွေသေတ္တာ (Wallet) မှ နှုတ်မည်</option>
+           </select>
+           <input type="date" id="expDate" class="admin-input-box text-sm w-full sm:w-40 !mb-0">
+           <button onclick="saveExpense()" class="btn bg-red-600 hover:bg-red-700 text-sm whitespace-nowrap">မှတ်တမ်းတင်မည်</button>
+        </div>
+      </div>
+
+      <div class="overflow-y-auto border rounded-xl bg-white p-2 shadow-sm h-[50vh]">
+         <div id="expenseListContainer" class="space-y-1">
+            <p class="text-center text-sm text-gray-500 p-4">Loading...</p>
+         </div>
+      </div>
+    </div>
+    <!-- 💸 Expense Tab UI ပြီးဆုံးပါပြီ -->
+
     <div id="tab-logs" class="tab-pane">
       <div class="flex justify-between items-center mb-3">
         <div>
@@ -960,7 +1016,11 @@
   let FIREBASE_DEVICE_NAMES = {}; 
   let FIREBASE_HIDDEN_DEVICES = []; 
   let FIREBASE_TREASURY = {}; // 🌟 Master Accounts များကို သိမ်းမည့် State 
-let FIREBASE_TREASURY_ORDER = []; // 🌟 Master Account အစီအစဉ် 
+  let FIREBASE_TREASURY_ORDER = []; // 🌟 Master Account အစီအစဉ် 
+  
+  // 🌟 Expense အတွက် State အသစ်
+  let FIREBASE_EXPENSES = {};
+  let FIREBASE_EXPENSE_ORDER = []; 
   
   // 🌟 API Keys Globals 🌟
   let TELEGRAM_BOT_TOKEN = ""; // Admin Setting မှ ရောက်လာပါလိမ့်မည်
@@ -997,6 +1057,8 @@ let FIREBASE_TREASURY_ORDER = []; // 🌟 Master Account အစီအစဉ်
   let LAST_RATE = { r:null, inv:null, vnd:null };
   let ADMIN_TIMEZONE = 'Asia/Bangkok'; 
   let ALERT_TIMEOUT_HOURS = 1; // Pending အချက်ပြရန် Default (၁ နာရီ)
+  let CURRENT_RECEIPT_THEME = 'default'; // 🌟 ပြေစာ Theme အသစ်အတွက် State
+  let CUSTOM_THEME_URL = ''; // 🌟 စိတ်ကြိုက်ပုံ Link ကို မှတ်သားရန်
 let AUTO_CANCEL_DAYS = 3;    // Auto Cancel ဖြစ်ရန် Default (၃ ရက်)
 let calcLock = false;
   let allLoadedHistory = [];
@@ -2420,15 +2482,35 @@ if (data.treasuryOrder) {
 } else {
     FIREBASE_TREASURY_ORDER = Object.keys(FIREBASE_TREASURY);
 }
-// 🌟 Auto-Repair: ပျောက်နေသော Treasury များကို စာရင်းထဲ ပြန်ထည့်မည်
+// // 🌟 Auto-Repair: ပျောက်နေသော Treasury များကို စာရင်းထဲ ပြန်ထည့်မည်
 Object.keys(FIREBASE_TREASURY).forEach(id => {
     if(!FIREBASE_TREASURY_ORDER.includes(id)) FIREBASE_TREASURY_ORDER.push(id);
 });
-        
+
+// 🌟 Expense ဒေတာ ဆွဲယူခြင်း 🌟
+if (data.expenses) FIREBASE_EXPENSES = data.expenses;
+if (data.expenseOrder) {
+    FIREBASE_EXPENSE_ORDER = data.expenseOrder;
+} else {
+    FIREBASE_EXPENSE_ORDER = Object.keys(FIREBASE_EXPENSES || {});
+}
+
         // 🌟 အသစ်ထည့်ရန်: Auto Login စစ်ဆေးခြင်း
         checkDeviceBypassAndInit();
         
         if (data.adminTimezone) { ADMIN_TIMEZONE = data.adminTimezone; const tzSelect = document.getElementById('adminTimezoneSelect'); if (tzSelect) tzSelect.value = ADMIN_TIMEZONE; }
+        
+        // 🌟 Theme ကို Load လုပ်မည်
+        if (data.receiptTheme) {
+            CURRENT_RECEIPT_THEME = data.receiptTheme;
+            if(document.getElementById('adminReceiptTheme')) document.getElementById('adminReceiptTheme').value = CURRENT_RECEIPT_THEME;
+        }
+        // 🌟 စိတ်ကြိုက်ပုံ Link ကိုပါ Load လုပ်မည်
+        if (data.customThemeUrl) {
+            CUSTOM_THEME_URL = data.customThemeUrl;
+            if(document.getElementById('customThemeUrlInput')) document.getElementById('customThemeUrlInput').value = CUSTOM_THEME_URL;
+        }
+        if(typeof window.toggleCustomThemeInput === 'function') window.toggleCustomThemeInput();
         if (data.lastRates) {
           if (data.lastRates.rate100k) { document.getElementById('rate100k').value = data.lastRates.rate100k; formatInputThousands(document.getElementById('rate100k'), true); syncFrom100k(); }
           if (data.lastRates.rateVnd) { document.getElementById('rateVnd').value = data.lastRates.rateVnd; formatInputThousands(document.getElementById('rateVnd'), true); refreshVndRateNote(); recalcVND(); }
@@ -2601,7 +2683,117 @@ function openAdmin() {
     if (tabId === 'tab-customers') renderCustomerAdminList();
     if (tabId === 'tab-logs') loadActivityLogs(); 
     if (tabId === 'tab-treasury') loadTreasuryData(); // 🌟 Treasury Tab သို့သွားလျှင် Data ဆွဲတင်မည်
+    if (tabId === 'tab-expenses') renderExpenseList(); // 🌟 Expense Tab သို့သွားလျှင် Data ဆွဲတင်မည်
   }
+
+  // ==========================================
+  // 💸 Expense Functions (အသုံးစရိတ် စီမံရန်)
+  // ==========================================
+  window.saveExpense = async function() {
+      const desc = document.getElementById('expDesc').value.trim();
+      const amt = parseFloat(document.getElementById('expAmt').value);
+      const curr = document.getElementById('expCurrency').value;
+      const ledgerId = document.getElementById('expLedger').value;
+      let dateStr = document.getElementById('expDate').value;
+
+      if (!desc || isNaN(amt) || amt <= 0) return alert("အကြောင်းအရာနှင့် ပမာဏကို မှန်ကန်စွာ ထည့်ပါ။");
+      if (!dateStr) {
+          const d = new Date();
+          dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      }
+
+      const btn = document.querySelector('button[onclick="saveExpense()"]');
+      const origText = btn.innerHTML;
+      btn.innerHTML = "သိမ်းနေသည်..."; btn.disabled = true;
+
+      const expId = "EXP_" + Date.now();
+      FIREBASE_EXPENSES[expId] = { id: expId, desc: desc, amount: amt, currency: curr, ledger: ledgerId, date: dateStr };
+      FIREBASE_EXPENSE_ORDER.push(expId);
+
+      try {
+          let dbUpdates = {
+              [`expenses.${expId}`]: FIREBASE_EXPENSES[expId],
+              expenseOrder: firebase.firestore.FieldValue.arrayUnion(expId)
+          };
+
+          // ငွေသေတ္တာရွေးချယ်ထားပါက အလိုအလျောက် နှုတ်ပေးမည်
+          if (ledgerId) {
+              await window.updateBalancesSafely([{ id: ledgerId, change: -amt }]);
+          }
+
+          await dbRef.update(dbUpdates);
+          logActivity("Expense Added", `အသုံးစရိတ် [${desc}] ${amt.toLocaleString()} ${curr} ထည့်သွင်းခဲ့သည်။`);
+
+          document.getElementById('expDesc').value = '';
+          document.getElementById('expAmt').value = '';
+          
+          renderExpenseList();
+          if (typeof loadTreasuryData === 'function') loadTreasuryData();
+          
+          window.showToast("အသုံးစရိတ် မှတ်တမ်းတင်ပြီးပါပြီ။", "💸");
+      } catch (e) {
+          alert("Error: " + e.message);
+      } finally {
+          btn.innerHTML = origText; btn.disabled = false;
+      }
+  };
+
+  window.renderExpenseList = function() {
+      const container = document.getElementById('expenseListContainer');
+      if(!container) return;
+      container.innerHTML = '';
+
+      if(FIREBASE_EXPENSE_ORDER.length === 0) {
+          container.innerHTML = '<p class="text-center text-gray-400 text-sm p-4">အသုံးစရိတ် မှတ်တမ်း မရှိသေးပါ။</p>';
+          return;
+      }
+
+      let sortedIds = [...FIREBASE_EXPENSE_ORDER].sort((a,b) => {
+          let dA = new Date(FIREBASE_EXPENSES[a].date).getTime();
+          let dB = new Date(FIREBASE_EXPENSES[b].date).getTime();
+          return dB - dA;
+      });
+
+      let html = '';
+      sortedIds.forEach(id => {
+          const exp = FIREBASE_EXPENSES[id];
+          let accInfo = window.getLedgerAccount(exp.ledger);
+          let ledgerName = accInfo ? accInfo.name : '—';
+          
+          let colorClass = exp.currency === 'THB' ? 'text-blue-600' : (exp.currency === 'VND' ? 'text-orange-600' : 'text-green-600');
+
+          html += `
+          <div class="flex justify-between items-center bg-gray-50 border border-gray-200 rounded-lg p-3 mb-1.5 hover:bg-gray-100 transition-colors">
+              <div>
+                  <div class="font-bold text-sm text-gray-800">${exp.desc}</div>
+                  <div class="text-[10px] text-gray-500 font-bold mt-1">📅 ${exp.date} &nbsp;|&nbsp; 💼 Wallet: ${ledgerName}</div>
+              </div>
+              <div class="flex items-center gap-3">
+                  <div class="font-black ${colorClass}">${exp.amount.toLocaleString()} ${exp.currency}</div>
+                  <button onclick="deleteExpense('${id}')" class="text-red-500 hover:bg-red-200 bg-red-100 px-2 py-1 rounded text-xs font-bold transition-colors">✕</button>
+              </div>
+          </div>
+          `;
+      });
+      container.innerHTML = html;
+  };
+
+  window.deleteExpense = async function(id) {
+      if(!confirm("ဤ အသုံးစရိတ်မှတ်တမ်းကို ဖျက်ရန် သေချာပါသလား?\n(မှတ်ချက်: ငွေသေတ္တာမှ နှုတ်ထားပြီးပါက အလိုအလျောက် ပြန်ပေါင်းပေးမည်မဟုတ်ပါ။ လက်ကျန်ငွေကို ကိုယ်တိုင် သွားရောက်ချိန်ညှိပါ။)")) return;
+      
+      delete FIREBASE_EXPENSES[id];
+      FIREBASE_EXPENSE_ORDER = FIREBASE_EXPENSE_ORDER.filter(x => x !== id);
+      
+      try {
+          await dbRef.update({
+              [`expenses.${id}`]: firebase.firestore.FieldValue.delete(),
+              expenseOrder: firebase.firestore.FieldValue.arrayRemove(id)
+          });
+          renderExpenseList();
+      } catch(e) { 
+          alert("ဖျက်ရာတွင် အခက်အခဲရှိပါသည်။"); 
+      }
+  };
 
   // --- Drag & Drop (Banks/QRs/Customers) ---
   // --- Drag & Drop (Optimized) ---
@@ -3761,7 +3953,8 @@ function openAdmin() {
 
       const finalHtml = optionsHtml + masterHtml + bankHtml + qrHtml;
       
-      const dropdownIds = ['newBankLedger', 'newQrLedger', 'successInLedger', 'successOutLedger', 'transferFromAcc', 'transferToAcc', 'manualLotFromAcc', 'manualLotToAcc'];
+      // expLedger ကို နောက်ဆုံးတွင် ထည့်သွင်းထားသည်
+      const dropdownIds = ['newBankLedger', 'newQrLedger', 'successInLedger', 'successOutLedger', 'transferFromAcc', 'transferToAcc', 'manualLotFromAcc', 'manualLotToAcc', 'expLedger'];
       dropdownIds.forEach(id => {
           const el = document.getElementById(id);
           if (el) {
@@ -4507,13 +4700,13 @@ function openAdmin() {
           watermarkDiv.style.overflow = 'hidden'; 
 
           const wmImg = document.createElement('img');
-          wmImg.src = 'assets/logo/main_logo.png';
+          wmImg.src = window.getThemeWatermarkUrl(CURRENT_RECEIPT_THEME);
           wmImg.style.position = 'absolute';
           wmImg.style.top = '50%';
           wmImg.style.left = '50%';
           wmImg.style.transform = 'translate(-50%, -50%)';
-          wmImg.style.width = '240px'; 
-          wmImg.style.opacity = '0.09'; 
+          wmImg.style.width = (CURRENT_RECEIPT_THEME === 'default') ? '240px' : '350px'; 
+          wmImg.style.opacity = (CURRENT_RECEIPT_THEME === 'default') ? '0.09' : '0.15'; 
           watermarkDiv.appendChild(wmImg);
 
           const textContainer = document.createElement('div');
@@ -5308,13 +5501,13 @@ renderHistoryRows(allLoadedHistory);
         watermarkDiv.style.overflow = 'hidden'; 
 
         const wmImg = document.createElement('img');
-        wmImg.src = 'assets/logo/main_logo.png';
+        wmImg.src = window.getThemeWatermarkUrl(CURRENT_RECEIPT_THEME);
         wmImg.style.position = 'absolute';
         wmImg.style.top = '50%';
         wmImg.style.left = '50%';
         wmImg.style.transform = 'translate(-50%, -50%)';
-        wmImg.style.width = '240px'; 
-        wmImg.style.opacity = '0.09'; 
+        wmImg.style.width = (CURRENT_RECEIPT_THEME === 'default') ? '240px' : '350px'; 
+        wmImg.style.opacity = (CURRENT_RECEIPT_THEME === 'default') ? '0.09' : '0.15'; 
         watermarkDiv.appendChild(wmImg);
 
         const textContainer = document.createElement('div');
@@ -5788,12 +5981,18 @@ async function extractSlipData(imageUrl) {
           customers: FIREBASE_CUSTOMERS,
           customerOrder: FIREBASE_CUSTOMER_ORDER,
           receiptTexts: FIREBASE_RECEIPT_TEXTS,
+          receiptTheme: CURRENT_RECEIPT_THEME, // 🌟 ထည့်လိုက်သော Theme
+          customThemeUrl: CUSTOM_THEME_URL, // 🌟 စိတ်ကြိုက်ပုံ Link ပါ ထည့်သိမ်းမည်
           deviceNames: FIREBASE_DEVICE_NAMES,
           hiddenDevices: FIREBASE_HIDDEN_DEVICES,
           
           // 🌟 Wallet (Master Accounts) နှင့် အစီအစဉ်များကို Backup ထဲ ထည့်ပါမည်
           treasuryAccounts: FIREBASE_TREASURY,
           treasuryOrder: FIREBASE_TREASURY_ORDER,
+          
+          // 🌟 Expense ဒေတာများ
+          expenses: FIREBASE_EXPENSES,
+          expenseOrder: FIREBASE_EXPENSE_ORDER,
           
           // --- 🌟 အောက်ပါ System ပိုင်းဆိုင်ရာများကို ထပ်ထည့်လိုက်ပါသည် ---
           apiKeys: { 
@@ -6013,6 +6212,44 @@ async function extractSlipData(imageUrl) {
       }
       setupUIForRole(CURRENT_ROLE);
   }
+// ==========================================
+  // 🎨 Receipt Theme Functions
+  // ==========================================
+  window.toggleCustomThemeInput = function() {
+      const theme = document.getElementById('adminReceiptTheme').value;
+      const inputEl = document.getElementById('customThemeUrlInput');
+      if (!inputEl) return;
+      if (theme === 'custom') {
+          inputEl.classList.remove('hidden');
+      } else {
+          inputEl.classList.add('hidden');
+      }
+  };
+
+  window.saveReceiptTheme = async function() {
+      const theme = document.getElementById('adminReceiptTheme').value;
+      const customUrl = document.getElementById('customThemeUrlInput') ? document.getElementById('customThemeUrlInput').value.trim() : '';
+      CURRENT_RECEIPT_THEME = theme;
+      CUSTOM_THEME_URL = customUrl;
+      
+      try {
+          if (dbRef) await dbRef.set({ receiptTheme: theme, customThemeUrl: customUrl }, { merge: true });
+          window.showToast("ပြေစာဒီဇိုင်း ပြောင်းလဲပြီးပါပြီ။", "🎨");
+      } catch(e) { 
+          alert("Error: " + e.message); 
+      }
+  };
+
+  window.getThemeWatermarkUrl = function(theme) {
+      if (theme === 'custom' && CUSTOM_THEME_URL) return CUSTOM_THEME_URL;
+      
+      switch(theme) {
+          case 'thingyan': return 'assets/theme/thingyan.png'; 
+          case 'thadingyut': return 'assets/theme/thadingyut.png';
+          case 'newyear': return 'assets/theme/newyear.png';
+          default: return 'assets/logo/main_logo.png';
+      }
+  };
 </script>
 </body>
 </html>
