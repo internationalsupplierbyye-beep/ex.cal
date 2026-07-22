@@ -4702,16 +4702,8 @@ function openAdmin() {
           const wmImg = document.createElement('img');
         wmImg.src = window.getThemeWatermarkUrl(CURRENT_RECEIPT_THEME);
         
-        // 🌟 Custom ဆိုလျှင် နောက်ခံအပြည့် (Cover) ပြမည်၊ ကျန်တာတွေက အလယ်မှာပြမည် 🌟
-        if (CURRENT_RECEIPT_THEME === 'custom') {
-            wmImg.style.position = 'absolute';
-            wmImg.style.top = '0';
-            wmImg.style.left = '0';
-            wmImg.style.width = '100%';
-            wmImg.style.height = '100%';
-            wmImg.style.objectFit = 'cover'; 
-            wmImg.style.opacity = '0.12';  
-        } else if (CURRENT_RECEIPT_THEME === 'default') {
+        // 🌟 Default (အဖြူရောင်) မှလွဲ၍ ကျန်တဲ့ Local Theme တွေရော Custom Link တွေပါ အားလုံးကို နောက်ခံအပြည့် (Cover) ပြမည် 🌟
+        if (CURRENT_RECEIPT_THEME === 'default') {
             wmImg.style.position = 'absolute';
             wmImg.style.top = '50%';
             wmImg.style.left = '50%';
@@ -4720,11 +4712,12 @@ function openAdmin() {
             wmImg.style.opacity = '0.09';
         } else {
             wmImg.style.position = 'absolute';
-            wmImg.style.top = '50%';
-            wmImg.style.left = '50%';
-            wmImg.style.transform = 'translate(-50%, -50%)';
-            wmImg.style.width = '350px';
-            wmImg.style.opacity = '0.15';
+            wmImg.style.top = '0';
+            wmImg.style.left = '0';
+            wmImg.style.width = '100%';
+            wmImg.style.height = '100%';
+            wmImg.style.objectFit = 'cover'; 
+            wmImg.style.opacity = '0.12'; // လိုအပ်ပါက အဖျော့အစူး 0.15 သို့ ပြောင်းနိုင်သည်
         }
         
         watermarkDiv.appendChild(wmImg);
@@ -5521,34 +5514,27 @@ renderHistoryRows(allLoadedHistory);
         watermarkDiv.style.overflow = 'hidden'; 
 
         const wmImg = document.createElement('img');
-          wmImg.src = window.getThemeWatermarkUrl(CURRENT_RECEIPT_THEME);
-          
-          // 🌟 Custom ဆိုလျှင် နောက်ခံအပြည့် (Cover) ပြမည်၊ ကျန်တာတွေက အလယ်မှာပြမည် 🌟
-          if (CURRENT_RECEIPT_THEME === 'custom') {
-              wmImg.style.position = 'absolute';
-              wmImg.style.top = '0';
-              wmImg.style.left = '0';
-              wmImg.style.width = '100%';
-              wmImg.style.height = '100%';
-              wmImg.style.objectFit = 'cover'; 
-              wmImg.style.opacity = '0.12';  
-          } else if (CURRENT_RECEIPT_THEME === 'default') {
-              wmImg.style.position = 'absolute';
-              wmImg.style.top = '50%';
-              wmImg.style.left = '50%';
-              wmImg.style.transform = 'translate(-50%, -50%)';
-              wmImg.style.width = '240px';
-              wmImg.style.opacity = '0.09';
-          } else {
-              wmImg.style.position = 'absolute';
-              wmImg.style.top = '50%';
-              wmImg.style.left = '50%';
-              wmImg.style.transform = 'translate(-50%, -50%)';
-              wmImg.style.width = '350px';
-              wmImg.style.opacity = '0.15';
-          }
-          
-          watermarkDiv.appendChild(wmImg);
+        wmImg.src = window.getThemeWatermarkUrl(CURRENT_RECEIPT_THEME);
+        
+        // 🌟 Default (အဖြူရောင်) မှလွဲ၍ ကျန်တဲ့ Local Theme တွေရော Custom Link တွေပါ အားလုံးကို နောက်ခံအပြည့် (Cover) ပြမည် 🌟
+        if (CURRENT_RECEIPT_THEME === 'default') {
+            wmImg.style.position = 'absolute';
+            wmImg.style.top = '50%';
+            wmImg.style.left = '50%';
+            wmImg.style.transform = 'translate(-50%, -50%)';
+            wmImg.style.width = '240px';
+            wmImg.style.opacity = '0.09';
+        } else {
+            wmImg.style.position = 'absolute';
+            wmImg.style.top = '0';
+            wmImg.style.left = '0';
+            wmImg.style.width = '100%';
+            wmImg.style.height = '100%';
+            wmImg.style.objectFit = 'cover'; 
+            wmImg.style.opacity = '0.12'; // လိုအပ်ပါက အဖျော့အစူး 0.15 သို့ ပြောင်းနိုင်သည်
+        }
+        
+        watermarkDiv.appendChild(wmImg);
 
         const textContainer = document.createElement('div');
         textContainer.style.position = 'absolute';
