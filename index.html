@@ -127,6 +127,49 @@
     .action-btns button:hover { background: #e2e8f0; }
     .btn-delete { color: #dc2626 !important; border-color: #fca5a5 !important; background: #fef2f2 !important; }
     .btn-delete:hover { background: #fee2e2 !important; }
+
+    /* /* 🌙 Dark Mode Styles (Updated & Fixed) */
+    html.dark body { background-color: #0f172a; color: #f1f5f9; }
+    html.dark .box, html.dark .card, html.dark .admin-content, html.dark .login-box, html.dark #customCusDropdown { background-color: #1e293b !important; border-color: #334155 !important; }
+    
+    /* Form Inputs & Selects အားလုံးအတွက် */
+    html.dark .amt-input, html.dark select, html.dark input[type="text"], html.dark input[type="date"], html.dark input[type="number"], html.dark input[type="password"], html.dark input[type="email"] { 
+        background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; 
+    }
+    html.dark .amt-input:focus, html.dark input:focus, html.dark select:focus { box-shadow: 0 0 0 4px rgba(255,255,255,.10) !important; }
+    html.dark select option { background-color: #1e293b; color: #e2e8f0; }
+    html.dark optgroup { background-color: #0f172a; color: #94a3b8; }
+    
+    /* စာသား အရောင်များ */
+    html.dark .label, html.dark h1, html.dark h2, html.dark h3, html.dark th { color: #f8fafc !important; } 
+    html.dark .sub, html.dark .muted, html.dark .rate-note { color: #94a3b8 !important; }
+    html.dark .text-gray-800, html.dark .text-gray-700, html.dark .text-slate-800, html.dark .text-slate-700, html.dark .text-black { color: #f1f5f9 !important; }
+    html.dark .text-gray-600, html.dark .text-gray-500, html.dark .text-gray-400, html.dark .text-slate-600, html.dark .text-slate-500 { color: #94a3b8 !important; }
+    
+    /* Layout & Table */
+    html.dark .radio-row, html.dark .qrFrame { border-color: #334155; background-color: #0f172a; }
+    html.dark header { background: linear-gradient(to right, #1e3a8a, #064e3b); }
+    html.dark .admin-input-box { background-color: #0f172a !important; color: #f1f5f9 !important; border-color: #334155 !important; }
+    html.dark .list-item, html.dark tr { background-color: #1e293b !important; border-color: #334155 !important; }
+    html.dark tr:hover { background-color: #334155 !important; }
+    html.dark td { color: #e2e8f0 !important; border-color: #334155 !important; }
+    
+    /* နောက်ခံအရောင်များ (Background Overrides) */
+    html.dark .bg-white, html.dark .bg-gray-50, html.dark .bg-gray-100 { background-color: #1e293b !important; border-color: #334155 !important; }
+    html.dark .bg-blue-50, html.dark .bg-emerald-50, html.dark .bg-orange-50, html.dark .bg-indigo-50, html.dark .bg-red-50, html.dark .bg-green-50, html.dark .bg-yellow-50, html.dark .bg-pink-50, html.dark .bg-purple-50 {
+        background-color: #0f172a !important; border-color: #334155 !important;
+    }
+    
+    /* အောင်မြင်/THB/MMK စသည့် သီးသန့် Badges များ */
+    html.dark .bg-indigo-100, html.dark .bg-blue-100, html.dark .bg-orange-100, html.dark .bg-green-100, html.dark .bg-red-100 { background-color: #334155 !important; border-color: #475569 !important; }
+    html.dark .text-indigo-800, html.dark .text-blue-900, html.dark .text-blue-800 { color: #93c5fd !important; }
+    
+    /* Customer Dropdown အတွက် သီးသန့် */
+    html.dark #cusSearchInput { background-color: #0f172a !important; color: #f1f5f9 !important; border-color: #334155 !important; }
+    html.dark .cus-option { border-color: #334155 !important; background-color: #1e293b !important; }
+    html.dark .cus-option:hover { background-color: #334155 !important; }
+    html.dark .cus-option .text-purple-800 { color: #c084fc !important; } 
+    html.dark .cus-option .text-gray-700 { color: #e2e8f0 !important; }
   </style>
 </head>
 
@@ -151,6 +194,20 @@
       if (dict[key]) el.placeholder = dict[key];
     });
   }
+
+  // 🌙 Dark Mode ကို ထိန်းချုပ်မည့် Function
+  function toggleDarkMode() {
+    document.documentElement.classList.toggle('dark');
+    const isDark = document.documentElement.classList.contains('dark');
+    localStorage.setItem('sys_dark_mode', isDark ? 'yes' : 'no');
+  }
+
+  // Page ပွင့်လာချိန် အရင်က Dark Mode ရွေးခဲ့လျှင် အော်တိုပွင့်ရန်
+  document.addEventListener('DOMContentLoaded', () => {
+    if(localStorage.getItem('sys_dark_mode') === 'yes') {
+      document.documentElement.classList.add('dark');
+    }
+  });
 </script>
 
 <div id="loginModal">
@@ -175,6 +232,9 @@
     <option value="th" class="text-black">🇹🇭 ไทย</option>
     <option value="vi" class="text-black">🇻🇳 Tiếng Việt</option>
   </select>
+  <!-- 🌙 Dark Mode ခလုတ် (Select ဘေးတွင် နေရာချထားသည်) -->
+  <button onclick="toggleDarkMode()" class="lang-switcher" style="left: 140px;">🌙 Dark</button>
+  
   <h1 class="text-xl sm:text-2xl font-black pb-1" data-i18n="app_title">MMK ↔ THB & VND ငွေလဲတွက်ချက်ခြင်း</h1>
   <p class="text-xs sm:text-sm opacity-90 pb-1" data-i18n="app_sub">MMK ↔ THB & VND Exchange Calculator</p>
   <button class="admin-btn" onclick="openAdmin()">🔒 Admin / Staff</button>
@@ -4777,7 +4837,15 @@ function openAdmin() {
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
+          // 🌟 ပုံထုတ်မည့်အချိန်လေးတွင် Dark Mode ကို အပြင်(Real DOM)မှာပါ ခဏပိတ်မည်
+          const isDark = document.documentElement.classList.contains('dark');
+          if (isDark) document.documentElement.classList.remove('dark');
+
           const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, logging:false, imageTimeout: 3000 });
+          
+          // 🌟 ပုံထုတ်ပြီးတာနဲ့ Dark Mode ကို ချက်ချင်းပြန်ဖွင့်မည်
+          if (isDark) document.documentElement.classList.add('dark');
+
           document.body.removeChild(clone);
 
           const margin=18; 
@@ -5591,7 +5659,15 @@ renderHistoryRows(allLoadedHistory);
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
+          // 🌟 ပုံထုတ်မည့်အချိန်လေးတွင် Dark Mode ကို အပြင်(Real DOM)မှာပါ ခဏပိတ်မည်
+          const isDark = document.documentElement.classList.contains('dark');
+          if (isDark) document.documentElement.classList.remove('dark');
+
           const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, logging:false, imageTimeout: 3000 });
+          
+          // 🌟 ပုံထုတ်ပြီးတာနဲ့ Dark Mode ကို ချက်ချင်းပြန်ဖွင့်မည်
+          if (isDark) document.documentElement.classList.add('dark');
+
           document.body.removeChild(clone);
 
           const margin=18; 
