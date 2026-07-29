@@ -5980,18 +5980,18 @@ async function extractSlipData(imageUrl) {
       return { isDuplicate: false };
   }
 
-  // --- 🌟 SLIP2GO API ဖြင့် စလစ်အတု/အစစ် စစ်ဆေးခြင်း (Error ရှာဖွေရန် အထူးစနစ်) 🌟 ---
+  // --- 🌟 SLIP2GO API ဖြင့် စလစ်အတု/အစစ် စစ်ဆေးခြင်း (Endpoint အမှန်ဖြင့် ပြင်ဆင်ထားသည်) 🌟 ---
   async function verifyWithSlip2Go(imageUrl) {
       if (!SLIP2GO_API_KEY) {
-          alert("⚠️ Slip2Go API Key ထည့်သွင်းထားခြင်း မရှိသေးပါ။ Admin တွင် ထည့်ပါ။");
+          console.warn("⚠️ Slip2Go API Key မထည့်ရသေးပါ။");
           return { checked: false };
       }
 
       try {
-          // Slip2Go Endpoint (Image URL ဖြင့်စစ်ရန်)
-          const targetUrl = "https://connect.slip2go.com/api/verify-slip/image-url";
+          // 🌟 ပုံထဲမှ အတိအကျတွေ့ရသော Endpoint URL အမှန် 🌟
+          const targetUrl = "https://connect.slip2go.com/api/verify-slip/qr-image-link/info";
           
-          // CORS ကိုကျော်ရန် Proxy ခံခြင်း
+          // Browser ၏ CORS ပိတ်ပင်မှုကို ကျော်လွှားရန် Proxy ခံခြင်း
           const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
 
           const response = await fetch(proxyUrl, {
@@ -6002,31 +6002,36 @@ async function extractSlipData(imageUrl) {
               },
               body: JSON.stringify({
                   payload: {
-                      url: imageUrl, 
+                      url: imageUrl, // ImgBB ပုံ Link
                       checkCondition: { checkDuplicate: true }
                   }
               })
           });
 
-          // 🌟 ချိတ်ဆက်မှု မအောင်မြင်ပါက ဤနေရာတွင် အတိအကျ အော်ပေးပါမည် 🌟
+          // 🌟 ချိတ်ဆက်မှု မအောင်မြင်ပါက 🌟
           if (!response.ok) {
               let errText = await response.text();
-              alert(`🚨 Slip2Go API ချိတ်ဆက်၍မရပါ!\n\nStatus Code: ${response.status}\nError: ${errText}\n\n👉 API Key မှားနေခြင်း၊ Endpoint မှားနေခြင်း (သို့) IP Whitelist တွင် မထည့်ထားခြင်း ဖြစ်နိုင်ပါသည်။`);
+              console.error(`Slip2Go API Error (${response.status}):`, errText);
+              
+              if (response.status === 400) {
+                  alert(`🚨 Slip2Go Parameter Error (400)\n\nAPI သို့ပို့သော Data ပုံစံလွဲနေပါသည်။ ("Check with Image URL" ထဲက "Req" (Request Details) Tab လေးကို ထပ်ရိုက်ပြပေးပါဗျ)`);
+              } else {
+                  alert(`🚨 Slip2Go ချိတ်ဆက်၍မရပါ! (Code: ${response.status})\n\nAPI Key သို့မဟုတ် လမ်းကြောင်း မှားနေပါသည်။`);
+              }
               return { checked: false }; 
           }
 
           const result = await response.json();
-          
-          // 🌟 ချိတ်ဆက်မှု အောင်မြင်ပါက Slip2Go မှ ပြန်ပို့သောစာကို ပြပေးပါမည် 🌟
-          alert(`✅ Slip2Go နှင့် ချိတ်ဆက်မိပါပြီ။ ပြန်လာသောအဖြေ:\n\n${JSON.stringify(result).substring(0, 150)}...`);
+          console.log("✅ Slip2Go မှ ပြန်လာသောအဖြေ:", result);
 
-          if (result.success === true || result.data?.success === true || result.valid === true || result.data?.valid === true) {
+          // 🌟 ပုံပါ Response ဇယားအရ code "200000" သည် အောင်မြင်ကြောင်းဖြစ်သည် 🌟
+          if (result.code === "200000" || result.success === true || result.data?.valid === true || result.valid === true) {
+              // Alert box ကို ခဏပိတ်ထားလိုက်ပါပြီ။ မှတ်တမ်းဇယားတွင်သာ အစိမ်းရောင်ဖြင့် ပြပါမည်။
               return { checked: true, isValid: true, data: result.data };
           } else {
-              return { checked: true, isValid: false, message: result.message || result.data?.message || "အတုဖြစ်နိုင်ပါသည်" };
+              return { checked: true, isValid: false, message: result.message || "အတုဖြစ်နိုင်ပါသည်" };
           }
       } catch (error) {
-          // 🌟 Proxy ပိတ်နေလျှင် (သို့) အင်တာနက်ပြဿနာရှိလျှင် 🌟
           alert(`🚨 Slip2Go Connection Error:\n\n${error.message}`);
           return { checked: false };
       }
