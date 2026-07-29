@@ -4905,24 +4905,18 @@ function openAdmin() {
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
-          // // 🌟 ပုံထုတ်မည့်အချိန်လေးတွင် မျက်စိမနောက်စေရန် Dark Overlay ခဏခံထားမည်
-          const isDark = document.documentElement.classList.contains('dark');
-          let darkOverlay = null;
-          if (isDark) {
-              darkOverlay = document.createElement('div');
-              darkOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0f172a;z-index:999999;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;font-weight:bold;';
-              darkOverlay.innerHTML = '⚡ ပုံထုတ်နေပါသည်...';
-              document.body.appendChild(darkOverlay);
-              document.documentElement.classList.remove('dark');
-          }
-
-          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, logging:false, imageTimeout: 3000 });
-          
-          // 🌟 ပုံထုတ်ပြီးတာနဲ့ Dark Mode နှင့် Screen ကို ပုံမှန်အတိုင်း ချက်ချင်းပြန်ထားမည်
-          if (isDark) {
-              document.documentElement.classList.add('dark');
-              if (darkOverlay) document.body.removeChild(darkOverlay);
-          }
+          // 🌟 နောက်ကွယ် (Background Clone) တွင်သာ Light Mode သို့ ပြောင်း၍ ပုံထုတ်မည် 
+          const canvas = await html2canvas(clone, { 
+              backgroundColor: '#ffffff', 
+              scale: 3, 
+              useCORS: true, 
+              logging: false, 
+              imageTimeout: 3000,
+              onclone: function(clonedDoc) {
+                  // ပုံထုတ်မည့် Document အတုထဲတွင်သာ dark class ကို ခိုးဖြုတ်လိုက်ပါမည်။ (User မျက်နှာပြင်ကို လုံးဝ မထိခိုက်ပါ)
+                  clonedDoc.documentElement.classList.remove('dark');
+              }
+          });
 
           document.body.removeChild(clone);
 
@@ -5737,24 +5731,18 @@ renderHistoryRows(allLoadedHistory);
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
-          // 🌟 ပုံထုတ်မည့်အချိန်လေးတွင် မျက်စိမနောက်စေရန် Dark Overlay ခဏခံထားမည်
-          const isDark = document.documentElement.classList.contains('dark');
-          let darkOverlay = null;
-          if (isDark) {
-              darkOverlay = document.createElement('div');
-              darkOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0f172a;z-index:999999;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;font-weight:bold;';
-              darkOverlay.innerHTML = '⚡ ပုံထုတ်နေပါသည်...';
-              document.body.appendChild(darkOverlay);
-              document.documentElement.classList.remove('dark');
-          }
-
-          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, logging:false, imageTimeout: 3000 });
-          
-          // 🌟 ပုံထုတ်ပြီးတာနဲ့ Dark Mode နှင့် Screen ကို ပုံမှန်အတိုင်း ချက်ချင်းပြန်ထားမည်
-          if (isDark) {
-              document.documentElement.classList.add('dark');
-              if (darkOverlay) document.body.removeChild(darkOverlay);
-          }
+          // 🌟 နောက်ကွယ် (Background Clone) တွင်သာ Light Mode သို့ ပြောင်း၍ ပုံထုတ်မည် 
+          const canvas = await html2canvas(clone, { 
+              backgroundColor: '#ffffff', 
+              scale: 3, 
+              useCORS: true, 
+              logging: false, 
+              imageTimeout: 3000,
+              onclone: function(clonedDoc) {
+                  // ပုံထုတ်မည့် Document အတုထဲတွင်သာ dark class ကို ခိုးဖြုတ်လိုက်ပါမည်။ (User မျက်နှာပြင်ကို လုံးဝ မထိခိုက်ပါ)
+                  clonedDoc.documentElement.classList.remove('dark');
+              }
+          });
 
           document.body.removeChild(clone);
 
