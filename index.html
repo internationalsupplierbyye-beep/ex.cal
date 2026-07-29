@@ -5016,13 +5016,13 @@ function openAdmin() {
             let colorClass = cleanInfo.includes("⚠️") ? "text-amber-600 border-amber-200" : "text-green-700 border-green-200";
             let infoId = "info-" + d.id;
             
-            // 🌟 w-[145px] သို့ ချဲ့ထားပြီး break-all သုံးကာ Scrollbar မပေါ်စေရန် ပြင်ဆင်ထားပါသည်
+            // 🌟 စာသားများ ပြတ်မသွားစေရန် အကျယ် (Width) ကို ပြင်ဆင်ထားပါသည် 🌟
             aiExtractedHtml = `
-            <div class="mt-1 border-t pt-1 ${colorClass} w-[145px] flex items-start gap-1.5">
-                <button onclick="const el = document.getElementById('${infoId}'); if(el.style.maxHeight === '14px') { el.style.maxHeight = '200px'; this.innerHTML = '▲'; } else { el.style.maxHeight = '14px'; this.innerHTML = '▼'; }" class="text-[9px] text-gray-500 hover:text-blue-500 bg-gray-50 hover:bg-blue-50 rounded border border-gray-200 transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center w-4 h-4 mt-0.5" title="အကျယ်ကြည့်ရန်">
+            <div class="mt-1 border-t pt-1 ${colorClass} w-full flex items-start gap-1.5">
+                <button onclick="const el = document.getElementById('${infoId}'); if(el.style.maxHeight === '14px') { el.style.maxHeight = '300px'; this.innerHTML = '▲'; } else { el.style.maxHeight = '14px'; this.innerHTML = '▼'; }" class="text-[9px] text-gray-500 hover:text-blue-500 bg-gray-50 hover:bg-blue-50 rounded border border-gray-200 transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center w-4 h-4 mt-0.5" title="အကျယ်ကြည့်ရန်">
                     ▼
                 </button>
-                <div id="${infoId}" class="text-[10px] font-bold leading-tight overflow-hidden break-all flex-1 pt-0.5" style="max-height: 14px; transition: max-height 0.2s ease-in-out;" title="စလစ် အချက်အလက်များ">
+                <div id="${infoId}" class="text-[10px] font-bold leading-relaxed overflow-hidden break-words whitespace-normal flex-1 pt-0.5" style="max-height: 14px; transition: max-height 0.3s ease-in-out;" title="စလစ် အချက်အလက်များ">
                     ${formattedInfo}
                 </div>
             </div>`;
@@ -5135,7 +5135,7 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
           <td class="p-3">${amountHtml}</td>
           <td class="p-3 text-center">${statusHtml}</td>
           <td class="p-3 text-center">${actionHtml}</td>
-          <td class="p-3 text-xs"><div class="max-w-[120px]"><div class="font-bold text-gray-800">${method}</div>${aiExtractedHtml}</div></td>
+          <td class="p-3 text-xs"><div class="min-w-[180px] max-w-[250px] whitespace-normal"><div class="font-bold text-gray-800">${method}</div>${aiExtractedHtml}</div></td>
         </tr>`;
       });
       
