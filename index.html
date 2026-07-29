@@ -861,6 +861,10 @@
             <label class="text-xs font-bold text-gray-300">OpenRouter API Key (AI စလစ်ဖတ်ရန်)</label>
             <input type="password" id="adminOpenRouterKey" class="admin-input-box text-sm bg-gray-900 text-white border-gray-600 focus:border-blue-500" placeholder="OpenRouter Key ထည့်ပါ">
           </div>
+          <div class="mb-3 border-t border-gray-600 pt-3">
+            <label class="text-xs font-bold text-gray-300">Slip2Go API Key (စလစ် အတု/အစစ် စစ်ရန်)</label>
+            <input type="password" id="adminSlip2GoKey" class="admin-input-box text-sm bg-gray-900 text-white border-gray-600 focus:border-blue-500" placeholder="Slip2Go Key ထည့်ပါ">
+          </div>
           <button onclick="saveApiKeys()" id="btnApiSave" class="btn bg-gray-600 hover:bg-gray-500 w-full text-white border border-gray-500">API Keys သိမ်းမည်</button>
         </div>
         ```
@@ -1154,6 +1158,7 @@
   let TELEGRAM_BOT_TOKEN = ""; // Admin Setting မှ ရောက်လာပါလိမ့်မည်
   let IMGBB_API_KEY = "";
   let OPENROUTER_API_KEY = "";
+  let SLIP2GO_API_KEY = ""; // 🌟 အသစ်
   let TELEGRAM_CHAT_ID = "-1003987703326";
   let TELEGRAM_TOPIC_ID = "2";
   let TELEGRAM_SUCCESS_TOPIC_ID = "14"; 
@@ -2235,6 +2240,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       const botToken = document.getElementById('adminBotToken').value.trim();
       const imgbb = document.getElementById('adminImgbbKey').value.trim();
       const openrouter = document.getElementById('adminOpenRouterKey').value.trim();
+      const slip2go = document.getElementById('adminSlip2GoKey').value.trim(); // 🌟 အသစ်
       
       const btn = document.getElementById('btnApiSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
@@ -2243,9 +2249,10 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           if (botToken) TELEGRAM_BOT_TOKEN = botToken;
           if (imgbb) IMGBB_API_KEY = imgbb;
           if (openrouter) OPENROUTER_API_KEY = openrouter;
+          if (slip2go) SLIP2GO_API_KEY = slip2go; // 🌟 အသစ်
           
           if(dbRef) {
-              await dbRef.set({ apiKeys: { botToken, imgbb, openrouter } }, { merge: true });
+              await dbRef.set({ apiKeys: { botToken, imgbb, openrouter, slip2go } }, { merge: true });
           }
           alert("API Keys များကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) {
@@ -2666,11 +2673,13 @@ if (data.telegram) {
             if(data.apiKeys.botToken) TELEGRAM_BOT_TOKEN = data.apiKeys.botToken;
             if(data.apiKeys.imgbb) IMGBB_API_KEY = data.apiKeys.imgbb;
             if(data.apiKeys.openrouter) OPENROUTER_API_KEY = data.apiKeys.openrouter;
+            if(data.apiKeys.slip2go) SLIP2GO_API_KEY = data.apiKeys.slip2go; // 🌟 အသစ်
         }
         
         if(document.getElementById('adminBotToken')) document.getElementById('adminBotToken').value = TELEGRAM_BOT_TOKEN;
         if(document.getElementById('adminImgbbKey')) document.getElementById('adminImgbbKey').value = IMGBB_API_KEY;
-        if(document.getElementById('adminOpenRouterKey')) document.getElementById('adminOpenRouterKey').value = OPENROUTER_API_KEY;        
+        if(document.getElementById('adminOpenRouterKey')) document.getElementById('adminOpenRouterKey').value = OPENROUTER_API_KEY; 
+        if(document.getElementById('adminSlip2GoKey')) document.getElementById('adminSlip2GoKey').value = SLIP2GO_API_KEY; // 🌟 အသစ်        
 
         const tgChatInput = document.getElementById('adminTgChatId');
         if(tgChatInput) tgChatInput.value = TELEGRAM_CHAT_ID;
@@ -5953,9 +5962,126 @@ async function extractSlipData(imageUrl) {
       document.getElementById('slipUploader').click(); 
   }
 
+   // 🌟 (အသစ်) စလစ်အထပ်/အတု (Duplicate) ဟုတ်မဟုတ် စစ်ဆေးသည့် Function 🌟
+  function checkDuplicateTransaction(extractedText, currentInvId) {
+      if (!extractedText) return { isDuplicate: false };
+      let parts = extractedText.split('|').map(s => s.trim());
+      if (parts.length >= 4) {
+          let refNo = parts[3];
+          if (refNo && refNo.length > 4 && refNo.toLowerCase() !== 'n/a' && refNo !== '-') {
+              let duplicateTx = allLoadedHistory.find(tx => {
+                  if (tx.id === currentInvId) return false;
+                  if (tx.extractedInfo && tx.extractedInfo.includes(refNo)) return true;
+                  return false;
+              });
+              if (duplicateTx) return { isDuplicate: true, refNo: refNo, duplicateId: duplicateTx.id };
+          }
+      }
+      return { isDuplicate: false };
+  }
+
+  // --- 🌟 SLIP2GO API ဖြင့် စလစ်အတု/အစစ် စစ်ဆေးခြင်း (Error ရှာဖွေရန် အထူးစနစ်) 🌟 ---
+  async function verifyWithSlip2Go(imageUrl) {
+      if (!SLIP2GO_API_KEY) {
+          alert("⚠️ Slip2Go API Key ထည့်သွင်းထားခြင်း မရှိသေးပါ။ Admin တွင် ထည့်ပါ။");
+          return { checked: false };
+      }
+
+      try {
+          // Slip2Go Endpoint (Image URL ဖြင့်စစ်ရန်)
+          const targetUrl = "https://connect.slip2go.com/api/verify-slip/image-url";
+          
+          // CORS ကိုကျော်ရန် Proxy ခံခြင်း
+          const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
+
+          const response = await fetch(proxyUrl, {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${SLIP2GO_API_KEY}`
+              },
+              body: JSON.stringify({
+                  payload: {
+                      url: imageUrl, 
+                      checkCondition: { checkDuplicate: true }
+                  }
+              })
+          });
+
+          // 🌟 ချိတ်ဆက်မှု မအောင်မြင်ပါက ဤနေရာတွင် အတိအကျ အော်ပေးပါမည် 🌟
+          if (!response.ok) {
+              let errText = await response.text();
+              alert(`🚨 Slip2Go API ချိတ်ဆက်၍မရပါ!\n\nStatus Code: ${response.status}\nError: ${errText}\n\n👉 API Key မှားနေခြင်း၊ Endpoint မှားနေခြင်း (သို့) IP Whitelist တွင် မထည့်ထားခြင်း ဖြစ်နိုင်ပါသည်။`);
+              return { checked: false }; 
+          }
+
+          const result = await response.json();
+          
+          // 🌟 ချိတ်ဆက်မှု အောင်မြင်ပါက Slip2Go မှ ပြန်ပို့သောစာကို ပြပေးပါမည် 🌟
+          alert(`✅ Slip2Go နှင့် ချိတ်ဆက်မိပါပြီ။ ပြန်လာသောအဖြေ:\n\n${JSON.stringify(result).substring(0, 150)}...`);
+
+          if (result.success === true || result.data?.success === true || result.valid === true || result.data?.valid === true) {
+              return { checked: true, isValid: true, data: result.data };
+          } else {
+              return { checked: true, isValid: false, message: result.message || result.data?.message || "အတုဖြစ်နိုင်ပါသည်" };
+          }
+      } catch (error) {
+          // 🌟 Proxy ပိတ်နေလျှင် (သို့) အင်တာနက်ပြဿနာရှိလျှင် 🌟
+          alert(`🚨 Slip2Go Connection Error:\n\n${error.message}`);
+          return { checked: false };
+      }
+  }
+
   window.handleSlipUpload = async function(event) {
       const files = event.target.files; if (!files || files.length === 0) return;
-      const invId = document.getElementById('uploadTargetInvId').value; 
+      const invId = document.getElementById('uploadTargetInvId').value; // --- 🌟 SLIP2GO API ဖြင့် စလစ်အတု/အစစ် စစ်ဆေးခြင်း (Proxy ဖြုတ်၍ တိုက်ရိုက်ချိတ်ဆက်ခြင်း) 🌟 ---
+  async function verifyWithSlip2Go(imageUrl) {
+      if (!SLIP2GO_API_KEY) {
+          alert("⚠️ Slip2Go API Key မထည့်ရသေးပါ။");
+          return { checked: false };
+      }
+
+      try {
+          // Proxy အသုံးမပြုတော့ဘဲ Slip2Go ဆီ တိုက်ရိုက်ချိတ်ဆက်မည်
+          const targetUrl = "https://connect.slip2go.com/api/verify-slip/image-url";
+
+          const response = await fetch(targetUrl, {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${SLIP2GO_API_KEY}`
+              },
+              body: JSON.stringify({
+                  payload: {
+                      url: imageUrl, // Slip2Go သို့ ImgBB ပုံ Link ပို့မည်
+                      checkCondition: { checkDuplicate: true }
+                  }
+              })
+          });
+
+          // 🌟 ချိတ်ဆက်မှု မအောင်မြင်ပါက 🌟
+          if (!response.ok) {
+              let errText = await response.text();
+              alert(`🚨 Slip2Go API Error (Code: ${response.status})\n\nအကြောင်းရင်း: ${errText}`);
+              return { checked: false }; 
+          }
+
+          const result = await response.json();
+          
+          // 🌟 ချိတ်ဆက်မှု အောင်မြင်ပါက 🌟
+          alert(`✅ Slip2Go နှင့် အောင်မြင်စွာ ချိတ်ဆက်မိပါပြီ။ ပြန်လာသောအဖြေ:\n\n${JSON.stringify(result).substring(0, 150)}...`);
+
+          if (result.success === true || result.data?.success === true || result.valid === true || result.data?.valid === true) {
+              return { checked: true, isValid: true, data: result.data };
+          } else {
+              return { checked: true, isValid: false, message: result.message || result.data?.message || "အတုဖြစ်နိုင်ပါသည်" };
+          }
+      } catch (error) {
+          // 🌟 Slip2Go ဘက်မှ Browser များမှ တိုက်ရိုက်လှမ်းခေါ်ခွင့် (CORS) ပိတ်ထားလျှင် ပြမည့် Error 🌟
+          alert(`🚨 Direct Connection Error:\n\n${error.message}\n\n👉 Slip2Go ဘက်မှ Browser မှ တိုက်ရိုက်ချိတ်ဆက်ခွင့် (CORS) ကို ပိတ်ထားခြင်း ဖြစ်နိုင်ပါသည်။`);
+          return { checked: false };
+      }
+  }
       if(!IMGBB_API_KEY) { alert("ImgBB API Key ထည့်သွင်းထားခြင်း မရှိပါ။ Admin တွင် ထည့်ပါ။"); return; } 
       
       const index = allLoadedHistory.findIndex(x => x.id === invId); 
@@ -6001,9 +6127,31 @@ async function extractSlipData(imageUrl) {
               // 🌟 ပုံအားလုံးကို AI နဲ့ ဖတ်ပြီး စာသားတွေ ပေါင်းမည် 🌟
               let newExtractedText = "";
               for (let i = 0; i < files.length; i++) {
-                  let base64Img = await fileToBase64(files[i]);
-                  let data = await extractSlipDataWithGemini(base64Img);
+                  let currentImgUrl = uploadedUrls[i];
+                  let data = "";
                   
+                  // 👇 SLIP2GO ဖြင့် အရင်စစ်ဆေးမည် 👇
+                  let slip2goResult = await verifyWithSlip2Go(currentImgUrl);
+                  
+                  if (slip2goResult.checked && !slip2goResult.isValid) {
+                      data = `🛑 [SLIP2GO သတိပေးချက်: စလစ်အတု ဖြစ်နိုင်ပါသည်! - ${slip2goResult.message}]`;
+                      alert(`🛑 သတိပေးချက်: Slip2Go စနစ်အရ ယခုစလစ်သည် အတု (သို့) မှားယွင်းနေပါသည်။ သေချာစွာ ပြန်လည်စစ်ဆေးပါ။`);
+                  } else {
+                      let base64Img = await fileToBase64(files[i]);
+                      data = await extractSlipDataWithGemini(base64Img);
+                      
+                      // 👇 Duplicate စစ်ဆေးမည် 👇
+                      let dupCheck = checkDuplicateTransaction(data, invId);
+                      if (dupCheck.isDuplicate) {
+                          data = `⚠️ [စလစ်အထပ်/အတု - Ref: ${dupCheck.refNo} ကို (${dupCheck.duplicateId}) တွင် သုံးပြီးဖြစ်သည်] | ` + data;
+                          alert(`⚠️ သတိပေးချက်: ယခုစလစ်ပါ (Ref: ${dupCheck.refNo}) ကို အခြား Invoice (${dupCheck.duplicateId}) တွင် အသုံးပြုထားပြီး ဖြစ်နေပါသည်။`);
+                      }
+                      
+                      if (slip2goResult.checked && slip2goResult.isValid) {
+                          data = `✅ [SLIP2GO Verified] | ` + data;
+                      }
+                  }
+
                   // ပုံအများကြီးဆိုလျှင် ခွဲခြားသိသာအောင် ပုံ ၁, ပုံ ၂ စသဖြင့် တပ်ပေးမည်
                   if (files.length > 1 || existingSlips.length > 0) {
                       newExtractedText += `[ပုံ ${existingSlips.length + i + 1}] | ${data}`;
@@ -6477,9 +6625,29 @@ async function extractSlipData(imageUrl) {
               let aiParsedData = { amount: 0, currency: '' };
 
               for (let i = 0; i < files.length; i++) {
-                  let base64Img = await fileToBase64(files[i]);
-                  let data = await extractSlipDataWithGemini(base64Img);
+                  let currentImgUrl = uploadedUrls[i];
+                  let data = "";
                   
+                  let slip2goResult = await verifyWithSlip2Go(currentImgUrl);
+                  
+                  if (slip2goResult.checked && !slip2goResult.isValid) {
+                      data = `🛑 [SLIP2GO သတိပေးချက်: စလစ်အတု ဖြစ်နိုင်ပါသည်! - ${slip2goResult.message}]`;
+                      alert(`🛑 သတိပေးချက်: Slip2Go စနစ်အရ ယခုစလစ်သည် အတု (သို့) မှားယွင်းနေပါသည်။`);
+                  } else {
+                      let base64Img = await fileToBase64(files[i]);
+                      data = await extractSlipDataWithGemini(base64Img);
+                      
+                      let dupCheck = checkDuplicateTransaction(data, null);
+                      if (dupCheck.isDuplicate) {
+                          data = `⚠️ [စလစ်အထပ်/အတု - Ref: ${dupCheck.refNo} ကို (${dupCheck.duplicateId}) တွင် သုံးပြီးဖြစ်သည်] | ` + data;
+                          alert(`⚠️ ယခုတင်လိုက်သော စလစ်သည် မှတ်တမ်းဟောင်း (${dupCheck.duplicateId}) နှင့် ထပ်နေပါသည်။ စလစ်အထပ် ဖြစ်နိုင်ပါသည်။`);
+                      }
+                      
+                      if (slip2goResult.checked && slip2goResult.isValid) {
+                          data = `✅ [SLIP2GO Verified] | ` + data;
+                      }
+                  }
+
                   newExtractedText += (files.length > 1) ? `[ပုံ ${i + 1}] | ${data}` : data;
                   if (i < files.length - 1) newExtractedText += " || "; 
                   
