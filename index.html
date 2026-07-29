@@ -5980,7 +5980,7 @@ async function extractSlipData(imageUrl) {
       return { isDuplicate: false };
   }
 
-  // --- 🌟 SLIP2GO API ဖြင့် စလစ်အတု/အစစ် စစ်ဆေးခြင်း (Endpoint အမှန်ဖြင့် ပြင်ဆင်ထားသည်) 🌟 ---
+  // --- 🌟 SLIP2GO API ဖြင့် စလစ်အတု/အစစ် စစ်ဆေးခြင်း (Payload အမှန်ဖြင့် ပြင်ဆင်ထားသည်) 🌟 ---
   async function verifyWithSlip2Go(imageUrl) {
       if (!SLIP2GO_API_KEY) {
           console.warn("⚠️ Slip2Go API Key မထည့်ရသေးပါ။");
@@ -5988,7 +5988,6 @@ async function extractSlipData(imageUrl) {
       }
 
       try {
-          // 🌟 ပုံထဲမှ အတိအကျတွေ့ရသော Endpoint URL အမှန် 🌟
           const targetUrl = "https://connect.slip2go.com/api/verify-slip/qr-image-link/info";
           
           // Browser ၏ CORS ပိတ်ပင်မှုကို ကျော်လွှားရန် Proxy ခံခြင်း
@@ -6002,7 +6001,7 @@ async function extractSlipData(imageUrl) {
               },
               body: JSON.stringify({
                   payload: {
-                      url: imageUrl, // ImgBB ပုံ Link
+                      imageUrl: imageUrl, // 🌟 ဤနေရာတွင် url အစား imageUrl ဟု အတိအကျ ပြင်လိုက်ပါပြီ 🌟
                       checkCondition: { checkDuplicate: true }
                   }
               })
@@ -6014,7 +6013,7 @@ async function extractSlipData(imageUrl) {
               console.error(`Slip2Go API Error (${response.status}):`, errText);
               
               if (response.status === 400) {
-                  alert(`🚨 Slip2Go Parameter Error (400)\n\nAPI သို့ပို့သော Data ပုံစံလွဲနေပါသည်။ ("Check with Image URL" ထဲက "Req" (Request Details) Tab လေးကို ထပ်ရိုက်ပြပေးပါဗျ)`);
+                  alert(`🚨 Slip2Go Parameter Error (400)\n\nအကြောင်းရင်း: ${errText}`);
               } else {
                   alert(`🚨 Slip2Go ချိတ်ဆက်၍မရပါ! (Code: ${response.status})\n\nAPI Key သို့မဟုတ် လမ်းကြောင်း မှားနေပါသည်။`);
               }
@@ -6026,7 +6025,7 @@ async function extractSlipData(imageUrl) {
 
           // 🌟 ပုံပါ Response ဇယားအရ code "200000" သည် အောင်မြင်ကြောင်းဖြစ်သည် 🌟
           if (result.code === "200000" || result.success === true || result.data?.valid === true || result.valid === true) {
-              // Alert box ကို ခဏပိတ်ထားလိုက်ပါပြီ။ မှတ်တမ်းဇယားတွင်သာ အစိမ်းရောင်ဖြင့် ပြပါမည်။
+              // မှတ်တမ်းဇယားတွင် အစိမ်းရောင်ဖြင့် ပြပါမည်။
               return { checked: true, isValid: true, data: result.data };
           } else {
               return { checked: true, isValid: false, message: result.message || "အတုဖြစ်နိုင်ပါသည်" };
