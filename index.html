@@ -5815,16 +5815,16 @@ async function extractSlipData(imageUrl) {
       reader.onerror = error => reject(error);
   });
 
-  // --- AI Slip Reader (GitHub Models API - Optimized) ---
+  // --- AI Slip Reader (Nghimmo / Custom OpenAI API) ---
   async function extractSlipDataWithGemini(base64Image) {
       if(!OPENROUTER_API_KEY) return "⚠️ API Key မထည့်ရသေးပါ။ Admin > အထွေထွေ တွင်ထည့်ပါ။"; 
       
-      // 🌟 URL ကို GitHub Azure Endpoint သို့ ပြောင်းထားသည်
-      const url = "https://models.inference.ai.azure.com/chat/completions";
+      // 🌟 ၁။ URL ကို Nghimmo API သို့ ပြောင်းပါ
+      const url = "https://api.nghimmo.com/v1/chat/completions";
 
-      // 🌟 Payload တွင် GitHub Model name ဖြစ်သော "gpt-4o" ကို သုံးထားသည်
       const payload = {
-          "model": "gpt-4o", 
+          // 🌟 ၂။ Model ကို Nghimmo မှ ခွင့်ပြုထားသော model အမည်သို့ ပြောင်းပါ
+          "model": "nghi/gpt-5.5", 
           "max_tokens": 150, 
           "messages": [
               {
@@ -5850,9 +5850,8 @@ async function extractSlipData(imageUrl) {
               method: "POST",
               headers: { 
                   "Content-Type": "application/json",
-                  "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-                  "HTTP-Referer": window.location.origin, 
-                  "X-Title": "TG Excal Slip Reader"
+                  // 🌟 API Key ကို Admin Panel မှတဆင့် လှမ်းယူပါမည်
+                  "Authorization": `Bearer ${OPENROUTER_API_KEY}`
               },
               body: JSON.stringify(payload)
           });
@@ -5862,8 +5861,7 @@ async function extractSlipData(imageUrl) {
           if (data.choices && data.choices.length > 0) {
               return data.choices[0].message.content.trim();
           } else {
-              // 🌟 Error အသေးစိတ်ကို log ထုတ်ပေးမည်
-              console.error("OpenRouter API Error Details:", JSON.stringify(data));
+              console.error("API Error Details:", JSON.stringify(data));
               return "⚠️ စလစ်ဖတ်၍မရပါ (Error: " + (data.error?.message || "Unknown") + ")";
           }
       } catch (error) {
@@ -5871,6 +5869,7 @@ async function extractSlipData(imageUrl) {
           return "⚠️ Connection Error";
       }
   }
+
   // --- Uploading Slips ---
   window.triggerSlipUpload = function(invId) { 
       document.getElementById('uploadTargetInvId').value = invId; 
