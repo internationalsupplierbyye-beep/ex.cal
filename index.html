@@ -128,14 +128,11 @@
     .btn-delete { color: #dc2626 !important; border-color: #fca5a5 !important; background: #fef2f2 !important; }
     .btn-delete:hover { background: #fee2e2 !important; }
 
-    /* 🌟 Smooth Theme Transition */
-    body, .box, .card, header, .admin-content, .amt-input { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
-
-    /* 🌙 Dark Mode Styles (Updated & Fixed) */
+    /* /* 🌙 Dark Mode Styles (Updated & Fixed) */
     html.dark body { background-color: #0f172a; color: #f1f5f9; }
     html.dark .box, html.dark .card, html.dark .admin-content, html.dark .login-box, html.dark #customCusDropdown { background-color: #1e293b !important; border-color: #334155 !important; }
     
-    /* Form Inputs & Selects */
+    /* Form Inputs & Selects အားလုံးအတွက် */
     html.dark .amt-input, html.dark select, html.dark input[type="text"], html.dark input[type="date"], html.dark input[type="number"], html.dark input[type="password"], html.dark input[type="email"] { 
         background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; 
     }
@@ -147,7 +144,7 @@
     html.dark .label, html.dark h1, html.dark h2, html.dark h3, html.dark th { color: #f8fafc !important; } 
     html.dark .sub, html.dark .muted, html.dark .rate-note { color: #94a3b8 !important; }
     html.dark .text-gray-800, html.dark .text-gray-700, html.dark .text-slate-800, html.dark .text-slate-700, html.dark .text-black { color: #f1f5f9 !important; }
-    html.dark .text-gray-600, html.dark .text-gray-500, html.dark .text-gray-400, html.dark .text-slate-600, html.dark .text-slate-500 { color: #cbd5e1 !important; } 
+    html.dark .text-gray-600, html.dark .text-gray-500, html.dark .text-gray-400, html.dark .text-slate-600, html.dark .text-slate-500 { color: #94a3b8 !important; }
     
     /* Layout & Table */
     html.dark .radio-row, html.dark .qrFrame { border-color: #334155; background-color: #0f172a; }
@@ -163,39 +160,16 @@
         background-color: #0f172a !important; border-color: #334155 !important;
     }
     
-    /* အောင်မြင်/THB/MMK စသည့် သီးသန့် Badges များ အားလုံးအတွက် */
-    html.dark .bg-indigo-100, html.dark .bg-blue-100, html.dark .bg-orange-100, html.dark .bg-green-100, html.dark .bg-red-100, html.dark .bg-purple-100 { background-color: #334155 !important; border-color: #475569 !important; }
-    
-    html.dark .text-indigo-800, html.dark .text-indigo-700, html.dark .text-blue-900, html.dark .text-blue-800, html.dark .text-blue-700, html.dark .text-blue-600 { color: #93c5fd !important; }
-    html.dark .text-green-800, html.dark .text-green-700, html.dark .text-green-600 { color: #86efac !important; }
-    html.dark .text-red-800, html.dark .text-red-700, html.dark .text-red-600 { color: #fca5a5 !important; }
-    html.dark .text-orange-800, html.dark .text-orange-700, html.dark .text-orange-600 { color: #fdba74 !important; }
-    html.dark .text-purple-800, html.dark .text-purple-700, html.dark .text-purple-600 { color: #d8b4fe !important; }
+    /* အောင်မြင်/THB/MMK စသည့် သီးသန့် Badges များ */
+    html.dark .bg-indigo-100, html.dark .bg-blue-100, html.dark .bg-orange-100, html.dark .bg-green-100, html.dark .bg-red-100 { background-color: #334155 !important; border-color: #475569 !important; }
+    html.dark .text-indigo-800, html.dark .text-blue-900, html.dark .text-blue-800 { color: #93c5fd !important; }
     
     /* Customer Dropdown အတွက် သီးသန့် */
     html.dark #cusSearchInput { background-color: #0f172a !important; color: #f1f5f9 !important; border-color: #334155 !important; }
     html.dark .cus-option { border-color: #334155 !important; background-color: #1e293b !important; }
     html.dark .cus-option:hover { background-color: #334155 !important; }
-    html.dark .cus-option .text-purple-800 { color: #d8b4fe !important; } 
+    html.dark .cus-option .text-purple-800 { color: #c084fc !important; } 
     html.dark .cus-option .text-gray-700 { color: #e2e8f0 !important; }
-
-    /* 🌟 Admin Tabs (Dark Mode) */
-    html.dark .tab-btn.active { background-color: #1e3a8a !important; border-color: #60a5fa !important; color: #bfdbfe !important; }
-    html.dark .tab-btn:hover:not(.active) { background-color: #334155 !important; color: #e2e8f0 !important; }
-    
-    /* 🌟 ✕ (Close) Button Hover လုပ်ချိန် မဲမသွားစေရန် */
-    html.dark .admin-content > button.hover\:text-black:hover { color: #f8fafc !important; }
-    html.dark #slipViewModal button.hover\:text-red-500:hover { color: #fca5a5 !important; }
-
-    /* 🌟 Drag and Drop States (Dark Mode) */
-    html.dark .list-item.dragging { opacity: 0.7; background-color: #334155 !important; border: 2px dashed #94a3b8 !important; }
-    html.dark .list-item.drag-over { border-top: 2px solid #60a5fa !important; }
-
-    /* 🌟 Dark Mode Scrollbar */
-    html.dark ::-webkit-scrollbar { width: 8px; height: 8px; }
-    html.dark ::-webkit-scrollbar-track { background: #0f172a; }
-    html.dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-    html.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
   </style>
 </head>
 
@@ -221,37 +195,18 @@
     });
   }
 
-  // // 🌙 Dark Mode ကို ထိန်းချုပ်မည့် Function
+  // 🌙 Dark Mode ကို ထိန်းချုပ်မည့် Function
   function toggleDarkMode() {
     document.documentElement.classList.toggle('dark');
     const isDark = document.documentElement.classList.contains('dark');
     localStorage.setItem('sys_dark_mode', isDark ? 'yes' : 'no');
-    
-    // 🌟 ခလုတ်စာသား ပြောင်းပေးမည့်အပိုင်း
-    const btn = document.querySelector('button[onclick="toggleDarkMode()"]');
-    if(btn) btn.innerHTML = isDark ? '☀️ Light' : '🌙 Dark';
   }
 
+  // Page ပွင့်လာချိန် အရင်က Dark Mode ရွေးခဲ့လျှင် အော်တိုပွင့်ရန်
   document.addEventListener('DOMContentLoaded', () => {
-    // 🌟 System ၏ Default Theme ကို ဖမ်းယူခြင်း
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const savedMode = localStorage.getItem('sys_dark_mode');
-    
-    let isDark = false;
-    if (savedMode === 'yes') {
-        isDark = true;
-    } else if (savedMode === null && prefersDark) {
-        // User က ဘာမှ မရွေးရသေးရင် System Theme (ဖုန်း Setting) အတိုင်း လိုက်လုပ်ပေးမည်
-        isDark = true; 
-    }
-
-    if(isDark) {
+    if(localStorage.getItem('sys_dark_mode') === 'yes') {
       document.documentElement.classList.add('dark');
     }
-    
-    // 🌟 Page စပွင့်ချိန်မှာ ခလုတ်စာသား အမှန်ပေါ်နေစေရန်
-    const btn = document.querySelector('button[onclick="toggleDarkMode()"]');
-    if(btn) btn.innerHTML = isDark ? '☀️ Light' : '🌙 Dark';
   });
 </script>
 
@@ -287,17 +242,6 @@
 
 <main class="max-w-2xl mx-auto">
   
-  <!-- 🌟 Smart Slip Buttons (အမှားအယွင်းမရှိစေရန် အရင်နေရာသို့ ပြန်ရွှေ့ထားသည်) -->
-  <div id="smartSlipContainer" class="hidden flex gap-3 mb-4 mt-2">
-    <button onclick="triggerSmartSlip('in')" class="flex-1 bg-green-600 border border-green-700 text-white font-bold py-3 rounded-xl shadow-sm hover:bg-green-700 flex items-center justify-center gap-2 transition-transform active:scale-95 text-sm sm:text-base">
-        <span class="text-lg">📥</span> ဝင်စလစ် စစ်မည်
-    </button>
-    <button onclick="triggerSmartSlip('out')" class="flex-1 bg-blue-600 border border-blue-700 text-white font-bold py-3 rounded-xl shadow-sm hover:bg-blue-700 flex items-center justify-center gap-2 transition-transform active:scale-95 text-sm sm:text-base">
-        <span class="text-lg">📤</span> ထွက်စလစ် တင်မည်
-    </button>
-  </div>
-  <input type="file" id="smartSlipUploader" accept="image/*" multiple style="display: none;" onchange="handleSmartSlipUpload(event)">
-
   <section class="box">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       <div>
@@ -329,13 +273,6 @@
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="lbl_thb">ဘတ်ငွေ</span></label>
         <input id="thbIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
-        <!-- 🌟 THB Quick Amount Buttons 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 1000)">+1,000</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 2000)">+2,000</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 5000)">+5,000</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 0, true)">C</button>
-        </div>
       </div>
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
@@ -364,13 +301,6 @@
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
         <input id="mmkIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
-        <!-- 🌟 MMK Quick Amount Buttons 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 100000)">+၁ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 500000)">+၅ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 1000000)">+၁၀ သိန်း</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 0, true)">C</button>
-        </div>
       </div>
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="lbl_thb">ဘတ်ငွေ</span></label>
@@ -476,13 +406,6 @@
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span data-i18n="lbl_vnd">ဒေါင်ငွေ</span></label>
         <input id="vndIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
-        <!-- 🌟 VND Quick Amount Buttons 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('vndIn', 100000)">+100,000</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('vndIn', 500000)">+500,000</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('vndIn', 1000000)">+1,000,000</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('vndIn', 0, true)">C</button>
-        </div>
       </div>
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
@@ -511,13 +434,6 @@
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
         <input id="mmkIn2" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
-        <!-- 🌟 MMK Quick Amount Buttons (VND Section) 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn2', 100000)">+၁ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn2', 500000)">+၅ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn2', 1000000)">+၁၀ သိန်း</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn2', 0, true)">C</button>
-        </div>
       </div>
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span data-i18n="lbl_vnd">ဒေါင်ငွေ</span></label>
@@ -893,10 +809,6 @@
             <label class="text-xs font-bold text-gray-300">OpenRouter API Key (AI စလစ်ဖတ်ရန်)</label>
             <input type="password" id="adminOpenRouterKey" class="admin-input-box text-sm bg-gray-900 text-white border-gray-600 focus:border-blue-500" placeholder="OpenRouter Key ထည့်ပါ">
           </div>
-          <div class="mb-3 border-t border-gray-600 pt-3">
-            <label class="text-xs font-bold text-gray-300">Slip2Go API Key (စလစ် အတု/အစစ် စစ်ရန်)</label>
-            <input type="password" id="adminSlip2GoKey" class="admin-input-box text-sm bg-gray-900 text-white border-gray-600 focus:border-blue-500" placeholder="Slip2Go Key ထည့်ပါ">
-          </div>
           <button onclick="saveApiKeys()" id="btnApiSave" class="btn bg-gray-600 hover:bg-gray-500 w-full text-white border border-gray-500">API Keys သိမ်းမည်</button>
         </div>
         ```
@@ -1124,7 +1036,6 @@
     </div>
 
   </div>
-</div> <!-- 🌟 adminModal ၏ အပိတ် </div> ကို ဤနေရာတွင် ထည့်ပေးလိုက်ပါသည် 🌟 -->
 
 <div id="slipViewModal" style="display:none;" class="fixed inset-0 bg-black/80 z-[80] items-center justify-center p-4">
   <div class="bg-white rounded-xl max-w-sm w-full p-4 shadow-2xl max-h-[85vh] flex flex-col">
@@ -1137,21 +1048,6 @@
     <div class="mt-3 pt-2 border-t text-xs text-center text-gray-500 font-bold">
         💡 ပုံအကြီးကြည့်လိုပါက ပုံပေါ်သို့ နှိပ်ပါ။
     </div>
-  </div>
-</div>
-
-<!-- 🌟 Smart Slip Match Modal -->
-<div id="smartMatchModal" style="display:none;" class="fixed inset-0 bg-black/70 z-[90] items-center justify-center p-4">
-  <div class="bg-white rounded-xl max-w-md w-full p-5 shadow-2xl flex flex-col max-h-[90vh]">
-    <h3 class="text-lg font-black mb-2 text-blue-800 border-b pb-2 flex justify-between items-center">
-      <span id="smartMatchTitle">🔍 မှတ်တမ်းရှာဖွေခြင်း</span>
-      <button onclick="document.getElementById('smartMatchModal').style.display='none'" class="text-gray-400 hover:text-red-500">✕</button>
-    </h3>
-    <div class="text-sm font-bold text-gray-700 bg-gray-50 p-3 rounded-lg mb-3 border border-gray-200">
-        <p>AI ဖတ်ထားသော ပမာဏ: <span id="smartMatchAiAmt" class="text-blue-600 text-lg font-black ml-1"></span></p>
-        <p class="text-xs text-gray-500 mt-1.5 leading-relaxed" id="smartMatchAiDetails"></p>
-    </div>
-    <div id="smartMatchList" class="flex-1 overflow-y-auto space-y-2 mb-4 pr-1"></div>
   </div>
 </div>
 
@@ -1190,7 +1086,6 @@
   let TELEGRAM_BOT_TOKEN = ""; // Admin Setting မှ ရောက်လာပါလိမ့်မည်
   let IMGBB_API_KEY = "";
   let OPENROUTER_API_KEY = "";
-  let SLIP2GO_API_KEY = ""; // 🌟 အသစ်
   let TELEGRAM_CHAT_ID = "-1003987703326";
   let TELEGRAM_TOPIC_ID = "2";
   let TELEGRAM_SUCCESS_TOPIC_ID = "14"; 
@@ -2272,7 +2167,6 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       const botToken = document.getElementById('adminBotToken').value.trim();
       const imgbb = document.getElementById('adminImgbbKey').value.trim();
       const openrouter = document.getElementById('adminOpenRouterKey').value.trim();
-      const slip2go = document.getElementById('adminSlip2GoKey').value.trim(); // 🌟 အသစ်
       
       const btn = document.getElementById('btnApiSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
@@ -2281,10 +2175,9 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           if (botToken) TELEGRAM_BOT_TOKEN = botToken;
           if (imgbb) IMGBB_API_KEY = imgbb;
           if (openrouter) OPENROUTER_API_KEY = openrouter;
-          if (slip2go) SLIP2GO_API_KEY = slip2go; // 🌟 အသစ်
           
           if(dbRef) {
-              await dbRef.set({ apiKeys: { botToken, imgbb, openrouter, slip2go } }, { merge: true });
+              await dbRef.set({ apiKeys: { botToken, imgbb, openrouter } }, { merge: true });
           }
           alert("API Keys များကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) {
@@ -2705,13 +2598,11 @@ if (data.telegram) {
             if(data.apiKeys.botToken) TELEGRAM_BOT_TOKEN = data.apiKeys.botToken;
             if(data.apiKeys.imgbb) IMGBB_API_KEY = data.apiKeys.imgbb;
             if(data.apiKeys.openrouter) OPENROUTER_API_KEY = data.apiKeys.openrouter;
-            if(data.apiKeys.slip2go) SLIP2GO_API_KEY = data.apiKeys.slip2go; // 🌟 အသစ်
         }
         
         if(document.getElementById('adminBotToken')) document.getElementById('adminBotToken').value = TELEGRAM_BOT_TOKEN;
         if(document.getElementById('adminImgbbKey')) document.getElementById('adminImgbbKey').value = IMGBB_API_KEY;
-        if(document.getElementById('adminOpenRouterKey')) document.getElementById('adminOpenRouterKey').value = OPENROUTER_API_KEY; 
-        if(document.getElementById('adminSlip2GoKey')) document.getElementById('adminSlip2GoKey').value = SLIP2GO_API_KEY; // 🌟 အသစ်        
+        if(document.getElementById('adminOpenRouterKey')) document.getElementById('adminOpenRouterKey').value = OPENROUTER_API_KEY;        
 
         const tgChatInput = document.getElementById('adminTgChatId');
         if(tgChatInput) tgChatInput.value = TELEGRAM_CHAT_ID;
@@ -4946,18 +4837,14 @@ function openAdmin() {
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
-          // 🌟 နောက်ကွယ် (Background Clone) တွင်သာ Light Mode သို့ ပြောင်း၍ ပုံထုတ်မည် 
-          const canvas = await html2canvas(clone, { 
-              backgroundColor: '#ffffff', 
-              scale: 3, 
-              useCORS: true, 
-              logging: false, 
-              imageTimeout: 3000,
-              onclone: function(clonedDoc) {
-                  // ပုံထုတ်မည့် Document အတုထဲတွင်သာ dark class ကို ခိုးဖြုတ်လိုက်ပါမည်။ (User မျက်နှာပြင်ကို လုံးဝ မထိခိုက်ပါ)
-                  clonedDoc.documentElement.classList.remove('dark');
-              }
-          });
+          // 🌟 ပုံထုတ်မည့်အချိန်လေးတွင် Dark Mode ကို အပြင်(Real DOM)မှာပါ ခဏပိတ်မည်
+          const isDark = document.documentElement.classList.contains('dark');
+          if (isDark) document.documentElement.classList.remove('dark');
+
+          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, logging:false, imageTimeout: 3000 });
+          
+          // 🌟 ပုံထုတ်ပြီးတာနဲ့ Dark Mode ကို ချက်ချင်းပြန်ဖွင့်မည်
+          if (isDark) document.documentElement.classList.add('dark');
 
           document.body.removeChild(clone);
 
@@ -5048,13 +4935,13 @@ function openAdmin() {
             let colorClass = cleanInfo.includes("⚠️") ? "text-amber-600 border-amber-200" : "text-green-700 border-green-200";
             let infoId = "info-" + d.id;
             
-            // 🌟 စာသားများ ပြတ်မသွားစေရန် အကျယ် (Width) ကို ပြင်ဆင်ထားပါသည် 🌟
+            // 🌟 w-[145px] သို့ ချဲ့ထားပြီး break-all သုံးကာ Scrollbar မပေါ်စေရန် ပြင်ဆင်ထားပါသည်
             aiExtractedHtml = `
-            <div class="mt-1 border-t pt-1 ${colorClass} w-full flex items-start gap-1.5">
-                <button onclick="const el = document.getElementById('${infoId}'); if(el.style.maxHeight === '14px') { el.style.maxHeight = '300px'; this.innerHTML = '▲'; } else { el.style.maxHeight = '14px'; this.innerHTML = '▼'; }" class="text-[9px] text-gray-500 hover:text-blue-500 bg-gray-50 hover:bg-blue-50 rounded border border-gray-200 transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center w-4 h-4 mt-0.5" title="အကျယ်ကြည့်ရန်">
+            <div class="mt-1 border-t pt-1 ${colorClass} w-[145px] flex items-start gap-1.5">
+                <button onclick="const el = document.getElementById('${infoId}'); if(el.style.maxHeight === '14px') { el.style.maxHeight = '200px'; this.innerHTML = '▲'; } else { el.style.maxHeight = '14px'; this.innerHTML = '▼'; }" class="text-[9px] text-gray-500 hover:text-blue-500 bg-gray-50 hover:bg-blue-50 rounded border border-gray-200 transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center w-4 h-4 mt-0.5" title="အကျယ်ကြည့်ရန်">
                     ▼
                 </button>
-                <div id="${infoId}" class="text-[10px] font-bold leading-relaxed overflow-hidden break-words whitespace-normal flex-1 pt-0.5" style="max-height: 14px; transition: max-height 0.3s ease-in-out;" title="စလစ် အချက်အလက်များ">
+                <div id="${infoId}" class="text-[10px] font-bold leading-tight overflow-hidden break-all flex-1 pt-0.5" style="max-height: 14px; transition: max-height 0.2s ease-in-out;" title="စလစ် အချက်အလက်များ">
                     ${formattedInfo}
                 </div>
             </div>`;
@@ -5167,7 +5054,7 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
           <td class="p-3">${amountHtml}</td>
           <td class="p-3 text-center">${statusHtml}</td>
           <td class="p-3 text-center">${actionHtml}</td>
-          <td class="p-3 text-xs"><div class="min-w-[180px] max-w-[250px] whitespace-normal"><div class="font-bold text-gray-800">${method}</div>${aiExtractedHtml}</div></td>
+          <td class="p-3 text-xs"><div class="max-w-[120px]"><div class="font-bold text-gray-800">${method}</div>${aiExtractedHtml}</div></td>
         </tr>`;
       });
       
@@ -5772,18 +5659,14 @@ renderHistoryRows(allLoadedHistory);
           document.body.appendChild(clone);
           await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
           
-          // 🌟 နောက်ကွယ် (Background Clone) တွင်သာ Light Mode သို့ ပြောင်း၍ ပုံထုတ်မည် 
-          const canvas = await html2canvas(clone, { 
-              backgroundColor: '#ffffff', 
-              scale: 3, 
-              useCORS: true, 
-              logging: false, 
-              imageTimeout: 3000,
-              onclone: function(clonedDoc) {
-                  // ပုံထုတ်မည့် Document အတုထဲတွင်သာ dark class ကို ခိုးဖြုတ်လိုက်ပါမည်။ (User မျက်နှာပြင်ကို လုံးဝ မထိခိုက်ပါ)
-                  clonedDoc.documentElement.classList.remove('dark');
-              }
-          });
+          // 🌟 ပုံထုတ်မည့်အချိန်လေးတွင် Dark Mode ကို အပြင်(Real DOM)မှာပါ ခဏပိတ်မည်
+          const isDark = document.documentElement.classList.contains('dark');
+          if (isDark) document.documentElement.classList.remove('dark');
+
+          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, logging:false, imageTimeout: 3000 });
+          
+          // 🌟 ပုံထုတ်ပြီးတာနဲ့ Dark Mode ကို ချက်ချင်းပြန်ဖွင့်မည်
+          if (isDark) document.documentElement.classList.add('dark');
 
           document.body.removeChild(clone);
 
@@ -5990,115 +5873,10 @@ async function extractSlipData(imageUrl) {
   }
   // --- Uploading Slips ---
   window.triggerSlipUpload = function(invId) { 
-      // 🌟 တင်မယ် နှိပ်လိုက်တာနဲ့ ဝင်စလစ်/ထွက်စလစ် ရွေးခိုင်းမည့် Popup (Modal) အသစ် 🌟
-      const overlay = document.createElement('div');
-      overlay.className = "fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4";
-      overlay.innerHTML = `
-          <div class="bg-white rounded-xl p-5 w-full max-w-xs text-center shadow-2xl">
-              <h3 class="font-black text-lg mb-4 text-gray-800">မည်သည့် စလစ်အမျိုးအစားကို တင်မည်နည်း?</h3>
-              <div class="flex gap-3">
-                  <button id="btnInSlip" class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold py-3 rounded-lg flex flex-col items-center transition-colors">
-                      <span class="text-3xl mb-1">📥</span> ဝင်စလစ်
-                  </button>
-                  <button id="btnOutSlip" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-bold py-3 rounded-lg flex flex-col items-center transition-colors">
-                      <span class="text-3xl mb-1">📤</span> ထွက်စလစ်
-                  </button>
-              </div>
-              <button id="btnCancelSlip" class="mt-5 text-sm font-bold text-gray-400 hover:text-red-500">✕ မတင်တော့ပါ (Cancel)</button>
-          </div>
-      `;
-      document.body.appendChild(overlay);
-
-      // ဝင်စလစ် ရွေးချယ်ပါက
-      document.getElementById('btnInSlip').onclick = () => {
-          window.currentSlipUploadMode = 'in'; 
-          document.getElementById('uploadTargetInvId').value = invId;
-          document.getElementById('slipUploader').click();
-          overlay.remove();
-      };
-      
-      // ထွက်စလစ် ရွေးချယ်ပါက
-      document.getElementById('btnOutSlip').onclick = () => {
-          window.currentSlipUploadMode = 'out'; 
-          document.getElementById('uploadTargetInvId').value = invId;
-          document.getElementById('slipUploader').click();
-          overlay.remove();
-      };
-
-      // Cancel နှိပ်ပါက
-      document.getElementById('btnCancelSlip').onclick = () => {
-          overlay.remove();
-      };
+      document.getElementById('uploadTargetInvId').value = invId; 
+      document.getElementById('slipUploader').click(); 
   }
 
-  // 🌟 စလစ်အထပ်/အတု (Duplicate) ဟုတ်မဟုတ် စစ်ဆေးသည့် Function 🌟
-  function checkDuplicateTransaction(extractedText, currentInvId) {
-      if (!extractedText) return { isDuplicate: false };
-      let parts = extractedText.split('|').map(s => s.trim());
-      if (parts.length >= 4) {
-          let refNo = parts[3];
-          if (refNo && refNo.length > 4 && refNo.toLowerCase() !== 'n/a' && refNo !== '-') {
-              let duplicateTx = allLoadedHistory.find(tx => {
-                  if (tx.id === currentInvId) return false;
-                  if (tx.extractedInfo && tx.extractedInfo.includes(refNo)) return true;
-                  return false;
-              });
-              if (duplicateTx) return { isDuplicate: true, refNo: refNo, duplicateId: duplicateTx.id };
-          }
-      }
-      return { isDuplicate: false };
-  }
-
-  // --- 🌟 SLIP2GO API ဖြင့် စလစ်အတု/အစစ် စစ်ဆေးခြင်း (Timeout နှင့် Proxy ပါဝင်သည်) 🌟 ---
-  async function verifyWithSlip2Go(imageUrl) {
-      if (!SLIP2GO_API_KEY) {
-          console.warn("⚠️ Slip2Go API Key မထည့်ရသေးပါ။");
-          return { checked: false };
-      }
-
-      try {
-          const targetUrl = "https://connect.slip2go.com/api/verify-slip/qr-image-link/info";
-          const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
-          
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-          const response = await fetch(proxyUrl, {
-              method: "POST",
-              headers: {
-                  "Content-Type": "application/json",
-                  "Authorization": `Bearer ${SLIP2GO_API_KEY}`
-              },
-              body: JSON.stringify({
-                  payload: {
-                      imageUrl: imageUrl, 
-                      checkCondition: { checkDuplicate: true }
-                  }
-              }),
-              signal: controller.signal
-          });
-
-          clearTimeout(timeoutId);
-
-          if (!response.ok) {
-              console.warn("Slip2Go API Error:", response.status);
-              return { checked: false }; 
-          }
-
-          const result = await response.json();
-
-          if (result.code === "200000" || result.success === true || result.data?.valid === true || result.valid === true) {
-              return { checked: true, isValid: true, data: result.data };
-          } else {
-              return { checked: true, isValid: false, message: result.message || "အတုဖြစ်နိုင်ပါသည်" };
-          }
-      } catch (error) {
-          console.warn("Slip2Go Connection Error or Timeout");
-          return { checked: false };
-      }
-  }
-
-  // --- ရိုးရိုး စလစ်တင်သည့်နေရာ (ဇယားထဲမှ "📎 တင်မယ်") ---
   window.handleSlipUpload = async function(event) {
       const files = event.target.files; if (!files || files.length === 0) return;
       const invId = document.getElementById('uploadTargetInvId').value; 
@@ -6106,13 +5884,13 @@ async function extractSlipData(imageUrl) {
       
       const index = allLoadedHistory.findIndex(x => x.id === invId); 
       let existingSlips = [];
-      let previousExtractedInfo = ""; 
+      let previousExtractedInfo = ""; // အဟောင်းကို မှတ်ထားရန်
       
       if(index !== -1) { 
           let tx = allLoadedHistory[index]; 
           existingSlips = tx.slipUrls || []; 
           if (tx.slipUrl && existingSlips.length === 0) existingSlips = [tx.slipUrl]; 
-          previousExtractedInfo = tx.extractedInfo || ""; 
+          previousExtractedInfo = tx.extractedInfo || ""; // ဒေတာအဟောင်းယူရန်
       }
 
       if (existingSlips.length + files.length > 10) { 
@@ -6122,10 +5900,12 @@ async function extractSlipData(imageUrl) {
 
       let uploadedUrls = []; let hasError = false;
       
+      // Upload ခလုတ်ကို ပိတ်ထားမည် (Loading ပြရန်)
       const uploadBtn = document.querySelector(`button[onclick*="triggerSlipUpload('${invId}')"]`);
       let origBtnText = "";
       if (uploadBtn) { 
           origBtnText = uploadBtn.innerHTML; 
+          // ခလုတ်ထဲမှာ Icon သို့မဟုတ် စာသား ဘယ်လိုပဲရှိရှိ "တင်နေသည် ⏳" လို့ အစားထိုးမည်
           uploadBtn.innerHTML = "တင်နေသည် ⏳"; 
           uploadBtn.disabled = true; 
       }
@@ -6141,39 +5921,14 @@ async function extractSlipData(imageUrl) {
 
          if (uploadedUrls.length > 0) {
               let combinedUrls = existingSlips.concat(uploadedUrls);
-              let newExtractedText = "";
               
-              let uploadMode = window.currentSlipUploadMode || 'in'; // ရွေးချယ်ထားသော Mode ကို ယူမည်
-
+              // 🌟 ပုံအားလုံးကို AI နဲ့ ဖတ်ပြီး စာသားတွေ ပေါင်းမည် 🌟
+              let newExtractedText = "";
               for (let i = 0; i < files.length; i++) {
-                  let currentImgUrl = uploadedUrls[i];
-                  
                   let base64Img = await fileToBase64(files[i]);
                   let data = await extractSlipDataWithGemini(base64Img);
-
-                  // 🌟 "ဝင်စလစ် (in)" ဖြစ်ပြီး THB ပါမှသာ Slip2Go ကို လှမ်းစစ်မည် (Bypass Logic အမှန်) 🌟
-                  if (uploadMode === 'in' && data.toUpperCase().includes('THB')) {
-                      let slip2goResult = await verifyWithSlip2Go(currentImgUrl);
-                      if (slip2goResult.checked && !slip2goResult.isValid) {
-                          data = `🛑 [SLIP2GO သတိပေးချက်: စလစ်အတု ဖြစ်နိုင်ပါသည်! - ${slip2goResult.message}] | ` + data;
-                          alert(`🛑 သတိပေးချက်: Slip2Go စနစ်အရ ယခုထိုင်းဘဏ်စလစ်သည် အတု (သို့) မှားယွင်းနေပါသည်။`);
-                      } else if (slip2goResult.checked && slip2goResult.isValid) {
-                          data = `✅ [SLIP2GO Verified] | ` + data;
-                      }
-                  } else if (uploadMode === 'out') {
-                      console.log("ထွက်စလစ်ဖြစ်သဖြင့် Slip2Go Verification ကို ကျော်သွားပါသည် (Bypassed).");
-                  }
-
-                  let dupCheck = checkDuplicateTransaction(data, invId);
-                  if (dupCheck.isDuplicate) {
-                      data = `⚠️ [စလစ်အထပ်/အတု - Ref: ${dupCheck.refNo} ကို (${dupCheck.duplicateId}) တွင် သုံးပြီးဖြစ်သည်] | ` + data;
-                      alert(`⚠️ သတိပေးချက်: ယခုစလစ်ပါ (Ref: ${dupCheck.refNo}) ကို အခြား Invoice (${dupCheck.duplicateId}) တွင် အသုံးပြုထားပြီး ဖြစ်နေပါသည်။`);
-                  }
-
-                  // စာသားရှေ့တွင် [ဝင်စလစ်] သို့မဟုတ် [ထွက်စလစ်] ဟု တပ်ပေးမည်
-                  let prefixText = uploadMode === 'in' ? "[ဝင်စလစ်]" : "[ထွက်စလစ်]";
-                  data = `${prefixText} ${data}`;
-
+                  
+                  // ပုံအများကြီးဆိုလျှင် ခွဲခြားသိသာအောင် ပုံ ၁, ပုံ ၂ စသဖြင့် တပ်ပေးမည်
                   if (files.length > 1 || existingSlips.length > 0) {
                       newExtractedText += `[ပုံ ${existingSlips.length + i + 1}] | ${data}`;
                   } else {
@@ -6183,6 +5938,7 @@ async function extractSlipData(imageUrl) {
                   if (i < files.length - 1) newExtractedText += " | "; 
               }
 
+              // ဒေတာအဟောင်းရှိရင် အသစ်နဲ့ ဆက်ပေါင်းမည်
               let finalExtractedInfo = previousExtractedInfo;
               if (finalExtractedInfo) {
                   finalExtractedInfo += " | " + newExtractedText;
@@ -6190,18 +5946,21 @@ async function extractSlipData(imageUrl) {
                   finalExtractedInfo = newExtractedText;
               }
 
+              // 🌟 Firebase သို့ သိမ်းမည် 🌟
               await firebase.firestore().collection("exchange_history").doc(invId).update({ 
                   slipUrls: combinedUrls, 
                   slipUrl: combinedUrls[0] || null,
                   extractedInfo: finalExtractedInfo 
               });
               
+              // Local History Data ထဲမှာပါ ချက်ချင်း Update လုပ်ပေးမည်
               if(index !== -1) { 
                   allLoadedHistory[index].slipUrls = combinedUrls; 
                   allLoadedHistory[index].slipUrl = combinedUrls[0] || null; 
                   allLoadedHistory[index].extractedInfo = finalExtractedInfo; 
               }
 
+              // 🌟 Telegram သို့ စလစ်ပုံများ လှမ်းပို့ရန် 🌟
               let txCustomerName = "—";
               if (index !== -1 && allLoadedHistory[index].customerName) {
                   txCustomerName = allLoadedHistory[index].customerName;
@@ -6232,7 +5991,6 @@ async function extractSlipData(imageUrl) {
       finally { 
           event.target.value = '';  
           if (uploadBtn) { uploadBtn.innerHTML = origBtnText; uploadBtn.disabled = false; }
-          window.currentSlipUploadMode = null; // Reset mode
       }
   }
 
@@ -6283,6 +6041,7 @@ async function extractSlipData(imageUrl) {
       
       try {
           if (slipArr.length === 0) {
+              // 🌟 စလစ်တစ်ပုံမှ မကျန်တော့လျှင် Slip Url ရော AI Data (extractedInfo) ပါ ဖျက်မည် 🌟
               await firebase.firestore().collection("exchange_history").doc(invId).update({
                   slipUrls: firebase.firestore.FieldValue.delete(),
                   slipUrl: firebase.firestore.FieldValue.delete(),
@@ -6313,20 +6072,50 @@ async function extractSlipData(imageUrl) {
           alert("ပုံဖျက်ရာတွင် အခက်အခဲရှိပါသည်။");
       }
   }
-
-  // --- 💾 Backup & Restore ---
+// ==========================================
+  // 💾 Backup & Restore Functions (အသစ်)
+  // ==========================================
   function exportDatabaseBackup() {
       const backupData = {
-          banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER,
-          qrs: FIREBASE_QRS, customers: FIREBASE_CUSTOMERS, customerOrder: FIREBASE_CUSTOMER_ORDER,
-          receiptTexts: FIREBASE_RECEIPT_TEXTS, receiptTheme: CURRENT_RECEIPT_THEME, customThemeUrl: CUSTOM_THEME_URL, 
-          deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES,
-          treasuryAccounts: FIREBASE_TREASURY, treasuryOrder: FIREBASE_TREASURY_ORDER,
-          expenses: FIREBASE_EXPENSES, expenseOrder: FIREBASE_EXPENSE_ORDER,
-          apiKeys: { botToken: TELEGRAM_BOT_TOKEN, imgbb: IMGBB_API_KEY, openrouter: OPENROUTER_API_KEY, slip2go: SLIP2GO_API_KEY },
-          telegram: { chatId: TELEGRAM_CHAT_ID, topicId: TELEGRAM_TOPIC_ID, successTopicId: TELEGRAM_SUCCESS_TOPIC_ID, cancelTopicId: TELEGRAM_CANCEL_TOPIC_ID, slipTopicId: TELEGRAM_SLIP_TOPIC_ID },
-          timeSettings: { pendingAlertHours: ALERT_TIMEOUT_HOURS, autoCancelDays: AUTO_CANCEL_DAYS },
-          device_permissions: FIREBASE_DEVICE_PERMISSIONS, system_passwords: FIREBASE_SYSTEM_PASSWORDS, adminTimezone: ADMIN_TIMEZONE
+          banks: FIREBASE_BANKS,
+          bankOrder: FIREBASE_BANK_ORDER,
+          qrs: FIREBASE_QRS,
+          customers: FIREBASE_CUSTOMERS,
+          customerOrder: FIREBASE_CUSTOMER_ORDER,
+          receiptTexts: FIREBASE_RECEIPT_TEXTS,
+          receiptTheme: CURRENT_RECEIPT_THEME, // 🌟 ထည့်လိုက်သော Theme
+          customThemeUrl: CUSTOM_THEME_URL, // 🌟 စိတ်ကြိုက်ပုံ Link ပါ ထည့်သိမ်းမည်
+          deviceNames: FIREBASE_DEVICE_NAMES,
+          hiddenDevices: FIREBASE_HIDDEN_DEVICES,
+          
+          // 🌟 Wallet (Master Accounts) နှင့် အစီအစဉ်များကို Backup ထဲ ထည့်ပါမည်
+          treasuryAccounts: FIREBASE_TREASURY,
+          treasuryOrder: FIREBASE_TREASURY_ORDER,
+          
+          // 🌟 Expense ဒေတာများ
+          expenses: FIREBASE_EXPENSES,
+          expenseOrder: FIREBASE_EXPENSE_ORDER,
+          
+          // --- 🌟 အောက်ပါ System ပိုင်းဆိုင်ရာများကို ထပ်ထည့်လိုက်ပါသည် ---
+          apiKeys: { 
+              botToken: TELEGRAM_BOT_TOKEN, 
+              imgbb: IMGBB_API_KEY, 
+              openrouter: OPENROUTER_API_KEY 
+          },
+          telegram: { 
+              chatId: TELEGRAM_CHAT_ID, 
+              topicId: TELEGRAM_TOPIC_ID, 
+              successTopicId: TELEGRAM_SUCCESS_TOPIC_ID, 
+              cancelTopicId: TELEGRAM_CANCEL_TOPIC_ID, 
+              slipTopicId: TELEGRAM_SLIP_TOPIC_ID 
+          },
+          timeSettings: { 
+              pendingAlertHours: ALERT_TIMEOUT_HOURS, 
+              autoCancelDays: AUTO_CANCEL_DAYS 
+          },
+          device_permissions: FIREBASE_DEVICE_PERMISSIONS,
+          system_passwords: FIREBASE_SYSTEM_PASSWORDS,
+          adminTimezone: ADMIN_TIMEZONE
       };
       
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
@@ -6350,14 +6139,18 @@ async function extractSlipData(imageUrl) {
                   event.target.value = ''; 
                   return;
               }
+              
               await dbRef.set(importedData, { merge: true });
               alert("Backup ဒေတာ အောင်မြင်စွာ Restore လုပ်ပြီးပါပြီ။ Page ကို Refresh လုပ်ပါမည်။");
               window.location.reload();
-          } catch (err) { alert("Backup ဖိုင်မှားယွင်းနေပါသည်။ (Invalid JSON)"); }
+          } catch (err) {
+              alert("Backup ဖိုင်မှားယွင်းနေပါသည်။ (Invalid JSON)");
+          }
       };
       reader.readAsText(file);
   }
 
+ // 🌟 အဆင့်မြှင့်တင်ထားသော Customer Statement စနစ် (Full Page Watermark)
   window.generateCustomerStatement = async function(cusId) {
       const c = FIREBASE_CUSTOMERS[cusId];
       if(!c) return alert("Customer အချက်အလက် မတွေ့ပါ။");
@@ -6383,7 +6176,9 @@ async function extractSlipData(imageUrl) {
       txs.forEach((tx, i) => {
           let dt = new Date(tx.timestamp);
           let dateStr = dt.toLocaleDateString('en-GB') + " " + dt.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+          
           let sColor = tx.status === 'Success' ? '#15803d' : (tx.status === 'Cancelled' ? '#b91c1c' : '#b45309');
+          
           htmlRows += `
             <tr style="border-bottom: 1px solid #e2e8f0; font-size:12px;">
                 <td style="padding: 8px;">${i+1}</td>
@@ -6392,7 +6187,8 @@ async function extractSlipData(imageUrl) {
                 <td style="padding: 8px;">${tx.type}</td>
                 <td style="padding: 8px; font-weight:bold; color:${sColor};">${tx.status || 'Pending'}</td>
                 <td style="padding: 8px; font-weight:bold; color:#15803d;">${tx.inAmt} ➔ ${tx.outAmt}</td>
-            </tr>`;
+            </tr>
+          `;
       });
 
       const reportDiv = document.createElement('div');
@@ -6404,15 +6200,20 @@ async function extractSlipData(imageUrl) {
       reportDiv.style.position = 'fixed';
       reportDiv.style.left = '-9999px';
       reportDiv.style.top = '0';
+      // 🌟 Overflows မဖြစ်စေရန် ကန့်သတ်ခြင်း
       reportDiv.style.overflow = 'hidden'; 
 
+      // 🌟 Watermark ပုံ ၆၀ ခုကို Loop ပတ်ပြီး ဖန်တီးခြင်း
       let watermarkBlocks = '';
-      for(let w = 0; w < 60; w++) { watermarkBlocks += `<img src="assets/logo/main_logo.png" style="width: 140px; opacity: 0.05; margin: 30px;">`; }
+      for(let w = 0; w < 60; w++) {
+          watermarkBlocks += `<img src="assets/logo/main_logo.png" style="width: 140px; opacity: 0.05; margin: 30px;">`;
+      }
 
       reportDiv.innerHTML = `
           <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; pointer-events: none; z-index: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; transform: rotate(-30deg);">
               ${watermarkBlocks}
           </div>
+          
           <div style="position: relative; z-index: 1;">
               <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 20px;">
                   <h1 style="font-size: 28px; font-weight: 900; color: #1e40af;">Thailand Guide - Supplier By Ye</h1>
@@ -6430,7 +6231,14 @@ async function extractSlipData(imageUrl) {
               </div>
               <table style="width: 100%; border-collapse: collapse; table-layout: fixed; background: rgba(255, 255, 255, 0.75);">
                   <thead style="background: rgba(241, 245, 249, 0.9);">
-                      <tr><th style="width: 50px; padding: 10px;">No.</th><th style="padding: 10px;">Date & Time</th><th style="padding: 10px;">Invoice ID</th><th style="padding: 10px;">Type</th><th style="padding: 10px;">Status</th><th style="padding: 10px;">Amount</th></tr>
+                      <tr>
+                          <th style="width: 50px; padding: 10px;">No.</th>
+                          <th style="padding: 10px;">Date & Time</th>
+                          <th style="padding: 10px;">Invoice ID</th>
+                          <th style="padding: 10px;">Type</th>
+                          <th style="padding: 10px;">Status</th>
+                          <th style="padding: 10px;">Amount</th>
+                      </tr>
                   </thead>
                   <tbody>${htmlRows}</tbody>
               </table>
@@ -6449,23 +6257,25 @@ async function extractSlipData(imageUrl) {
           const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
           pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
           pdf.save(`Statement_${fullName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
-      } catch(e) { alert("PDF ထုတ်ရာတွင် အခက်အခဲရှိပါသည်။"); } 
-      finally { document.body.removeChild(reportDiv); }
+      } catch(e) {
+          alert("PDF ထုတ်ရာတွင် အခက်အခဲရှိပါသည်။");
+      } finally {
+          document.body.removeChild(reportDiv);
+      }
   }
-
+   // TrueMoney အတွက် Amount ပါသော Link ထုတ်ပေးရန်
   window.generateTrueMoneyLink = function(amt) {
-      return `https://tmn.app.link/fcRfbMKlS3b?amount=${amt}`;
+      // သင့် Link ၏ နောက်တွင် ?amount= ထည့်ခြင်းဖြင့် App ထဲတွင် ပမာဏအော်တိုပေါ်လာပါမည်
+      const originalLink = "https://tmn.app.link/fcRfbMKlS3b"; 
+      return `${originalLink}?amount=${amt}`;
   }
 
+// --- 🌟 Role Based UI Setup & Auto-Login Logic ---
   function setupUIForRole(role) {
       const adminBtn = document.querySelector('.admin-btn');
       const modalTitle = document.getElementById('adminModalTitle');
       const btnExport = document.getElementById('btnExportCSV');
       const btnClear = document.getElementById('btnClearHistory');
-      
-      const smartContainer = document.getElementById('smartSlipContainer');
-      if (role !== 'guest') { if (smartContainer) smartContainer.classList.remove('hidden'); } 
-      else { if (smartContainer) smartContainer.classList.add('hidden'); }
       
       document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
       
@@ -6486,38 +6296,55 @@ async function extractSlipData(imageUrl) {
           adminBtn.innerHTML = "🔒 Admin / Staff";
       }
       
+      // Main Admin ဖြစ်မှသာ UI အကွက်ကို ပြသမည်
       const timeSettingsBlock = document.getElementById('timeSettingsBlock');
-      if (timeSettingsBlock) { timeSettingsBlock.style.display = (role === 'main admin') ? 'block' : 'none'; }
+      if (timeSettingsBlock) {
+          timeSettingsBlock.style.display = (role === 'main admin') ? 'block' : 'none';
+      }
   }
 
   function checkDeviceBypassAndInit() {
       const currentDeviceId = localStorage.getItem('sys_device_id');
       const deviceConfig = FIREBASE_DEVICE_PERMISSIONS[currentDeviceId];
-      if (deviceConfig && deviceConfig.role) { CURRENT_ROLE = deviceConfig.role.toLowerCase(); } 
-      else { CURRENT_ROLE = 'guest'; }
+      
+      if (deviceConfig && deviceConfig.role) {
+          CURRENT_ROLE = deviceConfig.role.toLowerCase();
+      } else {
+          CURRENT_ROLE = 'guest';
+      }
       setupUIForRole(CURRENT_ROLE);
   }
-
+// ==========================================
+  // 🎨 Receipt Theme Functions
+  // ==========================================
   window.toggleCustomThemeInput = function() {
       const theme = document.getElementById('adminReceiptTheme').value;
       const inputEl = document.getElementById('customThemeUrlInput');
       if (!inputEl) return;
-      if (theme === 'custom') { inputEl.classList.remove('hidden'); } 
-      else { inputEl.classList.add('hidden'); }
+      if (theme === 'custom') {
+          inputEl.classList.remove('hidden');
+      } else {
+          inputEl.classList.add('hidden');
+      }
   };
 
   window.saveReceiptTheme = async function() {
       const theme = document.getElementById('adminReceiptTheme').value;
       const customUrl = document.getElementById('customThemeUrlInput') ? document.getElementById('customThemeUrlInput').value.trim() : '';
-      CURRENT_RECEIPT_THEME = theme; CUSTOM_THEME_URL = customUrl;
+      CURRENT_RECEIPT_THEME = theme;
+      CUSTOM_THEME_URL = customUrl;
+      
       try {
           if (dbRef) await dbRef.set({ receiptTheme: theme, customThemeUrl: customUrl }, { merge: true });
           window.showToast("ပြေစာဒီဇိုင်း ပြောင်းလဲပြီးပါပြီ။", "🎨");
-      } catch(e) { alert("Error: " + e.message); }
+      } catch(e) { 
+          alert("Error: " + e.message); 
+      }
   };
 
   window.getThemeWatermarkUrl = function(theme) {
       if (theme === 'custom' && CUSTOM_THEME_URL) return CUSTOM_THEME_URL;
+      
       switch(theme) {
           case 'thingyan': return 'assets/theme/thingyan.png'; 
           case 'thadingyut': return 'assets/theme/thadingyut.png';
@@ -6525,289 +6352,6 @@ async function extractSlipData(imageUrl) {
           default: return 'assets/logo/main_logo.png';
       }
   };
-
-  // --- 🌟 Smart Slip Workflow (Fuzzy Match & Auto Success) ---
-  let smartSlipMode = 'in'; 
-
-  window.triggerSmartSlip = function(mode) {
-      smartSlipMode = mode;
-      document.getElementById('smartSlipUploader').value = '';
-      document.getElementById('smartSlipUploader').click();
-  }
-
-  window.handleSmartSlipUpload = async function(event) {
-      const files = event.target.files; 
-      if (!files || files.length === 0) return;
-      if (!IMGBB_API_KEY) { alert("ImgBB API Key ထည့်သွင်းထားခြင်း မရှိပါ။"); return; } 
-      if (files.length > 5) { alert("တစ်ကြိမ်လျှင် ပုံ ၅ ပုံထက်ပို၍ မတင်ပါနှင့်။"); return; }
-
-      let uploadedUrls = []; let hasError = false;
-      const origBtn = document.querySelector(smartSlipMode === 'in' ? 'button[onclick="triggerSmartSlip(\'in\')"]' : 'button[onclick="triggerSmartSlip(\'out\')"]');
-      const origText = origBtn.innerHTML;
-      
-      origBtn.innerHTML = "⏳ စစ်ဆေးနေသည်..."; origBtn.disabled = true;
-
-      try {
-          if (allLoadedHistory.length === 0) { await loadHistory(); }
-
-          for (let i = 0; i < files.length; i++) {
-              const formData = new FormData(); formData.append("image", files[i]);
-              const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
-              const result = await response.json(); 
-              if (result.success) uploadedUrls.push(result.data.url); 
-              else hasError = true;
-          }
-
-          if (uploadedUrls.length > 0) {
-              let newExtractedText = "";
-              let aiParsedData = { amount: 0, currency: '' };
-
-              for (let i = 0; i < files.length; i++) {
-                  let currentImgUrl = uploadedUrls[i];
-                  
-                  let base64Img = await fileToBase64(files[i]);
-                  let data = await extractSlipDataWithGemini(base64Img);
-                  
-                  // 🌟 ဝင်စလစ် (in) ဖြစ်ပြီး AI ဖတ်ထားသော စာသားထဲတွင် THB ပါမှသာ Slip2Go ကို လှမ်းစစ်မည် (Bypass) 🌟
-                  if (smartSlipMode === 'in' && data.toUpperCase().includes('THB')) {
-                      let slip2goResult = await verifyWithSlip2Go(currentImgUrl);
-                      if (slip2goResult.checked && !slip2goResult.isValid) {
-                          data = `🛑 [SLIP2GO သတိပေးချက်: စလစ်အတု ဖြစ်နိုင်ပါသည်! - ${slip2goResult.message}] | ` + data;
-                          alert(`🛑 သတိပေးချက်: Slip2Go စနစ်အရ ယခုထိုင်းဘဏ်စလစ်သည် အတု (သို့) မှားယွင်းနေပါသည်။`);
-                      } else if (slip2goResult.checked && slip2goResult.isValid) {
-                          data = `✅ [SLIP2GO Verified] | ` + data;
-                      }
-                  } else {
-                      console.log("MMK/VND စလစ်ဖြစ်သဖြင့် Slip2Go Verification ကို ကျော်သွားပါသည် (Bypassed).");
-                  }
-
-                  // ၃။ Duplicate စစ်ဆေးမည်
-                  let dupCheck = checkDuplicateTransaction(data, null);
-                  if (dupCheck.isDuplicate) {
-                      data = `⚠️ [စလစ်အထပ်/အတု - Ref: ${dupCheck.refNo} ကို (${dupCheck.duplicateId}) တွင် သုံးပြီးဖြစ်သည်] | ` + data;
-                      alert(`⚠️ ယခုတင်လိုက်သော စလစ်သည် မှတ်တမ်းဟောင်း (${dupCheck.duplicateId}) နှင့် ထပ်နေပါသည်။ စလစ်အထပ် ဖြစ်နိုင်ပါသည်။`);
-                  }
-
-                  newExtractedText += (files.length > 1) ? `[ပုံ ${i + 1}] | ${data}` : data;
-                  if (i < files.length - 1) newExtractedText += " || "; 
-                  
-                  if (aiParsedData.amount === 0) {
-                      const match = data.match(/([\d,.]+)\s*(THB|MMK|VND)/i);
-                      if (match) {
-                          aiParsedData.amount = parseFloat(match[1].replace(/,/g, ''));
-                          aiParsedData.currency = match[2].toUpperCase();
-                      } else {
-                          const parts = data.split('|');
-                          let lastPart = parts[parts.length - 1] || "";
-                          aiParsedData.amount = parseFloat(lastPart.replace(/[^\d.]/g, '')) || 0;
-                          aiParsedData.currency = lastPart.toUpperCase().includes('THB') ? 'THB' : (lastPart.toUpperCase().includes('VND') ? 'VND' : 'MMK');
-                      }
-                  }
-              }
-
-              if (aiParsedData.amount > 0) {
-                  document.getElementById('smartMatchModal').style.zIndex = "99999";
-                  showSmartMatchModal(aiParsedData.amount, aiParsedData.currency, newExtractedText, uploadedUrls);
-              } else {
-                  alert("စလစ်ထဲမှ ငွေပမာဏကို ဖတ်၍မရပါ။ ပုံမကြည်လင်ခြင်း ဖြစ်နိုင်ပါသည်။");
-              }
-          } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
-      } catch (e) { 
-          alert("အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။"); 
-      } finally { 
-          origBtn.innerHTML = origText; origBtn.disabled = false; event.target.value = '';  
-      }
-  }
-
-  function showSmartMatchModal(aiAmt, aiCurr, fullAiText, imgUrls) {
-      document.getElementById('smartMatchAiAmt').textContent = aiAmt.toLocaleString() + ' ' + aiCurr;
-      document.getElementById('smartMatchAiDetails').textContent = fullAiText.replace(/\|/g, ' | ');
-      document.getElementById('smartMatchTitle').textContent = smartSlipMode === 'in' ? "📥 ဝင်စလစ်နှင့် ကိုက်ညီသောမှတ်တမ်း" : "📤 ထွက်စလစ်နှင့် ကိုက်ညီသောမှတ်တမ်း";
-
-      const listDiv = document.getElementById('smartMatchList');
-      listDiv.innerHTML = '';
-
-      let matches = allLoadedHistory.filter(tx => {
-          if (smartSlipMode === 'in' && tx.status !== 'Pending') return false;
-          if (smartSlipMode === 'out' && tx.status !== 'Pending' && tx.status !== 'Success') return false;
-
-          let targetAmtStr = smartSlipMode === 'in' ? tx.inAmt : tx.outAmt;
-          let txAmt = parseFloat(targetAmtStr.replace(/[^\d.]/g, '')) || 0;
-          let txCurr = targetAmtStr.includes('THB') ? 'THB' : (targetAmtStr.includes('VND') ? 'VND' : 'MMK');
-
-          if (aiCurr && txCurr !== aiCurr) return false;
-
-          let diff = Math.abs(aiAmt - txAmt);
-          if (txCurr === 'THB' && diff <= 2) return true;
-          if (txCurr === 'MMK' && diff <= 200) return true;
-          if (txCurr === 'VND' && diff <= 5000) return true;
-          return false;
-      });
-
-      if (matches.length === 0) {
-          listDiv.innerHTML = `<div class="p-4 text-center text-red-500 font-bold border border-red-200 bg-red-50 rounded-lg">တူညီသော ပမာဏဖြင့် မှတ်တမ်း မတွေ့ရှိပါ။<br><span class="text-xs text-gray-500 font-normal">ပမာဏကွာဟချက်များလွန်းခြင်း (သို့) Invoice မဖွင့်ရသေးခြင်း ဖြစ်နိုင်ပါသည်။</span></div>`;
-      } else {
-          matches.forEach(tx => {
-    let targetAmtStr = smartSlipMode === 'in' ? tx.inAmt : tx.outAmt;
-    let btnClass = smartSlipMode === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700';
-    let btnText = smartSlipMode === 'in' ? 'အတည်ပြုမည်' : 'စလစ်တွဲမည်';
-
-    // 🕒 ရက်စွဲ နှင့် အချိန် Format ပြောင်းခြင်း
-    let dObj = new Date(tx.timestamp);
-    let timeStr = dObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    let dateStr = dObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-
-    // 💼 အဝင်/အထွက် အကောင့်အမည်များ ရှာဖွေခြင်း
-    let inMethod = tx.method || "မပါ";
-    let ledgerOutName = tx.ledgerOut ? (window.getLedgerAccount(tx.ledgerOut)?.name || tx.ledgerOut) : "မရွေးရသေးပါ";
-
-    listDiv.innerHTML += `
-    <div class="border border-gray-200 rounded-lg p-3 mb-2 hover:bg-blue-50 transition-colors">
-        <div class="flex justify-between items-center mb-1">
-            <div class="flex items-center gap-2">
-                <span class="font-bold text-sm text-blue-800">${tx.id}</span>
-                <span class="text-[10px] text-gray-500 font-bold bg-white border px-1.5 py-0.5 rounded shadow-sm">🕒 ${dateStr}, ${timeStr}</span>
-            </div>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-gray-100 font-bold border">${tx.status}</span>
-        </div>
-        
-        <div class="text-xs text-gray-600 mb-2">
-            <p class="mb-1">Customer: <span class="font-bold text-gray-800">${tx.customerName || '-'}</span></p>
-            
-            <!-- 💼 ဝင်ငွေ/ထွက်ငွေ အကောင့်များ ပြသခြင်း -->
-            <div class="flex flex-col gap-1 my-1.5 p-1.5 bg-gray-50 border border-gray-200 rounded-md">
-                <div class="flex justify-between">
-                    <span class="text-gray-500 font-bold">📥 အဝင် (In):</span>
-                    <span class="font-bold text-green-700 truncate max-w-[65%]" title="${inMethod}">${inMethod}</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-500 font-bold">📤 အထွက် (Out):</span>
-                    <span class="font-bold text-red-600 truncate max-w-[65%]" title="${ledgerOutName}">${ledgerOutName}</span>
-                </div>
-            </div>
-
-            <p class="mt-1">ပမာဏ: <span class="font-black text-green-700 text-sm">${targetAmtStr}</span></p>
-        </div>
-        <button onclick='confirmSmartMatch("${tx.id}", ${JSON.stringify(imgUrls)}, ${JSON.stringify(fullAiText)})' class="w-full text-white font-bold py-1.5 rounded-lg shadow-sm text-sm ${btnClass}">${btnText}</button>
-    </div>`;
-});
-      }
-      document.getElementById('smartMatchModal').style.display = 'flex';
-  }
-
-  window.confirmSmartMatch = async function(invId, imgUrls, aiText) {
-      document.getElementById('smartMatchModal').style.display = 'none';
-
-      const index = allLoadedHistory.findIndex(x => x.id === invId);
-      if (index === -1) return;
-      let tx = allLoadedHistory[index];
-
-      let existingSlips = tx.slipUrls || [];
-      if (tx.slipUrl && existingSlips.length === 0) existingSlips = [tx.slipUrl];
-      
-      let combinedUrls = existingSlips.concat(imgUrls);
-      let prevAiInfo = tx.extractedInfo || "";
-      let prefix = smartSlipMode === 'in' ? "[ဝင်စလစ်]" : "[ထွက်စလစ်]";
-      let newInfo = `${prefix} ${aiText}`;
-      let finalExtractedInfo = prevAiInfo ? (prevAiInfo + " || " + newInfo) : newInfo;
-
-      window.showToast("စလစ်မှတ်တမ်းတင်နေပါသည်...", "⏳");
-
-      try {
-          await firebase.firestore().collection("exchange_history").doc(invId).update({
-              slipUrls: combinedUrls, slipUrl: combinedUrls[0] || null, extractedInfo: finalExtractedInfo
-          });
-
-          tx.slipUrls = combinedUrls; tx.slipUrl = combinedUrls[0] || null; tx.extractedInfo = finalExtractedInfo;
-
-          if (smartSlipMode === 'in') {
-              let caption = `📥 Customer ဝင်စလစ်\nID: ${invId}\nCustomer: ${tx.customerName || '-'}`;
-              imgUrls.forEach(url => sendTelegramPhoto(url, caption, TELEGRAM_SLIP_TOPIC_ID));
-              window.showToast("စလစ်တင်ခြင်း အောင်မြင်ပါသည်။ ပိုက်ဆံအိတ်ရွေးပါ။", "✅");
-              renderHistoryRows(allLoadedHistory);
-              
-              window.updateTxStatus(invId, 'Success', null);
-          } else {
-              let caption = `📤 Admin ထွက်စလစ်\nID: ${invId}\nCustomer: ${tx.customerName || '-'}`;
-              imgUrls.forEach(url => sendTelegramPhoto(url, caption, TELEGRAM_SLIP_TOPIC_ID));
-              window.showToast("ထွက်စလစ် အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။", "✅");
-              renderHistoryRows(allLoadedHistory);
-          }
-      } catch(e) { alert("စလစ်သိမ်းဆည်းရာတွင် အခက်အခဲရှိပါသည်။"); }
-  }
-   
-      // 🌟 Quick Amount တွက်ချက်ပေးမည့် Function 🌟
-  window.addQuickAmt = function(inputId, addAmt, isClear = false) {
-      const el = document.getElementById(inputId);
-      if(!el) return;
-      
-      if(isClear) {
-          el.value = ''; // 'C' နှိပ်လျှင် အကုန်ဖျက်မည်
-      } else {
-          let current = parseFloat(el.value.replace(/,/g, '')) || 0;
-          let newVal = current + addAmt;
-          updateVal(inputId, newVal, inputId.toLowerCase().includes('thb') || inputId.toLowerCase().includes('vnd'));
-      }
-      // ဂဏန်းပြောင်းသွားကြောင်း စနစ်ကို အသိပေးပြီး ငွေလဲနှုန်းကို အလိုအလျောက် တွက်ခိုင်းမည်
-      el.dispatchEvent(new Event('input'));
-  };
-
-      // 🌟 PC အတွက် Copy & Paste ဖြင့် စလစ်တင်ခြင်း (Ctrl + V) 🌟
-  window.addEventListener('paste', function (e) {
-      let items = (e.clipboardData || window.clipboardData).items;
-      let files = [];
-      
-      // Paste လုပ်လိုက်တဲ့အထဲမှာ ပုံ (Image) ပါလား စစ်ဆေးခြင်း
-      for (let i = 0; i < items.length; i++) {
-          if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
-              files.push(items[i].getAsFile());
-          }
-      }
-      
-      if (files.length > 0) {
-          e.preventDefault(); // တခြားနေရာတွေမှာ သွား Paste မဖြစ်အောင် တားမည်
-          
-          // Custom Modal ဖန်တီးမည်
-          const overlay = document.createElement('div');
-          overlay.className = "fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4";
-          overlay.innerHTML = `
-              <div class="bg-white rounded-xl p-5 w-full max-w-xs text-center shadow-2xl transform scale-100 transition-transform">
-                  <h3 class="font-black text-lg mb-4 text-gray-800">🖼️ ပုံ Paste လုပ်လိုက်ပါပြီ<br><span class="text-xs text-gray-500 mt-1 block">မည်သည့်စလစ်အဖြစ် စစ်ဆေးမည်နည်း?</span></h3>
-                  <div class="flex gap-3">
-                      <button id="btnPasteIn" class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold py-3 rounded-lg flex flex-col items-center transition-colors shadow-sm">
-                          <span class="text-3xl mb-1">📥</span> ဝင်စလစ်
-                      </button>
-                      <button id="btnPasteOut" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-bold py-3 rounded-lg flex flex-col items-center transition-colors shadow-sm">
-                          <span class="text-3xl mb-1">📤</span> ထွက်စလစ်
-                      </button>
-                  </div>
-                  <button id="btnPasteCancel" class="mt-5 text-sm font-bold text-gray-400 hover:text-red-500 transition-colors">✕ မလုပ်တော့ပါ (Cancel)</button>
-              </div>
-          `;
-          document.body.appendChild(overlay);
-
-          // ဝင်စလစ် ရွေးပါက
-          document.getElementById('btnPasteIn').onclick = () => {
-              smartSlipMode = 'in'; 
-              let mockEvent = { target: { files: files, value: '' } };
-              window.handleSmartSlipUpload(mockEvent);
-              overlay.remove();
-          };
-          
-          // ထွက်စလစ် ရွေးပါက
-          document.getElementById('btnPasteOut').onclick = () => {
-              smartSlipMode = 'out'; 
-              let mockEvent = { target: { files: files, value: '' } };
-              window.handleSmartSlipUpload(mockEvent);
-              overlay.remove();
-          };
-
-          // Cancel နှိပ်ပါက
-          document.getElementById('btnPasteCancel').onclick = () => {
-              overlay.remove();
-          };
-      }
-  });
 </script>
 </body>
 </html>
