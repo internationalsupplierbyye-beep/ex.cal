@@ -44,7 +44,7 @@
     .sub{ font-size:.82rem; color:#6b7280; margin-bottom:.25rem; line-height:1.5; padding-bottom:4px; }
     .rate-note{ font-size:.95rem; color:#64748b; margin-top:.45rem; font-weight:900; line-height:1.8; padding-bottom:6px; display: inline-block; }
     .thanks{ color:#059669; font-size:.88rem; margin-top:.45rem; font-weight:800; line-height:1.8; padding-bottom:6px; display: inline-block; }
-    .lang-warn1, .lang-warn2 { line-height: 1.8; padding-bottom: 6px; display: inline-block; }
+    .lang-warn1, .lang-warn2, .lang-warn3 { line-height: 1.8; padding-bottom: 6px; display: inline-block; }
 
     h1, h2, h3 { line-height: 1.6 !important; padding-bottom: 4px; }
 
@@ -289,10 +289,11 @@
     <div class="text-center mt-3">
       <div class="rate-note" id="rateNote1"></div>
       <div class="export-only-texts hidden">
-          <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div>
-          <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div>
-          <div class="lang-thanks thanks"></div>
-      </div>
+        <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div>
+        <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div>
+        <div class="lang-warn3 text-red-600 font-extrabold mt-2"></div>
+        <div class="lang-thanks thanks"></div>
+    </div>
     </div>
     <div class="flex flex-wrap gap-2 mt-3">
       <button class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'download', this)" data-i18n="btn_png">Save PNG</button>
@@ -811,6 +812,11 @@
           <label class="text-xs font-bold text-gray-600">သတိပေးချက် ၂ (Warning 2)</label>
           <input type="text" id="adminWarn2" class="admin-input-box text-sm">
         </div>
+        <!-- ဒါက အခုအသစ်ထည့်လိုက်တဲ့ သတိပေးချက် ၃ ပါ -->
+        <div class="mb-2">
+          <label class="text-xs font-bold text-gray-600">သတိပေးချက် ၃ (Warning 3)</label>
+          <input type="text" id="adminWarn3" class="admin-input-box text-sm">
+        </div>
         <div class="mb-3">
           <label class="text-xs font-bold text-gray-600">ကျေးဇူးတင်လွှာ (Thanks Message)</label>
           <input type="text" id="adminThanks" class="admin-input-box text-sm">
@@ -1165,18 +1171,21 @@
       orig: {
           warn1: "ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။",
           warn2: "ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။",
+          warn3: "",
           thanks: "Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။",
           copyBottom: "ငွေလွှဲမည်ဆိုပါက ဘဏ်အကောင့်မေးပါ ခင်ဗျ၊"
       },
       en: {
           warn1: "Always request the bank account before every transfer.",
           warn2: "We are not responsible for any transfer made without requesting and confirming the bank account.",
+          warn3: "",
           thanks: "Thank you for trusting and using Thailand Guide - Supplier By Ye.",
           copyBottom: "Please ask for the bank account before transferring."
       },
       th: {
           warn1: "โอนเงินทุกครั้งกรุณาขอเลขบัญชีที่ต้องถามก่อน",
           warn2: "หากโอนโดยไม่ยืนยันเลขบัญชี ทางเพจขอไม่รับผิดชอบ",
+          warn3: "",
           thanks: "ขอบคุณที่ไว้วางใจและใช้บริการ Thailand Guide - Supplier By Ye",
           copyBottom: "กรุณาสอบถามเลขบัญชีธนาคารก่อนโอนเงิน"
       }
@@ -2474,21 +2483,23 @@ if (file.startsWith('PP:')) {
   // --- Dynamic Receipt Texts UI Update ---
   function loadReceiptTextsToInputs() {
       const lang = document.getElementById('adminReceiptLang').value;
-      const texts = FIREBASE_RECEIPT_TEXTS[lang] || {warn1:'', warn2:'', thanks:'', copyBottom:''};
+      const texts = FIREBASE_RECEIPT_TEXTS[lang] || {warn1:'', warn2:'', warn3:'', thanks:'', copyBottom:''};
       document.getElementById('adminWarn1').value = texts.warn1 || '';
       document.getElementById('adminWarn2').value = texts.warn2 || '';
+      document.getElementById('adminWarn3').value = texts.warn3 || '';
       document.getElementById('adminThanks').value = texts.thanks || '';
       document.getElementById('adminCopyBottom').value = texts.copyBottom || '';
   }
 
   function updateReceiptUI() {
-      const texts = FIREBASE_RECEIPT_TEXTS['orig'] || {warn1:'', warn2:'', thanks:''};
+      const texts = FIREBASE_RECEIPT_TEXTS['orig'] || {warn1:'', warn2:'', warn3:'', thanks:''};
       
       // {id} နေရာတွင် UI ၌ XXXX ဟု အကြမ်းဖျင်းပြထားမည်
       const replaceVars = (txt) => txt ? txt.replace(/{id}/g, 'XXXX') : '';
 
       document.querySelectorAll('.lang-warn1').forEach(el => el.textContent = replaceVars(texts.warn1));
       document.querySelectorAll('.lang-warn2').forEach(el => el.textContent = replaceVars(texts.warn2));
+      document.querySelectorAll('.lang-warn3').forEach(el => el.textContent = replaceVars(texts.warn3));
       document.querySelectorAll('.lang-thanks').forEach(el => el.textContent = replaceVars(texts.thanks));
   }
 
@@ -3927,13 +3938,14 @@ function openAdmin() {
       const lang = document.getElementById('adminReceiptLang').value;
       const w1 = document.getElementById('adminWarn1').value.trim();
       const w2 = document.getElementById('adminWarn2').value.trim();
+      const w3 = document.getElementById('adminWarn3').value.trim();
       const thx = document.getElementById('adminThanks').value.trim();
       const cb = document.getElementById('adminCopyBottom').value.trim();
 
       const btn = document.getElementById('btnReceiptTextSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
-      FIREBASE_RECEIPT_TEXTS[lang] = { warn1: w1, warn2: w2, thanks: thx, copyBottom: cb };
+      FIREBASE_RECEIPT_TEXTS[lang] = { warn1: w1, warn2: w2, warn3: w3, thanks: thx, copyBottom: cb };
 
       try {
           await updateFirebase('receipts');
@@ -5407,6 +5419,7 @@ renderHistoryRows(allLoadedHistory);
     if(lang==='orig') {
         const w1 = clone.querySelector('.lang-warn1'); if(w1 && customTexts.warn1) { w1.textContent = replaceVars(customTexts.warn1); }
         const w2 = clone.querySelector('.lang-warn2'); if(w2 && customTexts.warn2) { w2.textContent = replaceVars(customTexts.warn2); }
+        const w3 = clone.querySelector('.lang-warn3'); if(w3 && customTexts.warn3) { w3.textContent = replaceVars(customTexts.warn3); }
         const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = replaceVars(customTexts.thanks); }
         return;
     }
@@ -5444,6 +5457,7 @@ renderHistoryRows(allLoadedHistory);
 
     const w1 = clone.querySelector('.lang-warn1'); if(w1 && customTexts.warn1) { w1.textContent = replaceVars(customTexts.warn1); }
     const w2 = clone.querySelector('.lang-warn2'); if(w2 && customTexts.warn2) { w2.textContent = replaceVars(customTexts.warn2); }
+    const w3 = clone.querySelector('.lang-warn3'); if(w3 && customTexts.warn3) { w3.textContent = replaceVars(customTexts.warn3); }
     const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = replaceVars(customTexts.thanks); }
   }
 
