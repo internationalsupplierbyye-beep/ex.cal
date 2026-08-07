@@ -334,6 +334,7 @@
       <div class="export-only-texts hidden">
           <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div>
           <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-warn3 text-red-600 font-extrabold mt-2"></div>
           <div class="lang-thanks thanks"></div>
       </div>
     </div>
@@ -2602,6 +2603,12 @@ if (file.startsWith('PP:')) {
         if (data.receiptTexts) {
             if (data.receiptTexts.orig) {
                 FIREBASE_RECEIPT_TEXTS.orig = data.receiptTexts.orig;
+                
+                // ဒီမှာ warn3 မရှိရင် အလွတ်တစ်ခု ဖန်တီးပေးဖို့ ထည့်လိုက်ပါတယ်
+                if (FIREBASE_RECEIPT_TEXTS.orig.warn3 === undefined) {
+                    FIREBASE_RECEIPT_TEXTS.orig.warn3 = "";
+                }
+
                 if (!FIREBASE_RECEIPT_TEXTS.orig.copyBottom && FIREBASE_RECEIPT_TEXTS.orig.copyBottom !== "") {
                     FIREBASE_RECEIPT_TEXTS.orig.copyBottom = "ငွေလွှဲမည်ဆိုပါက ဘဏ်အကောင့်မေးပါ ခင်ဗျ၊";
                 }
@@ -2609,7 +2616,7 @@ if (file.startsWith('PP:')) {
                 if (data.receiptTexts.th) FIREBASE_RECEIPT_TEXTS.th = data.receiptTexts.th;
             } 
             else if (data.receiptTexts.warn1 !== undefined) {
-                FIREBASE_RECEIPT_TEXTS.orig = { warn1: data.receiptTexts.warn1, warn2: data.receiptTexts.warn2, thanks: data.receiptTexts.thanks, copyBottom: "ငွေလွှဲမည်ဆိုပါက ဘဏ်အကောင့်မေးပါ ခင်ဗျ၊" };
+                FIREBASE_RECEIPT_TEXTS.orig = { warn1: data.receiptTexts.warn1, warn2: data.receiptTexts.warn2, warn3: data.receiptTexts.warn3 || "", thanks: data.receiptTexts.thanks, copyBottom: "ငွေလွှဲမည်ဆိုပါက ဘဏ်အကောင့်မေးပါ ခင်ဗျ၊" };
             }
         }
         
