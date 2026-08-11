@@ -2133,6 +2133,7 @@ window.showToast = function(message, icon = "✅") {
 
       try {
           await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord);
+          if (!allLoadedHistory.some(t => t.id === invId)) allLoadedHistory.unshift(historyRecord);
           
           // 🌟 အရေးကြီးဆုံးအချက်: လက်ကျန်ငွေ တွက်ချက်ခြင်း
           let balanceChanges = [];
@@ -5309,11 +5310,11 @@ function openAdmin() {
             
             // 🌟 w-[145px] သို့ ချဲ့ထားပြီး break-all သုံးကာ Scrollbar မပေါ်စေရန် ပြင်ဆင်ထားပါသည်
             aiExtractedHtml = `
-            <div class="mt-1 border-t pt-1 ${colorClass} w-[145px] flex items-start gap-1.5">
-                <button onclick="const el = document.getElementById('${infoId}'); if(el.style.maxHeight === '14px') { el.style.maxHeight = '200px'; this.innerHTML = '▲'; } else { el.style.maxHeight = '14px'; this.innerHTML = '▼'; }" class="text-[9px] text-gray-500 hover:text-blue-500 bg-gray-50 hover:bg-blue-50 rounded border border-gray-200 transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center w-4 h-4 mt-0.5" title="အကျယ်ကြည့်ရန်">
+            <div class="mt-1 border-t pt-1 ${colorClass} w-[260px] flex items-start gap-1.5">
+                <button onclick="const el = document.getElementById('${infoId}'); if(el.style.maxHeight === '14px') { el.style.maxHeight = '500px'; this.innerHTML = '▲'; } else { el.style.maxHeight = '14px'; this.innerHTML = '▼'; }" class="text-[9px] text-gray-500 hover:text-blue-500 bg-gray-50 hover:bg-blue-50 rounded border border-gray-200 transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center w-4 h-4 mt-0.5" title="အကျယ်ကြည့်ရန်">
                     ▼
                 </button>
-                <div id="${infoId}" class="text-[10px] font-bold leading-tight overflow-hidden break-all flex-1 pt-0.5" style="max-height: 14px; transition: max-height 0.2s ease-in-out;" title="စလစ် အချက်အလက်များ">
+                <div id="${infoId}" class="text-[10px] font-bold leading-tight overflow-hidden break-words flex-1 pt-0.5" style="max-height: 14px; white-space: normal; transition: max-height 0.2s ease-in-out;" title="စလစ် အချက်အလက်များ">
                     ${formattedInfo}
                 </div>
             </div>`;
@@ -5426,7 +5427,7 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
           <td class="p-3">${amountHtml}</td>
           <td class="p-3 text-center">${statusHtml}</td>
           <td class="p-3 text-center">${actionHtml}</td>
-          <td class="p-3 text-xs"><div class="max-w-[120px]"><div class="font-bold text-gray-800">${method}</div>${aiExtractedHtml}</div></td>
+          <td class="p-3 text-xs" style="white-space:normal;"><div class="max-w-[260px]"><div class="font-bold text-gray-800 break-words" style="white-space:normal;">${method}</div>${aiExtractedHtml}</div></td>
         </tr>`;
       });
       
@@ -6069,6 +6070,9 @@ renderHistoryRows(allLoadedHistory);
           
           try { 
               await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); 
+
+              // 🌟 Web Refresh မလုပ်ဘဲ Smart Slip (Ctrl+V) က ချက်ချင်းရှာတွေ့အောင် memory cache ထဲ တန်းထည့်ပေးမည်
+              if (!allLoadedHistory.some(t => t.id === invId)) allLoadedHistory.unshift(historyRecord);
               
               // 🌟 ပြေစာအသစ် ထုတ်ကြောင်းကို Log ထဲ မှတ်မည်
               logActivity("Receipt Generated", `ID: ${invId} ပြေစာအသစ် ထုတ်ယူခဲ့သည်။`);
@@ -6355,8 +6359,8 @@ renderHistoryRows(allLoadedHistory);
   }
 
   // 🌟 Clipboard ထဲက ပုံကို ဖမ်းယူပြီး Slip အဖြစ် Process လုပ်မည့် Global Paste Listener
+  // (Admin/Staff ဆိုရင် modal/button ဘာမှ အရင်ဖွင့်စရာမလိုဘဲ စနစ်ရဲ့ ဘယ်နေရာမှာနေနေ Ctrl+V နှိပ်လိုက်ရင် အလုပ်လုပ်ပါသည်)
   document.addEventListener('paste', async function(e) {
-      if (!window.slipPasteContext) return;
       const items = e.clipboardData && e.clipboardData.items;
       if (!items) return;
 
@@ -6371,29 +6375,75 @@ renderHistoryRows(allLoadedHistory);
           }
       }
       if (imageFiles.length === 0) return;
-      e.preventDefault();
 
-      const ctx = window.slipPasteContext;
+      // Case 1: Paste box (Trigger button ကနေ) ဖွင့်ထားပြီးသား context ရှိနေရင် - လက်ရှိအတိုင်း လုပ်ဆောင်မည်
+      if (window.slipPasteContext) {
+          e.preventDefault();
+          const ctx = window.slipPasteContext;
 
-      // Normal upload flow ဖြစ်ပြီး Type မရွေးရသေးရင် - ပုံကို သိမ်းထားပြီး Type ရွေးဖို့ စောင့်မည်
-      if (ctx.kind === 'normal' && !ctx.mode) {
-          window.pendingPastedFiles = imageFiles;
-          const zoneText = document.getElementById('slipPasteZoneText');
-          if (zoneText) zoneText.innerHTML = `✅ ပုံ Paste ပြီးပါပြီ — အောက်ကနေ အမျိုးအစား ရွေးပါ`;
+          // Normal upload flow ဖြစ်ပြီး Type မရွေးရသေးရင် - ပုံကို သိမ်းထားပြီး Type ရွေးဖို့ စောင့်မည်
+          if (ctx.kind === 'normal' && !ctx.mode) {
+              window.pendingPastedFiles = imageFiles;
+              const zoneText = document.getElementById('slipPasteZoneText');
+              if (zoneText) zoneText.innerHTML = `✅ ပုံ Paste ပြီးပါပြီ — အောက်ကနေ အမျိုးအစား ရွေးပါ`;
+              return;
+          }
+
+          window.slipPasteContext = null;
+          const ov = document.getElementById('slipPasteOverlay');
+          if (ov) ov.remove();
+
+          if (ctx.kind === 'smart') {
+              smartSlipMode = ctx.mode;
+              await window.processSmartSlipFiles(imageFiles);
+          } else {
+              await window.processSlipFiles(imageFiles, ctx.invId, ctx.mode);
+          }
           return;
       }
 
-      window.slipPasteContext = null;
-      const ov = document.getElementById('slipPasteOverlay');
-      if (ov) ov.remove();
-
-      if (ctx.kind === 'smart') {
-          smartSlipMode = ctx.mode;
-          await window.processSmartSlipFiles(imageFiles);
-      } else {
-          await window.processSlipFiles(imageFiles, ctx.invId, ctx.mode);
+      // Case 2: ဘယ် button မှ အရင်နှိပ်စရာမလိုဘဲ - Admin/Staff ဖြစ်ပြီး modal ဘာမှ ဖွင့်မထားလျှင်
+      // စနစ်ရဲ့ ဘယ်နေရာမှာနေနေ Ctrl+V နှိပ်တာနဲ့ ဝင်စလစ်/ထွက်စလစ် ရွေးခိုင်းပြီး Smart Match စစ်ပေးမည်
+      if (typeof CURRENT_ROLE !== 'undefined' && CURRENT_ROLE !== 'guest' && !document.getElementById('slipPasteOverlay')) {
+          e.preventDefault();
+          window.showGlobalSlipTypeChooser(imageFiles);
       }
   });
+
+  // 🌟 ဘယ်နေရာမှာမဆို Paste လုပ်လိုက်တာနဲ့ ဝင်စလစ်/ထွက်စလစ် ရွေးခိုင်းမည့် Popup
+  window.showGlobalSlipTypeChooser = function(imageFiles) {
+      const existing = document.getElementById('slipPasteOverlay');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'slipPasteOverlay';
+      overlay.className = "fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4";
+      overlay.innerHTML = `
+          <div class="bg-white rounded-xl p-5 w-full max-w-sm text-center shadow-2xl">
+              <h3 class="font-black text-lg mb-1 text-gray-800">📋 ပုံ Paste ပြီးပါပြီ</h3>
+              <p class="text-xs text-gray-400 font-bold mb-4">ဒီပုံက ဘာစလစ်လဲ ရွေးပါ 👇</p>
+              <div class="flex gap-3">
+                  <button id="btnGlobalInSlip" class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold py-4 rounded-lg flex flex-col items-center transition-colors">
+                      <span class="text-2xl mb-1">📥</span> ဝင်စလစ်
+                  </button>
+                  <button id="btnGlobalOutSlip" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-bold py-4 rounded-lg flex flex-col items-center transition-colors">
+                      <span class="text-2xl mb-1">📤</span> ထွက်စလစ်
+                  </button>
+              </div>
+              <button id="btnGlobalCancelSlip" class="mt-4 text-sm font-bold text-gray-400 hover:text-red-500">✕ မတင်တော့ပါ (Cancel)</button>
+          </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const proceed = async (mode) => {
+          overlay.remove();
+          smartSlipMode = mode;
+          await window.processSmartSlipFiles(imageFiles);
+      };
+      document.getElementById('btnGlobalInSlip').onclick = () => proceed('in');
+      document.getElementById('btnGlobalOutSlip').onclick = () => proceed('out');
+      document.getElementById('btnGlobalCancelSlip').onclick = () => overlay.remove();
+  };
 
   function checkDuplicateTransaction(extractedText, currentInvId) {
       if (!extractedText) return { isDuplicate: false };
@@ -6579,7 +6629,9 @@ renderHistoryRows(allLoadedHistory);
       if (origBtn) { origBtn.innerHTML = "⏳ စစ်ဆေးနေသည်..."; origBtn.disabled = true; }
 
       try {
-          if (allLoadedHistory.length === 0) { await loadHistory(); }
+          // 🌟 Cache ဟောင်းသုံးမည့်အစား Slip စစ်တိုင်း history အသစ်ဆုံးကို Firestore ကနေ ပြန်ဆွဲမည်
+          // (တခြား Staff/Device က မကြာသေးခင် ထုတ်ခဲ့တဲ့ Invoice အသစ်ကိုပါ Refresh မလုပ်ဘဲ ချက်ချင်းရှာတွေ့စေရန်)
+          await loadHistory();
           for (let i = 0; i < files.length; i++) {
               const formData = new FormData(); formData.append("image", files[i]);
               const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
@@ -6700,7 +6752,15 @@ renderHistoryRows(allLoadedHistory);
           });
           tx.slipUrls = combinedUrls; tx.slipUrl = combinedUrls[0] || null; tx.extractedInfo = finalExtractedInfo;
           renderHistoryRows(allLoadedHistory);
-          window.showToast("စလစ်တွဲခြင်း အောင်မြင်ပါပြီ။", "✅");
+
+          // 🌟 ဝင်စလစ် ဖြစ်ပြီး Invoice ရွေးလိုက်ရင် Success confirm modal ကို ချက်ချင်း ဖွင့်ပေးမည်
+          // (ပိုက်ဆံအိတ် ဘယ်ဟာကနေဝင်/ထွက်မလဲ auto ရွေးပြီးသားမို့ "အတည်ပြုမည်" တစ်ခါပဲ ထပ်နှိပ်ရင် ရပါပြီ)
+          if (smartSlipMode === 'in' && tx.status === 'Pending') {
+              window.showToast("စလစ်ကိုက်ညီပါသည် — Success လုပ်ရန် အတည်ပြုပါ", "✅");
+              setTimeout(() => { if (typeof window.updateTxStatus === 'function') window.updateTxStatus(invId, 'Success', null); }, 350);
+          } else {
+              window.showToast("စလစ်တွဲခြင်း အောင်မြင်ပါပြီ။", "✅");
+          }
       } catch (e) { alert("စလစ်တွဲရာတွင် အခက်အခဲရှိပါသည်။"); }
   }
 
@@ -6915,6 +6975,7 @@ renderHistoryRows(allLoadedHistory);
 
       // FIFO Profit Engine (Treasury Tab) ကို 'today' filter ဖြင့် ယာယီ run ပြီး ရလဒ်ကို ယူသုံးမည်
       let profitText = "N/A";
+      let profitThbBahtText = "";
       try {
           const filterSelect = document.getElementById('dashFilterSelect');
           const originalFilter = filterSelect ? filterSelect.value : null;
@@ -6922,10 +6983,16 @@ renderHistoryRows(allLoadedHistory);
           if (typeof updateDashboard === 'function') updateDashboard(allLoadedHistory);
           const profitEl = document.getElementById('dash_total_profit');
           if (profitEl) profitText = profitEl.textContent;
+          const profitThbBahtEl = document.getElementById('est_profit_thb_baht');
+          if (profitThbBahtEl) profitThbBahtText = profitThbBahtEl.textContent;
           if (filterSelect && originalFilter !== null) { filterSelect.value = originalFilter; updateDashboard(allLoadedHistory); }
       } catch (e) { console.error("Daily Report Profit Calc Error:", e); }
 
-      return `📊 <b>နေ့စဉ် အနှစ်ချုပ် (Daily Closing Report)</b>\n📅 ${todayTzStr}\n\n✅ အောင်မြင်: ${successCount}\n⏳ Pending: ${pendingCount}\n❌ Cancel: ${cancelCount}\n\n💰 <b>ယနေ့ Volume</b>\nTHB: ${volThb.toLocaleString()}\nMMK: ${volMmk.toLocaleString()}\nVND: ${volVnd.toLocaleString()}\n\n📈 <b>ယနေ့ အမြတ်ငွေ (Est.)</b>: ${profitText}`;
+      const profitLine = profitThbBahtText
+          ? `📈 <b>ယနေ့ အမြတ်ငွေ (Est.)</b>: ${profitText} (${profitThbBahtText})`
+          : `📈 <b>ယနေ့ အမြတ်ငွေ (Est.)</b>: ${profitText}`;
+
+      return `📊 <b>နေ့စဉ် အနှစ်ချုပ် (Daily Closing Report)</b>\n📅 ${todayTzStr}\n\n✅ အောင်မြင်: ${successCount}\n⏳ Pending: ${pendingCount}\n❌ Cancel: ${cancelCount}\n\n💰 <b>ယနေ့ Volume</b>\nTHB: ${volThb.toLocaleString()}\nMMK: ${volMmk.toLocaleString()}\nVND: ${volVnd.toLocaleString()}\n\n${profitLine}`;
   }
 
   // 🌟 Auto Scheduled Backup ကို အချိန်တန်လျှင် Telegram သို့ ပို့ခြင်း
@@ -7069,7 +7136,14 @@ renderHistoryRows(allLoadedHistory);
       const modalTitle = document.getElementById('adminModalTitle');
       const btnExport = document.getElementById('btnExportCSV');
       const btnClear = document.getElementById('btnClearHistory');
-      
+      const smartSlipBox = document.getElementById('smartSlipContainer');
+
+      // 🌟 Smart Slip (ဝင်စလစ်/ထွက်စလစ် Auto စစ်ဆေးမည့်) Button တွေကို Admin/Staff အတွက်သာ ပြသမည်
+      if (smartSlipBox) {
+          if (role === 'main admin' || role === 'admin' || role === 'staff') smartSlipBox.classList.remove('hidden');
+          else smartSlipBox.classList.add('hidden');
+      }
+
       document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
       
       if (role === 'main admin' || role === 'admin') {
