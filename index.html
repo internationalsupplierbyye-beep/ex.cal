@@ -128,6 +128,15 @@
     .btn-delete:hover { background: #fee2e2 !important; }
 
     /* 🌙 Dark Mode Styles */
+    /* 🌟 Dark/Light ပြောင်းချိန် ရုတ်တရက်မဟုတ်ဘဲ ညင်သာစွာ ပြောင်းလဲစေရန် (Smooth Transition) */
+    body, header, .box, .card, .admin-content, .login-box, #customCusDropdown,
+    .amt-input, select, input, .list-item, tr, td, th,
+    .bg-white, .bg-gray-50, .bg-gray-100, .bg-blue-50, .bg-emerald-50, .bg-orange-50,
+    .bg-indigo-50, .bg-red-50, .bg-green-50, .bg-yellow-50, .bg-pink-50, .bg-purple-50,
+    .bg-indigo-100, .bg-blue-100, .bg-orange-100, .bg-green-100, .bg-red-100,
+    #cusSearchInput, .cus-option, .radio-row, .qrFrame, .admin-input-box, #appHeaderLogo {
+        transition: background-color 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease, opacity 0.35s ease;
+    }
     html.dark body { background-color: #0f172a; color: #f1f5f9; }
     html.dark .box, html.dark .card, html.dark .admin-content, html.dark .login-box, html.dark #customCusDropdown { background-color: #1e293b !important; border-color: #334155 !important; }
     html.dark .amt-input, html.dark select, html.dark input[type="text"], html.dark input[type="date"], html.dark input[type="number"], html.dark input[type="password"], html.dark input[type="email"] { 
@@ -182,16 +191,25 @@
     });
   }
 
+  function applyDarkModeBtnIcon(isDark) {
+    const btnEl = document.getElementById('darkModeBtn');
+    if (!btnEl) return;
+    btnEl.innerHTML = isDark ? '🌙 Dark' : '☀️ Light';
+  }
+
   function toggleDarkMode() {
     document.documentElement.classList.toggle('dark');
     const isDark = document.documentElement.classList.contains('dark');
     localStorage.setItem('sys_dark_mode', isDark ? 'yes' : 'no');
+    applyDarkModeBtnIcon(isDark);
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    if(localStorage.getItem('sys_dark_mode') === 'yes') {
+    const isDark = localStorage.getItem('sys_dark_mode') === 'yes';
+    if(isDark) {
       document.documentElement.classList.add('dark');
     }
+    applyDarkModeBtnIcon(isDark);
   });
 </script>
 
@@ -215,7 +233,7 @@
     <option value="th" class="text-black">🇹🇭 ไทย</option>
     <option value="vi" class="text-black">🇻🇳 Tiếng Việt</option>
   </select>
-  <button onclick="toggleDarkMode()" class="lang-switcher" style="left: 140px;">🌙 Dark</button>
+  <button id="darkModeBtn" onclick="toggleDarkMode()" class="lang-switcher" style="left: 140px;">🌙 Dark</button>
   
   <h1 class="text-xl sm:text-2xl font-black pb-1" data-i18n="app_title">MMK ↔ THB & VND ငွေလဲတွက်ချက်ခြင်း</h1>
   <p class="text-xs sm:text-sm opacity-90 pb-1" data-i18n="app_sub">MMK ↔ THB & VND Exchange Calculator</p>
@@ -529,9 +547,23 @@
            <p class="text-[10px] text-gray-500 mt-1">Customer လွှဲလိုက်သော ဘဏ်/QR ပေါ်မူတည်၍ အလိုအလျောက် ရွေးချယ်ပေးထားပါသည်။</p>
        </div>
        <div class="mt-3">
-           <label class="text-xs font-bold text-gray-600 mb-1 block text-red-600">ငွေထုတ်ပေးလိုက်သည့် ပိုက်ဆံအိတ် (-)</label>
+           <div class="flex items-center justify-between mb-1">
+               <label class="text-xs font-bold text-gray-600 block text-red-600">ငွေထုတ်ပေးလိုက်သည့် ပိုက်ဆံအိတ် (-)</label>
+               <label class="text-[11px] font-bold text-gray-600 flex items-center gap-1 cursor-pointer select-none">
+                   <input type="checkbox" id="successSplitOutCheck" onchange="toggleOutSplit()"> ၂ အကောင့် ခွဲပို့မည်
+               </label>
+           </div>
            <input type="text" placeholder="🔍 အကောင့် ရှာရန်..." class="admin-input-box !mb-1 text-xs py-1 bg-red-50" oninput="filterNativeSelect('successOutLedger', this.value)">
            <select id="successOutLedger" class="admin-input-box !mb-0 text-sm py-1.5"></select>
+           <input type="number" id="successOutAmt1" oninput="syncOutSplit('amt1')" placeholder="ပမာဏ (Account 1)" class="admin-input-box !mb-0 mt-1 text-sm py-1.5 hidden">
+
+           <div id="successOutSplitBlock" class="hidden mt-2 pt-2 border-t border-dashed border-gray-300">
+               <label class="text-xs font-bold text-gray-600 mb-1 block text-red-600">ဒုတိယ ပိုက်ဆံအိတ် (-)</label>
+               <input type="text" placeholder="🔍 အကောင့် ရှာရန်..." class="admin-input-box !mb-1 text-xs py-1 bg-red-50" oninput="filterNativeSelect('successOutLedger2', this.value)">
+               <select id="successOutLedger2" class="admin-input-box !mb-0 text-sm py-1.5"></select>
+               <input type="number" id="successOutAmt2" oninput="syncOutSplit('amt2')" placeholder="ပမာဏ (Account 2)" class="admin-input-box !mb-0 mt-1 text-sm py-1.5">
+               <p id="successOutSplitTotal" class="text-[10px] text-gray-500 mt-1"></p>
+           </div>
        </div>
        <div class="flex gap-2 mt-5">
            <button onclick="document.getElementById('successTxModal').style.display='none'" class="btn2 w-1/2 text-sm">ပိတ်မည်</button>
@@ -853,6 +885,40 @@
           <input type="text" id="adminTgSlipTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 18)">
         </div>
         <button onclick="saveTelegramSettings()" id="btnTgSave" class="btn bg-blue-600 hover:bg-blue-700 w-full">Telegram Settings သိမ်းမည်</button>
+
+        <hr class="border-pink-200 my-3">
+        <h3 class="font-bold text-pink-800 mb-3 text-sm">📊 Daily Closing Report (နေ့စဉ် အနှစ်ချုပ်)</h3>
+        <div class="mb-2 flex items-center gap-2">
+          <input type="checkbox" id="adminDailyReportEnabled" class="w-4 h-4">
+          <label for="adminDailyReportEnabled" class="text-xs font-bold text-gray-600">Daily Report ကို ဖွင့်မည်</label>
+        </div>
+        <div class="mb-2">
+          <label class="text-xs font-bold text-gray-600">ပို့မည့်အချိန် (Admin Timezone အလိုက်)</label>
+          <input type="time" id="adminDailyReportTime" class="admin-input-box text-sm" value="20:00">
+        </div>
+        <div class="mb-3">
+          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Daily Report ပို့ရန်) - မထည့်ရင် ပုံမှန် Topic သို့ ပို့မည်</label>
+          <input type="text" id="adminTgDailyReportTopicId" class="admin-input-box text-sm" placeholder="Topic ID (ဥပမာ: 20)">
+        </div>
+        <button onclick="saveDailyReportSettings()" id="btnDailyReportSave" class="btn bg-pink-600 hover:bg-pink-700 w-full mb-1">Daily Report Settings သိမ်းမည်</button>
+        <p class="text-[10px] text-gray-400 mb-3">⚠️ Server မရှိသော Static App ဖြစ်၍ ဒီ Feature က App ကို Browser Tab ဖွင့်ထားစဉ်မှသာ အလုပ်လုပ်ပါမည် (ဥပမာ - Admin ရဲ့ PC/Phone ကို ဖွင့်ထားရပါမည်)။</p>
+
+        <hr class="border-pink-200 my-3">
+        <h3 class="font-bold text-pink-800 mb-3 text-sm">💾 Auto Scheduled Backup</h3>
+        <div class="mb-2 flex items-center gap-2">
+          <input type="checkbox" id="adminAutoBackupEnabled" class="w-4 h-4">
+          <label for="adminAutoBackupEnabled" class="text-xs font-bold text-gray-600">Auto Backup ကို ဖွင့်မည်</label>
+        </div>
+        <div class="mb-2">
+          <label class="text-xs font-bold text-gray-600">Backup ပို့မည့်အချိန် (Admin Timezone အလိုက်)</label>
+          <input type="time" id="adminAutoBackupTime" class="admin-input-box text-sm" value="23:00">
+        </div>
+        <div class="mb-3">
+          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Backup ဖိုင်ပို့ရန်) - မထည့်ရင် ပုံမှန် Topic သို့ ပို့မည်</label>
+          <input type="text" id="adminTgBackupTopicId" class="admin-input-box text-sm" placeholder="Topic ID (ဥပမာ: 22)">
+        </div>
+        <button onclick="saveAutoBackupSettings()" id="btnAutoBackupSave" class="btn bg-pink-600 hover:bg-pink-700 w-full mb-1">Auto Backup Settings သိမ်းမည်</button>
+        <p class="text-[10px] text-gray-400 mb-3">⚠️ ဒါလည်း App ကို Tab ဖွင့်ထားချိန်တွင်သာ အလုပ်လုပ်ပါမည်။ Data ကို Firestore File အဖြစ် .json Format ဖြင့် Telegram ထဲသို့ ပို့ပေးပါမည်။</p>
         <div class="bg-gray-800 border border-gray-700 p-4 rounded-xl mt-4 mb-4 shadow-lg">
           <h3 class="font-bold text-white mb-3 text-sm">🔑 API Keys (Developer Settings)</h3>
           <div class="mb-2">
@@ -1169,6 +1235,18 @@
   let TELEGRAM_SUCCESS_TOPIC_ID = "14"; 
   let TELEGRAM_CANCEL_TOPIC_ID = ""; // 🌟 Cancel အတွက် Topic အသစ်
   let TELEGRAM_SLIP_TOPIC_ID = ""; // 🌟 Slip ပို့ရန် Topic အသစ်
+
+  // 🌟 Daily Closing Report Settings
+  let DAILY_REPORT_ENABLED = false;
+  let DAILY_REPORT_TIME = "20:00";
+  let TELEGRAM_DAILY_REPORT_TOPIC_ID = "";
+  let LAST_DAILY_REPORT_SENT_DATE = "";
+
+  // 🌟 Auto Scheduled Backup Settings
+  let AUTO_BACKUP_ENABLED = false;
+  let AUTO_BACKUP_TIME = "23:00";
+  let TELEGRAM_BACKUP_TOPIC_ID = "";
+  let LAST_AUTO_BACKUP_SENT_DATE = "";
 
   let FIREBASE_RECEIPT_TEXTS = {
       orig: {
@@ -2244,6 +2322,52 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           btn.disabled = false; btn.textContent = "Telegram Settings သိမ်းမည်";
       }
   }
+
+  // --- Admin General: Save Daily Closing Report Settings ---
+  window.saveDailyReportSettings = async function() {
+      const enabled = document.getElementById('adminDailyReportEnabled').checked;
+      const time = document.getElementById('adminDailyReportTime').value || "20:00";
+      const topicId = document.getElementById('adminTgDailyReportTopicId').value.trim();
+
+      const btn = document.getElementById('btnDailyReportSave');
+      btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
+      try {
+          DAILY_REPORT_ENABLED = enabled;
+          DAILY_REPORT_TIME = time;
+          TELEGRAM_DAILY_REPORT_TOPIC_ID = topicId;
+          if (dbRef) {
+              await dbRef.set({ dailyReport: { enabled: enabled, time: time, topicId: topicId, lastSentDate: LAST_DAILY_REPORT_SENT_DATE || "" } }, { merge: true });
+          }
+          window.showToast("Daily Report Settings သိမ်းဆည်းပြီးပါပြီ။", "📊");
+      } catch(e) {
+          alert("Error: " + e.message);
+      } finally {
+          btn.disabled = false; btn.textContent = "Daily Report Settings သိမ်းမည်";
+      }
+  }
+
+  // --- Admin General: Save Auto Scheduled Backup Settings ---
+  window.saveAutoBackupSettings = async function() {
+      const enabled = document.getElementById('adminAutoBackupEnabled').checked;
+      const time = document.getElementById('adminAutoBackupTime').value || "23:00";
+      const topicId = document.getElementById('adminTgBackupTopicId').value.trim();
+
+      const btn = document.getElementById('btnAutoBackupSave');
+      btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
+      try {
+          AUTO_BACKUP_ENABLED = enabled;
+          AUTO_BACKUP_TIME = time;
+          TELEGRAM_BACKUP_TOPIC_ID = topicId;
+          if (dbRef) {
+              await dbRef.set({ scheduledBackup: { enabled: enabled, time: time, topicId: topicId, lastSentDate: LAST_AUTO_BACKUP_SENT_DATE || "" } }, { merge: true });
+          }
+          window.showToast("Auto Backup Settings သိမ်းဆည်းပြီးပါပြီ။", "💾");
+      } catch(e) {
+          alert("Error: " + e.message);
+      } finally {
+          btn.disabled = false; btn.textContent = "Auto Backup Settings သိမ်းမည်";
+      }
+  }
 	window.saveApiKeys = async function() {
       const botToken = document.getElementById('adminBotToken').value.trim();
       const imgbb = document.getElementById('adminImgbbKey').value.trim();
@@ -2708,6 +2832,47 @@ if (data.telegram) {
         
         const tgSlipTopicInput = document.getElementById('adminTgSlipTopicId'); // 🌟 အသစ်
         if(tgSlipTopicInput) tgSlipTopicInput.value = TELEGRAM_SLIP_TOPIC_ID; // 🌟 အသစ်
+
+        // 🌟 Daily Closing Report Settings
+        if (data.dailyReport) {
+            DAILY_REPORT_ENABLED = !!data.dailyReport.enabled;
+            DAILY_REPORT_TIME = data.dailyReport.time || "20:00";
+            TELEGRAM_DAILY_REPORT_TOPIC_ID = data.dailyReport.topicId || "";
+            LAST_DAILY_REPORT_SENT_DATE = data.dailyReport.lastSentDate || "";
+        }
+        const dailyReportEnabledInput = document.getElementById('adminDailyReportEnabled');
+        if (dailyReportEnabledInput) dailyReportEnabledInput.checked = DAILY_REPORT_ENABLED;
+        const dailyReportTimeInput = document.getElementById('adminDailyReportTime');
+        if (dailyReportTimeInput) dailyReportTimeInput.value = DAILY_REPORT_TIME;
+        const dailyReportTopicInput = document.getElementById('adminTgDailyReportTopicId');
+        if (dailyReportTopicInput) dailyReportTopicInput.value = TELEGRAM_DAILY_REPORT_TOPIC_ID;
+
+        // 🌟 Auto Scheduled Backup Settings
+        if (data.scheduledBackup) {
+            AUTO_BACKUP_ENABLED = !!data.scheduledBackup.enabled;
+            AUTO_BACKUP_TIME = data.scheduledBackup.time || "23:00";
+            TELEGRAM_BACKUP_TOPIC_ID = data.scheduledBackup.topicId || "";
+            LAST_AUTO_BACKUP_SENT_DATE = data.scheduledBackup.lastSentDate || "";
+        }
+        const autoBackupEnabledInput = document.getElementById('adminAutoBackupEnabled');
+        if (autoBackupEnabledInput) autoBackupEnabledInput.checked = AUTO_BACKUP_ENABLED;
+        const autoBackupTimeInput = document.getElementById('adminAutoBackupTime');
+        if (autoBackupTimeInput) autoBackupTimeInput.value = AUTO_BACKUP_TIME;
+        const autoBackupTopicInput = document.getElementById('adminTgBackupTopicId');
+        if (autoBackupTopicInput) autoBackupTopicInput.value = TELEGRAM_BACKUP_TOPIC_ID;
+
+        // 🌟 Scheduler ကို စတင် Run ပါမည် (Tab ဖွင့်ထားချိန်တွင်သာ အလုပ်လုပ်သည်)
+        if (!window._schedulerStarted) {
+            window._schedulerStarted = true;
+            setInterval(() => {
+                try { checkAndSendDailyReport(); } catch(e) { console.error("Daily Report Check Error:", e); }
+                try { checkAndSendScheduledBackup(); } catch(e) { console.error("Auto Backup Check Error:", e); }
+            }, 5 * 60 * 1000); // ၅ မိနစ်တစ်ကြိမ် စစ်ဆေးမည်
+            setTimeout(() => {
+                try { checkAndSendDailyReport(); } catch(e) { console.error("Daily Report Check Error:", e); }
+                try { checkAndSendScheduledBackup(); } catch(e) { console.error("Auto Backup Check Error:", e); }
+            }, 10000); // App စတင်ချိန် ၁၀ စက္ကန့်အကြာတွင်လည်း တစ်ကြိမ် စစ်ဆေးမည်
+        }
         
         loadReceiptTextsToInputs();
         updateReceiptUI();
@@ -4108,7 +4273,7 @@ function openAdmin() {
       const finalHtml = optionsHtml + masterHtml + bankHtml + qrHtml;
       
       // expLedger ကို နောက်ဆုံးတွင် ထည့်သွင်းထားသည်
-      const dropdownIds = ['newBankLedger', 'newQrLedger', 'successInLedger', 'successOutLedger', 'transferFromAcc', 'transferToAcc', 'manualLotFromAcc', 'manualLotToAcc', 'expLedger'];
+      const dropdownIds = ['newBankLedger', 'newQrLedger', 'successInLedger', 'successOutLedger', 'successOutLedger2', 'transferFromAcc', 'transferToAcc', 'manualLotFromAcc', 'manualLotToAcc', 'expLedger'];
       dropdownIds.forEach(id => {
           const el = document.getElementById(id);
           if (el) {
@@ -4218,6 +4383,7 @@ function openAdmin() {
 
       const inSelect = document.getElementById('successInLedger');
       const outSelect = document.getElementById('successOutLedger');
+      const outSelect2 = document.getElementById('successOutLedger2');
 
       if(inSelect) { 
           inSelect.innerHTML = buildOptions(inCurr); 
@@ -4230,6 +4396,59 @@ function openAdmin() {
           if(outSelect.previousElementSibling && outSelect.previousElementSibling.tagName === 'INPUT') {
               outSelect.previousElementSibling.value = '';
           }
+      }
+      if(outSelect2) {
+          outSelect2.innerHTML = buildOptions(outCurr);
+          if(outSelect2.previousElementSibling && outSelect2.previousElementSibling.tagName === 'INPUT') {
+              outSelect2.previousElementSibling.value = '';
+          }
+      }
+  };
+
+  // 🌟 ငွေထုတ်ပေးမှုကို အကောင့် ၂ ခု ခွဲပို့ရန် Toggle/Sync Functions 🌟
+  let pendingOutTotal = 0;
+
+  window.toggleOutSplit = function(forceOn) {
+      const check = document.getElementById('successSplitOutCheck');
+      const isOn = (typeof forceOn === 'boolean') ? forceOn : (check ? check.checked : false);
+      if(check) check.checked = isOn;
+
+      const amt1El = document.getElementById('successOutAmt1');
+      const blockEl = document.getElementById('successOutSplitBlock');
+
+      if(isOn) {
+          amt1El.classList.remove('hidden');
+          blockEl.classList.remove('hidden');
+          if(!parseNum(amt1El.value)) amt1El.value = pendingOutTotal || '';
+          syncOutSplit('amt1');
+      } else {
+          amt1El.classList.add('hidden');
+          blockEl.classList.add('hidden');
+          amt1El.value = '';
+          document.getElementById('successOutAmt2').value = '';
+          document.getElementById('successOutLedger2').value = '';
+      }
+  };
+
+  window.syncOutSplit = function(source) {
+      const amt1El = document.getElementById('successOutAmt1');
+      const amt2El = document.getElementById('successOutAmt2');
+      const totalEl = document.getElementById('successOutSplitTotal');
+
+      let amt1 = parseNum(amt1El.value);
+      let amt2 = parseNum(amt2El.value);
+
+      if(source === 'amt1') {
+          amt2 = Math.max(0, pendingOutTotal - amt1);
+          amt2El.value = amt2 ? amt2 : '';
+      } else {
+          amt1 = Math.max(0, pendingOutTotal - amt2);
+          amt1El.value = amt1 ? amt1 : '';
+      }
+
+      if(totalEl) {
+          const sum = (parseNum(amt1El.value) || 0) + (parseNum(amt2El.value) || 0);
+          totalEl.textContent = `စုစုပေါင်း: ${sum.toLocaleString()} / ${pendingOutTotal.toLocaleString()} ${sum === pendingOutTotal ? '✅' : '⚠️ မကိုက်ညီပါ'}`;
       }
   };
 
@@ -4258,7 +4477,20 @@ function openAdmin() {
       const outSelect = document.getElementById('successOutLedger');
       
       if(inSelect) inSelect.value = tx.ledgerIn || '';
-      if(outSelect) outSelect.value = tx.ledgerOut || '';
+
+      pendingOutTotal = parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0;
+
+      if(Array.isArray(tx.ledgerOutSplit) && tx.ledgerOutSplit.length === 2) {
+          if(outSelect) outSelect.value = tx.ledgerOutSplit[0].id || '';
+          toggleOutSplit(true);
+          document.getElementById('successOutAmt1').value = tx.ledgerOutSplit[0].amount || '';
+          document.getElementById('successOutLedger2').value = tx.ledgerOutSplit[1].id || '';
+          document.getElementById('successOutAmt2').value = tx.ledgerOutSplit[1].amount || '';
+          syncOutSplit('amt1');
+      } else {
+          if(outSelect) outSelect.value = tx.ledgerOut || '';
+          toggleOutSplit(false);
+      }
   };
   
   // 🌟 Modal ထဲမှ အတည်ပြု (Confirm) နှိပ်သောအခါ အလုပ်လုပ်မည့် Function (ပြန်လည်ဖြည့်စွက်ခြင်း) 🌟
@@ -4274,6 +4506,28 @@ function openAdmin() {
       let newLedgerIn = inSelect ? inSelect.value : '';
       let newLedgerOut = outSelect ? outSelect.value : '';
 
+      const outTotalNumeric = parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0;
+      const inTotalNumeric = parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0;
+
+      const isSplit = !!(document.getElementById('successSplitOutCheck') && document.getElementById('successSplitOutCheck').checked);
+      let newLedgerOutSplit = null;
+
+      if (isSplit) {
+          const outAcc2 = document.getElementById('successOutLedger2').value;
+          const amt1 = parseNum(document.getElementById('successOutAmt1').value);
+          const amt2 = parseNum(document.getElementById('successOutAmt2').value);
+
+          if (!newLedgerOut || !outAcc2) { alert("ခွဲပို့မည့် အကောင့် ၂ ခုလုံးကို ရွေးချယ်ပါ။"); return; }
+          if (newLedgerOut === outAcc2) { alert("အကောင့် ၂ ခုသည် တူနေပါသည်။ မတူညီသော အကောင့် ၂ ခု ရွေးချယ်ပါ။"); return; }
+          if (!amt1 || !amt2) { alert("ပမာဏ ၂ ခုလုံးကို ထည့်သွင်းပါ။"); return; }
+          if (Math.abs((amt1 + amt2) - outTotalNumeric) > 0.5) {
+              alert(`ခွဲပို့သော ပမာဏစုစုပေါင်း (${(amt1+amt2).toLocaleString()}) သည် လွှဲရမည့်စုစုပေါင်း (${outTotalNumeric.toLocaleString()}) နှင့် မကိုက်ညီပါ။`);
+              return;
+          }
+
+          newLedgerOutSplit = [{ id: newLedgerOut, amount: amt1 }, { id: outAcc2, amount: amt2 }];
+      }
+
       const btn = document.querySelector('#successTxModal .bg-green-600');
       const origText = btn ? btn.innerHTML : "အတည်ပြုမည်";
       if (btn) { btn.innerHTML = "Processing..."; btn.disabled = true; }
@@ -4283,28 +4537,44 @@ function openAdmin() {
 
           if (window.isEditingWallet) {
               let oldLedgerIn = tx.ledgerIn;
-              let oldLedgerOut = tx.ledgerOut;
-              
-              if (oldLedgerIn !== newLedgerIn || oldLedgerOut !== newLedgerOut) {
-                  if (oldLedgerIn) balanceChanges.push({ id: oldLedgerIn, change: -(parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0) });
-                  if (oldLedgerOut) balanceChanges.push({ id: oldLedgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
-                  
-                  if (newLedgerIn) balanceChanges.push({ id: newLedgerIn, change: +(parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0) });
-                  if (newLedgerOut) balanceChanges.push({ id: newLedgerOut, change: -(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
+
+              // 🌟 အဟောင်း ငွေထုတ်ပေးမှု (Split ဖြစ်စေ၊ တစ်ခုတည်းဖြစ်စေ) ကို ပြန်ဖြည့်ပေးမည်
+              if (Array.isArray(tx.ledgerOutSplit) && tx.ledgerOutSplit.length === 2) {
+                  tx.ledgerOutSplit.forEach(s => { if (s.id) balanceChanges.push({ id: s.id, change: +(Number(s.amount) || 0) }); });
+              } else if (tx.ledgerOut) {
+                  balanceChanges.push({ id: tx.ledgerOut, change: +outTotalNumeric });
+              }
+              if (oldLedgerIn) balanceChanges.push({ id: oldLedgerIn, change: -inTotalNumeric });
+
+              if (newLedgerIn) balanceChanges.push({ id: newLedgerIn, change: +inTotalNumeric });
+
+              if (isSplit) {
+                  newLedgerOutSplit.forEach(s => balanceChanges.push({ id: s.id, change: -s.amount }));
+              } else if (newLedgerOut) {
+                  balanceChanges.push({ id: newLedgerOut, change: -outTotalNumeric });
               }
           } 
           else {
-              if (newLedgerIn) balanceChanges.push({ id: newLedgerIn, change: +(parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0) });
-              if (newLedgerOut) balanceChanges.push({ id: newLedgerOut, change: -(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
+              if (newLedgerIn) balanceChanges.push({ id: newLedgerIn, change: +inTotalNumeric });
+
+              if (isSplit) {
+                  newLedgerOutSplit.forEach(s => balanceChanges.push({ id: s.id, change: -s.amount }));
+              } else if (newLedgerOut) {
+                  balanceChanges.push({ id: newLedgerOut, change: -outTotalNumeric });
+              }
           }
 
-          await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update({
+          const updatePayload = {
               ledgerIn: newLedgerIn,
               ledgerOut: newLedgerOut
-          });
+          };
+          updatePayload.ledgerOutSplit = isSplit ? newLedgerOutSplit : firebase.firestore.FieldValue.delete();
+
+          await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update(updatePayload);
           
           tx.ledgerIn = newLedgerIn;
           tx.ledgerOut = newLedgerOut;
+          tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
 
           // 🌟 Database တစ်ခုလုံး အုပ်မသိမ်းတော့ဘဲ Balance သီးသန့်ကိုသာ လုံခြုံစွာ တိုး/လျှော့မည်
           if (balanceChanges.length > 0) {
@@ -4381,6 +4651,9 @@ function openAdmin() {
           
           if(inSelect) inSelect.value = autoInboundLedger;
           if(outSelect) outSelect.value = '';
+
+          pendingOutTotal = parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0;
+          toggleOutSplit(false);
 
           return;
       }
@@ -4544,7 +4817,12 @@ function openAdmin() {
           if (tx && tx.status === 'Success') {
               let balanceChanges = [];
               if (tx.ledgerIn) balanceChanges.push({ id: tx.ledgerIn, change: -(parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0) });
-              if (tx.ledgerOut) balanceChanges.push({ id: tx.ledgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
+
+              if (Array.isArray(tx.ledgerOutSplit) && tx.ledgerOutSplit.length === 2) {
+                  tx.ledgerOutSplit.forEach(s => { if (s.id) balanceChanges.push({ id: s.id, change: +(Number(s.amount) || 0) }); });
+              } else if (tx.ledgerOut) {
+                  balanceChanges.push({ id: tx.ledgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
+              }
               
               if (balanceChanges.length > 0) {
                   await window.updateBalancesSafely(balanceChanges);
@@ -5855,53 +6133,7 @@ renderHistoryRows(allLoadedHistory);
       }
   }
 
-   // --- AI Slip Reader (ChatGPT Vision API) ---
-async function extractSlipData(imageUrl) {
-    // ⚠️ သတိပြုရန်: API Key အသစ်ပြန်ထုတ်ပြီးမှ ဒီနေရာမှာ ပြန်ထည့်ပါ
-    const OPENAI_API_KEY = "YOUR_NEW_API_KEY_HERE"; 
-    
-    try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: "gpt-4o", 
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            { 
-                                type: "text", 
-                                text: "ဒီဘဏ်စလစ်ပုံထဲက အောက်ပါအချက်အလက်တွေကို ရှာပေးပါ: လက်ခံသူအမည် (Receiver Name), ဘဏ်အမည် (Bank Name), ဘဏ်အကောင့်နံပါတ် (Account Number - အချို့ပဲပါလျှင် ပါသလောက်), နှင့် လွှဲငွေပမာဏ (Amount/Transaction ID). အောက်ပါအတိုင်း တိုတိုတုတ်တုတ် ပြန်ဖြေပေးပါ: 'KBZ Pay, U Ba, 09***, 100,000 MMK'." 
-                            },
-                            { 
-                                type: "image_url", 
-                                image_url: { url: imageUrl } 
-                            }
-                        ]
-                    }
-                ],
-                max_tokens: 150
-            })
-        });
-
-        // 🌟 Error ဘာကြောင့်တက်လဲ အတိအကျသိရန် 🌟
-        if (!response.ok) {
-            const errData = await response.json();
-            console.error("OpenAI API Error:", errData);
-            return "⚠️ စလစ်ဖတ်၍မရပါ (Console တွင် Error ကိုစစ်ပါ)";
-        }
-
-        const data = await response.json();
-        return data.choices[0].message.content; 
-    } catch (error) {
-        console.error("ChatGPT Fetch Error:", error);
-        return "⚠️ စလစ်ဖတ်၍မရပါ (Network Error)";
-    }
-}
+   // (မှတ်ချက်: ယခင်က သုံးခဲ့သော ChatGPT Vision API function ကို ဖယ်ရှားလိုက်ပါသည် - အခုသုံးနေသည်မှာ extractSlipDataWithGemini အောက်တွင်ပါသည်)
 
   // ပုံဖိုင် (File) ကို Base64 စာသားအဖြစ် ပြောင်းပေးမည့် အကူ Function
   const fileToBase64 = (file) => new Promise((resolve, reject) => {
@@ -5911,59 +6143,95 @@ async function extractSlipData(imageUrl) {
       reader.onerror = error => reject(error);
   });
 
-  // --- AI Slip Reader (Nghimmo / Custom OpenAI API) ---
-  async function extractSlipDataWithGemini(base64Image) {
-      if(!OPENROUTER_API_KEY) return "⚠️ API Key မထည့်ရသေးပါ။ Admin > အထွေထွေ တွင်ထည့်ပါ။"; 
-      
-      // 🌟 ၁။ URL ကို Nghimmo API သို့ ပြောင်းပါ
-      const url = "https://api.nghimmo.com/v1/chat/completions";
+  // --- AI Slip Reader (OpenRouter Free Tier) ---
+  // 🌟 Free model တစ်ခုတည်းကိုသာ မှီခိုမည့်အစား - overload/down ဖြစ်တတ်တဲ့ free tier အတွက် Fallback list ထားရှိသည်
+  const SLIP_OCR_MODELS = [
+      "google/gemma-4-31b-it:free",
+      "google/gemma-4-26b-a4b-it:free",
+      "openrouter/free"
+  ];
 
+  const SLIP_OCR_PROMPT = "ဒီပုံဟာ ဘဏ် (သို့) Mobile Banking/Wallet Application တစ်ခုခု (ဥပမာ - Thai PromptPay, KBank, SCB ကဲ့သို့ ထိုင်းဘဏ်များ (သို့) KPay, Wave Money, AYA Pay, CB Pay, KBZPay ကဲ့သို့ မြန်မာ Wallet App များ) ၏ ငွေလွှဲပြေစာ (Transfer Slip/Receipt) ဖြစ်ပါသည်။ ပုံထဲက အောက်ပါ အချက်အလက်များကို ရှာပေးပါ။ 'ဘဏ်/Wallet အမည်' ဆိုသည်မှာ ငွေလွှဲသူ၏ဘဏ်မဟုတ်ဘဲ ငွေ လက်ခံသူ (To / Receiver) ၏ ဘဏ် (သို့) Wallet App အမည် ဖြစ်ရပါမည်။\n\nဖြေရမည့် ပုံစံ (တစ်ကြောင်းတည်း၊ | ဖြင့်သာ ခွဲပါ) -\n'လက်ခံသူ၏ဘဏ်/Wallet အမည် | လက်ခံသူအမည် | အကောင့်နံပါတ်/ဖုန်းနံပါတ် | Transaction No (သို့) Ref No | ပမာဏ ငွေကြေးအမျိုးအစားနှင့်တကွ'\n\nဥပမာ ၁ (ထိုင်း) - 'PromptPay | BHONE MYAT THU | 094-xxx-5867 | 2026062213542623004940608 | 1,508.00 THB'\nဥပမာ ၂ (မြန်မာ) - 'KPay | DAW THIDAR WIN | 09-xxx-1234 | TQR_KPAY20260810001 | 500,000 MMK'\n\n(သတိပြုရန်: ငွေကြေးအမျိုးအစားကို ပမာဏ၏ နောက်ဆုံးတွင် THB (သို့) MMK (သို့) VND ဟု အတိအကျ ဖော်ပြပါ။ မြန်မာ Unicode စာလုံးများကို မှန်ကန်စွာ ဖတ်ပါ။ အချက်အလက်များကို | သင်္ကေတဖြင့်သာ ခြားပေးပါ။ ပမာဏတွင်ပါသော ကော်မာများကို မဖြုတ်ပါနှင့်။ အခြားပိုသော စာသားများ လုံးဝ မရေးပါနှင့်။)";
+
+  async function callSlipOcrModel(model, base64Image) {
+      const url = "https://openrouter.ai/api/v1/chat/completions";
       const payload = {
-          // 🌟 ၂။ Model ကို Nghimmo မှ ခွင့်ပြုထားသော model အမည်သို့ ပြောင်းပါ
-          "model": "nghi/gpt-5.5", 
-          "max_tokens": 150, 
+          "model": model,
+          "max_tokens": 200,
           "messages": [
               {
                   "role": "user",
                   "content": [
-                      { 
-                          "type": "text", 
-                          "text": "ဒီဘဏ်စလစ်ပုံထဲက အချက်အလက်တွေကို ရှာပေးပါ။ အရေးကြီးသည်မှာ 'ဘဏ်အမည်' ဆိုသည်မှာ ငွေလွှဲသူ၏ဘဏ်မဟုတ်ဘဲ ငွေလက်ခံသူ (To / Receiver) ၏ ဘဏ်အမည် သို့မဟုတ် PromptPay ဖြစ်ရပါမည်။ ဖြေရမည့် ပုံစံမှာ - 'လက်ခံသူ၏ဘဏ်အမည် | လက်ခံသူအမည် | အကောင့်နံပါတ် | Transaction No (သို့မဟုတ် Ref No) | ပမာဏ' ဖြစ်ရပါမည်။ \nဥပမာ - 'PromptPay | BHONE MYAT THU | 094-xxx-5867 | 2026062213542623004940608 | 1,508.00 THB'. \n(သတိပြုရန်: အချက်အလက်များကို | သင်္ကေတဖြင့်သာ ခြားပေးပါ။ ပမာဏတွင်ပါသော ကော်မာများကို မဖြုတ်ပါနှင့်။ အခြားပိုသော စာသားများ လုံးဝ မရေးပါနှင့်။)" 
-                      },
-                      { 
-                          "type": "image_url", 
-                          "image_url": { 
-                              "url": `data:image/jpeg;base64,${base64Image}` 
-                          } 
-                      }
+                      { "type": "text", "text": SLIP_OCR_PROMPT },
+                      { "type": "image_url", "image_url": { "url": `data:image/jpeg;base64,${base64Image}` } }
                   ]
               }
           ]
       };
 
-      try {
-          const response = await fetch(url, {
-              method: "POST",
-              headers: { 
-                  "Content-Type": "application/json",
-                  // 🌟 API Key ကို Admin Panel မှတဆင့် လှမ်းယူပါမည်
-                  "Authorization": `Bearer ${OPENROUTER_API_KEY}`
-              },
-              body: JSON.stringify(payload)
-          });
-          
-          const data = await response.json();
-          
-          if (data.choices && data.choices.length > 0) {
-              return data.choices[0].message.content.trim();
-          } else {
-              console.error("API Error Details:", JSON.stringify(data));
-              return "⚠️ စလစ်ဖတ်၍မရပါ (Error: " + (data.error?.message || "Unknown") + ")";
-          }
-      } catch (error) {
-          console.error("Fetch Error:", error);
-          return "⚠️ Connection Error";
+      const response = await fetch(url, {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${OPENROUTER_API_KEY}`
+          },
+          body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+          const errMsg = data.error?.message || `HTTP ${response.status}`;
+          throw new Error(`[${model}] ${errMsg}`);
       }
+      if (data.choices && data.choices.length > 0 && data.choices[0].message?.content) {
+          return data.choices[0].message.content.trim();
+      }
+      throw new Error(`[${model}] Empty response - ${JSON.stringify(data).slice(0, 200)}`);
+  }
+
+  // 🌟 OCR ရလဒ်ကို heuristic စစ်ဆေးပြီး မသေချာလျှင် Flag တင်ခြင်း
+  function flagLowConfidenceOcr(data) {
+      if (!data || data.startsWith('⚠️')) return data; // Error message ဖြစ်ရင် ဒီအတိုင်းပဲထားမည်
+
+      const parts = data.split('|').map(p => p.trim());
+      let reason = '';
+
+      if (parts.length < 5) {
+          reason = 'အချက်အလက် ချို့တဲ့နေသည်';
+      } else {
+          const amountPart = parts[parts.length - 1];
+          const namePart = parts[1] || '';
+          if (!/[\d,]+(\.\d+)?\s*(THB|MMK|VND)/i.test(amountPart)) {
+              reason = 'ပမာဏ/ငွေကြေး အမျိုးအစား ရှင်းရှင်းလင်းလင်း မတွေ့ပါ';
+          } else if (!namePart || namePart.length < 2 || /unknown|n\/a|unclear|ရှင်းလင်း|မမြင်|ဖတ်မရ/i.test(namePart)) {
+              reason = 'လက်ခံသူအမည် ရှင်းရှင်းလင်းလင်း မတွေ့ပါ';
+          }
+      }
+
+      if (reason) {
+          return `⚠️ [AI OCR - ကိုယ်တိုင် ပြန်စစ်ပါ (${reason})] | ` + data;
+      }
+      return data;
+  }
+
+  async function extractSlipDataWithGemini(base64Image) {
+      if(!OPENROUTER_API_KEY) return "⚠️ API Key မထည့်ရသေးပါ။ Admin > အထွေထွေ တွင်ထည့်ပါ။"; 
+
+      let lastError = null;
+      for (const model of SLIP_OCR_MODELS) {
+          try {
+              const result = await callSlipOcrModel(model, base64Image);
+              if (result) return result;
+          } catch (error) {
+              console.error(`Slip OCR failed with ${model}:`, error.message || error);
+              lastError = error;
+              // ဒီ model မရရင် နောက် fallback model ကို ဆက်စမ်းမည်
+              continue;
+          }
+      }
+      console.error("All Slip OCR models failed. Last error:", lastError);
+      return "⚠️ စလစ်ဖတ်၍မရပါ (Model အားလုံး Error - Console (F12) တွင် အသေးစိတ် စစ်ပါ)";
   }
 
   // 🌟 Quick Amount Button အတွက် Function အသစ် 🌟
@@ -5979,43 +6247,153 @@ async function extractSlipData(imageUrl) {
   };
 
   // --- Uploading Slips ---
+  // 🌟 Type ရွေးခြင်းနှင့် Paste ကို တစ်ခါတည်း လုပ်နိုင်သော Combined Modal
   window.triggerSlipUpload = function(invId) { 
+      window.pendingPastedFiles = null;
+      const existing = document.getElementById('slipPasteOverlay');
+      if (existing) existing.remove();
+
       const overlay = document.createElement('div');
+      overlay.id = 'slipPasteOverlay';
       overlay.className = "fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4";
       overlay.innerHTML = `
-          <div class="bg-white rounded-xl p-5 w-full max-w-xs text-center shadow-2xl">
-              <h3 class="font-black text-lg mb-4 text-gray-800">မည်သည့် စလစ်အမျိုးအစားကို တင်မည်နည်း?</h3>
+          <div class="bg-white rounded-xl p-5 w-full max-w-sm text-center shadow-2xl">
+              <h3 class="font-black text-lg mb-3 text-gray-800">📎 စလစ် တင်ရန်</h3>
+              <div id="slipPasteZone" tabindex="0" class="border-2 border-dashed border-gray-300 rounded-xl p-6 mb-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors outline-none">
+                  <p id="slipPasteZoneText" class="text-gray-600 font-bold text-sm">📋 ပုံကို Copy ယူပြီး ဒီနေရာတွင် Paste (Ctrl+V) လုပ်ပါ</p>
+                  <p class="text-gray-400 text-xs mt-2">(သို့) ဖိုင်ရွေးရန် ဒီနေရာကို နှိပ်ပါ</p>
+              </div>
+              <p class="text-xs text-gray-400 font-bold mb-2">အမျိုးအစား ရွေးပါ 👇</p>
               <div class="flex gap-3">
                   <button id="btnInSlip" class="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold py-3 rounded-lg flex flex-col items-center transition-colors">
-                      <span class="text-3xl mb-1">📥</span> ဝင်စလစ်
+                      <span class="text-2xl mb-1">📥</span> ဝင်စလစ်
                   </button>
                   <button id="btnOutSlip" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-bold py-3 rounded-lg flex flex-col items-center transition-colors">
-                      <span class="text-3xl mb-1">📤</span> ထွက်စလစ်
+                      <span class="text-2xl mb-1">📤</span> ထွက်စလစ်
                   </button>
               </div>
-              <button id="btnCancelSlip" class="mt-5 text-sm font-bold text-gray-400 hover:text-red-500">✕ မတင်တော့ပါ (Cancel)</button>
+              <button id="btnCancelSlip" class="mt-4 text-sm font-bold text-gray-400 hover:text-red-500">✕ မတင်တော့ပါ (Cancel)</button>
           </div>
       `;
       document.body.appendChild(overlay);
+      window.slipPasteContext = { kind: 'normal', invId: invId, mode: null };
+      const zone = document.getElementById('slipPasteZone');
+      zone.focus();
 
-      document.getElementById('btnInSlip').onclick = () => {
-          window.currentSlipUploadMode = 'in'; 
+      zone.onclick = () => {
           document.getElementById('uploadTargetInvId').value = invId;
+          document.getElementById('slipUploader').value = '';
           document.getElementById('slipUploader').click();
-          overlay.remove();
       };
-      
-      document.getElementById('btnOutSlip').onclick = () => {
-          window.currentSlipUploadMode = 'out'; 
+
+      const chooseType = (mode) => {
           document.getElementById('uploadTargetInvId').value = invId;
-          document.getElementById('slipUploader').click();
-          overlay.remove();
+          window.currentSlipUploadMode = mode;
+          window.slipPasteContext = null;
+          if (window.pendingPastedFiles && window.pendingPastedFiles.length > 0) {
+              const files = window.pendingPastedFiles;
+              window.pendingPastedFiles = null;
+              overlay.remove();
+              window.processSlipFiles(files, invId, mode);
+          } else {
+              // ပုံမပါသေးရင် ဖိုင်ရွေးဖို့ dialog ကို ဖွင့်ပေးမည် (mode ကတော့ ရွေးပြီးသား)
+              document.getElementById('slipUploader').value = '';
+              document.getElementById('slipUploader').click();
+              overlay.remove();
+          }
       };
+
+      document.getElementById('btnInSlip').onclick = () => chooseType('in');
+      document.getElementById('btnOutSlip').onclick = () => chooseType('out');
 
       document.getElementById('btnCancelSlip').onclick = () => {
+          window.slipPasteContext = null;
+          window.pendingPastedFiles = null;
           overlay.remove();
       };
   }
+
+  // 🌟 Smart Slip အတွက် Paste-ready Box (mode က button ကနေတိုက်ရိုက်ရွေးပြီးသားဖြစ်လို့ ဒီနေရာမှာ Paste ချက်ချင်းအလုပ်လုပ်သည်)
+  window.openSlipPicker = function(context) {
+      window.slipPasteContext = context;
+      const existing = document.getElementById('slipPasteOverlay');
+      if (existing) existing.remove();
+
+      const overlay = document.createElement('div');
+      overlay.id = 'slipPasteOverlay';
+      overlay.className = "fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4";
+      overlay.innerHTML = `
+          <div class="bg-white rounded-xl p-5 w-full max-w-sm text-center shadow-2xl">
+              <h3 class="font-black text-lg mb-3 text-gray-800">${context.mode === 'in' ? '📥 ဝင်စလစ်' : '📤 ထွက်စလစ်'} တင်ရန်</h3>
+              <div id="slipPasteZone" tabindex="0" class="border-2 border-dashed border-gray-300 rounded-xl p-8 mb-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors outline-none">
+                  <p class="text-gray-600 font-bold text-sm">📋 ပုံကို Copy ယူပြီး ဒီနေရာတွင် Paste (Ctrl+V) လုပ်ပါ</p>
+                  <p class="text-gray-400 text-xs mt-2">(သို့) ဖိုင်ရွေးရန် ဒီနေရာကို နှိပ်ပါ</p>
+              </div>
+              <button id="btnCancelPaste" class="text-sm font-bold text-gray-400 hover:text-red-500">✕ မတင်တော့ပါ (Cancel)</button>
+          </div>
+      `;
+      document.body.appendChild(overlay);
+      const zone = document.getElementById('slipPasteZone');
+      zone.focus();
+
+      zone.onclick = () => {
+          if (context.kind === 'smart') {
+              document.getElementById('smartSlipUploader').value = '';
+              document.getElementById('smartSlipUploader').click();
+          } else {
+              document.getElementById('uploadTargetInvId').value = context.invId;
+              window.currentSlipUploadMode = context.mode;
+              document.getElementById('slipUploader').value = '';
+              document.getElementById('slipUploader').click();
+          }
+      };
+
+      document.getElementById('btnCancelPaste').onclick = () => {
+          window.slipPasteContext = null;
+          overlay.remove();
+      };
+  }
+
+  // 🌟 Clipboard ထဲက ပုံကို ဖမ်းယူပြီး Slip အဖြစ် Process လုပ်မည့် Global Paste Listener
+  document.addEventListener('paste', async function(e) {
+      if (!window.slipPasteContext) return;
+      const items = e.clipboardData && e.clipboardData.items;
+      if (!items) return;
+
+      let imageFiles = [];
+      for (let i = 0; i < items.length; i++) {
+          if (items[i].type && items[i].type.startsWith('image/')) {
+              const blob = items[i].getAsFile();
+              if (blob) {
+                  const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+                  imageFiles.push(new File([blob], `pasted-slip-${Date.now()}.${ext}`, { type: blob.type }));
+              }
+          }
+      }
+      if (imageFiles.length === 0) return;
+      e.preventDefault();
+
+      const ctx = window.slipPasteContext;
+
+      // Normal upload flow ဖြစ်ပြီး Type မရွေးရသေးရင် - ပုံကို သိမ်းထားပြီး Type ရွေးဖို့ စောင့်မည်
+      if (ctx.kind === 'normal' && !ctx.mode) {
+          window.pendingPastedFiles = imageFiles;
+          const zoneText = document.getElementById('slipPasteZoneText');
+          if (zoneText) zoneText.innerHTML = `✅ ပုံ Paste ပြီးပါပြီ — အောက်ကနေ အမျိုးအစား ရွေးပါ`;
+          return;
+      }
+
+      window.slipPasteContext = null;
+      const ov = document.getElementById('slipPasteOverlay');
+      if (ov) ov.remove();
+
+      if (ctx.kind === 'smart') {
+          smartSlipMode = ctx.mode;
+          await window.processSmartSlipFiles(imageFiles);
+      } else {
+          await window.processSlipFiles(imageFiles, ctx.invId, ctx.mode);
+      }
+  });
 
   function checkDuplicateTransaction(extractedText, currentInvId) {
       if (!extractedText) return { isDuplicate: false };
@@ -6037,7 +6415,7 @@ async function extractSlipData(imageUrl) {
   async function verifyWithSlip2Go(imageUrl) {
       if (!SLIP2GO_API_KEY) {
           console.warn("⚠️ Slip2Go API Key မထည့်ရသေးပါ။");
-          return { checked: false };
+          return { checked: false, reason: 'no_key' };
       }
       try {
           const targetUrl = "https://connect.slip2go.com/api/verify-slip/qr-image-link/info";
@@ -6053,19 +6431,49 @@ async function extractSlipData(imageUrl) {
           });
           clearTimeout(timeoutId);
 
-          if (!response.ok) return { checked: false }; 
+          if (!response.ok) {
+              if (response.status === 401 || response.status === 403) {
+                  return { checked: false, reason: 'auth_error', status: response.status };
+              }
+              return { checked: false, reason: 'http_error', status: response.status };
+          }
           const result = await response.json();
           if (result.code === "200000" || result.success === true || result.data?.valid === true || result.valid === true) {
               return { checked: true, isValid: true, data: result.data };
           } else {
               return { checked: true, isValid: false, message: result.message || "အတုဖြစ်နိုင်ပါသည်" };
           }
-      } catch (error) { return { checked: false }; }
+      } catch (error) {
+          if (error.name === 'AbortError') return { checked: false, reason: 'timeout' };
+          return { checked: false, reason: 'network_error' };
+      }
+  }
+
+  // 🌟 Slip2Go မရှင်းလင်းချက်ကြောင့် စစ်ဆေးမရသည့်အခါ ရှင်းလင်းစွာပြသရန်
+  function slip2goFailText(result) {
+      const reasonMap = {
+          'no_key': 'API Key မထည့်ရသေးပါ',
+          'auth_error': `API Key သက်တမ်းကုန်နေခြင်း (သို့) မှားယွင်းနေနိုင်ပါသည် (${result.status})`,
+          'http_error': `Server Error (${result.status})`,
+          'timeout': 'အချိန်ကျော်လွန်သွားသည် (Timeout)',
+          'network_error': 'ချိတ်ဆက်၍မရပါ (Network Error)'
+      };
+      return reasonMap[result.reason] || 'အကြောင်းမသိ Error';
   }
 
   window.handleSlipUpload = async function(event) {
       const files = event.target.files; if (!files || files.length === 0) return;
       const invId = document.getElementById('uploadTargetInvId').value; 
+      const uploadMode = window.currentSlipUploadMode || 'in';
+      const ov = document.getElementById('slipPasteOverlay'); if (ov) ov.remove();
+      window.slipPasteContext = null;
+      window.pendingPastedFiles = null;
+      await window.processSlipFiles(files, invId, uploadMode);
+      event.target.value = '';
+  }
+
+  window.processSlipFiles = async function(files, invId, uploadMode) {
+      if (!files || files.length === 0) return;
       if(!IMGBB_API_KEY) { alert("ImgBB API Key ထည့်သွင်းထားခြင်း မရှိပါ။"); return; } 
       
       const index = allLoadedHistory.findIndex(x => x.id === invId); 
@@ -6077,7 +6485,7 @@ async function extractSlipData(imageUrl) {
           previousExtractedInfo = tx.extractedInfo || ""; 
       }
 
-      if (existingSlips.length + files.length > 10) { alert(`၁၀ ပုံထက် ကျော်လွန်နေပါသည်။`); event.target.value = ''; return; }
+      if (existingSlips.length + files.length > 10) { alert(`၁၀ ပုံထက် ကျော်လွန်နေပါသည်။`); return; }
       let uploadedUrls = []; let hasError = false;
       
       const uploadBtn = document.querySelector(`button[onclick*="triggerSlipUpload('${invId}')"]`);
@@ -6095,12 +6503,12 @@ async function extractSlipData(imageUrl) {
          if (uploadedUrls.length > 0) {
               let combinedUrls = existingSlips.concat(uploadedUrls);
               let newExtractedText = "";
-              let uploadMode = window.currentSlipUploadMode || 'in'; 
 
               for (let i = 0; i < files.length; i++) {
                   let currentImgUrl = uploadedUrls[i];
                   let base64Img = await fileToBase64(files[i]);
                   let data = await extractSlipDataWithGemini(base64Img);
+                  data = flagLowConfidenceOcr(data);
 
                   if (uploadMode === 'in' && data.toUpperCase().includes('THB')) {
                       let slip2goResult = await verifyWithSlip2Go(currentImgUrl);
@@ -6109,6 +6517,11 @@ async function extractSlipData(imageUrl) {
                           alert(`🛑 သတိပေးချက်: Slip2Go စနစ်အရ ယခုထိုင်းဘဏ်စလစ်သည် အတု (သို့) မှားယွင်းနေပါသည်။`);
                       } else if (slip2goResult.checked && slip2goResult.isValid) {
                           data = `✅ [SLIP2GO Verified] | ` + data;
+                      } else if (!slip2goResult.checked) {
+                          data = `⚠️ [SLIP2GO စစ်ဆေး၍မရပါ - ${slip2goFailText(slip2goResult)}] | ` + data;
+                          if (slip2goResult.reason === 'auth_error') {
+                              alert(`⚠️ Slip2Go API Key သက်တမ်းကုန်နေနိုင်ပါသည် (Error ${slip2goResult.status})။ Admin > အထွေထွေ တွင် Key အသစ် ပြန်ထည့်ပါ။`);
+                          }
                       }
                   }
                   let dupCheck = checkDuplicateTransaction(data, invId);
@@ -6138,25 +6551,32 @@ async function extractSlipData(imageUrl) {
               renderHistoryRows(allLoadedHistory); 
           } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
       } catch (e) { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။"); } 
-      finally { event.target.value = ''; if (uploadBtn) { uploadBtn.innerHTML = origBtnText; uploadBtn.disabled = false; } window.currentSlipUploadMode = null; }
+      finally { if (uploadBtn) { uploadBtn.innerHTML = origBtnText; uploadBtn.disabled = false; } window.currentSlipUploadMode = null; }
   }
 
   let smartSlipMode = 'in'; 
   window.triggerSmartSlip = function(mode) {
       smartSlipMode = mode;
-      document.getElementById('smartSlipUploader').value = '';
-      document.getElementById('smartSlipUploader').click();
+      window.openSlipPicker({ kind: 'smart', mode: mode });
   }
 
   window.handleSmartSlipUpload = async function(event) {
       const files = event.target.files; if (!files || files.length === 0) return;
+      const ov = document.getElementById('slipPasteOverlay'); if (ov) ov.remove();
+      window.slipPasteContext = null;
+      await window.processSmartSlipFiles(files);
+      event.target.value = '';
+  }
+
+  window.processSmartSlipFiles = async function(files) {
+      if (!files || files.length === 0) return;
       if (!IMGBB_API_KEY) { alert("ImgBB API Key ထည့်သွင်းထားခြင်း မရှိပါ။"); return; } 
       if (files.length > 5) { alert("တစ်ကြိမ်လျှင် ပုံ ၅ ပုံထက်ပို၍ မတင်ပါနှင့်။"); return; }
 
       let uploadedUrls = []; let hasError = false;
       const origBtn = document.querySelector(smartSlipMode === 'in' ? 'button[onclick="triggerSmartSlip(\'in\')"]' : 'button[onclick="triggerSmartSlip(\'out\')"]');
-      const origText = origBtn.innerHTML;
-      origBtn.innerHTML = "⏳ စစ်ဆေးနေသည်..."; origBtn.disabled = true;
+      const origText = origBtn ? origBtn.innerHTML : '';
+      if (origBtn) { origBtn.innerHTML = "⏳ စစ်ဆေးနေသည်..."; origBtn.disabled = true; }
 
       try {
           if (allLoadedHistory.length === 0) { await loadHistory(); }
@@ -6174,6 +6594,7 @@ async function extractSlipData(imageUrl) {
                   let currentImgUrl = uploadedUrls[i];
                   let base64Img = await fileToBase64(files[i]);
                   let data = await extractSlipDataWithGemini(base64Img);
+                  data = flagLowConfidenceOcr(data);
                   
                   if (smartSlipMode === 'in' && data.toUpperCase().includes('THB')) {
                       let slip2goResult = await verifyWithSlip2Go(currentImgUrl);
@@ -6181,6 +6602,8 @@ async function extractSlipData(imageUrl) {
                           data = `🛑 [SLIP2GO သတိပေးချက်: စလစ်အတု ဖြစ်နိုင်ပါသည်! - ${slip2goResult.message}] | ` + data;
                       } else if (slip2goResult.checked && slip2goResult.isValid) {
                           data = `✅ [SLIP2GO Verified] | ` + data;
+                      } else if (!slip2goResult.checked) {
+                          data = `⚠️ [SLIP2GO စစ်ဆေး၍မရပါ - ${slip2goFailText(slip2goResult)}] | ` + data;
                       }
                   }
                   let dupCheck = checkDuplicateTransaction(data, null);
@@ -6208,7 +6631,7 @@ async function extractSlipData(imageUrl) {
               } else { alert("စလစ်ထဲမှ ငွေပမာဏကို ဖတ်၍မရပါ။ ပုံမကြည်လင်ခြင်း ဖြစ်နိုင်ပါသည်။"); }
           } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
       } catch (e) { alert("အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။"); } 
-      finally { origBtn.innerHTML = origText; origBtn.disabled = false; event.target.value = ''; }
+      finally { if (origBtn) { origBtn.innerHTML = origText; origBtn.disabled = false; } }
   }
 
   function showSmartMatchModal(aiAmt, aiCurr, fullAiText, imgUrls) {
@@ -6362,8 +6785,8 @@ async function extractSlipData(imageUrl) {
   // ==========================================
   // 💾 Backup & Restore Functions (အသစ်)
   // ==========================================
-  function exportDatabaseBackup() {
-      const backupData = {
+  function buildBackupDataObject() {
+      return {
           banks: FIREBASE_BANKS,
           bankOrder: FIREBASE_BANK_ORDER,
           qrs: FIREBASE_QRS,
@@ -6398,6 +6821,10 @@ async function extractSlipData(imageUrl) {
           system_passwords: FIREBASE_SYSTEM_PASSWORDS,
           adminTimezone: ADMIN_TIMEZONE
       };
+  }
+
+  function exportDatabaseBackup() {
+      const backupData = buildBackupDataObject();
       
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
       const downloadAnchorNode = document.createElement('a');
@@ -6407,6 +6834,116 @@ async function extractSlipData(imageUrl) {
       document.body.appendChild(downloadAnchorNode); 
       downloadAnchorNode.click();
       downloadAnchorNode.remove();
+  }
+
+  // 🌟 Backup ဖိုင်ကို Telegram သို့ .json Document အဖြစ် ပို့ခြင်း
+  async function sendBackupToTelegram(isAuto) {
+      if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+          console.warn("Telegram Backup: Bot Token/Chat ID မရှိပါ။");
+          return false;
+      }
+      try {
+          const backupData = buildBackupDataObject();
+          const dateStr = new Date().toISOString().slice(0, 10);
+          const jsonBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+
+          const formData = new FormData();
+          formData.append('chat_id', TELEGRAM_CHAT_ID);
+          const topicId = TELEGRAM_BACKUP_TOPIC_ID || TELEGRAM_TOPIC_ID;
+          if (topicId) formData.append('message_thread_id', topicId);
+          formData.append('document', jsonBlob, `TG_Excal_Backup_${dateStr}.json`);
+          formData.append('caption', `📦 ${isAuto ? 'Auto ' : ''}Database Backup - ${dateStr}`);
+
+          const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`;
+          const res = await fetch(url, { method: 'POST', body: formData });
+          const result = await res.json();
+          if (!result.ok) { console.error("Telegram Backup Send Failed:", result); return false; }
+          return true;
+      } catch (e) {
+          console.error("Telegram Backup Error:", e);
+          return false;
+      }
+  }
+
+  function getTzTodayAndTime() {
+      const tz = ADMIN_TIMEZONE || 'Asia/Bangkok';
+      const nowTz = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+      const todayTzStr = toYYYYMMDD(nowTz);
+      const hh = String(nowTz.getHours()).padStart(2, '0');
+      const mm = String(nowTz.getMinutes()).padStart(2, '0');
+      return { todayTzStr, nowHM: `${hh}:${mm}`, nowTz, tz };
+  }
+
+  // 🌟 Daily Closing Report ကို အချိန်တန်လျှင် Telegram သို့ Auto ပို့ခြင်း
+  async function checkAndSendDailyReport() {
+      if (!DAILY_REPORT_ENABLED) return;
+      const { todayTzStr, nowHM } = getTzTodayAndTime();
+      if (nowHM < DAILY_REPORT_TIME) return;
+      if (LAST_DAILY_REPORT_SENT_DATE === todayTzStr) return; // ဒီနေ့ ပို့ပြီးသား
+
+      const reportText = buildDailyReportText();
+      sendTelegramAlert(reportText, TELEGRAM_DAILY_REPORT_TOPIC_ID || TELEGRAM_TOPIC_ID);
+      LAST_DAILY_REPORT_SENT_DATE = todayTzStr;
+      if (dbRef) {
+          try {
+              await dbRef.set({ dailyReport: { enabled: DAILY_REPORT_ENABLED, time: DAILY_REPORT_TIME, topicId: TELEGRAM_DAILY_REPORT_TOPIC_ID, lastSentDate: todayTzStr } }, { merge: true });
+          } catch (e) { console.error("Daily Report Save Error:", e); }
+      }
+  }
+
+  function buildDailyReportText() {
+      const { todayTzStr, tz } = getTzTodayAndTime();
+      let successCount = 0, pendingCount = 0, cancelCount = 0;
+      let volThb = 0, volMmk = 0, volVnd = 0;
+
+      (allLoadedHistory || []).forEach(tx => {
+          if (!tx.timestamp) return;
+          let recDateObj;
+          try { recDateObj = new Date(new Date(tx.timestamp).toLocaleString('en-US', { timeZone: tz })); } catch(e) { return; }
+          if (toYYYYMMDD(recDateObj) !== todayTzStr) return;
+
+          if (tx.status === 'Success') {
+              successCount++;
+              const inAmt = parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0;
+              const type = tx.type || '';
+              if (type.startsWith('THB')) volThb += inAmt;
+              else if (type.startsWith('MMK')) volMmk += inAmt;
+              else if (type.startsWith('VND')) volVnd += inAmt;
+          } else if (tx.status === 'Pending') pendingCount++;
+          else if (tx.status === 'Cancelled' || tx.status === 'Auto Cancel') cancelCount++;
+      });
+
+      // FIFO Profit Engine (Treasury Tab) ကို 'today' filter ဖြင့် ယာယီ run ပြီး ရလဒ်ကို ယူသုံးမည်
+      let profitText = "N/A";
+      try {
+          const filterSelect = document.getElementById('dashFilterSelect');
+          const originalFilter = filterSelect ? filterSelect.value : null;
+          if (filterSelect) filterSelect.value = 'today';
+          if (typeof updateDashboard === 'function') updateDashboard(allLoadedHistory);
+          const profitEl = document.getElementById('dash_total_profit');
+          if (profitEl) profitText = profitEl.textContent;
+          if (filterSelect && originalFilter !== null) { filterSelect.value = originalFilter; updateDashboard(allLoadedHistory); }
+      } catch (e) { console.error("Daily Report Profit Calc Error:", e); }
+
+      return `📊 <b>နေ့စဉ် အနှစ်ချုပ် (Daily Closing Report)</b>\n📅 ${todayTzStr}\n\n✅ အောင်မြင်: ${successCount}\n⏳ Pending: ${pendingCount}\n❌ Cancel: ${cancelCount}\n\n💰 <b>ယနေ့ Volume</b>\nTHB: ${volThb.toLocaleString()}\nMMK: ${volMmk.toLocaleString()}\nVND: ${volVnd.toLocaleString()}\n\n📈 <b>ယနေ့ အမြတ်ငွေ (Est.)</b>: ${profitText}`;
+  }
+
+  // 🌟 Auto Scheduled Backup ကို အချိန်တန်လျှင် Telegram သို့ ပို့ခြင်း
+  async function checkAndSendScheduledBackup() {
+      if (!AUTO_BACKUP_ENABLED) return;
+      const { todayTzStr, nowHM } = getTzTodayAndTime();
+      if (nowHM < AUTO_BACKUP_TIME) return;
+      if (LAST_AUTO_BACKUP_SENT_DATE === todayTzStr) return; // ဒီနေ့ ပို့ပြီးသား
+
+      const success = await sendBackupToTelegram(true);
+      if (success) {
+          LAST_AUTO_BACKUP_SENT_DATE = todayTzStr;
+          if (dbRef) {
+              try {
+                  await dbRef.set({ scheduledBackup: { enabled: AUTO_BACKUP_ENABLED, time: AUTO_BACKUP_TIME, topicId: TELEGRAM_BACKUP_TOPIC_ID, lastSentDate: todayTzStr } }, { merge: true });
+              } catch (e) { console.error("Auto Backup Save Error:", e); }
+          }
+      }
   }
 
   function importDatabaseBackup(event) {
