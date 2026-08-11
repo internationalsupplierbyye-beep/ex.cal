@@ -537,16 +537,17 @@
 
 <div id="successTxModal" style="display:none;" class="fixed inset-0 bg-black/60 z-[70] items-center justify-center p-4">
   <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl border-t-4 border-green-500">
-    <h3 class="text-lg font-black mb-4 text-green-700">✅ ငွေလွှဲအောင်မြင်ကြောင်း အတည်ပြုရန်</h3>
+    <h3 id="successModalTitle" class="text-lg font-black mb-4 text-green-700">✅ ငွေလွှဲအောင်မြင်ကြောင်း အတည်ပြုရန်</h3>
     <div class="space-y-3">
        <p class="text-sm text-gray-600">ပြေစာ ID: <span id="successModalInvId" class="font-bold text-black"></span></p>
-       <div>
+       <p id="successModalHint" class="hidden text-xs bg-blue-50 border border-blue-200 text-blue-700 rounded-lg p-2 font-bold"></p>
+       <div id="successInBlock">
            <label class="text-xs font-bold text-gray-600 mb-1 block text-green-600">ငွေဝင်မည့် ပိုက်ဆံအိတ် (+)</label>
            <input type="text" placeholder="🔍 အကောင့် ရှာရန်..." class="admin-input-box !mb-1 text-xs py-1 bg-green-50" oninput="filterNativeSelect('successInLedger', this.value)">
            <select id="successInLedger" class="admin-input-box !mb-0 text-sm py-1.5"></select>
            <p class="text-[10px] text-gray-500 mt-1">Customer လွှဲလိုက်သော ဘဏ်/QR ပေါ်မူတည်၍ အလိုအလျောက် ရွေးချယ်ပေးထားပါသည်။</p>
        </div>
-       <div class="mt-3">
+       <div id="successOutBlock" class="mt-3">
            <div class="flex items-center justify-between mb-1">
                <label class="text-xs font-bold text-gray-600 block text-red-600">ငွေထုတ်ပေးလိုက်သည့် ပိုက်ဆံအိတ် (-)</label>
                <label class="text-[11px] font-bold text-gray-600 flex items-center gap-1 cursor-pointer select-none">
@@ -566,7 +567,7 @@
            </div>
        </div>
        <div class="flex gap-2 mt-5">
-           <button onclick="document.getElementById('successTxModal').style.display='none'" class="btn2 w-1/2 text-sm">ပိတ်မည်</button>
+           <button onclick="document.getElementById('successTxModal').style.display='none'; window.pendingTargetStatus=null; window.isEditingWallet=false;" class="btn2 w-1/2 text-sm">ပိတ်မည်</button>
            <button onclick="confirmSuccessStatus()" class="btn bg-green-600 hover:bg-green-700 w-1/2 text-sm">အတည်ပြုမည်</button>
        </div>
     </div>
@@ -768,6 +769,14 @@
         <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 overflow-x-auto">
           <input type="text" id="searchInvId" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[120px]" placeholder="ID, Name, Phone, Ref ဖြင့်ရှာရန်" oninput="searchHistoryLocally(true)">
           <input type="date" id="searchDate" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[130px]" onchange="searchHistoryLocally(true)" title="ရက်စွဲဖြင့်ရှာရန်">
+          <select id="searchStatus" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[130px]" onchange="searchHistoryLocally(true)" title="Status ဖြင့်ရှာရန်">
+              <option value="">Status အားလုံး</option>
+              <option value="Pending">⏳ Pending</option>
+              <option value="Owing">💸 ကြိုလွဲပြီး (Owing)</option>
+              <option value="Success">✅ Success</option>
+              <option value="Cancelled">❌ Cancelled</option>
+              <option value="Auto Cancel">❌ Auto Cancel</option>
+          </select>
           <button onclick="searchHistoryLocally(true)" class="btn bg-blue-600 !py-1 !px-3 !text-sm" title="ရှာရန်">🔍</button>
           <button onclick="loadHistory()" class="btn2 !py-1 !px-3 !text-sm" title="Refresh">🔄</button>
           <button id="btnExportCSV" onclick="exportHistoryCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="Excel ဖိုင်ထုတ်ရန်">📥 Export</button>
@@ -4406,6 +4415,51 @@ function openAdmin() {
       }
   };
 
+  // 🌟 Success Modal ကို Mode အလိုက် (full / owing / owing_complete) ပြောင်းပေးမည့် Function 🌟
+  window.successModalMode = 'full';
+  window.setSuccessModalMode = function(mode) {
+      window.successModalMode = mode;
+      const inBlock = document.getElementById('successInBlock');
+      const outBlock = document.getElementById('successOutBlock');
+      const title = document.getElementById('successModalTitle');
+      const hint = document.getElementById('successModalHint');
+
+      if (mode === 'owing') {
+          if(inBlock) inBlock.classList.add('hidden');
+          if(outBlock) outBlock.classList.remove('hidden');
+          if(title) { title.textContent = '💸 ကြိုလွှဲငွေ ထုတ်ပြီးကြောင်း အတည်ပြုရန်'; title.className = 'text-lg font-black mb-4 text-blue-700'; }
+          if(hint) { hint.textContent = 'Customer ငွေ မထည့်ရသေးဘဲ ကျွန်ုပ်တို့ဘက်က ငွေကို ကြိုလွှဲပေးလိုက်ခြင်း ဖြစ်ပါသည်။ ငွေထုတ်ပေးလိုက်သော ပိုက်ဆံအိတ်ကိုသာ ရွေးပါ။'; hint.classList.remove('hidden'); }
+      } else if (mode === 'owing_complete') {
+          if(inBlock) inBlock.classList.remove('hidden');
+          if(outBlock) outBlock.classList.add('hidden');
+          if(title) { title.textContent = '✅ ကျန်ငွေ ဝင်ရောက်ကြောင်း အတည်ပြုရန်'; title.className = 'text-lg font-black mb-4 text-green-700'; }
+          if(hint) { hint.textContent = 'ငွေထုတ်ပေးမှုကို အရင်က မှတ်ပြီးသားဖြစ်၍ Customer ငွေ ဝင်လာသော ပိုက်ဆံအိတ်ကိုသာ ရွေးပါ။'; hint.classList.remove('hidden'); }
+      } else {
+          if(inBlock) inBlock.classList.remove('hidden');
+          if(outBlock) outBlock.classList.remove('hidden');
+          if(title) { title.textContent = '✅ ငွေလွှဲအောင်မြင်ကြောင်း အတည်ပြုရန်'; title.className = 'text-lg font-black mb-4 text-green-700'; }
+          if(hint) { hint.textContent = ''; hint.classList.add('hidden'); }
+      }
+  };
+
+  // 🌟 Method (QR/Bank) အမည်ပေါ်မူတည်၍ ဝင်ငွေအကောင့်ကို အလိုအလျောက် ခန့်မှန်းပေးမည့် Function 🌟
+  window.getAutoInboundLedger = function(tx, inCurr) {
+      let autoInboundLedger = '';
+      if (tx.method && tx.method.includes('QR')) {
+          const foundQrIndex = FIREBASE_QRS.findIndex(q => {
+              let rawName = (q.name || q.file || "").replace(/\.[^.]+$/, '').toLowerCase();
+              return tx.method.toLowerCase().includes(rawName);
+          });
+          if (foundQrIndex > -1) {
+              const q = FIREBASE_QRS[foundQrIndex];
+              if (!q.currency || q.currency === inCurr) {
+                  autoInboundLedger = q.ledger ? q.ledger : `QR_${foundQrIndex}`;
+              }
+          }
+      }
+      return autoInboundLedger;
+  };
+
   // 🌟 ငွေထုတ်ပေးမှုကို အကောင့် ၂ ခု ခွဲပို့ရန် Toggle/Sync Functions 🌟
   let pendingOutTotal = 0;
 
@@ -4460,6 +4514,8 @@ function openAdmin() {
       
       pendingSuccessTxId = invId;
       window.isEditingWallet = true; 
+      window.pendingTargetStatus = null;
+      setSuccessModalMode('full');
       
       document.getElementById('successModalInvId').textContent = invId;
       document.getElementById('successTxModal').style.display = 'flex';
@@ -4501,6 +4557,7 @@ function openAdmin() {
       const index = allLoadedHistory.findIndex(x => x.id === pendingSuccessTxId);
       if (index === -1) return;
       const tx = allLoadedHistory[index];
+      const mode = window.isEditingWallet ? 'edit' : (window.pendingTargetStatus || 'Success');
 
       const inSelect = document.getElementById('successInLedger');
       const outSelect = document.getElementById('successOutLedger');
@@ -4513,7 +4570,10 @@ function openAdmin() {
       const isSplit = !!(document.getElementById('successSplitOutCheck') && document.getElementById('successSplitOutCheck').checked);
       let newLedgerOutSplit = null;
 
-      if (isSplit) {
+      // 'owing_complete' mode ကတော့ Out-Ledger ကို လုံးဝမပြောင်းတော့ပါ (အရင်က မှတ်ပြီးသားမို့)
+      const outFieldNeeded = (mode !== 'Success_FromOwing');
+
+      if (outFieldNeeded && isSplit) {
           const outAcc2 = document.getElementById('successOutLedger2').value;
           const amt1 = parseNum(document.getElementById('successOutAmt1').value);
           const amt2 = parseNum(document.getElementById('successOutAmt2').value);
@@ -4536,7 +4596,46 @@ function openAdmin() {
       try {
           let balanceChanges = [];
 
-          if (window.isEditingWallet) {
+          // ==== Mode 1: Pending/Owing → "Owing" (ငွေထုတ်ပေးလိုက်သည့် ပိုက်ဆံအိတ်ကိုသာ မှတ်ပြီး ချက်ချင်းနှုတ်မည်) ====
+          if (mode === 'Owing') {
+              if (isSplit) {
+                  newLedgerOutSplit.forEach(s => balanceChanges.push({ id: s.id, change: -s.amount }));
+              } else if (newLedgerOut) {
+                  balanceChanges.push({ id: newLedgerOut, change: -outTotalNumeric });
+              }
+
+              const updatePayload = { ledgerOut: newLedgerOut };
+              updatePayload.ledgerOutSplit = isSplit ? newLedgerOutSplit : firebase.firestore.FieldValue.delete();
+
+              await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update(updatePayload);
+              tx.ledgerOut = newLedgerOut;
+              tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
+
+              if (balanceChanges.length > 0) {
+                  await window.updateBalancesSafely(balanceChanges);
+                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
+              }
+
+              document.getElementById('successTxModal').style.display = 'none';
+              await finalizeTxStatus(pendingSuccessTxId, 'Owing', "");
+          }
+          // ==== Mode 2: "Owing" → "Success" (ဝင်ငွေအကောင့်ကိုသာ ရွေးပြီး ဖြည့်ပေးမည်၊ Out ကို ထပ်မနှုတ်တော့) ====
+          else if (mode === 'Success_FromOwing') {
+              if (newLedgerIn) balanceChanges.push({ id: newLedgerIn, change: +inTotalNumeric });
+
+              await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update({ ledgerIn: newLedgerIn });
+              tx.ledgerIn = newLedgerIn;
+
+              if (balanceChanges.length > 0) {
+                  await window.updateBalancesSafely(balanceChanges);
+                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
+              }
+
+              document.getElementById('successTxModal').style.display = 'none';
+              await finalizeTxStatus(pendingSuccessTxId, 'Success', "");
+          }
+          // ==== Mode 3 & 4: ရှိပြီးသား လုပ်ဆောင်ချက်များ (Pending→Success ပုံမှန်၊ Wallet ပြန်ရွေးခြင်း) ====
+          else if (mode === 'edit') {
               let oldLedgerIn = tx.ledgerIn;
 
               // 🌟 အဟောင်း ငွေထုတ်ပေးမှု (Split ဖြစ်စေ၊ တစ်ခုတည်းဖြစ်စေ) ကို ပြန်ဖြည့်ပေးမည်
@@ -4554,8 +4653,25 @@ function openAdmin() {
               } else if (newLedgerOut) {
                   balanceChanges.push({ id: newLedgerOut, change: -outTotalNumeric });
               }
-          } 
+
+              const updatePayload = { ledgerIn: newLedgerIn, ledgerOut: newLedgerOut };
+              updatePayload.ledgerOutSplit = isSplit ? newLedgerOutSplit : firebase.firestore.FieldValue.delete();
+
+              await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update(updatePayload);
+              tx.ledgerIn = newLedgerIn;
+              tx.ledgerOut = newLedgerOut;
+              tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
+
+              if (balanceChanges.length > 0) {
+                  await window.updateBalancesSafely(balanceChanges);
+                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
+              }
+
+              document.getElementById('successTxModal').style.display = 'none';
+              renderHistoryRows(allLoadedHistory);
+          }
           else {
+              // Pending → Success (ပုံမှန်စီးဆင်းမှု)
               if (newLedgerIn) balanceChanges.push({ id: newLedgerIn, change: +inTotalNumeric });
 
               if (isSplit) {
@@ -4563,41 +4679,33 @@ function openAdmin() {
               } else if (newLedgerOut) {
                   balanceChanges.push({ id: newLedgerOut, change: -outTotalNumeric });
               }
-          }
 
-          const updatePayload = {
-              ledgerIn: newLedgerIn,
-              ledgerOut: newLedgerOut
-          };
-          updatePayload.ledgerOutSplit = isSplit ? newLedgerOutSplit : firebase.firestore.FieldValue.delete();
+              const updatePayload = { ledgerIn: newLedgerIn, ledgerOut: newLedgerOut };
+              updatePayload.ledgerOutSplit = isSplit ? newLedgerOutSplit : firebase.firestore.FieldValue.delete();
 
-          await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update(updatePayload);
-          
-          tx.ledgerIn = newLedgerIn;
-          tx.ledgerOut = newLedgerOut;
-          tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
+              await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update(updatePayload);
+              tx.ledgerIn = newLedgerIn;
+              tx.ledgerOut = newLedgerOut;
+              tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
 
-          // 🌟 Database တစ်ခုလုံး အုပ်မသိမ်းတော့ဘဲ Balance သီးသန့်ကိုသာ လုံခြုံစွာ တိုး/လျှော့မည်
-          if (balanceChanges.length > 0) {
-              await window.updateBalancesSafely(balanceChanges); 
-              if (typeof loadTreasuryData === 'function') loadTreasuryData();
-          }
+              if (balanceChanges.length > 0) {
+                  await window.updateBalancesSafely(balanceChanges);
+                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
+              }
 
-          document.getElementById('successTxModal').style.display = 'none';
-
-          if (!window.isEditingWallet) {
+              document.getElementById('successTxModal').style.display = 'none';
               await finalizeTxStatus(pendingSuccessTxId, 'Success', "");
-          } else {
-              renderHistoryRows(allLoadedHistory); 
           }
-          
+
       } catch(e) {
           console.error("Confirm Success Error:", e);
           alert("လုပ်ဆောင်ရာတွင် အခက်အခဲရှိပါသည်။");
       } finally {
           if (btn) { btn.innerHTML = origText; btn.disabled = false; }
           window.isEditingWallet = false;
+          window.pendingTargetStatus = null;
           pendingSuccessTxId = null;
+          setSuccessModalMode('full');
       }
   };
 
@@ -4613,49 +4721,65 @@ function openAdmin() {
           return;
       }
 
-      if (newStatus === 'Success') {
+      let inCurr = '', outCurr = '';
+      try {
+          let parts = tx.type.split(' ➔ ');
+          if (parts.length === 2) {
+              inCurr = parts[0].trim();
+              outCurr = parts[1].trim();
+          }
+      } catch(e) {}
+
+      // 🌟 Pending/Success → "ကြိုလွဲပြီး (Owing)" ➜ ငွေထုတ်ပေးလိုက်သော ပိုက်ဆံအိတ်ကိုသာ မှတ်ပြီး Treasury မှ ချက်ချင်းနှုတ်ပေးမည်
+      if (newStatus === 'Owing') {
           pendingSuccessTxId = invId;
           pendingSuccessSelectEl = selectEl;
+          window.isEditingWallet = false;
+          window.pendingTargetStatus = 'Owing';
 
           document.getElementById('successModalInvId').textContent = invId;
           document.getElementById('successTxModal').style.display = 'flex';
-          
-          if(selectEl) selectEl.value = tx.status; 
-
-          let inCurr = '', outCurr = '';
-          try {
-              let parts = tx.type.split(' ➔ ');
-              if (parts.length === 2) {
-                  inCurr = parts[0].trim();  
-                  outCurr = parts[1].trim(); 
-              }
-          } catch(e) {}
+          if(selectEl) selectEl.value = tx.status;
 
           filterAndInitSuccessDropdowns(inCurr, outCurr);
 
-          let autoInboundLedger = '';
-          if(tx.method && tx.method.includes('QR')) {
-              const foundQrIndex = FIREBASE_QRS.findIndex(q => {
-                  let rawName = (q.name || q.file || "").replace(/\.[^.]+$/, '').toLowerCase();
-                  return tx.method.toLowerCase().includes(rawName);
-              });
-              if(foundQrIndex > -1) {
-                  const q = FIREBASE_QRS[foundQrIndex];
-                  if (!q.currency || q.currency === inCurr) {
-                      autoInboundLedger = q.ledger ? q.ledger : `QR_${foundQrIndex}`;
-                  }
-              }
-          }
-          
-          const inSelect = document.getElementById('successInLedger');
           const outSelect = document.getElementById('successOutLedger');
-          
-          if(inSelect) inSelect.value = autoInboundLedger;
           if(outSelect) outSelect.value = '';
 
           pendingOutTotal = parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0;
           toggleOutSplit(false);
+          setSuccessModalMode('owing');
+          return;
+      }
 
+      if (newStatus === 'Success') {
+          pendingSuccessTxId = invId;
+          pendingSuccessSelectEl = selectEl;
+          window.isEditingWallet = false;
+
+          document.getElementById('successModalInvId').textContent = invId;
+          document.getElementById('successTxModal').style.display = 'flex';
+          if(selectEl) selectEl.value = tx.status;
+
+          filterAndInitSuccessDropdowns(inCurr, outCurr);
+
+          const inSelect = document.getElementById('successInLedger');
+          const outSelect = document.getElementById('successOutLedger');
+          const autoInboundLedger = getAutoInboundLedger(tx, inCurr);
+
+          if (tx.status === 'Owing') {
+              // 🌟 ငွေထုတ်ပေးမှုကို အရင်ကတည်းက မှတ်ပြီးသားမို့ ဝင်ငွေအကောင့်ကိုသာ ရွေးခိုင်းမည်
+              window.pendingTargetStatus = 'Success_FromOwing';
+              if(inSelect) inSelect.value = autoInboundLedger;
+              setSuccessModalMode('owing_complete');
+          } else {
+              window.pendingTargetStatus = 'Success';
+              if(inSelect) inSelect.value = autoInboundLedger;
+              if(outSelect) outSelect.value = '';
+              pendingOutTotal = parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0;
+              toggleOutSplit(false);
+              setSuccessModalMode('full');
+          }
           return;
       }
 
@@ -4666,6 +4790,23 @@ function openAdmin() {
   async function finalizeTxStatus(invId, newStatus, ledgerLogNotes) {
       const index = allLoadedHistory.findIndex(x => x.id === invId);
       const tx = allLoadedHistory[index];
+      const oldStatus = tx.status;
+
+      // 🌟 "ကြိုလွဲပြီး (Owing)" အခြေအနေမှ Success မဖြစ်ဘဲ ထွက်သွားရင် (ဥပမာ Cancel) အရင်နှုတ်ထားတဲ့ ငွေထုတ်ပေးမှုကို Treasury ထဲ ပြန်ဖြည့်ပေးမည်
+      if (oldStatus === 'Owing' && newStatus !== 'Success') {
+          try {
+              let revertChanges = [];
+              if (Array.isArray(tx.ledgerOutSplit) && tx.ledgerOutSplit.length === 2) {
+                  tx.ledgerOutSplit.forEach(s => { if (s.id) revertChanges.push({ id: s.id, change: +(Number(s.amount) || 0) }); });
+              } else if (tx.ledgerOut) {
+                  revertChanges.push({ id: tx.ledgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
+              }
+              if (revertChanges.length > 0) {
+                  await window.updateBalancesSafely(revertChanges);
+                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
+              }
+          } catch(e) { console.error("Owing Revert Error:", e); }
+      }
 
      // ✅ 1. မျက်နှာပြင် (UI) ကို ချက်ချင်း အရင် Update လုပ်ပါမည် (Delay မဖြစ်စေရန်)
      tx.status = newStatus;
@@ -4678,7 +4819,7 @@ function openAdmin() {
           // 🌟 Log မှတ်မည် 
           logActivity("Status Change", `ID: ${invId} ၏ Status ကို '${newStatus}' သို့ ပြောင်းလဲခဲ့သည်။`);
           
-          let statusEmoji = newStatus === 'Success' ? '✅' : (newStatus === 'Cancelled' ? '❌' : '⏳');
+          let statusEmoji = newStatus === 'Success' ? '✅' : (newStatus === 'Cancelled' ? '❌' : (newStatus === 'Owing' ? '💸' : '⏳'));
           let alertMsg = `${statusEmoji} <b>မှတ်တမ်း Status ပြောင်းလဲမှု</b>\n\n`;
           alertMsg += `ID: <code>${invId}</code>\n`;
           
@@ -4707,6 +4848,8 @@ function openAdmin() {
               sendTelegramAlert(alertMsg, TELEGRAM_SUCCESS_TOPIC_ID);
           } else if(newStatus === 'Cancelled') {
               sendTelegramAlert(alertMsg, TELEGRAM_CANCEL_TOPIC_ID);
+          } else if(newStatus === 'Owing') {
+              sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID);
           } else {
               sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID);
           }
@@ -4825,6 +4968,20 @@ function openAdmin() {
                   balanceChanges.push({ id: tx.ledgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
               }
               
+              if (balanceChanges.length > 0) {
+                  await window.updateBalancesSafely(balanceChanges);
+                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
+              }
+          }
+          // 🌟 "ကြိုလွဲပြီး (Owing)" ဖြစ်နေတဲ့ မှတ်တမ်းကို ဖျက်ရင် အရင်နှုတ်ထားတဲ့ ငွေထုတ်ပေးမှုကိုပဲ ပြန်ဖြည့်ပေးရမယ် (In ကို လုံးဝ မမှတ်ရသေးလို့) 🌟
+          else if (tx && tx.status === 'Owing') {
+              let balanceChanges = [];
+              if (Array.isArray(tx.ledgerOutSplit) && tx.ledgerOutSplit.length === 2) {
+                  tx.ledgerOutSplit.forEach(s => { if (s.id) balanceChanges.push({ id: s.id, change: +(Number(s.amount) || 0) }); });
+              } else if (tx.ledgerOut) {
+                  balanceChanges.push({ id: tx.ledgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
+              }
+
               if (balanceChanges.length > 0) {
                   await window.updateBalancesSafely(balanceChanges);
                   if (typeof loadTreasuryData === 'function') loadTreasuryData();
@@ -5330,6 +5487,8 @@ function openAdmin() {
         
         if (status === 'Success') {
             statusColor = 'bg-green-100 text-green-800 border-green-300';
+        } else if (status === 'Owing') {
+            statusColor = 'bg-blue-100 text-blue-800 border-blue-300';
         } else if (status === 'Cancelled' || status === 'Auto Cancel') {
             statusColor = 'bg-red-100 text-red-800 border-red-300';
         } else {
@@ -5383,8 +5542,9 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
           `;
           
           statusHtml = `
-            <select onchange="window.updateTxStatus('${d.id}', this.value, this)" class="border rounded px-2 py-1 text-xs font-bold ${statusColor}">
+            <select onchange="window.updateTxStatus('${d.id}', this.value, this)" class="border rounded px-2 py-1 text-xs font-bold ${statusColor}" style="width:auto; max-width:140px;">
                 <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
+                <option value="Owing" ${status === 'Owing' ? 'selected' : ''}>Owing</option>
                 <option value="Success" ${status === 'Success' ? 'selected' : ''}>Success</option>
                 <option value="Cancelled" ${status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                 ${status === 'Auto Cancel' ? `<option value="Auto Cancel" selected>Auto Cancel</option>` : ''}
@@ -5425,7 +5585,7 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
           <td class="p-3 text-xs font-bold text-purple-600">${displayRate}</td>
           <td class="p-3">${typeHtml}</td>
           <td class="p-3">${amountHtml}</td>
-          <td class="p-3 text-center">${statusHtml}</td>
+          <td class="p-3 text-center" style="max-width:150px;">${statusHtml}</td>
           <td class="p-3 text-center">${actionHtml}</td>
           <td class="p-3 text-xs" style="white-space:normal;"><div class="max-w-[260px]"><div class="font-bold text-gray-800 break-words" style="white-space:normal;">${method}</div>${aiExtractedHtml}</div></td>
         </tr>`;
@@ -5532,13 +5692,18 @@ renderHistoryRows(allLoadedHistory);
   async function searchHistoryLocally() {
       const searchId = document.getElementById('searchInvId').value.trim().toLowerCase();
       const searchDate = document.getElementById('searchDate') ? document.getElementById('searchDate').value : "";
+      const searchStatus = document.getElementById('searchStatus') ? document.getElementById('searchStatus').value : "";
 
-      if (!searchId && !searchDate) { 
+      if (!searchId && !searchDate && !searchStatus) { 
           renderHistoryRows(allLoadedHistory); 
           return; 
       }
       
       let filtered = allLoadedHistory;
+
+      if (searchStatus) {
+          filtered = filtered.filter(d => (d.status || 'Pending') === searchStatus);
+      }
 
       if (searchDate) {
           filtered = filtered.filter(d => {
@@ -5580,7 +5745,7 @@ renderHistoryRows(allLoadedHistory);
           });
       }
 
-      if(filtered.length === 0 && searchId && searchId.startsWith('inv') && !searchDate) {
+      if(filtered.length === 0 && searchId && searchId.startsWith('inv') && !searchDate && !searchStatus) {
          const list = document.getElementById('adminHistoryList');
          list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔍 Database တွင် ရှာဖွေနေပါသည်...</td></tr>';
          try {
