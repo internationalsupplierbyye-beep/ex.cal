@@ -2755,6 +2755,30 @@ if (file.startsWith('PP:')) {
       });
 
     dbRef = firebase.firestore().collection("exchange_app").doc("admin_data");
+
+    // 🌟 SECURITY FIX: Device Permission ကို Real-time စောင့်ကြည့်ခြင်း
+    // Main Admin က device UUID ကို ပြင်/ဖျက်လိုက်တာနဲ့ ချက်ချင်း Effect ဖြစ်စေရန် (Reload မလိုအပ်ဘဲ)
+    dbRef.onSnapshot((docSnap) => {
+      if (!docSnap.exists) return;
+      const data = docSnap.data();
+      const newPermissions = data.device_permissions || {};
+      FIREBASE_DEVICE_PERMISSIONS = newPermissions;
+
+      const previousRole = CURRENT_ROLE;
+      checkDeviceBypassAndInit(); // CURRENT_ROLE ကို အသစ်ပြန်တွက်မည်
+
+      const wasElevated = (previousRole === 'main admin' || previousRole === 'admin' || previousRole === 'staff');
+      const stillElevated = (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff');
+
+      // Role ချေဖျက်ခံရ (သို့) အနိမ့်ကျသွားရင် Admin Panel ကို ချက်ချင်း ပိတ်ပြီး UI ကို အပြည့်ပြန်ရှင်းမည်
+      if (wasElevated && previousRole !== CURRENT_ROLE && !stillElevated) {
+          const modal = document.getElementById('adminModal');
+          if (modal) modal.style.display = 'none';
+          alert("သင့် Device ၏ Admin Access ကို ပြန်လည်ရုပ်သိမ်းလိုက်ပါသည်။");
+          location.reload();
+      }
+    });
+
     dbRef.get().then((docSnap) => {
       if (docSnap.exists) {
         const data = docSnap.data();
