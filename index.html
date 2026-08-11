@@ -98,6 +98,26 @@
     #loginModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 60; align-items: center; justify-content: center; }
     .login-box { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
 
+    /* 🌟 Balance Edit Modal (Treasury) */
+    #balanceEditModal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); z-index: 70; align-items: center; justify-content: center; padding: 16px; }
+    .bal-edit-box { background: white; padding: 22px; border-radius: 20px; width: 100%; max-width: 380px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: left; }
+    .bal-edit-title { font-size: 1.05rem; font-weight: 900; color: #0f172a; margin-bottom: 4px; display:flex; align-items:center; gap:8px; }
+    .bal-edit-sub { font-size: .8rem; color: #64748b; margin-bottom: 16px; font-weight: 700; }
+    .bal-edit-label { font-size: .78rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 4px; display:block; }
+    .bal-edit-name-input { width: 100%; box-sizing: border-box; padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-weight: 700; font-size: .92rem; color: #334155; background: #f8fafc; margin-bottom: 16px; }
+    .bal-edit-name-input:focus { outline: none; border-color: #94a3b8; background: white; }
+    .bal-edit-divider { border-top: 1px dashed #e2e8f0; margin: 2px 0 14px 0; }
+    .bal-edit-amt-zone { background: linear-gradient(180deg,#fff7ed,#fffbeb); border: 2px solid #fbbf24; border-radius: 16px; padding: 14px 14px 12px 14px; margin-bottom: 6px; }
+    .bal-edit-amt-label { font-size: .8rem; font-weight: 900; color: #b45309; margin-bottom: 8px; display:flex; align-items:center; gap:6px; }
+    .bal-edit-amt-input { width: 100%; box-sizing: border-box; font-size: 1.55rem !important; font-weight: 900 !important; color: #7c2d12 !important; background: #ffffff !important; border: 2px solid #fbbf24 !important; border-radius: 12px !important; padding: 12px 14px !important; text-align: center; font-variant-numeric: tabular-nums; }
+    .bal-edit-amt-input:focus { outline: none !important; border-color: #d97706 !important; box-shadow: 0 0 0 4px rgba(217,119,6,.15) !important; }
+    .bal-edit-current { font-size: .75rem; color: #92400e; font-weight: 700; margin-top: 8px; text-align: center; }
+    .bal-edit-delta { font-size: .85rem; font-weight: 900; text-align: center; margin-top: 6px; padding: 4px 0; border-radius: 8px; }
+    .bal-edit-delta.zero { color: #94a3b8; }
+    .bal-edit-delta.up { color: #059669; background: #ecfdf5; }
+    .bal-edit-delta.down { color: #dc2626; background: #fef2f2; }
+    .bal-edit-btns { display:flex; gap:10px; margin-top: 18px; }
+
     .tab-btn { padding: 10px 16px; font-weight: bold; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
     .tab-btn:hover { color: #111827; background: #f1f5f9; }
     .tab-btn.active { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
@@ -222,6 +242,32 @@
     <div class="flex gap-2 mt-2">
       <button onclick="closeLogin()" class="btn2 w-1/2">ပိတ်မည်</button>
       <button onclick="checkLogin()" class="btn w-1/2 bg-blue-600">ဝင်မည်</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🌟 Treasury Balance Edit Modal -->
+<div id="balanceEditModal">
+  <div class="bal-edit-box">
+    <div class="bal-edit-title">✏️ လက်ကျန်ငွေ ပြင်ဆင်ရန်</div>
+    <div class="bal-edit-sub" id="balEditAccLabel">Account</div>
+
+    <div id="balEditNameWrap">
+      <span class="bal-edit-label">Account Name</span>
+      <input type="text" id="balEditNameInput" class="bal-edit-name-input" placeholder="Account Name">
+      <div class="bal-edit-divider"></div>
+    </div>
+
+    <div class="bal-edit-amt-zone">
+      <div class="bal-edit-amt-label">💰 လက်ကျန်ငွေ အသစ် (Amount)</div>
+      <input type="text" inputmode="decimal" id="balEditAmtInput" class="bal-edit-amt-input" placeholder="0" oninput="window.updateBalEditDelta()">
+      <div class="bal-edit-current" id="balEditCurrentLabel">လက်ရှိလက်ကျန်: 0</div>
+      <div class="bal-edit-delta zero" id="balEditDeltaLabel">ပြောင်းလဲမှု မရှိသေးပါ</div>
+    </div>
+
+    <div class="bal-edit-btns">
+      <button onclick="window.closeBalEditModal()" class="btn2 w-1/2">မလုပ်တော့ပါ</button>
+      <button onclick="window.confirmBalEditSave()" class="btn w-1/2 bg-emerald-600">သိမ်းမည်</button>
     </div>
   </div>
 </div>
@@ -3481,25 +3527,6 @@ function openAdmin() {
       }
   }
 
-  function clearCustomerForm() {
-      document.getElementById('cusId').value = '';
-      document.getElementById('cusName').value = '';
-      document.getElementById('cusPhone').value = '';
-      document.getElementById('cusSocial').value = '';
-      document.getElementById('cusBankName').value = '';
-      document.getElementById('cusBankNo').value = '';
-  }
-
-  function editCustomer(id) {
-      const c = FIREBASE_CUSTOMERS[id]; if(!c) return;
-      document.getElementById('cusId').value = c.id;
-      document.getElementById('cusName').value = c.name || '';
-      document.getElementById('cusPhone').value = c.phone || '';
-      document.getElementById('cusSocial').value = c.social || '';
-      document.getElementById('cusBankName').value = c.bankName || '';
-      document.getElementById('cusBankNo').value = c.bankNo || '';
-  }
-
   async function deleteCustomer(id) {
       if(!confirm("ဤ Customer ကို ဖျက်ရန် သေချာပါသလား?")) return;
       delete FIREBASE_CUSTOMERS[id];
@@ -3819,7 +3846,10 @@ function openAdmin() {
       } catch (e) { alert("သိမ်းဆည်းရာတွင် အခက်အခဲရှိပါသည်။"); }
   }
 
-  async function adjustTreasuryBalance(id) {
+  // 🌟 Balance Edit Modal ၏ လက်ရှိ context ကို သိမ်းထားရန်
+  let _balEditCtx = null;
+
+  function adjustTreasuryBalance(id) {
       let acc = null;
       let isMaster = false;
       let updateTarget = 'all';
@@ -3839,40 +3869,93 @@ function openAdmin() {
 
       if (!acc) return;
 
-      // 🌟 newName ကို အပြင်ဘက်မှာ ကြိုတင်ကြေညာထားမှ အောက်က try block မှာ Error မတက်မှာပါ
-      let newName = null; 
-
-      // Master Account ဖြစ်မှသာ နာမည်ပြောင်းခွင့်ပြုမည်
-      if (isMaster) {
-          newName = prompt(`Master Account နာမည်ကို ပြင်ပါ:`, acc.name);
-          if (newName === null) return;
-          acc.name = newName;
-      }
-      
       let dispName = acc.name || (acc.file ? acc.file.replace(/\.[^.]+$/, '') : "Account");
-      const newBalStr = prompt(`'${dispName}' ၏ လက်ကျန်ငွေအသစ်ကို ထည့်ပါ:`, acc.balance || 0);
-      if (newBalStr === null) return;
-      
-      const newBal = parseFloat(newBalStr.replace(/,/g, ''));
+
+      _balEditCtx = { id, acc, isMaster, updateTarget, currentBal: acc.balance || 0 };
+
+      // 🌟 Name field ကို Master Account မှသာ ပြသမည် — Amount field ကို ရှင်းလင်းစွာ ခွဲထားပြီး
+      // အမှတ်မထင် မှားနှိပ်မိမှုကို လျှော့ချပါသည်
+      const nameWrap = document.getElementById('balEditNameWrap');
+      const nameInput = document.getElementById('balEditNameInput');
+      if (isMaster) {
+          nameWrap.style.display = '';
+          nameInput.value = acc.name || '';
+      } else {
+          nameWrap.style.display = 'none';
+          nameInput.value = '';
+      }
+
+      document.getElementById('balEditAccLabel').textContent = dispName;
+      document.getElementById('balEditAmtInput').value = (acc.balance || 0);
+      document.getElementById('balEditCurrentLabel').textContent = `လက်ရှိလက်ကျန်: ${(acc.balance || 0).toLocaleString()}`;
+      window.updateBalEditDelta();
+
+      document.getElementById('balanceEditModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('balEditAmtInput').select(), 50);
+  }
+
+  window.updateBalEditDelta = function() {
+      if (!_balEditCtx) return;
+      const raw = document.getElementById('balEditAmtInput').value;
+      const newBal = parseFloat(String(raw).replace(/,/g, ''));
+      const label = document.getElementById('balEditDeltaLabel');
+      if (isNaN(newBal)) {
+          label.className = 'bal-edit-delta zero';
+          label.textContent = 'ဂဏန်းသာ ထည့်သွင်းပါ';
+          return;
+      }
+      const diff = newBal - _balEditCtx.currentBal;
+      if (diff === 0) {
+          label.className = 'bal-edit-delta zero';
+          label.textContent = 'ပြောင်းလဲမှု မရှိပါ';
+      } else if (diff > 0) {
+          label.className = 'bal-edit-delta up';
+          label.textContent = `▲ +${diff.toLocaleString()} တိုးလာမည်`;
+      } else {
+          label.className = 'bal-edit-delta down';
+          label.textContent = `▼ ${diff.toLocaleString()} လျော့သွားမည်`;
+      }
+  };
+
+  window.closeBalEditModal = function() {
+      document.getElementById('balanceEditModal').style.display = 'none';
+      _balEditCtx = null;
+  };
+
+  window.confirmBalEditSave = async function() {
+      if (!_balEditCtx) return;
+      const { id, acc, isMaster, updateTarget } = _balEditCtx;
+
+      const newBalStr = document.getElementById('balEditAmtInput').value;
+      const newBal = parseFloat(String(newBalStr).replace(/,/g, ''));
       if (isNaN(newBal)) return alert("ဂဏန်းသာ ထည့်သွင်းပါ။");
 
-      let change = newBal - (acc.balance || 0);
+      let newName = null;
+      if (isMaster) {
+          newName = document.getElementById('balEditNameInput').value.trim();
+          if (!newName) return alert("Account နာမည် ထည့်သွင်းပါ။");
+          acc.name = newName;
+      }
+
+      let change = newBal - _balEditCtx.currentBal;
 
       try {
           // 🌟 သီးသန့် Balance ကိုသာ Increment ဖြင့် လှမ်း Update လုပ်မည်
           await window.updateBalancesSafely([{ id: id, change: change }]);
-          
+
           if (isMaster && newName !== null) {
-              await updateFirebase(updateTarget === 'all' ? 'all' : updateTarget); 
+              await updateFirebase(updateTarget === 'all' ? 'all' : updateTarget);
           }
-          
+
           loadTreasuryData();
-          if (isMaster) renderAdminLists(); 
-      } catch (e) { 
+          if (isMaster) renderAdminLists();
+
+          window.closeBalEditModal();
+      } catch (e) {
           console.error(e); // Error ကို Console မှာ ကြည့်လို့ရအောင် ထည့်ထားပေးပါတယ်
-          alert("ပြင်ဆင်ရာတွင် အခက်အခဲရှိပါသည်။"); 
+          alert("ပြင်ဆင်ရာတွင် အခက်အခဲရှိပါသည်။");
       }
-  }
+  };
 
   async function deleteMasterAccount(id) {
       const acc = FIREBASE_TREASURY[id];
@@ -4806,6 +4889,26 @@ function openAdmin() {
                   if (typeof loadTreasuryData === 'function') loadTreasuryData();
               }
           } catch(e) { console.error("Owing Revert Error:", e); }
+      }
+
+      // 🌟 "Success" အခြေအနေမှ တခြား Status (Cancelled/Pending/Owing) သို့ ပြောင်းလဲသွားရင်
+      // Success ဖြစ်စဉ်က Treasury ထဲ ထည့်/နှုတ်ခဲ့တဲ့ ငွေတွေကို ပြန်ပြင်ပေးရမည် (deleteTxRecord ၏ Logic အတိုင်း)
+      if (oldStatus === 'Success' && newStatus !== 'Success') {
+          try {
+              let revertChanges = [];
+              if (tx.ledgerIn) revertChanges.push({ id: tx.ledgerIn, change: -(parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0) });
+
+              if (Array.isArray(tx.ledgerOutSplit) && tx.ledgerOutSplit.length === 2) {
+                  tx.ledgerOutSplit.forEach(s => { if (s.id) revertChanges.push({ id: s.id, change: +(Number(s.amount) || 0) }); });
+              } else if (tx.ledgerOut) {
+                  revertChanges.push({ id: tx.ledgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
+              }
+
+              if (revertChanges.length > 0) {
+                  await window.updateBalancesSafely(revertChanges);
+                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
+              }
+          } catch(e) { console.error("Success Revert Error:", e); }
       }
 
      // ✅ 1. မျက်နှာပြင် (UI) ကို ချက်ချင်း အရင် Update လုပ်ပါမည် (Delay မဖြစ်စေရန်)
@@ -7218,6 +7321,22 @@ renderHistoryRows(allLoadedHistory);
 
       txs.sort((a,b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
+      // 🌟 Currency အလိုက် Total ပေါင်းချုပ်ရန် (Success ဖြစ်သော မှတ်တမ်းများကိုသာ ပေါင်းမည်)
+      // "100,000 MMK" ကဲ့သို့သော string များထဲမှ ဂဏန်းနှင့် ငွေကြေးအမျိုးအစားကို ခွဲထုတ်သည်
+      function parseAmtStr(str) {
+          if (!str) return null;
+          const m = String(str).match(/([\d,]+(?:\.\d+)?)\s*([A-Za-z]+)/);
+          if (!m) return null;
+          return { value: parseFloat(m[1].replace(/,/g, '')), currency: m[2].toUpperCase() };
+      }
+
+      let totals = {}; // { MMK: { in:0, out:0 }, THB: { in:0, out:0 }, VND: { in:0, out:0 } }
+      function addTotal(bucket, parsed) {
+          if (!parsed || isNaN(parsed.value)) return;
+          if (!totals[parsed.currency]) totals[parsed.currency] = { in: 0, out: 0 };
+          totals[parsed.currency][bucket] += parsed.value;
+      }
+
       let htmlRows = '';
       txs.forEach((tx, i) => {
           let dt = new Date(tx.timestamp);
@@ -7232,7 +7351,38 @@ renderHistoryRows(allLoadedHistory);
                 <td style="padding: 8px; font-weight:bold; color:${sColor};">${tx.status || 'Pending'}</td>
                 <td style="padding: 8px; font-weight:bold; color:#15803d;">${tx.inAmt} ➔ ${tx.outAmt}</td>
             </tr>`;
+
+          // Success ဖြစ်သော မှတ်တမ်းများကိုသာ Total ထဲ ပေါင်းမည် (Pending/Cancelled ကို မထည့်ပါ)
+          if (tx.status === 'Success') {
+              addTotal('in', parseAmtStr(tx.inAmt));
+              addTotal('out', parseAmtStr(tx.outAmt));
+          }
       });
+
+      // 🌟 Currency အလိုက် Total Summary HTML ကို တည်ဆောက်မည်
+      const currencyOrder = ['MMK', 'THB', 'VND'];
+      const sortedCurrencies = Object.keys(totals).sort((a, b) => {
+          let ia = currencyOrder.indexOf(a), ib = currencyOrder.indexOf(b);
+          if (ia === -1) ia = 99; if (ib === -1) ib = 99;
+          return ia - ib;
+      });
+
+      let totalsCells = '';
+      sortedCurrencies.forEach(cur => {
+          const t = totals[cur];
+          totalsCells += `
+              <div style="flex:1; min-width:130px; background:#ffffff; border:1px solid #dbeafe; border-radius:10px; padding:10px 12px;">
+                  <div style="font-size:11px; font-weight:900; color:#1e40af; letter-spacing:.03em; margin-bottom:6px;">${cur} TOTAL</div>
+                  <div style="font-size:11px; color:#15803d; font-weight:800;">In: ${t.in.toLocaleString()} ${cur}</div>
+                  <div style="font-size:11px; color:#b91c1c; font-weight:800; margin-top:2px;">Out: ${t.out.toLocaleString()} ${cur}</div>
+              </div>`;
+      });
+
+      const totalsBlock = sortedCurrencies.length ? `
+          <div style="margin-top: 14px; padding: 14px; background: rgba(239,246,255,0.9); border: 1px solid #bfdbfe; border-radius: 12px;">
+              <div style="font-size:12px; font-weight:900; color:#1e3a8a; margin-bottom:10px;">📊 TOTAL ပေါင်းချုပ် (Success မှတ်တမ်းများ)</div>
+              <div style="display:flex; flex-wrap:wrap; gap:10px;">${totalsCells}</div>
+          </div>` : '';
 
       const reportDiv = document.createElement('div');
       reportDiv.style.width = '1000px'; 
@@ -7273,6 +7423,7 @@ renderHistoryRows(allLoadedHistory);
                   </thead>
                   <tbody>${htmlRows}</tbody>
               </table>
+              ${totalsBlock}
           </div>
       `;
 
