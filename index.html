@@ -2690,7 +2690,8 @@ if (file.startsWith('PP:')) {
   window.addEventListener('DOMContentLoaded', () => {
     populateAllTimezones();
     let sysDeviceId = localStorage.getItem('sys_device_id');
-    if (!sysDeviceId) { sysDeviceId = "DEV-" + Math.floor(1000 + Math.random() * 9000); localStorage.setItem('sys_device_id', sysDeviceId); }
+    if (sysDeviceId && sysDeviceId.startsWith('DEV-')) { sysDeviceId = null; } // old weak-format ID → force regenerate
+    if (!sysDeviceId) { sysDeviceId = crypto.randomUUID(); localStorage.setItem('sys_device_id', sysDeviceId); }
     document.getElementById('displayDeviceId').textContent = sysDeviceId;
     
     const bankEl = document.getElementById('bankSelect');
