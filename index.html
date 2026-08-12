@@ -688,6 +688,7 @@
 <div id="adminModal">
   <div class="admin-content relative">
     <button onclick="closeAdmin()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl z-10">✕</button>
+    <button id="btnSwitchToDeviceMode" onclick="switchToDeviceMode()" style="display:none;" class="absolute top-3 right-14 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-2 py-1 rounded z-10">🔄 Device Mode ပြန်ပြောင်း</button>
     <h2 id="adminModalTitle" class="text-xl font-black mb-4 flex items-center gap-2">⚙️ Admin Settings</h2>
     
     <div class="flex border-b mb-4 overflow-x-auto shrink-0 pb-1" id="adminTabsHeader">
@@ -1019,8 +1020,20 @@
            <button onclick="loadUserRoles()" class="btn2 !py-1 !px-3 !text-sm">🔄 Refresh</button>
         </div>
         <p class="text-xs text-rose-600 mb-3">Device ID မှတ်မိထားခြင်း မရှိသော Browser များတွင် Email/Password နှင့် Login ဝင်ရာတွင် သက်ဆိုင်ရာ Account ၏ Role ကို ဤနေရာမှ စီမံနိုင်ပါသည်။ ⚠️ Device Permission List နှင့် လုံးဝ သီးခြားစီဖြစ်ပါသည် — Device ကို ဖျက်ရုံနှင့် ဒီ Account များက ဆက်လက် Login ဝင်နိုင်ပါသေးမည်။</p>
+        <div class="grid grid-cols-2 gap-1 mb-2">
+          <input type="text" id="newAccountEmail" class="admin-input-box !mb-0 !py-1 text-sm" placeholder="Email အသစ်...">
+          <input type="text" id="newAccountPassword" class="admin-input-box !mb-0 !py-1 text-sm" placeholder="Password (အနည်းဆုံး ၆ လုံး)...">
+        </div>
         <div class="flex gap-1 mb-3">
-          <input type="text" id="newUserRoleEmail" class="admin-input-box !mb-0 !py-1 text-sm flex-1" placeholder="Email ထည့်ပါ...">
+          <select id="newAccountRole" class="border rounded-lg px-2 py-1 text-xs font-bold bg-slate-50 text-purple-800 border-purple-200">
+             <option value="staff">Staff (History)</option>
+             <option value="admin">Admin (Full)</option>
+             <option value="main admin">Main Admin</option>
+          </select>
+          <button onclick="adminCreateEmailAccount()" class="btn bg-purple-600 hover:bg-purple-700 !py-1 !px-3 !text-xs whitespace-nowrap flex-1">🆕 Account အသစ် ဖန်တီးမည်</button>
+        </div>
+        <div class="flex gap-1 mb-3">
+          <input type="text" id="newUserRoleEmail" class="admin-input-box !mb-0 !py-1 text-sm flex-1" placeholder="Email ရှိပြီးသားအား Role ပေးရန်...">
           <select id="newUserRoleValue" class="border rounded-lg px-2 py-1 text-xs font-bold bg-slate-50 text-purple-800 border-purple-200">
              <option value="staff">Staff (History)</option>
              <option value="admin">Admin (Full)</option>
@@ -1050,6 +1063,15 @@
           </optgroup>
         </select>
         <button onclick="updateTimezone()" id="btnTzSave" class="btn bg-orange-600 hover:bg-orange-700 w-full">အချိန်ဇုန် သိမ်းမည်</button>
+      </div>
+
+      <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-4">
+        <h3 class="font-bold text-amber-800 mb-2">⏳ Email Login Session Timeout</h3>
+        <p class="text-xs text-amber-700 mb-2">Email/Password ဖြင့် Login ဝင်ပြီးနောက် ဒီနာရီပေါင်းလွန်ရင် အလိုအလျောက် Logout ထုတ်ပါမည် (Device-bypass အတွက် သက်ရောက်မှုမရှိပါ)။</p>
+        <div class="flex gap-1">
+          <input type="number" id="sessionTimeoutHoursInput" min="1" step="1" class="admin-input-box !mb-0 bg-white flex-1" placeholder="24">
+          <button onclick="updateSessionTimeout()" class="btn bg-amber-600 hover:bg-amber-700 !px-4">သိမ်းမည်</button>
+        </div>
       </div>
 
       <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl mb-4">
@@ -1291,6 +1313,12 @@
   let userRoleUnsub = null; // Email/Password login user_roles real-time listener ကို ပယ်ဖျက်ရန် reference
   let FIREBASE_SYSTEM_PASSWORDS = {}; 
   let FIREBASE_DEVICE_PERMISSIONS = {};
+  let CURRENT_DEVICE_ID = null; // 🌟 Firebase Anonymous Auth UID (localStorage UUID အစား - Server မှ verify ထားပြီးသား ID)
+  let deviceRoleUnsub = null; // device_roles/{uid} real-time listener ကို ပယ်ဖျက်ရန် reference
+  let FIREBASE_CONFIG_REF = null; // 🌟 Admin Settings ကနေ Account အသစ်ဖန်တီးရန် Secondary Firebase App အတွက်
+  let SESSION_START_AT = null; // Email Login ဝင်ချိန် (Session Timeout / Force Logout တွက်ချက်ရန်)
+  let IS_EMAIL_SESSION = false;
+  let SESSION_TIMEOUT_HOURS = 24; // Admin Settings ကနေ ပြောင်းနိုင်သည်
 
   // --- Global States ---
   let FIREBASE_BANKS = {};
@@ -2205,7 +2233,7 @@ window.showToast = function(message, icon = "✅") {
           savedRate = `1 MMK = ${fmt6(fAmt/mAmt)} VND`;
       }
       
-      const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
+      const currentDeviceId = CURRENT_DEVICE_ID || "Unknown";
 
       const historyRecord = {
         id: invId, type: type, rate: savedRate, inAmt: inAmtStr, outAmt: outAmtStr,
@@ -2257,7 +2285,7 @@ window.showToast = function(message, icon = "✅") {
     // --- 📝 Activity Log Functions ---
 
   async function logActivity(actionTitle, details) {
-      const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
+      const currentDeviceId = CURRENT_DEVICE_ID || "Unknown";
       const mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
       
       const logEntry = {
@@ -2717,10 +2745,8 @@ if (file.startsWith('PP:')) {
   // --- Initializing ---
   window.addEventListener('DOMContentLoaded', () => {
     populateAllTimezones();
-    let sysDeviceId = localStorage.getItem('sys_device_id');
-    if (sysDeviceId && sysDeviceId.startsWith('DEV-')) { sysDeviceId = null; } // old weak-format ID → force regenerate
-    if (!sysDeviceId) { sysDeviceId = crypto.randomUUID(); localStorage.setItem('sys_device_id', sysDeviceId); }
-    document.getElementById('displayDeviceId').textContent = sysDeviceId;
+    // 🌟 Device ID ကို Firebase Anonymous Auth ဖြင့် အောက်ဘက် Firebase Connection block တွင် သတ်မှတ်ပေးပါမည် (forge မလုပ်နိုင်တော့ပါ)
+    document.getElementById('displayDeviceId').textContent = "…စောင့်ဆိုင်းနေသည်";
     
     const bankEl = document.getElementById('bankSelect');
     if(bankEl) bankEl.addEventListener('change', () => refreshBankInfo(false));
@@ -2771,6 +2797,7 @@ if (file.startsWith('PP:')) {
   try {
     const firebaseConfig = { apiKey: "AIzaSyDr4ada9hQah9C2ZX0xFBfxYDdXUQl3oa4", authDomain: "excal-570ed.firebaseapp.com", projectId: "excal-570ed", storageBucket: "excal-570ed.firebasestorage.app", messagingSenderId: "84544400626", appId: "1:84544400626:web:3393a4e339d3f41a60f46b", measurementId: "G-4KLYMEPPGT" };
     firebase.initializeApp(firebaseConfig);
+    FIREBASE_CONFIG_REF = firebaseConfig;
 
     // 🌟 အင်တာနက်မရှိချိန် အလုပ်လုပ်နိုင်ရန် Offline Persistence ကို ဖွင့်ခြင်း
     firebase.firestore().enablePersistence()
@@ -2784,29 +2811,133 @@ if (file.startsWith('PP:')) {
 
     dbRef = firebase.firestore().collection("exchange_app").doc("admin_data");
 
-    // 🌟 SECURITY FIX: Device Permission ကို Real-time စောင့်ကြည့်ခြင်း
-    // Main Admin က device UUID ကို ပြင်/ဖျက်လိုက်တာနဲ့ ချက်ချင်း Effect ဖြစ်စေရန် (Reload မလိုအပ်ဘဲ)
-    dbRef.onSnapshot((docSnap) => {
-      if (!docSnap.exists) return;
-      const data = docSnap.data();
-      const newPermissions = data.device_permissions || {};
-      FIREBASE_DEVICE_PERMISSIONS = newPermissions;
+    // 🌟 BUG FIX: Persistence ကို တိကျစွာ သတ်မှတ်ခြင်း — မလုပ်ရင် တခါတခါ Browser အချို့တွင် Refresh တိုင်း
+    // Anonymous UID အသစ်ပြောင်းနေတတ်ပြီး Device-bypass Permission ကပ်မနေတော့ပါ (History တွင်လည်း "Unknown" ဖြစ်တတ်သည်)
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .catch((e) => console.warn("Auth persistence setup error:", e));
 
-      const previousRole = CURRENT_ROLE;
-      checkDeviceBypassAndInit(); // CURRENT_ROLE ကို အသစ်ပြန်တွက်မည်
-
-      const wasElevated = (previousRole === 'main admin' || previousRole === 'admin' || previousRole === 'staff');
-      const stillElevated = (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff');
-
-      // Role ချေဖျက်ခံရ (သို့) အနိမ့်ကျသွားရင် Admin Panel ကို ချက်ချင်း ပိတ်ပြီး UI ကို အပြည့်ပြန်ရှင်းမည်
-      if (wasElevated && previousRole !== CURRENT_ROLE && !stillElevated) {
-          const modal = document.getElementById('adminModal');
-          if (modal) modal.style.display = 'none';
-          alert("သင့် Device ၏ Admin Access ကို ပြန်လည်ရုပ်သိမ်းလိုက်ပါသည်။");
-          location.reload();
+    // 🌟 SECURITY FIX: localStorage UUID ဟာ ဘယ်သူမဆို forge လုပ်နိုင်တာမို့ Firebase Anonymous Auth
+    // ဖြင့် device တစ်ခုချင်းစီကို cryptographically verified UID တစ်ခု အစားထိုးပေးမည်။
+    // Role ကို 'device_roles/{uid}' collection ထဲမှာ Firestore Rules က verify လို့ရအောင် သိမ်းမည်။
+    async function restoreEmailSession(user) {
+      CURRENT_DEVICE_ID = user.email; // 🌟 BUG FIX: Email login အတွက် Device ID/Name ကို history မှတ်တမ်းများတွင် "Unknown" မဖြစ်တော့စေရန်
+      const dispEl = document.getElementById('displayDeviceId');
+      if (dispEl) dispEl.textContent = user.email + " (Email Login)";
+      const switchBtn = document.getElementById('btnSwitchToDeviceMode');
+      if (switchBtn) switchBtn.style.display = 'block';
+      try {
+        const docRef = await firebase.firestore().collection("user_roles").doc(user.email).get();
+        CURRENT_ROLE = (docRef.exists && docRef.data().role) ? docRef.data().role : 'guest';
+      } catch (e) {
+        CURRENT_ROLE = 'guest';
       }
+      setupUIForRole(CURRENT_ROLE);
+      const stillElevated = ['main admin', 'admin', 'staff'].includes(CURRENT_ROLE);
+      if (stillElevated) {
+        loadAdminDataOnce();
+        SESSION_START_AT = Date.now();
+        IS_EMAIL_SESSION = true;
+        startSessionTimeoutWatcher();
+        attachUserRoleListener(user.email);
+      }
+      else firebase.auth().signOut(); // Role မရှိတော့ရင် Email session ကို ရှင်းပြီး Anonymous device mode ပြန်ဝင်စေမည်
+    }
+
+    // 🌟 user_roles/{email} ကို Real-time စောင့်ကြည့်ခြင်း (Role ဖျက်/ပြင် + Force Logout နှစ်မျိုးလုံးကို ဒီတစ်နေရာတည်းက ကိုင်တွယ်)
+    function attachUserRoleListener(email) {
+        if (typeof userRoleUnsub === 'function') userRoleUnsub();
+        userRoleUnsub = firebase.firestore().collection("user_roles").doc(email)
+            .onSnapshot((snap) => {
+                const stillElevated = ['main admin', 'admin', 'staff'];
+                if (!snap.exists) {
+                    alert("သင့် Account ၏ Access ကို ပြန်လည်ရုပ်သိမ်းလိုက်ပါသည်။");
+                    firebase.auth().signOut();
+                    location.reload();
+                    return;
+                }
+                const newRole = (snap.data().role || 'guest').toLowerCase();
+                if (CURRENT_ROLE !== newRole) {
+                    if (!stillElevated.includes(newRole)) {
+                        alert("သင့် Account ၏ Access ကို ပြန်လည်ရုပ်သိမ်းလိုက်ပါသည်။");
+                        firebase.auth().signOut();
+                        location.reload();
+                        return;
+                    } else {
+                        CURRENT_ROLE = newRole;
+                        setupUIForRole(CURRENT_ROLE);
+                    }
+                }
+                const fLogout = snap.data().forceLogoutAt;
+                if (fLogout && typeof fLogout.toMillis === 'function' && SESSION_START_AT && fLogout.toMillis() > SESSION_START_AT) {
+                    alert("Admin မှ သင့် Session ကို Force Logout ထုတ်လိုက်ပါသည်။");
+                    firebase.auth().signOut();
+                    location.reload();
+                }
+            });
+    }
+
+    // 🌟 Email Login Session Timeout — Admin Settings ထဲက SESSION_TIMEOUT_HOURS ကို ကြာချိန်လွန်ရင် အလိုအလျောက် Logout ထုတ်မည်
+    let sessionTimeoutInterval = null;
+    function startSessionTimeoutWatcher() {
+        if (sessionTimeoutInterval) clearInterval(sessionTimeoutInterval);
+        sessionTimeoutInterval = setInterval(() => {
+            if (!IS_EMAIL_SESSION || !SESSION_START_AT) return;
+            const hoursPassed = (Date.now() - SESSION_START_AT) / (1000 * 60 * 60);
+            if (hoursPassed >= SESSION_TIMEOUT_HOURS) {
+                alert("Session သက်တမ်းကုန်သွားပါပြီ — ပြန်လည် Login ဝင်ပေးပါ။");
+                firebase.auth().signOut();
+                location.reload();
+            }
+        }, 2 * 60 * 1000); // ၂ မိနစ်တစ်ကြိမ် စစ်မည်
+    }
+
+    firebase.auth().onAuthStateChanged((user) => {
+      if (!user) {
+        firebase.auth().signInAnonymously().catch((e) => console.error("Anonymous auth error:", e));
+        return;
+      }
+      if (!user.isAnonymous) {
+        // 🌟 FIX: Email login လုပ်ဖူးထားတဲ့ Session ဟာ Browser ထဲမှာ ကျန်နေတတ်ပါတယ် (Firebase Auth persistence)
+        // ယခင်က ဒီနေရာမှာ "return" ချည်းလုပ်ခဲ့လို့ Device ID/Role ကို ပြန် Restore မလုပ်ဘဲ "…စောင့်ဆိုင်းနေသည်" အမြဲကျန်ခဲ့ခြင်း ဖြစ်ပါတယ်
+        restoreEmailSession(user);
+        return;
+      }
+
+      CURRENT_DEVICE_ID = user.uid;
+      const dispEl = document.getElementById('displayDeviceId');
+      if (dispEl) dispEl.textContent = CURRENT_DEVICE_ID;
+      const switchBtn = document.getElementById('btnSwitchToDeviceMode');
+      if (switchBtn) switchBtn.style.display = 'none';
+
+      // Device ကိုယ်ပိုင် Role ကို Real-time စောင့်ကြည့်ခြင်း (Main Admin က ပြင်/ဖျက်လိုက်တာနဲ့ ချက်ချင်း Effect ဖြစ်စေရန်)
+      if (typeof deviceRoleUnsub === 'function') deviceRoleUnsub();
+      deviceRoleUnsub = firebase.firestore().collection("device_roles").doc(user.uid)
+        .onSnapshot((snap) => {
+          const previousRole = CURRENT_ROLE;
+          if (snap.exists && snap.data().role) {
+            FIREBASE_DEVICE_PERMISSIONS[user.uid] = { name: snap.data().name || '', role: snap.data().role };
+            CURRENT_ROLE = snap.data().role.toLowerCase();
+          } else {
+            delete FIREBASE_DEVICE_PERMISSIONS[user.uid];
+            CURRENT_ROLE = 'guest';
+          }
+          setupUIForRole(CURRENT_ROLE);
+
+          const stillElevated = ['main admin', 'admin', 'staff'].includes(CURRENT_ROLE);
+          const wasElevated = ['main admin', 'admin', 'staff'].includes(previousRole);
+          if (wasElevated && previousRole !== CURRENT_ROLE && !stillElevated) {
+              const modal = document.getElementById('adminModal');
+              if (modal) modal.style.display = 'none';
+              alert("သင့် Device ၏ Admin Access ကို ပြန်လည်ရုပ်သိမ်းလိုက်ပါသည်။");
+              location.reload();
+          }
+
+          // Role ရရှိမှသာ admin_data (customers/treasury/apiKeys) ကို ဆွဲယူခွင့်ရှိပါမည် (Firestore Rules အရ)
+          if (stillElevated) loadAdminDataOnce();
+        }, (err) => console.warn("device_roles listen error:", err.code));
     });
 
+    function loadAdminDataOnce() {
     dbRef.get().then((docSnap) => {
       if (docSnap.exists) {
         const data = docSnap.data();
@@ -2855,9 +2986,9 @@ if (file.startsWith('PP:')) {
         
         FIREBASE_DEVICE_NAMES = data.deviceNames || {}; FIREBASE_HIDDEN_DEVICES = data.hiddenDevices || []; 
         
-        // 🌟 အသစ်ထည့်ရန်: Password နှင့် Permission များ
+        // 🌟 အသစ်ထည့်ရန်: Password
         if (data.system_passwords) FIREBASE_SYSTEM_PASSWORDS = data.system_passwords;
-        if (data.device_permissions) FIREBASE_DEVICE_PERMISSIONS = data.device_permissions;
+        // (device_permissions field ကို 'device_roles' collection အသစ်သို့ ရွှေ့ပြီးပါပြီ — အောက်တွင် loadAdminDevices() က ဆွဲယူမည်)
         
         // 🌟 Treasury ဒေတာကို ဆွဲယူခြင်း
 if (data.treasuryAccounts) FIREBASE_TREASURY = data.treasuryAccounts;
@@ -2879,10 +3010,14 @@ if (data.expenseOrder) {
     FIREBASE_EXPENSE_ORDER = Object.keys(FIREBASE_EXPENSES || {});
 }
 
-        // 🌟 အသစ်ထည့်ရန်: Auto Login စစ်ဆေးခြင်း
-        checkDeviceBypassAndInit();
+        // (Role/Auto-Login ကို device_roles listener က သီးသန့် ကိုင်တွယ်ပြီးပါပြီ)
         
         if (data.adminTimezone) { ADMIN_TIMEZONE = data.adminTimezone; const tzSelect = document.getElementById('adminTimezoneSelect'); if (tzSelect) tzSelect.value = ADMIN_TIMEZONE; }
+        if (data.sessionTimeoutHours) {
+            SESSION_TIMEOUT_HOURS = parseFloat(data.sessionTimeoutHours) || 24;
+            const stInput = document.getElementById('sessionTimeoutHoursInput');
+            if (stInput) stInput.value = SESSION_TIMEOUT_HOURS;
+        }
         
         // 🌟 Theme ကို Load လုပ်မည်
         if (data.receiptTheme) {
@@ -2988,7 +3123,11 @@ if (data.telegram) {
         initDropdowns(); 
         if (typeof syncAllLedgerDropdowns === 'function') syncAllLedgerDropdowns(); // 👈 ဤစာကြောင်းကို အသစ်ထပ်ထည့်ပါ
       }
+    }).catch((e) => {
+      // Role မရှိသေးသော Device (guest) များအတွက် admin_data ဖတ်ခွင့်မရှိခြင်းသည် ပုံမှန်ဖြစ်ပါသည် (Firestore Rules)
+      if (e.code !== 'permission-denied') console.error("admin_data load error:", e);
     });
+    } // 👈 loadAdminDataOnce() function ကုန်ပါပြီ
   } catch (err) {}
 
   // 🌟 Type အလိုက် ခွဲသိမ်းမည့် အပိုင်း (Data Overwrite မဖြစ်စေရန်)
@@ -3072,38 +3211,29 @@ function openAdmin() {
 
         if (docRef.exists) {
             let roleData = docRef.data();
+
+            // Device-bypass (Anonymous Auth) listener ကို ရပ်လိုက်မည် — Email login role က override လုပ်ရန်
+            if (typeof deviceRoleUnsub === 'function') { deviceRoleUnsub(); deviceRoleUnsub = null; }
             
+            CURRENT_DEVICE_ID = user.email; // 🌟 BUG FIX: history မှတ်တမ်းများတွင် "Unknown" မဖြစ်စေရန်
+            const dispEl = document.getElementById('displayDeviceId');
+            if (dispEl) dispEl.textContent = user.email + " (Email Login)";
+            const switchBtn = document.getElementById('btnSwitchToDeviceMode');
+            if (switchBtn) switchBtn.style.display = 'block';
+            SESSION_START_AT = Date.now();
+            IS_EMAIL_SESSION = true;
+            startSessionTimeoutWatcher();
+
             // ၃။ Database ထဲရှိ role ("staff", "admin", "main admin") ကို CURRENT_ROLE သို့ ထည့်ပေးခြင်း
             CURRENT_ROLE = roleData.role || 'guest';
             
             setupUIForRole(CURRENT_ROLE);
+            if (typeof loadAdminDataOnce === 'function') loadAdminDataOnce(); // admin_data (customers/treasury/apiKeys) ကို ယခုမှ ဆွဲယူခွင့်ရမည်
             closeLogin();
             openAdmin();
 
-            // 🌟 SECURITY FIX: user_roles ကို Real-time စောင့်ကြည့်ခြင်း
-            // Main Admin က ဒီ Email ရဲ့ Role ကို ဖျက်/ပြင်လိုက်တာနဲ့ ချက်ချင်း Effect ဖြစ်စေရန် (Reload/Re-login မလိုအပ်ဘဲ)
-            if (typeof userRoleUnsub === 'function') userRoleUnsub(); // ယခင် listener ရှိခဲ့လျှင် ပယ်ဖျက်မည်
-            userRoleUnsub = firebase.firestore().collection("user_roles").doc(user.email)
-                .onSnapshot((snap) => {
-                    const stillElevated = ['main admin', 'admin', 'staff'];
-                    if (!snap.exists) {
-                        alert("သင့် Account ၏ Access ကို ပြန်လည်ရုပ်သိမ်းလိုက်ပါသည်။");
-                        firebase.auth().signOut();
-                        location.reload();
-                        return;
-                    }
-                    const newRole = (snap.data().role || 'guest').toLowerCase();
-                    if (CURRENT_ROLE !== newRole) {
-                        if (!stillElevated.includes(newRole)) {
-                            alert("သင့် Account ၏ Access ကို ပြန်လည်ရုပ်သိမ်းလိုက်ပါသည်။");
-                            firebase.auth().signOut();
-                            location.reload();
-                        } else {
-                            CURRENT_ROLE = newRole;
-                            setupUIForRole(CURRENT_ROLE);
-                        }
-                    }
-                });
+            // 🌟 SECURITY FIX: user_roles ကို Real-time စောင့်ကြည့်ခြင်း (Role ဖျက်/ပြင် + Force Logout)
+            attachUserRoleListener(user.email);
         } else {
             alert("သင့်အကောင့်အတွက် Role သတ်မှတ်ထားခြင်း မရှိပါ။ Admin ကို ဆက်သွယ်ပါ။");
             await firebase.auth().signOut(); // Role မရှိပါက ချက်ချင်း ပြန်ထွက်စေမည်
@@ -3124,6 +3254,10 @@ function openAdmin() {
   }
 
   function closeAdmin() { document.getElementById('adminModal').style.display = 'none'; }
+  window.switchToDeviceMode = function() {
+      if (!confirm("Email Login Session ကနေ ထွက်ပြီး Device-bypass Mode ပြန်ဝင်မည်။ ဆက်လုပ်မလား?")) return;
+      firebase.auth().signOut().then(() => location.reload());
+  };
 
   function switchTab(tabId, btnElement) {
     document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
@@ -4312,9 +4446,17 @@ function openAdmin() {
     list.innerHTML = '<p class="text-center text-sm text-blue-500 p-2">စက်အသစ်များကို ရှာဖွေနေပါသည်...</p>';
     let uniqueDevices = new Set();
     Object.keys(FIREBASE_DEVICE_NAMES).forEach(id => uniqueDevices.add(id));
-    Object.keys(FIREBASE_DEVICE_PERMISSIONS).forEach(id => uniqueDevices.add(id)); // Permission ထဲက ID တွေပါထည့်ရှာမည်
     
     try {
+      // 🌟 SECURITY: Role များကို 'device_roles' collection (Firebase UID key) ထဲကမှ တိုက်ရိုက်ဆွဲယူမည်
+      // (admin_data ထဲက embedded device_permissions field အစား — Firestore Rules က verify လုပ်နိုင်ရန်)
+      const roleSnap = await firebase.firestore().collection("device_roles").get();
+      FIREBASE_DEVICE_PERMISSIONS = {};
+      roleSnap.forEach(doc => {
+          FIREBASE_DEVICE_PERMISSIONS[doc.id] = doc.data();
+          uniqueDevices.add(doc.id);
+      });
+
       const snap = await firebase.firestore().collection("exchange_history").orderBy("timestamp", "desc").limit(300).get();
       snap.forEach(doc => { const d = doc.data(); if(d.deviceId) uniqueDevices.add(d.deviceId); });
       
@@ -4364,38 +4506,37 @@ function openAdmin() {
     
     const name = nameInput.value.trim();
     const role = roleSelect.value;
-    const updates = {}; // 🌟 FIX: dot-notation update payload (nested field ကို တိတိကျကျ ဖျက်/ပြင်ရန်)
     
-    // Name Update
-    if(name === "") { delete FIREBASE_DEVICE_NAMES[id]; updates[`deviceNames.${id}`] = firebase.firestore.FieldValue.delete(); }
-    else { FIREBASE_DEVICE_NAMES[id] = name; updates[`deviceNames.${id}`] = name; }
-    
-    // Role Update (Main Admin သာလုပ်ခွင့်ရှိသည်)
-    if(CURRENT_ROLE === 'main admin') {
-        if(role === 'guest') {
-            delete FIREBASE_DEVICE_PERMISSIONS[id]; // Guest ဆိုလျှင် permission database ထဲမှ ဖျက်မည်
-            // 🌟 FIX: set({merge:true}) နဲ့ nested map key ကို ဘယ်တော့မှ အမှန်တကယ် ဖျက်လို့မရပါ (merge က key ပျောက်နေရင် "မပြောင်းလဲပါ" လို့ ယူဆတတ်လို့)
-            // FieldValue.delete() နဲ့ dot-path update ကိုသာ သုံးမှ Firestore ထဲက တကယ်ဖျက်ပေးပါမည်
-            updates[`device_permissions.${id}`] = firebase.firestore.FieldValue.delete();
-        } else {
-            FIREBASE_DEVICE_PERMISSIONS[id] = { name: name || id, role: role };
-            updates[`device_permissions.${id}`] = { name: name || id, role: role };
-        }
-    }
+    // Name Update (admin_data.deviceNames field ထဲမှာ ဆက်ထားမည် - sensitive မဟုတ်ပါ)
+    if(name === "") { delete FIREBASE_DEVICE_NAMES[id]; }
+    else { FIREBASE_DEVICE_NAMES[id] = name; }
 
     const btn = roleSelect.nextElementSibling.querySelector('button'); 
     const originalText = btn.textContent;
     btn.textContent = "..."; btn.disabled = true;
     
     try {
-      // Firebase သို့ dot-notation update ဖြင့် တိတိကျကျ လှမ်းသိမ်းမည် (merge:true ရဲ့ nested-map ချို့ယွင်းချက်ကို ရှောင်ရှားရန်)
-      await dbRef.update(updates); 
+      const nameUpdate = {};
+      if(name === "") nameUpdate[`deviceNames.${id}`] = firebase.firestore.FieldValue.delete();
+      else nameUpdate[`deviceNames.${id}`] = name;
+      await dbRef.update(nameUpdate);
+
+      // Role Update — 'device_roles/{uid}' document သီးခြား (Main Admin သာလုပ်ခွင့်ရှိသည်၊ Rules ကလည်း ဒါကိုပဲ verify လုပ်မည်)
+      if(CURRENT_ROLE === 'main admin') {
+          const roleDocRef = firebase.firestore().collection("device_roles").doc(id);
+          if(role === 'guest') {
+              delete FIREBASE_DEVICE_PERMISSIONS[id];
+              await roleDocRef.delete();
+          } else {
+              const roleData = { name: name || id, role: role };
+              FIREBASE_DEVICE_PERMISSIONS[id] = roleData;
+              await roleDocRef.set(roleData, { merge: true });
+          }
+      }
       
       btn.textContent = "✔ Saved"; btn.classList.replace('bg-indigo-600', 'bg-green-600');
       setTimeout(() => { btn.textContent = "Save"; btn.classList.replace('bg-green-600', 'bg-indigo-600'); btn.disabled = false; }, 1500);
-      
-      // Auto-Login Status ပြန်စစ်မည် (မိမိကိုယ်ကို Role ပြောင်းမိပါက ချက်ချင်း Effect ဖြစ်စေရန်)
-      checkDeviceBypassAndInit();
+      // မိမိကိုယ်ကို Role ပြောင်းမိပါက 'device_roles/{uid}' real-time listener က အလိုအလျောက် ချက်ချင်း Effect ဖြစ်စေပါမည်
       
     } catch(e) { 
         alert("Error: " + e.message); 
@@ -4408,16 +4549,17 @@ function openAdmin() {
       if(!FIREBASE_HIDDEN_DEVICES.includes(id)) {
           FIREBASE_HIDDEN_DEVICES.push(id); 
           delete FIREBASE_DEVICE_NAMES[id]; 
-          // ပုန်းသွားတဲ့ Device ရဲ့ Permission ပါ တစ်ခါတည်းရုပ်သိမ်းမည်
           delete FIREBASE_DEVICE_PERMISSIONS[id]; 
           
           try { 
-              // 🌟 FIX: FieldValue.delete() + dot-path update ဖြင့် Firestore ထဲက nested key ကို တကယ်ဖျက်မည် (merge:true ကို မသုံးတော့)
               await dbRef.update({ 
                   [`deviceNames.${id}`]: firebase.firestore.FieldValue.delete(),
-                  hiddenDevices: FIREBASE_HIDDEN_DEVICES,
-                  [`device_permissions.${id}`]: firebase.firestore.FieldValue.delete()
+                  hiddenDevices: FIREBASE_HIDDEN_DEVICES
               }); 
+              // ပုန်းသွားတဲ့ Device ရဲ့ Role ပါ တစ်ခါတည်း ရုပ်သိမ်းမည် (Main Admin သာ)
+              if (CURRENT_ROLE === 'main admin') {
+                  await firebase.firestore().collection("device_roles").doc(id).delete();
+              }
               
               loadAdminDevices(); 
           } 
@@ -4427,7 +4569,7 @@ function openAdmin() {
 
   // --- Admin General: Email/Password Login (user_roles Collection) Management ---
   // 🌟 ဒါက Device Permission System နဲ့ လုံးဝ သီးခြားစီ ဖြစ်ပါသည် — Firebase Auth ဖြင့် Login ဝင်သူများ၏ Role ကို ဒီနေရာမှ စီမံရပါမည်
-  // 🌟 Hidden/ဖျက်ပြီးသား Device ဟောင်းများ (merge bug ကြောင့် Firestore ထဲ ကျန်ရစ်ခဲ့သော Permission) ကို UUID တိုက်ရိုက်ရိုက်ပြီး Force-ဖျက်ရန်
+  // 🌟 device_roles/{uid} document ကို UID တိုက်ရိုက်ရိုက်ပြီး Force-ဖျက်ရန်
   async function forceRemoveDevicePermission() {
       if (CURRENT_ROLE !== 'main admin') return alert("Main Admin သာ ခွင့်ပြုပါသည်။");
       const input = document.getElementById('forceRemoveUuid');
@@ -4437,7 +4579,7 @@ function openAdmin() {
 
       try {
           delete FIREBASE_DEVICE_PERMISSIONS[uuid];
-          await dbRef.update({ [`device_permissions.${uuid}`]: firebase.firestore.FieldValue.delete() });
+          await firebase.firestore().collection("device_roles").doc(uuid).delete();
           input.value = '';
           alert("✔ Permission ဖျက်ပြီးပါပြီ။");
           loadAdminDevices();
@@ -4460,9 +4602,13 @@ function openAdmin() {
           snap.forEach(doc => {
               const email = doc.id;
               const role = (doc.data().role || 'guest').toLowerCase();
+              const currentName = FIREBASE_DEVICE_NAMES[email] || '';
               html += `
               <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 mb-2 gap-2 bg-white p-3 rounded-xl border border-slate-100">
-                <div class="font-mono text-xs font-bold text-slate-600 w-full sm:w-1/3 truncate" title="${email}">${email}</div>
+                <div class="w-full sm:w-1/3">
+                  <div class="font-mono text-xs font-bold text-slate-600 truncate" title="${email}">${email}</div>
+                  <input type="text" id="userrolename_${btoa(email)}" value="${currentName}" placeholder="Name (Dev ID) ထည့်ပါ..." class="admin-input-box !mb-0 !py-1 !mt-1 text-xs w-full" ${disableSelect}>
+                </div>
                 <select id="userrole_${btoa(email)}" class="border rounded-lg px-2 py-1 text-xs font-bold bg-slate-50 text-purple-800 border-purple-200" ${disableSelect}>
                    <option value="staff" ${role === 'staff' ? 'selected' : ''}>Staff (History)</option>
                    <option value="admin" ${role === 'admin' ? 'selected' : ''}>Admin (Full)</option>
@@ -4470,12 +4616,70 @@ function openAdmin() {
                 </select>
                 <div class="flex gap-1 w-full sm:w-auto mt-2 sm:mt-0 justify-end">
                    <button onclick="saveUserRoleAccess('${email}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-xs whitespace-nowrap" ${disableSelect}>Save</button>
+                   <button onclick="forceLogoutUser('${email}')" class="btn bg-amber-50 hover:bg-amber-100 !py-1 !px-3 !text-xs whitespace-nowrap border border-amber-500 text-amber-700" title="ချက်ချင်း Logout ထုတ်မည် (Role မဖျက်ပါ)" ${disableSelect}>🚪</button>
                    <button onclick="deleteUserRole('${email}')" class="btn bg-red-50 hover:bg-red-100 !py-1 !px-3 !text-xs whitespace-nowrap border border-red-500 text-red-600" title="Role ဖျက်မည်" ${disableSelect}>🗑</button>
                 </div>
               </div>`;
           });
           list.innerHTML = html;
       } catch(e) { list.innerHTML = '<p class="text-center text-sm text-red-500 p-2">Error loading accounts.</p>'; }
+  }
+
+  // 🌟 Admin Settings ထဲကနေ Email/Password Account အသစ် ဖန်တီးခြင်း
+  // (Firebase Client SDK သည် createUser လုပ်တာနဲ့ ချက်ချင်း ထို Account အဖြစ် Sign-in ပြောင်းလိုက်တတ်သဖြင့်
+  //  Main Admin ၏ လက်ရှိ Session မပျက်စေရန် Secondary App တစ်ခုသီးသန့်ဖန်တီးပြီး လုပ်ဆောင်ပါသည်)
+  async function adminCreateEmailAccount() {
+      if (CURRENT_ROLE !== 'main admin') return alert("Main Admin သာ ခွင့်ပြုပါသည်။");
+      const email = document.getElementById('newAccountEmail').value.trim().toLowerCase();
+      const pass = document.getElementById('newAccountPassword').value;
+      const role = document.getElementById('newAccountRole').value;
+      if (!email || !email.includes('@')) return alert("Email မှန်ကန်စွာ ထည့်ပါ။");
+      if (!pass || pass.length < 6) return alert("Password အနည်းဆုံး ၆ လုံး ရှိရပါမည်။");
+      if (!FIREBASE_CONFIG_REF) return alert("Firebase config မတွေ့ပါ။ Page ကို Refresh လုပ်ကြည့်ပါ။");
+
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = "..."; btn.disabled = true;
+      let secondaryApp = null;
+      try {
+          secondaryApp = firebase.apps.find(a => a.name === "Secondary") || firebase.initializeApp(FIREBASE_CONFIG_REF, "Secondary");
+          await secondaryApp.auth().createUserWithEmailAndPassword(email, pass);
+          await secondaryApp.auth().signOut(); // Secondary App ၏ Session ကို ချက်ချင်း ရှင်းပစ်မည် (Main Admin Session ကို မထိခိုက်စေရန်)
+          await firebase.firestore().collection("user_roles").doc(email).set({ role: role }, { merge: true });
+          document.getElementById('newAccountEmail').value = '';
+          document.getElementById('newAccountPassword').value = '';
+          alert("✔ Account အသစ် ဖန်တီးပြီးပါပြီ: " + email);
+          loadUserRoles();
+      } catch(e) {
+          let msg = e.message;
+          if (e.code === 'auth/email-already-in-use') msg = "ဒီ Email နဲ့ Account ရှိပြီးသားပါ။";
+          alert("Error: " + msg);
+      } finally {
+          btn.textContent = originalText; btn.disabled = false;
+      }
+  }
+
+  // 🌟 Force Logout — Role ကို မဖျက်ဘဲ လက်ရှိ Session ကိုသာ ချက်ချင်း ထုတ်ပစ်မည် (user_roles listener က ကိုင်တွယ်မည်)
+  async function forceLogoutUser(email) {
+      if (CURRENT_ROLE !== 'main admin') return alert("Main Admin သာ ခွင့်ပြုပါသည်။");
+      if (!confirm(email + " ကို ချက်ချင်း Logout ထုတ်ရန် သေချာပါသလား?")) return;
+      try {
+          await firebase.firestore().collection("user_roles").doc(email).set({
+              forceLogoutAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+          alert("✔ Logout Signal ပို့ပြီးပါပြီ — Account ဟာ Online ရှိနေရင် စက္ကန့်ပိုင်းအတွင်း ထွက်သွားပါလိမ့်မယ်။");
+      } catch(e) { alert("Error: " + e.message); }
+  }
+
+  async function updateSessionTimeout() {
+      if (CURRENT_ROLE !== 'main admin') return alert("Main Admin သာ ခွင့်ပြုပါသည်။");
+      const val = parseFloat(document.getElementById('sessionTimeoutHoursInput').value);
+      if (!Number.isFinite(val) || val <= 0) return alert("နာရီ အရေအတွက် မှန်ကန်စွာ ထည့်ပါ။");
+      try {
+          SESSION_TIMEOUT_HOURS = val;
+          await dbRef.update({ sessionTimeoutHours: val });
+          alert("✔ Session Timeout ကို " + val + " နာရီ အဖြစ် သိမ်းပြီးပါပြီ။");
+      } catch(e) { alert("Error: " + e.message); }
   }
 
   async function addUserRole() {
@@ -4497,9 +4701,14 @@ function openAdmin() {
   async function saveUserRoleAccess(email) {
       if (CURRENT_ROLE !== 'main admin') return alert("Main Admin သာ ခွင့်ပြုပါသည်။");
       const roleSelect = document.getElementById(`userrole_${btoa(email)}`);
+      const nameInput = document.getElementById(`userrolename_${btoa(email)}`);
       if (!roleSelect) return;
+      const name = nameInput ? nameInput.value.trim() : '';
       try {
           await firebase.firestore().collection("user_roles").doc(email).set({ role: roleSelect.value }, { merge: true });
+          // 🌟 Email account အတွက် Name (Dev ID) — Device list တွင်သုံးသော 'deviceNames' field ကိုပဲ Email ကို key အဖြစ် အသုံးပြု၍ ပြန်သုံးမည်
+          if (name === "") { delete FIREBASE_DEVICE_NAMES[email]; await dbRef.update({ [`deviceNames.${email}`]: firebase.firestore.FieldValue.delete() }); }
+          else { FIREBASE_DEVICE_NAMES[email] = name; await dbRef.update({ [`deviceNames.${email}`]: name }); }
           alert("✔ Saved: " + email);
       } catch(e) { alert("Error: " + e.message); }
   }
@@ -4510,6 +4719,8 @@ function openAdmin() {
       try {
           // 🌟 doc().delete() ဖြင့် document တစ်ခုလုံးကို ဖျက်ခြင်းဖြစ်၍ merge:true ၏ nested-map ပြဿနာနှင့် မသက်ဆိုင်ပါ — တကယ်ဖျက်ပေးပါသည်
           await firebase.firestore().collection("user_roles").doc(email).delete();
+          delete FIREBASE_DEVICE_NAMES[email];
+          await dbRef.update({ [`deviceNames.${email}`]: firebase.firestore.FieldValue.delete() }).catch(()=>{});
           loadUserRoles();
       } catch(e) { alert("Error: " + e.message); }
   }
@@ -6499,7 +6710,7 @@ renderHistoryRows(allLoadedHistory);
           else if(sectionId==='box-vnd2mmk') { recType = "VND ➔ MMK"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; } 
           else if(sectionId==='box-mmk2vnd') { recType = "MMK ➔ VND"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
           
-          const currentDeviceId = localStorage.getItem('sys_device_id') || "Unknown";
+          const currentDeviceId = CURRENT_DEVICE_ID || "Unknown";
           const historyRecord = { 
               id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
               method: paymentMethodName, profit: 0, status: 'Pending', timestamp: new Date().toISOString(), 
@@ -7653,13 +7864,8 @@ renderHistoryRows(allLoadedHistory);
       if (timeSettingsBlock) { timeSettingsBlock.style.display = (role === 'main admin') ? 'block' : 'none'; }
   }
 
-  function checkDeviceBypassAndInit() {
-      const currentDeviceId = localStorage.getItem('sys_device_id');
-      const deviceConfig = FIREBASE_DEVICE_PERMISSIONS[currentDeviceId];
-      if (deviceConfig && deviceConfig.role) { CURRENT_ROLE = deviceConfig.role.toLowerCase(); } 
-      else { CURRENT_ROLE = 'guest'; }
-      setupUIForRole(CURRENT_ROLE);
-  }
+  // (checkDeviceBypassAndInit() ကို ဖယ်ရှားလိုက်ပါပြီ — Role ကို 'device_roles/{uid}' real-time listener
+  //  က Firebase Connection block အတွင်းမှာ တိုက်ရိုက် ကိုင်တွယ်ပါပြီ; localStorage UUID ကို မသုံးတော့ပါ)
 
   window.toggleCustomThemeInput = function() {
       const theme = document.getElementById('adminReceiptTheme').value;
