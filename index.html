@@ -5,9 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TG Excal</title>
 
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- html2canvas / jsPDF ကို PDF Export လုပ်ချိန်မှသာ လိုအပ်ပါတယ် — defer ထည့်ထားတာက Login/Data Loading ကို ဟန့်တားမှုမရှိစေဘဲ background ကနေဆွဲစေခြင်းပါ -->
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
@@ -4707,8 +4714,11 @@ function openAdmin() {
       try {
           await firebase.firestore().collection("user_roles").doc(email).set({ role: roleSelect.value }, { merge: true });
           // 🌟 Email account အတွက် Name (Dev ID) — Device list တွင်သုံးသော 'deviceNames' field ကိုပဲ Email ကို key အဖြစ် အသုံးပြု၍ ပြန်သုံးမည်
-          if (name === "") { delete FIREBASE_DEVICE_NAMES[email]; await dbRef.update({ [`deviceNames.${email}`]: firebase.firestore.FieldValue.delete() }); }
-          else { FIREBASE_DEVICE_NAMES[email] = name; await dbRef.update({ [`deviceNames.${email}`]: name }); }
+          // 🐛 BUG FIX: Email မှာ dot (.) ပါနေလို့ dot-string key ("deviceNames.a.b@c.com") ကို Firestore က nested field အဖြစ် အလွဲအမှား ယူဆတတ်ပါတယ် (UID မှာတော့ dot မပါလို့ ပြဿနာမရှိခဲ့ပါ)
+          // FieldPath ကို segment အနေနဲ့ တိုက်ရိုက်ပေးလိုက်ရင် email ရဲ့ dot တွေကို nesting delimiter အဖြစ် မယူဆတော့ဘဲ flat key တစ်ခုတည်းအဖြစ်သာ မှန်ကန်စွာ သိမ်းပေးပါတယ်
+          const nameFieldPath = new firebase.firestore.FieldPath('deviceNames', email);
+          if (name === "") { delete FIREBASE_DEVICE_NAMES[email]; await dbRef.update(nameFieldPath, firebase.firestore.FieldValue.delete()); }
+          else { FIREBASE_DEVICE_NAMES[email] = name; await dbRef.update(nameFieldPath, name); }
           alert("✔ Saved: " + email);
       } catch(e) { alert("Error: " + e.message); }
   }
@@ -4720,7 +4730,7 @@ function openAdmin() {
           // 🌟 doc().delete() ဖြင့် document တစ်ခုလုံးကို ဖျက်ခြင်းဖြစ်၍ merge:true ၏ nested-map ပြဿနာနှင့် မသက်ဆိုင်ပါ — တကယ်ဖျက်ပေးပါသည်
           await firebase.firestore().collection("user_roles").doc(email).delete();
           delete FIREBASE_DEVICE_NAMES[email];
-          await dbRef.update({ [`deviceNames.${email}`]: firebase.firestore.FieldValue.delete() }).catch(()=>{});
+          await dbRef.update(new firebase.firestore.FieldPath('deviceNames', email), firebase.firestore.FieldValue.delete()).catch(()=>{});
           loadUserRoles();
       } catch(e) { alert("Error: " + e.message); }
   }
