@@ -82,6 +82,14 @@
     .amt-input::placeholder{ color:#9aa4b2 !important; font-weight:700 !important; }
     .amt-input:focus{ outline:none !important; border-color:#111827 !important; box-shadow:0 0 0 4px rgba(17,24,39,.10) !important; }
 
+    /* 🌟 Invoice Letterhead (Export/Receipt only) 🌟 */
+    .inv-band{ background:linear-gradient(135deg,#1d4ed8,#059669); border-radius:16px 16px 0 0; padding:20px 16px; text-align:center; color:#fff; position:relative; }
+    .inv-band-row{ display:flex; align-items:center; justify-content:center; gap:10px; }
+    .inv-band-logo{ width:42px; height:42px; border-radius:12px; background:#fff; padding:3px; object-fit:contain; box-shadow:0 2px 6px rgba(0,0,0,.18); flex-shrink:0; }
+    .inv-band-name{ font-weight:900; font-size:22px; line-height:1.35; color:#fff; }
+    .inv-band-tag{ font-size:11px; font-weight:800; letter-spacing:.4px; color:rgba(255,255,255,.88); margin-top:5px; }
+    .inv-reprint-pill{ position:absolute; top:10px; right:10px; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.6); color:#fff; font-size:10px; font-weight:900; letter-spacing:1px; padding:3px 9px; border-radius:999px; }
+
     .radio-row{ display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid #e5e7eb; border-radius:14px; margin-top:8px; user-select:none; }
     .radio-row input[type="radio"]{ width:20px; height:20px; accent-color:#111827; cursor:pointer; flex:0 0 auto; }
     .radio-row span{ font-weight:900; font-size:.95rem; cursor:pointer; line-height:1.5; padding-bottom: 2px;}
@@ -5633,6 +5641,9 @@ function openAdmin() {
                   div.style.whiteSpace = 'nowrap'; div.style.overflow = 'hidden'; div.style.textOverflow = 'ellipsis'; 
                   div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.lineHeight = '1.5'; 
                   div.style.minHeight = '56px'; div.style.height = '56px'; div.style.paddingTop = '12px'; div.style.paddingBottom = '14px';
+                  div.style.borderRadius = '14px';
+                  if (i === 1) { div.style.background = '#ecfdf5'; div.style.borderColor = '#10b981'; div.style.color = '#065f46'; }
+                  else { div.style.background = '#f8fafc'; div.style.borderColor = '#94a3b8'; }
                   div.textContent = val;
                   inputs[i].replaceWith(div);
               });
@@ -5667,28 +5678,38 @@ function openAdmin() {
           }
 
           const brandHeader = document.createElement('div');
-          brandHeader.style.textAlign = 'center'; 
-          brandHeader.style.paddingBottom = '15px'; 
-          brandHeader.style.marginBottom = '15px'; 
-          brandHeader.style.borderBottom = '2px dashed #cbd5e1';
-          
+          brandHeader.className = 'inv-band';
+          brandHeader.style.margin = '-1rem -1rem 15px -1rem';
+
+          const brandLogoRow = document.createElement('div');
+          brandLogoRow.className = 'inv-band-row';
+
+          const brandLogoImg = document.createElement('img');
+          brandLogoImg.src = 'assets/logo/main_logo.png';
+          brandLogoImg.crossOrigin = 'anonymous';
+          brandLogoImg.className = 'inv-band-logo';
+
           const brandTitle = document.createElement('div');
-          brandTitle.style.fontWeight = '900'; 
-          brandTitle.style.fontSize = '24px'; 
-          brandTitle.style.color = '#0f172a';
+          brandTitle.className = 'inv-band-name';
           brandTitle.textContent = (T && T.titleTop) ? T.titleTop : 'Thailand Guide - Supplier By Ye';
-          brandHeader.appendChild(brandTitle);
+
+          brandLogoRow.appendChild(brandLogoImg);
+          brandLogoRow.appendChild(brandTitle);
+          brandHeader.appendChild(brandLogoRow);
 
           const reprintBadge = document.createElement('div');
-          reprintBadge.textContent = "[ REPRINT ]";
-          reprintBadge.style.color = '#dc2626';
-          reprintBadge.style.fontSize = '14px';
-          reprintBadge.style.fontWeight = '900';
-          reprintBadge.style.marginTop = '6px';
-          reprintBadge.style.letterSpacing = '2px';
+          reprintBadge.className = 'inv-reprint-pill';
+          reprintBadge.textContent = 'REPRINT';
           brandHeader.appendChild(reprintBadge);
           
           clone.insertBefore(brandHeader, clone.firstChild);
+
+          await new Promise(res => { 
+              let timer = setTimeout(res, 400); 
+              if(brandLogoImg.complete) { clearTimeout(timer); return res(); }
+              brandLogoImg.onload = () => { clearTimeout(timer); res(); };
+              brandLogoImg.onerror = () => { clearTimeout(timer); res(); };
+          });
 
           clone.style.boxShadow = 'none'; 
           clone.style.border = '1px solid #e5e7eb'; 
@@ -5816,20 +5837,22 @@ function openAdmin() {
           const footerDiv = document.createElement('div');
           footerDiv.style.display = 'flex';
           footerDiv.style.justifyContent = 'space-between';
-          footerDiv.style.alignItems = 'flex-end';
-          footerDiv.style.marginTop = '12px';
-          footerDiv.style.paddingTop = '12px';
+          footerDiv.style.alignItems = 'center';
+          footerDiv.style.marginTop = '14px';
+          footerDiv.style.padding = '10px 12px';
           footerDiv.style.borderTop = '1px dashed #cbd5e1';
-          footerDiv.style.paddingBottom = '8px';
+          footerDiv.style.background = '#f8fafc';
+          footerDiv.style.borderRadius = '10px';
 
           const idSpan = document.createElement('span');
-          idSpan.style.fontSize = '13px'; 
+          idSpan.style.fontSize = '12px'; 
           idSpan.style.fontWeight = '900';
-          idSpan.style.color = '#334155';
-          idSpan.textContent = "ID: " + tx.id;
+          idSpan.style.color = '#0f172a';
+          idSpan.style.letterSpacing = '.2px';
+          idSpan.innerHTML = '<span style="color:#64748b;">🧾</span> ' + tx.id;
 
           const timeSpan = document.createElement('span');
-          timeSpan.style.fontSize = '13px'; 
+          timeSpan.style.fontSize = '12px'; 
           timeSpan.style.fontWeight = 'bold';
           timeSpan.style.color = '#64748b';
           timeSpan.textContent = timeStr;
@@ -6552,6 +6575,9 @@ renderHistoryRows(allLoadedHistory);
 
           const div=document.createElement('div');
           div.className=el.className || ''; div.style.whiteSpace='nowrap'; div.style.overflow='hidden'; div.style.textOverflow='ellipsis'; div.style.display='flex'; div.style.alignItems='center'; div.style.lineHeight='1.5'; div.style.minHeight='56px'; div.style.height='56px'; div.style.paddingTop='12px'; div.style.paddingBottom='14px';
+          div.style.borderRadius='14px';
+          if (isTarget) { div.style.background='#ecfdf5'; div.style.borderColor='#10b981'; div.style.color='#065f46'; }
+          else { div.style.background='#f8fafc'; div.style.borderColor='#94a3b8'; }
           
           div.textContent = val;
           if (!isTarget) inValueStr = val; else outValueStr = val;
@@ -6633,20 +6659,22 @@ renderHistoryRows(allLoadedHistory);
         const footerDiv = document.createElement('div');
         footerDiv.style.display = 'flex';
         footerDiv.style.justifyContent = 'space-between';
-        footerDiv.style.alignItems = 'flex-end';
-        footerDiv.style.marginTop = '12px';
-        footerDiv.style.paddingTop = '12px';
+        footerDiv.style.alignItems = 'center';
+        footerDiv.style.marginTop = '14px';
+        footerDiv.style.padding = '10px 12px';
         footerDiv.style.borderTop = '1px dashed #cbd5e1';
-        footerDiv.style.paddingBottom = '8px';
+        footerDiv.style.background = '#f8fafc';
+        footerDiv.style.borderRadius = '10px';
 
         const idSpan = document.createElement('span');
-        idSpan.style.fontSize = '13px'; 
+        idSpan.style.fontSize = '12px'; 
         idSpan.style.fontWeight = '900';
-        idSpan.style.color = '#334155';
-        idSpan.textContent = "ID: " + invId;
+        idSpan.style.color = '#0f172a';
+        idSpan.style.letterSpacing = '.2px';
+        idSpan.innerHTML = '<span style="color:#64748b;">🧾</span> ' + invId;
 
         const timeSpan = document.createElement('span');
-        timeSpan.style.fontSize = '13px'; 
+        timeSpan.style.fontSize = '12px'; 
         timeSpan.style.fontWeight = 'bold';
         timeSpan.style.color = '#64748b';
         timeSpan.textContent = timeStr;
@@ -6656,19 +6684,33 @@ renderHistoryRows(allLoadedHistory);
         clone.appendChild(footerDiv);
 
         const brandHeader = document.createElement('div');
-        brandHeader.style.textAlign = 'center'; 
-        brandHeader.style.paddingBottom = '15px'; 
-        brandHeader.style.marginBottom = '15px'; 
-        brandHeader.style.borderBottom = '2px dashed #cbd5e1';
-        
+        brandHeader.className = 'inv-band';
+        brandHeader.style.margin = '-1rem -1rem 15px -1rem';
+
+        const brandLogoRow = document.createElement('div');
+        brandLogoRow.className = 'inv-band-row';
+
+        const brandLogoImg = document.createElement('img');
+        brandLogoImg.src = 'assets/logo/main_logo.png';
+        brandLogoImg.crossOrigin = 'anonymous';
+        brandLogoImg.className = 'inv-band-logo';
+
         const brandTitle = document.createElement('div');
-        brandTitle.style.fontWeight = '900'; 
-        brandTitle.style.fontSize = '24px'; 
-        brandTitle.style.color = '#0f172a';
+        brandTitle.className = 'inv-band-name';
         brandTitle.textContent = (T && T.titleTop) ? T.titleTop : 'Thailand Guide - Supplier By Ye';
-        
-        brandHeader.appendChild(brandTitle);
+
+        brandLogoRow.appendChild(brandLogoImg);
+        brandLogoRow.appendChild(brandTitle);
+        brandHeader.appendChild(brandLogoRow);
+
         clone.insertBefore(brandHeader, clone.firstChild);
+
+        await new Promise(res => { 
+            let timer = setTimeout(res, 400); 
+            if(brandLogoImg.complete) { clearTimeout(timer); return res(); }
+            brandLogoImg.onload = () => { clearTimeout(timer); res(); };
+            brandLogoImg.onerror = () => { clearTimeout(timer); res(); };
+        });
 
         let savedCustomerName = "—";
         const cusId = document.getElementById('mainCustomerSelect')?.value;
