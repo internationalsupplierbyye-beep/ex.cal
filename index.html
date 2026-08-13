@@ -1419,8 +1419,12 @@ let calcLock = false;
   const DEFAULT_QR_FILES = ["hba.jpg","hbq.jpg","hkqr.jpg","ht7.jpg","tkpayq.jpg","yba.jpg","ybq.jpg","ybidv.jpg","yka.jpg","ykpayq.jpg","ykq.jpg","yktba.jpg","yktbq.jpg","ysa.jpg","yt7.jpg","ytq.jpg","ywaveq.jpg"];
 
   // --- Telegram Integration Function ---
-  function sendTelegramAlert(messageText, specificTopicId = null) {
-      if(!TELEGRAM_CHAT_ID || !TELEGRAM_BOT_TOKEN) return; 
+  // 🐛 BUG FIX: အရင်က fire-and-forget ဖြစ်ပြီး (await မထားဘဲ) Telegram ဆီ တကယ်ရောက်/မရောက်
+  // မစစ်ဘဲ "ပို့ပြီးပြီ" ဟု ယူဆတတ်ခဲ့ပါတယ် (ဥပမာ - bot token/topic id မှားရင် Telegram ဆီက
+  // error response ပြန်ပေမယ့် fetch() ကိုယ်တိုင်က resolve ဖြစ်နေလို့ .catch() က မဖမ်းမိပါ)။
+  // အခု HTTP response ကို စစ်ပြီး success/failure ကို Promise<boolean> အနေနဲ့ ပြန်ပေးအောင် ပြင်ထားပါတယ်
+  async function sendTelegramAlert(messageText, specificTopicId = null) {
+      if(!TELEGRAM_CHAT_ID || !TELEGRAM_BOT_TOKEN) return false;
       
       const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
       const payload = {
@@ -1434,11 +1438,19 @@ let calcLock = false;
           payload.message_thread_id = finalTopicId;
       }
 
-      fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-      }).catch(e => console.error("Telegram Send Error:", e));
+      try {
+          const res = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+          });
+          const result = await res.json();
+          if (!result.ok) { console.error("Telegram Send Failed:", result); return false; }
+          return true;
+      } catch (e) {
+          console.error("Telegram Send Error:", e);
+          return false;
+      }
   }
 
    // 🌟 (အသစ်ထည့်ရန်) Telegram သို့ ပုံပို့မည့် Function 🌟
@@ -4274,6 +4286,11 @@ function openAdmin() {
       if(!id || !name || !accName || !accNo) {
           return alert("ဘဏ်အချက်အလက် (Code, Name, Account Name, Account No) များကို ပြည့်စုံစွာထည့်ပါ။");
       }
+      // 🐛 BUG FIX: Bank Code ထဲမှာ dot (.) ပါခဲ့ရင် Firestore field path ပျက်ပြီး balance
+      // update မှားနိုင်တဲ့ ပြဿနာရှိတာကြောင့် Code ကို dot မပါအောင် အတင်းတားထားပါတယ်
+      if (id.includes('.')) {
+          return alert("Bank Code ထဲမှာ dot (.) ခွင့်မပြုပါ (ဥပမာ 'K.B.Z' အစား 'KBZ' လို့ရေးပါ)။");
+      }
 
       if (mode === 'save') {
           if (FIREBASE_BANKS[id]) return alert("ဤ Bank Code ဖြင့် ရှိပြီးသားဖြစ်နေပါသည်။ 'Update' ကို နှိပ်ပါ သို့မဟုတ် Code နာမည် အသစ်ပြောင်းပါ။");
@@ -4811,7 +4828,11 @@ function openAdmin() {
           aggregated[upd.id] = (aggregated[upd.id] || 0) + upd.change;
       });
 
-      let dbUpdates = {};
+      // 🐛 BUG FIX: Bank Code / Treasury ID ထဲမှာ dot (.) ပါနေရင် (ဥပမာ "K.B.Z") dot-string key
+      // ("banks.K.B.Z.balance") ကို Firestore က nested field path လို့ အလွဲအမှား ယူဆပြီး
+      // မှားယွင်းတဲ့နေရာကို update လုပ်တတ်ပါတယ်။ FieldPath ကို segment အနေနဲ့ တိုက်ရိုက်ပေးလိုက်ရင်
+      // dot ပါလည်း တစ်ခုတည်းသော field name အဖြစ်ပဲ မှန်ကန်စွာ ကိုင်တွယ်ပါတယ် (deviceNames fix ကဲ့သို့)
+      let updatePairs = [];
       let qrChanged = false;
 
       for (let id in aggregated) {
@@ -4823,17 +4844,17 @@ function openAdmin() {
 
           // Database တွင် Increment ဖြင့် သီးသန့် တိုး/လျှော့မည် (Offline ဖြစ်နေလည်း ပြဿနာမရှိပါ)
           if (FIREBASE_TREASURY[id]) {
-              dbUpdates[`treasuryAccounts.${id}.balance`] = firebase.firestore.FieldValue.increment(change);
+              updatePairs.push(new firebase.firestore.FieldPath('treasuryAccounts', id, 'balance'), firebase.firestore.FieldValue.increment(change));
           } else if (id.startsWith('BANK_')) {
               let bId = id.replace('BANK_', '');
-              dbUpdates[`banks.${bId}.balance`] = firebase.firestore.FieldValue.increment(change);
+              updatePairs.push(new firebase.firestore.FieldPath('banks', bId, 'balance'), firebase.firestore.FieldValue.increment(change));
           } else if (id.startsWith('QR_')) {
               qrChanged = true; 
           }
       }
 
-      if (Object.keys(dbUpdates).length > 0) {
-          await dbRef.update(dbUpdates);
+      if (updatePairs.length > 0) {
+          await dbRef.update(...updatePairs);
       }
       if (qrChanged) {
           await dbRef.update({ qrs: FIREBASE_QRS });
@@ -7601,7 +7622,12 @@ renderHistoryRows(allLoadedHistory);
       if (LAST_DAILY_REPORT_SENT_DATE === todayTzStr) return; // ဒီနေ့ ပို့ပြီးသား
 
       const reportText = buildDailyReportText();
-      sendTelegramAlert(reportText, TELEGRAM_DAILY_REPORT_TOPIC_ID || TELEGRAM_TOPIC_ID);
+      // 🐛 BUG FIX: Telegram ဆီ တကယ်ရောက်မှသာ (success === true) "ပို့ပြီးပြီ" လို့ မှတ်မည်။
+      // မရောက်ခဲ့ရင် lastSentDate ကို မပြောင်းဘဲ ထားခဲ့လို့ နောက် admin/staff တစ်ယောက်ယောက်
+      // tab ဖွင့်လိုက်တဲ့အခါ (5 မိနစ်တစ်ခါ check ထဲမှာ) ပြန်ကြိုးစား ပို့ပေးပါလိမ့်မယ်
+      const success = await sendTelegramAlert(reportText, TELEGRAM_DAILY_REPORT_TOPIC_ID || TELEGRAM_TOPIC_ID);
+      if (!success) { console.error("Daily Report: Telegram ပို့မှု မအောင်မြင်ပါ၊ နောက်တစ်ကြိမ် ပြန်ကြိုးစားပါမည်။"); return; }
+
       LAST_DAILY_REPORT_SENT_DATE = todayTzStr;
       if (dbRef) {
           try {
