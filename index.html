@@ -7205,6 +7205,32 @@ renderHistoryRows(allLoadedHistory);
       event.target.value = '';
   }
 
+// 🌟 Bug Fix: ပထမဆုံးအကြိမ် Slip တင်တုန်းက Row ပေါ်က "📎 တင်မည်" ခလုတ်ကို ရှာပြီး Loading ပြနိုင်ပေမယ့်
+// ပထမပုံ တင်ပြီးသွားတာနဲ့ Row က "👁 (N) စလစ်" ခလုတ်အသစ်ကို ပြောင်းပြသွားတဲ့အတွက် (onclick="openSlipModal"),
+// နောက်ထပ်တင်တဲ့အခါ querySelector က ခလုတ်ကို ရှာမတွေ့တော့ဘဲ Loading ပျောက်သွားတာဖြစ်ပါတယ်။
+// ဒါကြောင့် Row ခလုတ်ပေါ်မူတည်မနေတဲ့ Global Indicator တစ်ခုကို အစားထိုးသုံးပါမည်။
+window.showUploadingIndicator = function(msg) {
+    let el = document.getElementById('slipUploadIndicator');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'slipUploadIndicator';
+        el.className = "fixed top-4 left-1/2 -translate-x-1/2 z-[10000] bg-indigo-600 text-white font-bold text-sm px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2";
+        document.body.appendChild(el);
+    }
+    el.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite;">⏳</span> ${msg || 'စလစ် တင်နေသည်...'}`;
+    el.style.display = 'flex';
+}
+window.hideUploadingIndicator = function() {
+    const el = document.getElementById('slipUploadIndicator');
+    if (el) el.style.display = 'none';
+}
+if (!document.getElementById('slipUploadSpinnerStyle')) {
+    const styleTag = document.createElement('style');
+    styleTag.id = 'slipUploadSpinnerStyle';
+    styleTag.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+    document.head.appendChild(styleTag);
+}
+
   window.processSlipFiles = async function(files, invId, uploadMode) {
       if (!files || files.length === 0) return;
       if(!IMGBB_API_KEY) { alert("ImgBB API Key ထည့်သွင်းထားခြင်း မရှိပါ။"); return; } 
@@ -7224,6 +7250,7 @@ renderHistoryRows(allLoadedHistory);
       const uploadBtn = document.querySelector(`button[onclick*="triggerSlipUpload('${invId}')"]`);
       let origBtnText = "";
       if (uploadBtn) { origBtnText = uploadBtn.innerHTML; uploadBtn.innerHTML = "တင်နေသည် ⏳"; uploadBtn.disabled = true; }
+      window.showUploadingIndicator("Slip စစ်ဆေး/တင်နေသည်...");
 
       try {
           for (let i = 0; i < files.length; i++) {
@@ -7284,7 +7311,7 @@ renderHistoryRows(allLoadedHistory);
               renderHistoryRows(allLoadedHistory); 
           } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
       } catch (e) { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။"); } 
-      finally { if (uploadBtn) { uploadBtn.innerHTML = origBtnText; uploadBtn.disabled = false; } window.currentSlipUploadMode = null; }
+      finally { if (uploadBtn) { uploadBtn.innerHTML = origBtnText; uploadBtn.disabled = false; } window.currentSlipUploadMode = null; window.hideUploadingIndicator(); }
   }
 
   let smartSlipMode = 'in'; 
@@ -7310,6 +7337,7 @@ renderHistoryRows(allLoadedHistory);
       const origBtn = document.querySelector(smartSlipMode === 'in' ? 'button[onclick="triggerSmartSlip(\'in\')"]' : 'button[onclick="triggerSmartSlip(\'out\')"]');
       const origText = origBtn ? origBtn.innerHTML : '';
       if (origBtn) { origBtn.innerHTML = "⏳ စစ်ဆေးနေသည်..."; origBtn.disabled = true; }
+      window.showUploadingIndicator("Slip စစ်ဆေး/တင်နေသည်...");
 
       try {
           // 🌟 Cache ဟောင်းသုံးမည့်အစား Slip စစ်တိုင်း history အသစ်ဆုံးကို Firestore ကနေ ပြန်ဆွဲမည်
@@ -7366,7 +7394,7 @@ renderHistoryRows(allLoadedHistory);
               } else { alert("စလစ်ထဲမှ ငွေပမာဏကို ဖတ်၍မရပါ။ ပုံမကြည်လင်ခြင်း ဖြစ်နိုင်ပါသည်။"); }
           } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
       } catch (e) { alert("အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။"); } 
-      finally { if (origBtn) { origBtn.innerHTML = origText; origBtn.disabled = false; } }
+      finally { if (origBtn) { origBtn.innerHTML = origText; origBtn.disabled = false; } window.hideUploadingIndicator(); }
   }
 
   function showSmartMatchModal(aiAmt, aiCurr, fullAiText, imgUrls) {
@@ -7479,9 +7507,24 @@ renderHistoryRows(allLoadedHistory);
       document.getElementById('slipViewModal').style.display = 'flex';
   }
 
+  // --- Slip OCR text ကို ပုံအလိုက် ခွဲခြားပေးသော Helper (Delete လုပ်တဲ့အခါ ပုံနှင့်အတူ OCR စာသားပါ ရှင်းရန်) ---
+  function getExtractedInfoBlocks(extractedInfo) {
+      if (!extractedInfo) return [];
+      // "[ပုံ N] |" marker တွေအလိုက် ခွဲထုတ်ပါ (ပုံတစ်ခုစီရဲ့ OCR စာသားကို သီးခြားစီ ခွဲသိမ်းရန်)
+      return extractedInfo
+          .split(/\[ပုံ\s*\d+\]\s*\|\s*/)
+          .map(s => s.replace(/^\|+|\|+$/g, '').trim())
+          .filter(s => s.length > 0);
+  }
+  function rebuildExtractedInfo(blocks) {
+      if (!blocks || blocks.length === 0) return "";
+      if (blocks.length === 1) return blocks[0];
+      return blocks.map((b, i) => `[ပုံ ${i + 1}] | ${b}`).join(" | ");
+  }
+
   // --- Delete Slip ---
   window.deleteSlipImage = async function(invId, imageIndex) {
-      if(!confirm("ဤပုံကို ဖျက်ရန် သေချာပါသလား?")) return;
+      if(!confirm("ဤပုံကို ဖျက်ရန် သေချာပါသလား? (ပုံနှင့်အတူ ၎င်း၏ OCR ဖတ်ထားချက်ပါ ပါဝင်ဖျက်သွားပါမည်)")) return;
       
       const index = allLoadedHistory.findIndex(x => x.id === invId);
       if(index === -1) return;
@@ -7489,6 +7532,18 @@ renderHistoryRows(allLoadedHistory);
       let tx = allLoadedHistory[index];
       let slipArr = tx.slipUrls || [];
       if (tx.slipUrl && slipArr.length === 0) slipArr = [tx.slipUrl];
+
+      // 🌟 Bug Fix: ပုံတစ်ပုံကို ဖျက်လိုက်တဲ့အခါ အဲ့ပုံနဲ့ သက်ဆိုင်တဲ့ OCR စာသား (extractedInfo block) ကိုပါ
+      // တွဲဖျက်ပေးရန် — မဟုတ်ရင် မှားတင်မိလို့ ပြန်ဖျက်လိုက်တဲ့ ပုံရဲ့ Trans No/Ref က extractedInfo ထဲမှာ
+      // ကျန်နေပြီး နောက်ပိုင်း Duplicate Check က ဆက်ကိုက်နေနိုင်ပါတယ်။
+      let infoBlocks = getExtractedInfoBlocks(tx.extractedInfo);
+      if (infoBlocks.length === slipArr.length && imageIndex < infoBlocks.length) {
+          infoBlocks.splice(imageIndex, 1);
+      } else {
+          // Block အရေအတွက်နှင့် ပုံအရေအတွက် မကိုက်ညီပါက (ဟောင်းနေတဲ့ Data ဖြစ်နိုင်) မှားယွင်းတဲ့ Block ကို
+          // မှားဖျက်မိမည့်အစား OCR စာသားအားလုံးကို ရှင်းလိုက်တာက ပိုစိတ်ချရပါတယ် (Stale duplicate-check data ကျန်ခြင်းထက်)
+          infoBlocks = [];
+      }
       
       slipArr.splice(imageIndex, 1);
       
@@ -7503,12 +7558,13 @@ renderHistoryRows(allLoadedHistory);
               tx.slipUrl = null;
               tx.extractedInfo = null;
           } else {
-              await firebase.firestore().collection("exchange_history").doc(invId).update({
-                  slipUrls: slipArr,
-                  slipUrl: slipArr[0]
-              });
+              let newExtractedInfo = rebuildExtractedInfo(infoBlocks);
+              let updatePayload = { slipUrls: slipArr, slipUrl: slipArr[0] };
+              updatePayload.extractedInfo = newExtractedInfo ? newExtractedInfo : firebase.firestore.FieldValue.delete();
+              await firebase.firestore().collection("exchange_history").doc(invId).update(updatePayload);
               tx.slipUrls = slipArr;
               tx.slipUrl = slipArr[0];
+              tx.extractedInfo = newExtractedInfo || null;
           }
           
           renderHistoryRows(allLoadedHistory);
