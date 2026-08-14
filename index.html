@@ -7253,19 +7253,26 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       window.showUploadingIndicator("Slip စစ်ဆေး/တင်နေသည်...");
 
       try {
+          // 🌟 Bug Fix: files[i] တစ်ပုံပုံ upload မအောင်မြင်ခဲ့ရင် uploadedUrls[] က files[] ထက်တိုသွားတာမို့
+          // အောက်က loop (index i နဲ့ ကိုက်ညီအောင် ရေးထားတာ) က uploadedUrls[i] ကနေ လွဲမှားတဲ့ ပုံကို ယူသွားနိုင်ပြီး
+          // Slip2Go စစ်ဆေးမှု၊ OCR block အရေအတွက် စတာတွေ slipUrls နဲ့ desync ဖြစ်စေနိုင်ပါတယ်။
+          // ဒါကြောင့် files[] အတိုင်း 1:1 (upload မအောင်မြင်ရင် null) tracking လုပ်ပြီး auto skip လုပ်ပါမည်။
+          let uploadResults = [];
           for (let i = 0; i < files.length; i++) {
               const formData = new FormData(); formData.append("image", files[i]);
               const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
               const result = await response.json(); 
-              if (result.success) uploadedUrls.push(result.data.url); else hasError = true;
+              if (result.success) { uploadResults.push(result.data.url); uploadedUrls.push(result.data.url); }
+              else { uploadResults.push(null); hasError = true; }
           }
 
          if (uploadedUrls.length > 0) {
               let combinedUrls = existingSlips.concat(uploadedUrls);
-              let newExtractedText = "";
+              let blocks = [];
 
               for (let i = 0; i < files.length; i++) {
-                  let currentImgUrl = uploadedUrls[i];
+                  let currentImgUrl = uploadResults[i];
+                  if (!currentImgUrl) continue; // ဒီပုံ upload မအောင်မြင်ခဲ့ရင် OCR/extractedInfo block ကို ကျော်ပါ
                   let base64Img = await fileToBase64(files[i]);
                   let data = await extractSlipDataWithGemini(base64Img);
                   data = flagLowConfidenceOcr(data);
@@ -7292,9 +7299,12 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
 
                   let prefixText = uploadMode === 'in' ? "[ဝင်စလစ်]" : "[ထွက်စလစ်]";
                   data = `${prefixText} ${data}`;
-                  newExtractedText += (files.length > 1 || existingSlips.length > 0) ? `[ပုံ ${existingSlips.length + i + 1}] | ${data}` : data;
-                  if (i < files.length - 1) newExtractedText += " | "; 
+                  blocks.push(data);
               }
+
+              // 🌟 combinedUrls (slipUrls) နဲ့ block အရေအတွက် အမြဲကိုက်ညီအောင် blocks[] ကို အခုမှ ပေါင်းစပ်ပါမည်
+              let useNumbering = (existingSlips.length + blocks.length) > 1;
+              let newExtractedText = blocks.map((d, idx) => useNumbering ? `[ပုံ ${existingSlips.length + idx + 1}] | ${d}` : d).join(" | ");
 
               let finalExtractedInfo = previousExtractedInfo ? previousExtractedInfo + " | " + newExtractedText : newExtractedText;
 
@@ -7343,18 +7353,23 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           // 🌟 Cache ဟောင်းသုံးမည့်အစား Slip စစ်တိုင်း history အသစ်ဆုံးကို Firestore ကနေ ပြန်ဆွဲမည်
           // (တခြား Staff/Device က မကြာသေးခင် ထုတ်ခဲ့တဲ့ Invoice အသစ်ကိုပါ Refresh မလုပ်ဘဲ ချက်ချင်းရှာတွေ့စေရန်)
           await loadHistory();
+          // 🌟 Bug Fix: files[i] တစ်ပုံပုံ upload မအောင်မြင်ခဲ့ရင် uploadedUrls[] တိုသွားလို့ i-index ချင်း
+          // မကိုက်တော့ပါ (processSlipFiles ကိစ္စတူ) — files[] အတိုင်း 1:1 tracking လုပ်ပြီး skip လုပ်ပါမည်။
+          let uploadResults = [];
           for (let i = 0; i < files.length; i++) {
               const formData = new FormData(); formData.append("image", files[i]);
               const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
               const result = await response.json(); 
-              if (result.success) uploadedUrls.push(result.data.url); else hasError = true;
+              if (result.success) { uploadResults.push(result.data.url); uploadedUrls.push(result.data.url); }
+              else { uploadResults.push(null); hasError = true; }
           }
 
           if (uploadedUrls.length > 0) {
-              let newExtractedText = ""; let aiParsedData = { amount: 0, currency: '' };
+              let blocks = []; let aiParsedData = { amount: 0, currency: '' };
 
               for (let i = 0; i < files.length; i++) {
-                  let currentImgUrl = uploadedUrls[i];
+                  let currentImgUrl = uploadResults[i];
+                  if (!currentImgUrl) continue; // ဒီပုံ upload မအောင်မြင်ခဲ့ရင် ကျော်ပါ
                   let base64Img = await fileToBase64(files[i]);
                   let data = await extractSlipDataWithGemini(base64Img);
                   data = flagLowConfidenceOcr(data);
@@ -7374,8 +7389,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
                       data = `⚠️ [စလစ်အထပ်/အတု - Ref: ${dupCheck.refNo} ကို (${dupCheck.duplicateId}) တွင် သုံးပြီးဖြစ်သည်] | ` + data;
                   }
 
-                  newExtractedText += (files.length > 1) ? `[ပုံ ${i + 1}] | ${data}` : data;
-                  if (i < files.length - 1) newExtractedText += " || "; 
+                  blocks.push(data);
                   
                   if (aiParsedData.amount === 0) {
                       const match = data.match(/([\d,.]+)\s*(THB|MMK|VND|Ks)/i);
@@ -7387,6 +7401,9 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
                       }
                   }
               }
+
+              // 🌟 uploadedUrls (imgUrls) နဲ့ block အရေအတွက် အမြဲကိုက်ညီအောင် blocks[] ကို အခုမှ ပေါင်းစပ်ပါမည်
+              let newExtractedText = blocks.map((d, idx) => blocks.length > 1 ? `[ပုံ ${idx + 1}] | ${d}` : d).join(" | ");
 
               if (aiParsedData.amount > 0) {
                   document.getElementById('smartMatchModal').style.zIndex = "99999";
@@ -7454,8 +7471,13 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       let combinedUrls = existingSlips.concat(imgUrls);
       
       let prefixText = smartSlipMode === 'in' ? "[ဝင်စလစ်]" : "[ထွက်စလစ်]";
-      let newAiText = `${prefixText} ${aiText}`;
-      let finalExtractedInfo = tx.extractedInfo ? tx.extractedInfo + " | " + newAiText : newAiText;
+      // 🌟 Bug Fix: aiText ထဲက "[ပုံ N]" preview-numbering က Batch-local (1 ကနေစပြီးအမြဲစ) ဖြစ်နေတာမို့
+      // Invoice မှာ Slip ရှိပြီးသားဖြစ်ရင် "[ပုံ 1]" ထပ်တလဲလဲ ပေါ်လာနိုင်ပါတယ် — getExtractedInfoBlocks/
+      // rebuildExtractedInfo ကို ပြန်သုံးပြီး ရှိပြီးသားနဲ့ အသစ်ပေါင်းလိုက်ပြီး တစ်ခါတည်း renumber လုပ်ပါမည်။
+      let newBlocks = getExtractedInfoBlocks(aiText).map(b => `${prefixText} ${b}`);
+      if (newBlocks.length === 0) newBlocks = [`${prefixText} ${aiText}`];
+      let existingBlocks = getExtractedInfoBlocks(tx.extractedInfo);
+      let finalExtractedInfo = rebuildExtractedInfo(existingBlocks.concat(newBlocks));
 
       try {
           await firebase.firestore().collection("exchange_history").doc(invId).update({
