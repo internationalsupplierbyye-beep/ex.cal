@@ -279,6 +279,21 @@
   </div>
 </div>
 
+<!-- 🌟 Customer Link Modal (History Panel ထဲက Record တစ်ခုကို Customer နဲ့ နောက်ကျမှ ချိတ်ဆက်ရန်) -->
+<div id="linkCustomerModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.65); z-index:80; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:white; border-radius:20px; width:100%; max-width:380px; max-height:80vh; box-shadow:0 20px 40px rgba(0,0,0,0.3); display:flex; flex-direction:column; overflow:hidden;">
+    <div style="padding:18px 18px 12px 18px; border-bottom:1px solid #f1f5f9;">
+      <div style="font-size:1.05rem; font-weight:900; color:#0f172a; display:flex; align-items:center; gap:8px;">🔗 Customer ချိတ်ဆက်ရန်</div>
+      <div style="font-size:.78rem; color:#64748b; font-weight:700; margin-top:2px;">ID: <span id="linkCusInvIdLabel" style="color:#7c3aed;">-</span></div>
+      <input type="text" id="linkCusSearchInput" oninput="window.filterLinkCustomerOptions()" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." class="admin-input-box mt-2" style="font-size:.9rem;">
+    </div>
+    <div id="linkCusOptions" style="overflow-y:auto; flex:1;"></div>
+    <div style="padding:12px 18px; border-top:1px solid #f1f5f9;">
+      <button onclick="window.closeCustomerLinkModal()" class="btn2 w-full">မလုပ်တော့ပါ</button>
+    </div>
+  </div>
+</div>
+
 <header>
   <select id="sysLangSelect" onchange="changeSystemLanguage(this.value)" class="lang-switcher">
     <option value="my" class="text-black">🇲🇲 မြန်မာ</option>
@@ -2813,6 +2828,7 @@ if (file.startsWith('PP:')) {
 
   // --- Firebase Connection ---
   let dbRef = null;
+  let publicDbRef = null; // 🌟 Guest/Public users (login/role မလိုဘဲ) Banks + QR + Rate ဖတ်ရန် document
   try {
     const firebaseConfig = { apiKey: "AIzaSyDr4ada9hQah9C2ZX0xFBfxYDdXUQl3oa4", authDomain: "excal-570ed.firebaseapp.com", projectId: "excal-570ed", storageBucket: "excal-570ed.firebasestorage.app", messagingSenderId: "84544400626", appId: "1:84544400626:web:3393a4e339d3f41a60f46b", measurementId: "G-4KLYMEPPGT" };
     firebase.initializeApp(firebaseConfig);
@@ -2829,6 +2845,72 @@ if (file.startsWith('PP:')) {
       });
 
     dbRef = firebase.firestore().collection("exchange_app").doc("admin_data");
+    publicDbRef = firebase.firestore().collection("exchange_app").doc("public_data");
+
+    // 🌟 GUEST/PUBLIC: Login/Role လုံးဝ မလိုဘဲ Banks + QR + Rate ကို ဖတ်ပြီး Calculator ကို
+    // အသုံးပြုနိုင်ရန် (Firestore Rule အရ exchange_app/public_data document ကို public read ခွင့်ပြုထားသည်)
+    // admin_data ထဲက customers/treasury/apiKeys စတဲ့ sensitive data တွေကို ဒီနေရာက လုံးဝ မတွေ့နိုင်ပါ။
+    function loadPublicDataOnce() {
+      if (!publicDbRef) return;
+      publicDbRef.get().then((snap) => {
+        if (!snap.exists) return;
+        const pd = snap.data();
+
+        if (pd.banks) {
+          FIREBASE_BANKS = pd.banks;
+          FIREBASE_BANK_ORDER = pd.bankOrder || Object.keys(FIREBASE_BANKS);
+          Object.keys(FIREBASE_BANKS).forEach(id => {
+            if (!FIREBASE_BANK_ORDER.includes(id)) FIREBASE_BANK_ORDER.push(id);
+          });
+        }
+
+        if (pd.qrs) {
+          FIREBASE_QRS = pd.qrs.map(q => (typeof q === 'string') ? { file: q, name: q.replace(/\.[^.]+$/, '') } : q);
+        }
+
+        // Rate ကို guest ကိုယ်တိုင် ရိုက်ထားခြင်း မရှိသေးပါက၊ Admin သိမ်းထားသော နောက်ဆုံး rate ကို ကူညီဖြည့်ပေးမည်
+        if (pd.lastRates) {
+          const r100kEl = document.getElementById('rate100k');
+          const rVndEl = document.getElementById('rateVnd');
+          if (pd.lastRates.rate100k && r100kEl && !parseNum(r100kEl.value)) {
+            r100kEl.value = pd.lastRates.rate100k;
+            formatInputThousands(r100kEl, true);
+            syncFrom100k();
+          }
+          if (pd.lastRates.rateVnd && rVndEl && !parseNum(rVndEl.value)) {
+            rVndEl.value = pd.lastRates.rateVnd;
+            formatInputThousands(rVndEl, true);
+            refreshVndRateNote(); recalcVND();
+          }
+        }
+
+        initDropdowns();
+      }).catch((e) => {
+        if (e.code !== 'permission-denied') console.warn("public_data load error:", e);
+      });
+    }
+    loadPublicDataOnce();
+
+    // 🌟 Admin/Staff က Banks/QR/Rate ပြင်တိုင်း Guest များအတွက် public_data document ကိုပါ
+    // Auto-Sync လုပ်ပေးမည့် Function (Bank balance ကဲ့သို့ sensitive field များကို ထုတ်ပယ်ထားသည်)
+    async function syncPublicData(fields = {}) {
+      if (!publicDbRef) return;
+      try {
+        let payload = {};
+        if (fields.banks) {
+          const sanitizedBanks = {};
+          Object.keys(FIREBASE_BANKS).forEach(k => {
+            const { balance, ...rest } = FIREBASE_BANKS[k] || {};
+            sanitizedBanks[k] = rest;
+          });
+          payload.banks = sanitizedBanks;
+          payload.bankOrder = FIREBASE_BANK_ORDER;
+        }
+        if (fields.qrs) payload.qrs = FIREBASE_QRS;
+        if (fields.rates) payload.lastRates = fields.rates;
+        if (Object.keys(payload).length > 0) await publicDbRef.set(payload, { merge: true });
+      } catch (e) { console.warn("public_data sync error:", e); }
+    }
 
     // 🌟 BUG FIX: Persistence ကို တိကျစွာ သတ်မှတ်ခြင်း — မလုပ်ရင် တခါတခါ Browser အချို့တွင် Refresh တိုင်း
     // Anonymous UID အသစ်ပြောင်းနေတတ်ပြီး Device-bypass Permission ကပ်မနေတော့ပါ (History တွင်လည်း "Unknown" ဖြစ်တတ်သည်)
@@ -3141,6 +3223,15 @@ if (data.telegram) {
         updateReceiptUI();
         initDropdowns(); 
         if (typeof syncAllLedgerDropdowns === 'function') syncAllLedgerDropdowns(); // 👈 ဤစာကြောင်းကို အသစ်ထပ်ထည့်ပါ
+
+        // 🌟 admin_data အောင်မြင်စွာ ဆွဲယူတိုင်း Guest public_data ကိုပါ (Banks/QR/Rate) လက်ရှိအတိုင်း Sync ပြန်ချပေးမည်
+        // (public_data document ကို ပထမဆုံးအကြိမ် အလိုအလျောက် ဖန်တီးပေးရာလည်း ကျပါသည်)
+        if (typeof syncPublicData === 'function') {
+          const currentLastRates = {};
+          if (data.lastRates && data.lastRates.rate100k) currentLastRates.rate100k = data.lastRates.rate100k;
+          if (data.lastRates && data.lastRates.rateVnd) currentLastRates.rateVnd = data.lastRates.rateVnd;
+          syncPublicData({ banks: true, qrs: true, rates: Object.keys(currentLastRates).length ? currentLastRates : undefined });
+        }
       }
     }).catch((e) => {
       // Role မရှိသေးသော Device (guest) များအတွက် admin_data ဖတ်ခွင့်မရှိခြင်းသည် ပုံမှန်ဖြစ်ပါသည် (Firestore Rules)
@@ -3163,6 +3254,13 @@ if (data.telegram) {
 else payload = { banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES, customers: FIREBASE_CUSTOMERS, customerOrder: FIREBASE_CUSTOMER_ORDER, treasuryAccounts: FIREBASE_TREASURY, treasuryOrder: FIREBASE_TREASURY_ORDER };
         
         await dbRef.set(payload, { merge: true }); 
+
+        // 🌟 Banks/QR ပြောင်းလဲတိုင်း Guest (public_data) ကိုပါ Sync ပြန်ချပေးမည်
+        if (typeof syncPublicData === 'function') {
+          if (type === 'banks') syncPublicData({ banks: true });
+          else if (type === 'qrs') syncPublicData({ qrs: true });
+          else if (type === 'all') syncPublicData({ banks: true, qrs: true });
+        }
       } catch(err) { alert("Firebase သိမ်း၍မရပါ။"); }
     }
   }
@@ -3178,7 +3276,10 @@ else payload = { banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIR
                   const r100k = parseNum(document.getElementById('rate100k').value); const rVnd = parseNum(document.getElementById('rateVnd').value);
                   let ratesToSave = {};
                   if (Number.isFinite(r100k) && r100k > 0) ratesToSave.rate100k = r100k; if (Number.isFinite(rVnd) && rVnd > 0) ratesToSave.rateVnd = rVnd;
-                  if (Object.keys(ratesToSave).length > 0) { try { await dbRef.set({ lastRates: ratesToSave }, { merge: true }); } catch (err) { } }
+                  if (Object.keys(ratesToSave).length > 0) {
+                      try { await dbRef.set({ lastRates: ratesToSave }, { merge: true }); } catch (err) { }
+                      if (typeof syncPublicData === 'function') { try { await syncPublicData({ rates: ratesToSave }); } catch (err) { } } // 🌟 Guest ဘက်ကလည်း Rate အသစ်မြင်ရအောင်
+                  }
               }, 1500); 
           });
       }
@@ -5389,6 +5490,73 @@ function openAdmin() {
       }
   }
 
+  // 🌟🌟 Guest (login/role မရှိသေးသော) ကနေ ထုတ်ထားသော Slip များတွင် Customer name မပါဝင်နိုင်သဖြင့်
+  // Staff+ ဘက်ကနေ History Panel မှာ နောက်ကျမှ Customer ကို ပြန်ချိတ်/ဖြုတ်နိုင်ရန် Function
+  window.updateTxCustomer = async function(invId, newCustomerName) {
+      const index = allLoadedHistory.findIndex(x => x.id === invId);
+      if(index === -1) return;
+      const tx = allLoadedHistory[index];
+      const finalName = newCustomerName || "—";
+      if(tx.customerName === finalName) return;
+
+      try {
+          await firebase.firestore().collection("exchange_history").doc(invId).update({ customerName: finalName });
+          allLoadedHistory[index].customerName = finalName;
+          logActivity("Customer Linked", `ID: ${invId} ကို Customer "${finalName}" နှင့် ချိတ်ဆက်ခဲ့သည်။`);
+          renderHistoryRows(allLoadedHistory);
+      } catch(e) {
+          console.error(e); alert("Customer ချိတ်ဆက်ခြင်း မအောင်မြင်ပါ။");
+      }
+  }
+
+  // 🌟 History row ၏ 🔗 ဆက်ရန် ခလုတ်ကနေ ဖွင့်မည့် Modal Logic
+  window._linkCustomerTargetInvId = null;
+  window.openCustomerLinkModal = function(invId, currentName) {
+      window._linkCustomerTargetInvId = invId;
+      const label = document.getElementById('linkCusInvIdLabel');
+      if (label) label.textContent = invId;
+      const searchInput = document.getElementById('linkCusSearchInput');
+      if (searchInput) searchInput.value = '';
+      window.populateLinkCustomerOptions();
+      const modal = document.getElementById('linkCustomerModal');
+      if (modal) modal.style.display = 'flex';
+      if (searchInput) setTimeout(() => searchInput.focus(), 50);
+  };
+  window.closeCustomerLinkModal = function() {
+      const modal = document.getElementById('linkCustomerModal');
+      if (modal) modal.style.display = 'none';
+      window._linkCustomerTargetInvId = null;
+  };
+  window.populateLinkCustomerOptions = function() {
+      const container = document.getElementById('linkCusOptions');
+      if (!container) return;
+      let html = `<div class="cus-option p-3 hover:bg-purple-100 cursor-pointer text-sm text-red-600 font-bold border-b border-gray-200" data-search="" onclick="window.selectLinkCustomer('')">✕ ချိတ်ဆက်ခြင်း ဖြုတ်မည် (— မထည့်ပါ —)</div>`;
+      FIREBASE_CUSTOMER_ORDER.forEach(id => {
+          const c = FIREBASE_CUSTOMERS[id];
+          if (c) {
+              let text = c.name + (c.social ? ` (${c.social})` : '');
+              let searchString = (c.name + " " + (c.social||"") + " " + (c.phone||"")).toLowerCase();
+              html += `<div class="cus-option p-3 hover:bg-purple-100 cursor-pointer border-b border-gray-200 last:border-0" data-search="${searchString}" onclick="window.selectLinkCustomer('${text.replace(/'/g, "\\'")}')">
+                  <div class="font-bold text-sm text-purple-800">${text}</div>
+                  ${c.phone ? `<div class="text-xs font-bold text-gray-500 mt-0.5">📞 ${c.phone}</div>` : ''}
+              </div>`;
+          }
+      });
+      container.innerHTML = html;
+  };
+  window.filterLinkCustomerOptions = function() {
+      const search = (document.getElementById('linkCusSearchInput').value || '').toLowerCase();
+      document.querySelectorAll('#linkCusOptions .cus-option').forEach(opt => {
+          const searchData = opt.getAttribute('data-search') || "";
+          opt.style.display = (search === "" || searchData.includes(search)) ? 'block' : 'none';
+      });
+  };
+  window.selectLinkCustomer = function(fullName) {
+      const invId = window._linkCustomerTargetInvId;
+      window.closeCustomerLinkModal();
+      if (invId) window.updateTxCustomer(invId, fullName);
+  };
+
   window.swapTxAmounts = async function(invId) {
       const index = allLoadedHistory.findIndex(x => x.id === invId);
       if(index === -1) return;
@@ -5995,6 +6163,17 @@ function openAdmin() {
         let cusName = d.customerName || "—";
         
         let cusHtml = `<div class="max-w-[60px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
+
+        // 🌟 Staff+ အတွက် Customer ကို နောက်ကျမှ ပြန်ချိတ်/ပြင်ဆင်နိုင်ရန် (Guest ထုတ်ထားသော Slip များအတွက် အထူးအသုံးဝင်သည်)
+        if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
+            const escCusName = String(cusName).replace(/'/g, "\\'");
+            cusHtml = `
+              <div class="flex flex-col items-start gap-0.5">
+                  <div class="max-w-[60px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>
+                  <button onclick="window.openCustomerLinkModal('${d.id}', '${escCusName}')" class="border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 px-1 py-0.5 rounded text-[9px] shadow-sm active:translate-y-[1px]" title="Customer ဆက်ရန်/ပြောင်းရန်">🔗 ဆက်ရန်</button>
+              </div>
+            `;
+        }
         
         // 🌟 Pending ဖြစ်ပြီး ၁ နာရီကျော်သွားပါက အနီရောင်ဖြင့် သတိပေးရန် 🌟
         let isOverdue = false;
