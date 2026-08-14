@@ -7593,24 +7593,60 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       finally { if (origBtn) { origBtn.innerHTML = origText; origBtn.disabled = false; } window.hideUploadingIndicator(); }
   }
 
+  // 🌟 Invoice ထုတ်ခဲ့သော ရက်စွဲ/အချိန်ကို App တစ်ခုလုံးနှင့် တသမတ်တည်းဖြစ်အောင်
+  // (ADMIN_TIMEZONE + en-GB format) ပြန်ပြောပေးမည့် Helper 🌟
+  function formatInvoiceTime(isoStr) {
+      if (!isoStr) return '';
+      const dateObj = new Date(isoStr);
+      return dateObj.toLocaleString('en-GB', { timeZone: ADMIN_TIMEZONE || 'Asia/Bangkok', hour12: true, day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  // 🌟 tx ထဲမှာရှိပြီးသား Slip တွေက ဝင်ဘက်လား ထွက်ဘက်လား ခွဲခြားပေးမည့် Helper
+  // extractedInfo ရဲ့ Block တစ်ခုချင်းစီမှာ "[ဝင်စလစ်]" / "[ထွက်စလစ်]" prefix ပါနေတာကို စစ်ဆေးသည်
+  // (prefix မပါသေးတဲ့ ဟောင်းနေတဲ့ Data အတွက် hasUnknown ဖြင့် fallback ပေးထားသည်)
+  function getSlipDirectionInfo(tx) {
+      const hasAnySlip = !!(tx.slipUrls && tx.slipUrls.length) || !!tx.slipUrl;
+      if (!hasAnySlip) return { hasIn: false, hasOut: false, hasUnknown: false };
+      const blocks = getExtractedInfoBlocks(tx.extractedInfo);
+      if (blocks.length === 0) return { hasIn: false, hasOut: false, hasUnknown: true };
+      let hasIn = blocks.some(b => b.includes('[ဝင်စလစ်]'));
+      let hasOut = blocks.some(b => b.includes('[ထွက်စလစ်]'));
+      let hasUnknown = blocks.some(b => !b.includes('[ဝင်စလစ်]') && !b.includes('[ထွက်စလစ်]'));
+      return { hasIn, hasOut, hasUnknown };
+  }
+
   function showSmartMatchModal(aiAmt, aiCurr, fullAiText, imgUrls) {
       document.getElementById('smartMatchAiAmt').textContent = aiAmt.toLocaleString() + ' ' + aiCurr;
       document.getElementById('smartMatchAiDetails').textContent = fullAiText.replace(/\|/g, ' | ');
       document.getElementById('smartMatchTitle').textContent = smartSlipMode === 'in' ? "📥 ဝင်စလစ်နှင့် ကိုက်ညီသောမှတ်တမ်း" : "📤 ထွက်စလစ်နှင့် ကိုက်ညီသောမှတ်တမ်း";
 
       const listDiv = document.getElementById('smartMatchList'); listDiv.innerHTML = '';
+      // 🌟 Pending + Success နှစ်မျိုးစလုံးကို ဝင်/ထွက် နှစ်ခုစလုံးအတွက် ပြပေးမည် (Success နှိပ်ပြီးမှ
+      // Slip နောက်ကျမှ ပြန်တင်တဲ့ Case အတွက်) — ဒါပေမယ့် မှားနိုင်ခြေလျော့ဖို့ hasSlip/status/timestamp
+      // အချက်တွေ ထပ်ထည့်ပြီး sort/badge လုပ်ပေးထားပါသည်
       let matches = allLoadedHistory.filter(tx => {
-          if (smartSlipMode === 'in' && tx.status !== 'Pending') return false;
-          if (smartSlipMode === 'out' && tx.status !== 'Pending' && tx.status !== 'Success') return false;
+          if (tx.status !== 'Pending' && tx.status !== 'Success') return false;
           let targetAmtStr = smartSlipMode === 'in' ? tx.inAmt : tx.outAmt;
           let txAmt = parseFloat(targetAmtStr.replace(/[^\d.]/g, '')) || 0;
           let txCurr = targetAmtStr.includes('THB') ? 'THB' : (targetAmtStr.includes('VND') ? 'VND' : 'MMK');
           if (aiCurr && txCurr !== aiCurr) return false;
           let diff = Math.abs(aiAmt - txAmt);
-          if (txCurr === 'THB' && diff <= 2) return true;
-          if (txCurr === 'MMK' && diff <= 200) return true;
+          if (txCurr === 'THB' && diff <= 10) return true;
+          if (txCurr === 'MMK' && diff <= 1000) return true;
           if (txCurr === 'VND' && diff <= 5000) return true;
           return false;
+      });
+
+      // 🌟 Sort: Pending ကို အပေါ်ဆုံးမှာ ထား → လက်ရှိ (ဝင်/ထွက်) ဘက်အတွက် Slip မရှိသေးသူကို
+      // Slip ရှိပြီးသားထက် အပေါ်ထား → အသစ်ဆုံးကို အပေါ်ထား
+      matches.sort((a, b) => {
+          const aSlip = getSlipDirectionInfo(a);
+          const bSlip = getSlipDirectionInfo(b);
+          const aRelevantHasSlip = smartSlipMode === 'in' ? (aSlip.hasIn || aSlip.hasUnknown) : (aSlip.hasOut || aSlip.hasUnknown);
+          const bRelevantHasSlip = smartSlipMode === 'in' ? (bSlip.hasIn || bSlip.hasUnknown) : (bSlip.hasOut || bSlip.hasUnknown);
+          if (a.status !== b.status) return a.status === 'Pending' ? -1 : 1;
+          if (aRelevantHasSlip !== bRelevantHasSlip) return aRelevantHasSlip ? 1 : -1;
+          return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
       });
 
       if (matches.length === 0) {
@@ -7621,12 +7657,24 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               let btnClass = smartSlipMode === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700';
               let btnText = smartSlipMode === 'in' ? 'အတည်ပြုမည်' : 'စလစ်တွဲမည်';
               let inMethod = tx.method || "မပါ";
-              
+              let slipInfo = getSlipDirectionInfo(tx);
+
+              let statusBadge = tx.status === 'Pending'
+                  ? `<span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 border border-yellow-300">⏳ Pending</span>`
+                  : `<span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-green-100 text-green-700 border border-green-300">✅ Success</span>`;
+              let slipBadges = '';
+              if (slipInfo.hasIn) slipBadges += `<span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-red-100 text-red-600 border border-red-300 ml-1">⚠️ စလစ်ရှိပြီးသား(ဝင်)</span>`;
+              if (slipInfo.hasOut) slipBadges += `<span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-red-100 text-red-600 border border-red-300 ml-1">⚠️ စလစ်ရှိပြီးသား(ထွက်)</span>`;
+              if (slipInfo.hasUnknown) slipBadges += `<span class="text-[10px] font-black px-1.5 py-0.5 rounded bg-red-100 text-red-600 border border-red-300 ml-1">⚠️ Slip ရှိပြီးသား</span>`;
+              let timeStr = formatInvoiceTime(tx.timestamp);
+
               listDiv.innerHTML += `
               <div class="border border-gray-200 rounded-lg p-3 mb-2 hover:bg-blue-50 transition-colors">
                   <div class="flex justify-between items-center mb-1">
                       <span class="font-bold text-sm text-blue-800">${tx.id}</span>
+                      <span class="text-[10px] text-gray-400 font-bold">${timeStr}</span>
                   </div>
+                  <div class="mb-1">${statusBadge}${slipBadges}</div>
                   <div class="text-xs text-gray-600 mb-2">
                       <p>Customer: <span class="font-bold text-gray-800">${tx.customerName || '-'}</span></p>
                       <p>အဝင် (In): <span class="font-bold text-green-700">${inMethod}</span></p>
