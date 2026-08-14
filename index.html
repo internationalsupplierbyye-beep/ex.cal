@@ -6886,7 +6886,7 @@ renderHistoryRows(allLoadedHistory);
       } else {
           const amountPart = parts[parts.length - 1];
           const namePart = parts[1] || '';
-          if (!/[\d,]+(\.\d+)?\s*(THB|MMK|VND)/i.test(amountPart)) {
+          if (!/[\d,]+(\.\d+)?\s*(THB|MMK|VND|Ks)/i.test(amountPart)) {
               reason = 'ပမာဏ/ငွေကြေး အမျိုးအစား ရှင်းရှင်းလင်းလင်း မတွေ့ပါ';
           } else if (!namePart || namePart.length < 2 || /unknown|n\/a|unclear|ရှင်းလင်း|မမြင်|ဖတ်မရ/i.test(namePart)) {
               reason = 'လက်ခံသူအမည် ရှင်းရှင်းလင်းလင်း မတွေ့ပါ';
@@ -7129,7 +7129,10 @@ renderHistoryRows(allLoadedHistory);
       if (!extractedText) return { isDuplicate: false };
       let parts = extractedText.split('|').map(s => s.trim());
       if (parts.length >= 4) {
-          let refNo = parts[3];
+          // 🌟 Front-index (parts[3]) မသုံးတော့ပါ — flagLowConfidenceOcr/Slip2Go warning တွေ ရှေ့ကနေ
+          // ထပ်ဝင်လာရင် index ရွေ့သွားနိုင်လို့ (Bug Fix)။ Amount ဟာ အမြဲနောက်ဆုံး field ဖြစ်တဲ့အတွက်
+          // Transaction No ကို "နောက်ဆုံးမှ ဒုတိယမြောက်" field အနေနဲ့ ယူပါ — ရှေ့က prefix ဘယ်နှခုပေါင်းပေါင်း မှားမည်မဟုတ်ပါ။
+          let refNo = parts[parts.length - 2];
           if (refNo && refNo.length > 4 && refNo.toLowerCase() !== 'n/a' && refNo !== '-') {
               let duplicateTx = allLoadedHistory.find(tx => {
                   if (tx.id === currentInvId) return false;
@@ -7347,8 +7350,8 @@ renderHistoryRows(allLoadedHistory);
                   if (i < files.length - 1) newExtractedText += " || "; 
                   
                   if (aiParsedData.amount === 0) {
-                      const match = data.match(/([\d,.]+)\s*(THB|MMK|VND)/i);
-                      if (match) { aiParsedData.amount = parseFloat(match[1].replace(/,/g, '')); aiParsedData.currency = match[2].toUpperCase(); } 
+                      const match = data.match(/([\d,.]+)\s*(THB|MMK|VND|Ks)/i);
+                      if (match) { aiParsedData.amount = parseFloat(match[1].replace(/,/g, '')); aiParsedData.currency = /ks/i.test(match[2]) ? 'MMK' : match[2].toUpperCase(); } 
                       else {
                           const parts = data.split('|'); let lastPart = parts[parts.length - 1] || "";
                           aiParsedData.amount = parseFloat(lastPart.replace(/[^\d.]/g, '')) || 0;
