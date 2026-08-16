@@ -27,7 +27,8 @@
     header{
       background:linear-gradient(to right,#2563eb,#10b981);
       color:white; padding:.85rem 1rem; text-align:center;
-      border-radius:1rem; margin-bottom:.75rem; position: relative;
+      border-radius:1rem; margin-bottom:.75rem; position: sticky;
+      top: 0; z-index: 40; box-shadow: 0 4px 12px rgba(0,0,0,.12);
     }
     .admin-btn {
       position: absolute; top: 12px; right: 12px;
@@ -317,7 +318,20 @@
 
     <div style="margin-bottom:16px;">
       <div style="font-size:.75rem; font-weight:800; color:#dc2626; margin-bottom:3px;">ရငွေ (Out) — <span id="amtEditOutCurLabel"></span></div>
-      <input type="number" step="any" id="amtEditOutInput" oninput="window.onAmtEditInputChanged('out')" class="admin-input-box" placeholder="Out Amount">
+      <input type="number" step="any" id="amtEditOutInput" oninput="window.onAmtEditInputChanged('out'); window.onAmtEditSplitChanged();" class="admin-input-box" placeholder="Out Amount">
+    </div>
+
+    <div id="amtEditSplitBlock" class="hidden" style="margin-bottom:16px; padding:12px; border:1.5px dashed #f59e0b; border-radius:12px; background:#fffbeb;">
+      <div style="font-size:.72rem; font-weight:900; color:#b45309; margin-bottom:8px;">⚠️ ဒီ Out ငွေဟာ Account ၂ ခု split ခွဲထားပါတယ် — ပြန်ခွဲပေးပါ</div>
+      <div style="margin-bottom:8px;">
+        <div id="amtEditSplitAcc1Label" style="font-size:.75rem; font-weight:800; color:#92400e; margin-bottom:3px;"></div>
+        <input type="number" step="any" id="amtEditOutAmt1" oninput="window.onAmtEditSplitChanged('amt1')" class="admin-input-box !mb-0 text-sm py-1.5" placeholder="ပမာဏ (Account 1)">
+      </div>
+      <div>
+        <div id="amtEditSplitAcc2Label" style="font-size:.75rem; font-weight:800; color:#92400e; margin-bottom:3px;"></div>
+        <input type="number" step="any" id="amtEditOutAmt2" oninput="window.onAmtEditSplitChanged('amt2')" class="admin-input-box !mb-0 text-sm py-1.5" placeholder="ပမာဏ (Account 2)">
+      </div>
+      <div id="amtEditSplitTotalNote" style="font-size:.72rem; font-weight:800; margin-top:8px; text-align:right;"></div>
     </div>
 
     <div style="display:flex; gap:8px;">
@@ -5678,8 +5692,40 @@ function openAdmin() {
       document.getElementById('amtEditRateUnitLabel').textContent = (tx.type && tx.type.includes('THB')) ? '(100K MMK = ? THB)' : (tx.type && tx.type.includes('VND')) ? '(1 MMK = ? VND)' : '';
       document.getElementById('amtEditAutoToggle').checked = true;
 
+      // 🌟 Out ငွေက account ၂ ခု split ခွဲထားရင် — ပြန်ခွဲစရာ Block ကို ပြသမည်
+      const splitBlock = document.getElementById('amtEditSplitBlock');
+      if (Array.isArray(tx.ledgerOutSplit) && tx.ledgerOutSplit.length === 2) {
+          const acc1 = window.getLedgerAccount(tx.ledgerOutSplit[0].id);
+          const acc2 = window.getLedgerAccount(tx.ledgerOutSplit[1].id);
+          document.getElementById('amtEditSplitAcc1Label').textContent = '💼 ' + (acc1 ? acc1.name : (tx.ledgerOutSplit[0].id || 'Account 1'));
+          document.getElementById('amtEditSplitAcc2Label').textContent = '💼 ' + (acc2 ? acc2.name : (tx.ledgerOutSplit[1].id || 'Account 2'));
+          document.getElementById('amtEditOutAmt1').value = tx.ledgerOutSplit[0].amount || '';
+          document.getElementById('amtEditOutAmt2').value = tx.ledgerOutSplit[1].amount || '';
+          splitBlock.classList.remove('hidden');
+          window.onAmtEditSplitChanged();
+      } else {
+          splitBlock.classList.add('hidden');
+      }
+
       const modal = document.getElementById('amtEditModal');
       if (modal) modal.style.display = 'flex';
+  };
+
+  // 🌟 Split ဖြစ်နေတဲ့ Out ငွေကို account ၂ ခုကြား ပြန်ခွဲရာမှာ Out စုစုပေါင်းနဲ့ တူမတူ Live စစ်ပေးမည်
+  window.onAmtEditSplitChanged = function() {
+      const amt1 = parseFloat(document.getElementById('amtEditOutAmt1').value) || 0;
+      const amt2 = parseFloat(document.getElementById('amtEditOutAmt2').value) || 0;
+      const outVal = parseFloat(document.getElementById('amtEditOutInput').value) || 0;
+      const note = document.getElementById('amtEditSplitTotalNote');
+      const sum = amt1 + amt2;
+      const diff = Math.round((sum - outVal) * 100) / 100;
+      if (Math.abs(diff) < 0.01) {
+          note.style.color = '#059669';
+          note.textContent = `✅ စုစုပေါင်း ${sum.toLocaleString()} — Out ငွေနှင့် ညီမျှသည်`;
+      } else {
+          note.style.color = '#dc2626';
+          note.textContent = `❌ စုစုပေါင်း ${sum.toLocaleString()} — Out ငွေ (${outVal.toLocaleString()}) နှင့် မညီ (${diff > 0 ? '+' : ''}${diff.toLocaleString()})`;
+      }
   };
 
   // 🌟 In/Out/Rate ထဲက တစ်ခုခု ပြောင်းလိုက်ပါက "Auto ချိန်ညှိမည်" ဖွင့်ထားလျှင် ကျန်တစ်ဖက်ကို အလိုအလျောက် ပြန်တွက်ပေးခြင်း
@@ -5724,12 +5770,15 @@ function openAdmin() {
           const result = computeOtherAmount(tx.type, rateVal, 'out', outVal);
           if (result !== null) inEl.value = toPlainNumStr(result);
       }
+      if (typeof window.onAmtEditSplitChanged === 'function') window.onAmtEditSplitChanged();
   };
 
   window.closeAmtEditModal = function() {
       const modal = document.getElementById('amtEditModal');
       if (modal) modal.style.display = 'none';
       window._amtEditTargetInvId = null;
+      const splitBlock = document.getElementById('amtEditSplitBlock');
+      if (splitBlock) splitBlock.classList.add('hidden');
   };
 
   window.confirmAmtEditSave = async function() {
@@ -5754,41 +5803,62 @@ function openAdmin() {
       const deltaIn = inVal - oldInVal;
       const deltaOut = outVal - oldOutVal;
 
+      // 🌟 Out ငွေက account ၂ ခု split ခွဲထားလားစစ်ပြီး ရှိရင် Modal ထဲက ပြန်ခွဲထားတဲ့ ပမာဏတွေကိုသုံးမည်
+      const isSplitActive = Array.isArray(tx.ledgerOutSplit) && tx.ledgerOutSplit.length === 2
+          && document.getElementById('amtEditSplitBlock') && !document.getElementById('amtEditSplitBlock').classList.contains('hidden');
+
+      let newSplitAmt1 = 0, newSplitAmt2 = 0;
+      if (isSplitActive) {
+          newSplitAmt1 = parseFloat(document.getElementById('amtEditOutAmt1').value) || 0;
+          newSplitAmt2 = parseFloat(document.getElementById('amtEditOutAmt2').value) || 0;
+          const sum = Math.round((newSplitAmt1 + newSplitAmt2) * 100) / 100;
+          const target = Math.round(outVal * 100) / 100;
+          if (newSplitAmt1 <= 0 || newSplitAmt2 <= 0 || Math.abs(sum - target) >= 0.01) {
+              alert("⚠️ Account ၂ ခု စုစုပေါင်းက Out ငွေနှင့် ညီရပါမည်။ ပြန်စစ်ပေးပါ။");
+              return;
+          }
+      }
+
       try {
           // 🌟 Amount ကို ပြင်ခြင်းက Treasury/Ledger balance ကိုပါ တစ်ပြိုင်နက် ထိရောက်စေရမည်
           // (Success/Owing status အတွက်သာ — ဒီ status တွေမှာသာ ငွေအမှန်တကယ် ရွှေ့ပြောင်းပြီးသားမို့)
-          if ((tx.status === 'Success' || tx.status === 'Owing') && (deltaIn !== 0 || deltaOut !== 0)) {
+          let updatePayload = { inAmt: newIn, outAmt: newOut, rate: newRate };
+
+          if ((tx.status === 'Success' || tx.status === 'Owing') && (deltaIn !== 0 || deltaOut !== 0 || isSplitActive)) {
               let balanceChanges = [];
-              let splitWarning = false;
 
               if (tx.status === 'Success' && tx.ledgerIn && deltaIn !== 0) {
                   balanceChanges.push({ id: tx.ledgerIn, change: deltaIn });
               }
 
-              if (deltaOut !== 0) {
-                  if (Array.isArray(tx.ledgerOutSplit) && tx.ledgerOutSplit.length === 2) {
-                      // 🌟 Split ဖြစ်နေရင် delta ကို ဘယ်လိုခွဲမလဲ မသိနိုင်တာမို့ Auto sync မလုပ်ဘဲ user ကို သတိပေးမည်
-                      splitWarning = true;
-                  } else if (tx.ledgerOut) {
-                      balanceChanges.push({ id: tx.ledgerOut, change: -deltaOut });
-                  }
+              if (isSplitActive) {
+                  // 🌟 Account တစ်ခုချင်းစီအတွက် Delta ကို သီးခြားစီတွက်ပြီး Treasury ကို တိုက်ရိုက် Sync ပေးမည်
+                  const oldAmt1 = Number(tx.ledgerOutSplit[0].amount) || 0;
+                  const oldAmt2 = Number(tx.ledgerOutSplit[1].amount) || 0;
+                  const delta1 = newSplitAmt1 - oldAmt1;
+                  const delta2 = newSplitAmt2 - oldAmt2;
+                  if (delta1 !== 0 && tx.ledgerOutSplit[0].id) balanceChanges.push({ id: tx.ledgerOutSplit[0].id, change: -delta1 });
+                  if (delta2 !== 0 && tx.ledgerOutSplit[1].id) balanceChanges.push({ id: tx.ledgerOutSplit[1].id, change: -delta2 });
+
+                  const newSplit = [
+                      { id: tx.ledgerOutSplit[0].id, amount: newSplitAmt1 },
+                      { id: tx.ledgerOutSplit[1].id, amount: newSplitAmt2 }
+                  ];
+                  updatePayload.ledgerOutSplit = newSplit;
+                  tx.ledgerOutSplit = newSplit;
+              } else if (deltaOut !== 0 && tx.ledgerOut) {
+                  balanceChanges.push({ id: tx.ledgerOut, change: -deltaOut });
               }
 
               if (balanceChanges.length > 0) {
                   await window.updateBalancesSafely(balanceChanges);
                   if (typeof loadTreasuryData === 'function') loadTreasuryData();
               }
-
-              if (splitWarning) {
-                  alert("⚠️ Out ငွေက account နှစ်ခု split ဖြစ်နေတာမို့ Balance ကို auto ပြင်မပေးနိုင်ပါ။ Treasury ထဲမှာ ကိုယ်တိုင် ချိန်ညှိပေးပါ။");
-              }
           }
 
-          await firebase.firestore().collection("exchange_history").doc(invId).update({
-              inAmt: newIn, outAmt: newOut, rate: newRate
-          });
+          await firebase.firestore().collection("exchange_history").doc(invId).update(updatePayload);
 
-          logActivity("Edit Amounts", `ID: ${invId} ၏ ပမာဏများကို (${tx.inAmt} ➔ ${tx.outAmt}, ${tx.rate || '-'}) မှ (${newIn} ➔ ${newOut}, ${newRate || '-'}) သို့ ပြင်ဆင်ခဲ့သည်။`);
+          logActivity("Edit Amounts", `ID: ${invId} ၏ ပမာဏများကို (${tx.inAmt} ➔ ${tx.outAmt}, ${tx.rate || '-'}) မှ (${newIn} ➔ ${newOut}, ${newRate || '-'}) သို့ ပြင်ဆင်ခဲ့သည်။${isSplitActive ? ` (Split: ${newSplitAmt1} / ${newSplitAmt2})` : ''}`);
 
           allLoadedHistory[index].inAmt = newIn;
           allLoadedHistory[index].outAmt = newOut;
