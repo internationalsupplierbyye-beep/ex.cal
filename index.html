@@ -7320,7 +7320,9 @@ renderHistoryRows(allLoadedHistory);
       } else {
           const amountPart = parts[parts.length - 1];
           const namePart = parts[1] || '';
-          if (!/[\d,]+(\.\d+)?\s*(THB|MMK|VND|Ks)/i.test(amountPart)) {
+          const hasAmount = /[\d,]+(\.\d+)?/.test(amountPart);
+          const hasCurrency = parseAiAmountCurrency(data).currency !== 'UNKNOWN';
+          if (!hasAmount || !hasCurrency) {
               reason = 'ပမာဏ/ငွေကြေး အမျိုးအစား ရှင်းရှင်းလင်းလင်း မတွေ့ပါ';
           } else if (!namePart || namePart.length < 2 || /unknown|n\/a|unclear|ရှင်းလင်း|မမြင်|ဖတ်မရ/i.test(namePart)) {
               reason = 'လက်ခံသူအမည် ရှင်းရှင်းလင်းလင်း မတွေ့ပါ';
@@ -7665,6 +7667,37 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
     document.head.appendChild(styleTag);
 }
 
+  // 🌟 AI OCR ရလဒ်ထဲက ပမာဏနှင့် ငွေကြေးအမျိုးအစားကို ခိုင်မာစွာ ဖော်ထုတ်ပေးမည့် Function 🌟
+  // Bug Fix: AI Model က prompt အတိုင်း "THB" ဟု အတိအကျ မရေးဘဲ "บาท" / "Baht" / "ဘတ်" စသည့်
+  // အခြားစာလုံးများဖြင့် ရေးတတ်သောကြောင့် ယခင် code က ထို case များကို "MMK" ဟု အလိုအလျောက်
+  // မှားယွင်း default လုပ်ခဲ့သည် (THB/VND မဟုတ်လျှင် အားလုံး MMK ဟု ယူဆခဲ့ခြင်း)။
+  // ယခု ဘာသာစကား ၃ မျိုးလုံး (English/Thai/Myanmar) ၏ ငွေကြေးအမည်များကို တိုက်ရိုက်ရှာပေးသည်။
+  function parseAiAmountCurrency(data) {
+      const parts = data.split('|');
+      const lastPart = parts[parts.length - 1] || "";
+      // ပမာဏကို ဂဏန်း/ကော်မာ/အစက်ရှိသမျှ ဟုန်းရာမှ ဆွဲယူမည် (နောက်ဆုံးအပိုင်းကသာ ပမာဏဖြစ်နိုင်ဆုံး)
+      const numMatch = lastPart.match(/([\d][\d,]*\.?\d*)/);
+      const amount = numMatch ? (parseFloat(numMatch[1].replace(/,/g, '')) || 0) : 0;
+
+      const haystack = lastPart; // case-sensitive အတွက် Thai/Myanmar စာလုံးများကို မူရင်းအတိုင်း စစ်မည်
+      const upper = lastPart.toUpperCase();
+
+      let currency = '';
+      if (/\bTHB\b/.test(upper) || /บาท/.test(haystack) || /baht/i.test(haystack) || /ဘတ်/.test(haystack)) {
+          currency = 'THB';
+      } else if (/\bVND\b/.test(upper) || /VNĐ/i.test(haystack) || /₫/.test(haystack) || /đồng|dong/i.test(haystack)) {
+          currency = 'VND';
+      } else if (/\bMMK\b/.test(upper) || /\bKS\b/.test(upper) || /ကျပ်/.test(haystack) || /kyat/i.test(haystack)) {
+          currency = 'MMK';
+      }
+
+      // ငွေကြေးအမျိုးအစား လုံးဝမတွေ့ပါက "MMK" ဟု မှားယွင်း မယူဆတော့ဘဲ မသေချာကြောင်း Flag တင်မည်
+      if (!currency) {
+          return { amount, currency: 'UNKNOWN' };
+      }
+      return { amount, currency };
+  }
+
   window.processSlipFiles = async function(files, invId, uploadMode) {
       if (!files || files.length === 0) return;
       if(!IMGBB_API_KEY) { alert("ImgBB API Key ထည့်သွင်းထားခြင်း မရှိပါ။"); return; } 
@@ -7826,13 +7859,9 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
                   blocks.push(data);
                   
                   if (aiParsedData.amount === 0) {
-                      const match = data.match(/([\d,.]+)\s*(THB|MMK|VND|Ks)/i);
-                      if (match) { aiParsedData.amount = parseFloat(match[1].replace(/,/g, '')); aiParsedData.currency = /ks/i.test(match[2]) ? 'MMK' : match[2].toUpperCase(); } 
-                      else {
-                          const parts = data.split('|'); let lastPart = parts[parts.length - 1] || "";
-                          aiParsedData.amount = parseFloat(lastPart.replace(/[^\d.]/g, '')) || 0;
-                          aiParsedData.currency = lastPart.toUpperCase().includes('THB') ? 'THB' : (lastPart.toUpperCase().includes('VND') ? 'VND' : 'MMK');
-                      }
+                      const parsed = parseAiAmountCurrency(data);
+                      aiParsedData.amount = parsed.amount;
+                      aiParsedData.currency = parsed.currency;
                   }
               }
 
