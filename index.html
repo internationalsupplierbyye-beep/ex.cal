@@ -1554,6 +1554,25 @@ let calcLock = false;
   function formatRate(num) { return num.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 4}); }
   function formatMmk(num) { return num.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}); }
 
+  // 🌟 Customer ဘက်ကနေ လွှဲရလွယ်ကူအောင် "လွှဲရမည့် ငွေပမာဏ" ကို အနီးဆုံး ဂဏန်းအတန်းသို့ Round-up ပြသပေးမည့် Function 🌟
+  // သတိပြုရန်: ဒါက Receipt/Copy Text မှာသာ ပြသရန် ရည်ရွယ်သည်။ Ledger/မှတ်တမ်း (in/out Amt၊ Treasury၊ profit)
+  // တွင်မူ မူရင်း အတိအကျ ဂဏန်းကိုသာ အမြဲ မှတ်တမ်းတင်ပြီး ဒီ Round-up နှင့် လုံးဝ မသက်ဆိုင်ပါ။
+  // MMK ဝင်ငွေ (Customer ကျပ်လွှဲမည့်ကိစ္စ) -> အနီးဆုံး ၁၀၀ ကျပ် အထိ Round-up
+  // VND ဝင်ငွေ (Customer ဒေါင်လွှဲမည့်ကိစ္စ) -> အနီးဆုံး ၁,၀၀၀ ဒေါင် အထိ Round-up (နောက်ကနေ ၃ လုံးမြောက်)
+  // THB ဝင်ငွေ (box-thb2mmk) -> Round-up မလိုအပ်ပါ (null ပြန်မည်)
+  function computeRoundedTransferNote(sectionId, inValueStr) {
+      let factor = 0, unit = '';
+      if (sectionId === 'box-mmk2thb' || sectionId === 'box-mmk2vnd') { factor = 100; unit = 'ကျပ်'; }
+      else if (sectionId === 'box-vnd2mmk') { factor = 1000; unit = 'ဒေါင်'; }
+      else return null;
+
+      const num = parseFloat(String(inValueStr || '').replace(/[^\d.]/g, ''));
+      if (!num || num <= 0) return null;
+
+      const rounded = Math.ceil(num / factor) * factor;
+      return `${rounded.toLocaleString('en-US')} ${unit}`;
+  }
+
   function formatInputThousands(el, allowDecimal){
     if(!el) return;
     const start = el.selectionStart ?? el.value.length; const before = el.value;
@@ -1777,6 +1796,11 @@ window.showToast = function(message, icon = "✅") {
 
       if (rateStr) {
           textToCopy += `\n${rateStr}\n`;
+      }
+
+      const roundNoteText = computeRoundedTransferNote(sectionId, val1);
+      if (roundNoteText) {
+          textToCopy += `\nလွှဲရမည့် ငွေပမာဏမှာ ${roundNoteText} ဖြစ်ပါသည်။\n`;
       }
 
       const saveLang = document.getElementById('saveLangSelect') ? document.getElementById('saveLangSelect').value : 'orig';
@@ -6984,6 +7008,21 @@ renderHistoryRows(allLoadedHistory);
                 logo.onerror = () => { clearTimeout(timer); res(); };
             });
           }
+        }
+        
+        // 🌟 Customer အတွက် "လွှဲရမည့် ငွေပမာဏ" (Round-up) မှတ်ချက်ကို အကောင့်နာမည်/QR အောက်တွင် ပြသပေးမည် 🌟
+        // (Ledger/မှတ်တမ်းမှာမူ inValueStr ၏ မူရင်း အတိအကျ ဂဏန်းကိုသာ ဆက်လက်အသုံးပြုမည်)
+        const roundNoteText = computeRoundedTransferNote(sectionId, inValueStr);
+        if (roundNoteText) {
+            const roundDiv = document.createElement('div');
+            roundDiv.style.textAlign = 'center';
+            roundDiv.style.marginTop = '10px';
+            roundDiv.style.fontSize = '18px';
+            roundDiv.style.fontWeight = '900';
+            roundDiv.style.color = '#b91c1c';
+            roundDiv.style.paddingBottom = '4px';
+            roundDiv.textContent = `လွှဲရမည့် ငွေပမာဏမှာ ${roundNoteText} ဖြစ်ပါသည်`;
+            clone.appendChild(roundDiv);
         }
         
         const timeStr = getExportTimeStr(lang);
