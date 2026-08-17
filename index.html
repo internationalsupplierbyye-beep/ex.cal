@@ -5961,6 +5961,22 @@ function openAdmin() {
       }
   }
 
+  // 🌟 SAVE တစ်ခါလုပ်တိုင်း QR ပုံကို wsrv.nl ကနေ အသစ်ပြန်ဆွဲနေရခြင်းကြောင့် နှေးနေတာကို ဖြေရှင်းရန်
+  // (URL ထဲမှာ ပမာဏ ပါဝင်ပြီးသားဖြစ်၍ URL တူရင် ပုံလည်းတူသည် — Cache လုပ်ထားလို့ရသည်)
+  window.__qrProxyCache = window.__qrProxyCache || {};
+  async function getProxiedQrDataUrl(targetSrc) {
+      if (window.__qrProxyCache[targetSrc]) {
+          try { return await window.__qrProxyCache[targetSrc]; } catch(e) { delete window.__qrProxyCache[targetSrc]; }
+      }
+      const promise = (async () => {
+          const res = await fetch("https://wsrv.nl/?url=" + encodeURIComponent(targetSrc));
+          const blob = await res.blob();
+          return await new Promise(r => { const reader = new FileReader(); reader.onloadend = () => r(reader.result); reader.readAsDataURL(blob); });
+      })();
+      window.__qrProxyCache[targetSrc] = promise;
+      try { return await promise; } catch(e) { delete window.__qrProxyCache[targetSrc]; throw e; }
+  }
+
   window.reprintReceipt = async function(invId, btnElement = null) {
       const tx = allLoadedHistory.find(x => x.id === invId);
       if (!tx) return alert("မှတ်တမ်း ရှာမတွေ့ပါ။");
@@ -6105,12 +6121,10 @@ function openAdmin() {
                       
                       let targetSrc = finalImgUrl;
                       
-                      // 🌟 နောက်ဆုံးအကြိမ် အသေချာဆုံးနည်းလမ်း (Base64 သို့ ပြောင်းလဲခြင်း)
+                      // 🌟 နောက်ဆုံးအကြိမ် အသေချာဆုံးနည်းလမ်း (Base64 သို့ ပြောင်းလဲခြင်း) — Cache ပြန်သုံးနိုင်အောင်
                       if(targetSrc.includes('promptpay.io') || targetSrc.includes('api.qrserver.com')) {
                           try {
-                              const res = await fetch("https://wsrv.nl/?url=" + encodeURIComponent(targetSrc));
-                              const blob = await res.blob();
-                              targetSrc = await new Promise(r => { const reader = new FileReader(); reader.onloadend = () => r(reader.result); reader.readAsDataURL(blob); });
+                              targetSrc = await getProxiedQrDataUrl(targetSrc);
                           } catch(e) { console.log("QR Load Error"); }
                       }
                       
@@ -6287,7 +6301,7 @@ function openAdmin() {
           textContainer.style.justifyContent = 'center';
           textContainer.style.gap = '50px 80px'; 
 
-          for(let i=0; i<50; i++) {
+          for(let i=0; i<30; i++) {
               const block = document.createElement('div');
               block.style.display = 'flex';
               block.style.flexDirection = 'column';
@@ -6333,7 +6347,7 @@ function openAdmin() {
           const isDark = document.documentElement.classList.contains('dark');
           if (isDark) document.documentElement.classList.remove('dark');
 
-          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, logging:false, imageTimeout: 3000 });
+          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 2, useCORS:true, logging:false, imageTimeout: 3000 });
           
           // 🌟 ပုံထုတ်ပြီးတာနဲ့ Dark Mode ကို ချက်ချင်းပြန်ဖွင့်မည်
           if (isDark) document.documentElement.classList.add('dark');
@@ -6957,12 +6971,10 @@ renderHistoryRows(allLoadedHistory);
           
           let targetSrc = CURRENT_QR.hasBig ? CURRENT_QR.big : CURRENT_QR.normal;
           
-          // 🌟 နောက်ဆုံးအကြိမ် အသေချာဆုံးနည်းလမ်း (Base64 သို့ ပြောင်းလဲခြင်း)
+          // 🌟 နောက်ဆုံးအကြိမ် အသေချာဆုံးနည်းလမ်း (Base64 သို့ ပြောင်းလဲခြင်း) — Cache ပြန်သုံးနိုင်အောင်
           if(targetSrc.includes('promptpay.io') || targetSrc.includes('api.qrserver.com')) {
               try {
-                  const res = await fetch("https://wsrv.nl/?url=" + encodeURIComponent(targetSrc));
-                  const blob = await res.blob();
-                  targetSrc = await new Promise(r => { const reader = new FileReader(); reader.onloadend = () => r(reader.result); reader.readAsDataURL(blob); });
+                  targetSrc = await getProxiedQrDataUrl(targetSrc);
               } catch(e) { console.log("QR Load Error"); }
           }
           
@@ -7145,7 +7157,7 @@ renderHistoryRows(allLoadedHistory);
         textContainer.style.justifyContent = 'center';
         textContainer.style.gap = '50px 80px'; 
 
-        for(let i=0; i<50; i++) {
+        for(let i=0; i<30; i++) {
             const block = document.createElement('div');
             block.style.display = 'flex';
             block.style.flexDirection = 'column';
@@ -7191,7 +7203,7 @@ renderHistoryRows(allLoadedHistory);
           const isDark = document.documentElement.classList.contains('dark');
           if (isDark) document.documentElement.classList.remove('dark');
 
-          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 3, useCORS:true, logging:false, imageTimeout: 3000 });
+          const canvas = await html2canvas(clone,{ backgroundColor:'#ffffff', scale: 2, useCORS:true, logging:false, imageTimeout: 3000 });
           
           // 🌟 ပုံထုတ်ပြီးတာနဲ့ Dark Mode ကို ချက်ချင်းပြန်ဖွင့်မည်
           if (isDark) document.documentElement.classList.add('dark');
