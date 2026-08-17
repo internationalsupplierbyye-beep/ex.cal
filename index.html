@@ -5099,6 +5099,19 @@ function openAdmin() {
                   autoInboundLedger = q.ledger ? q.ledger : `QR_${foundQrIndex}`;
               }
           }
+      } else if (tx.method) {
+          // 🌟 Bank မှလွှဲသည့် Method များအတွက်လည်း QR နှင့်အလားတူ auto-detect ပြုလုပ်ပေးမည် 🌟
+          const foundBankId = Object.keys(FIREBASE_BANKS).find(id => {
+              const b = FIREBASE_BANKS[id];
+              let rawName = (b.name || "").toLowerCase();
+              return rawName && tx.method.toLowerCase().includes(rawName);
+          });
+          if (foundBankId) {
+              const b = FIREBASE_BANKS[foundBankId];
+              if (!b.currency || b.currency === inCurr) {
+                  autoInboundLedger = b.ledger ? b.ledger : `BANK_${foundBankId}`;
+              }
+          }
       }
       return autoInboundLedger;
   };
