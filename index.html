@@ -8028,13 +8028,38 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               let btnClass = smartSlipMode === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700';
               let btnText = smartSlipMode === 'in' ? 'အတည်ပြုမည်' : 'စလစ်တွဲမည်';
               let inMethod = tx.method || "မပါ";
-              
+
+              // 🌟 Invoice ထုတ်ခဲ့သော ရက်စွဲ/အချိန် (History Table ကနေ format တူအောင်)
+              let dateStr = '-';
+              try { dateStr = new Date(tx.timestamp).toLocaleString('en-GB', { timeZone: ADMIN_TIMEZONE || 'Asia/Bangkok', hour12: true }); } catch(e) {}
+
+              // 🌟 Status Badge
+              let statusColor = tx.status === 'Success' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300';
+              let statusHtml = `<span class="border rounded px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${statusColor}">${tx.status}</span>`;
+
+              // 🌟 ဒီ Invoice မှာ (ဝင်/ထွက်) စလစ် ချိတ်ထားပြီးသားလား စစ်ပြီး သတိပေး Badge ပြရန်
+              let slipArr = tx.slipUrls || [];
+              if (tx.slipUrl && slipArr.length === 0) slipArr = [tx.slipUrl];
+              let prefixCheck = smartSlipMode === 'in' ? '[ဝင်စလစ်]' : '[ထွက်စလစ်]';
+              let sameModeAttached = (tx.extractedInfo || '').includes(prefixCheck);
+              let attachedHtml = '';
+              if (sameModeAttached) {
+                  attachedHtml = `<span class="border rounded px-2 py-0.5 text-[10px] font-bold whitespace-nowrap bg-orange-100 text-orange-700 border-orange-300">⚠️ ${smartSlipMode === 'in' ? 'ဝင်' : 'ထွက်'}စလစ် ချိတ်ပြီးသား</span>`;
+              } else if (slipArr.length > 0) {
+                  attachedHtml = `<span class="border rounded px-2 py-0.5 text-[10px] font-bold whitespace-nowrap bg-gray-100 text-gray-600 border-gray-300">📎 စလစ် ${slipArr.length} ပုံ ရှိပြီးသား</span>`;
+              }
+
               listDiv.innerHTML += `
               <div class="border border-gray-200 rounded-lg p-3 mb-2 hover:bg-blue-50 transition-colors">
-                  <div class="flex justify-between items-center mb-1">
+                  <div class="flex justify-between items-center mb-1 flex-wrap gap-1">
                       <span class="font-bold text-sm text-blue-800">${tx.id}</span>
+                      <div class="flex items-center gap-1 flex-wrap justify-end">
+                          ${statusHtml}
+                          ${attachedHtml}
+                      </div>
                   </div>
                   <div class="text-xs text-gray-600 mb-2">
+                      <p>📅 ထုတ်ချိန်: <span class="font-bold text-gray-700">${dateStr}</span></p>
                       <p>Customer: <span class="font-bold text-gray-800">${tx.customerName || '-'}</span></p>
                       <p>အဝင် (In): <span class="font-bold text-green-700">${inMethod}</span></p>
                       <p>ပမာဏ: <span class="font-black text-green-700 text-sm">${targetAmtStr}</span></p>
