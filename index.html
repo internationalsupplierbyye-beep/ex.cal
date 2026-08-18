@@ -1845,6 +1845,46 @@ window.showToast = function(message, icon = "✅") {
 
 
   // --- 🌟 DASHBOARD & FIFO PROFIT/LOTS FUNCTIONS 🌟 ---
+
+  // 🌟 FIFO Profit & Active Lots သည် History Table ရဲ့ Pagination (Load More) window (150+) ကို
+  // လုံးဝ မမှီခိုဘဲ Success status ရှိသမျှ Record အားလုံးကို သီးခြား Firestore query တစ်ခုနဲ့
+  // ဆွဲယူပြီး တွက်ချက်ရန် ရေးထားသည့် Cache/Fetch Layer
+  let allSuccessHistoryForFifo = [];
+  let fifoLoadedOnce = false;
+  let fifoDataDirty = true; // Success ဖြစ်စေမည့် ပြောင်းလဲမှု (Status/Amount/Type/Delete) ဖြစ်တိုင်း true သို့ ပြန်ပြောင်းမည်
+  let fifoFetchInFlight = null;
+
+  function markFifoDataDirty() { fifoDataDirty = true; }
+
+  async function fetchAllSuccessHistoryForFifo(forceRefresh = false) {
+      if (fifoFetchInFlight) return fifoFetchInFlight;
+      if (fifoLoadedOnce && !fifoDataDirty && !forceRefresh) return allSuccessHistoryForFifo;
+
+      fifoFetchInFlight = (async () => {
+          try {
+              const snap = await firebase.firestore().collection("exchange_history")
+                  .where("status", "==", "Success")
+                  .get();
+              let arr = [];
+              snap.forEach(doc => arr.push(doc.data()));
+              allSuccessHistoryForFifo = arr;
+              fifoLoadedOnce = true;
+              fifoDataDirty = false;
+          } catch (e) {
+              console.error("FIFO Full-History Fetch Error:", e);
+          } finally {
+              fifoFetchInFlight = null;
+          }
+          return allSuccessHistoryForFifo;
+      })();
+      return fifoFetchInFlight;
+  }
+
+  async function refreshFifoDashboard(forceRefresh = false) {
+      await fetchAllSuccessHistoryForFifo(forceRefresh);
+      if (typeof updateDashboard === 'function') updateDashboard(allSuccessHistoryForFifo);
+  }
+
   function applyDashboardFilter() {
       const filter = document.getElementById('dashFilterSelect').value;
       const customWrap = document.getElementById('customDateWrap');
@@ -1857,7 +1897,7 @@ window.showToast = function(message, icon = "✅") {
           customWrap.classList.remove('flex');
       }
       
-      updateDashboard(allLoadedHistory);
+      refreshFifoDashboard();
   }
 
   function toYYYYMMDD(d) {
@@ -2371,6 +2411,7 @@ window.showToast = function(message, icon = "✅") {
           alertMsg += `Device: <b>${mappedDeviceName}</b>`;
           
           sendTelegramAlert(alertMsg, TELEGRAM_SUCCESS_TOPIC_ID); 
+          markFifoDataDirty();
 
           document.getElementById('manualLotModal').style.display='none';
           document.getElementById('manualLotForeign').value = '';
@@ -5511,6 +5552,8 @@ function openAdmin() {
      // ✅ 1. မျက်နှာပြင် (UI) ကို ချက်ချင်း အရင် Update လုပ်ပါမည် (Delay မဖြစ်စေရန်)
      tx.status = newStatus;
      renderHistoryRows(allLoadedHistory);
+     markFifoDataDirty();
+     if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { refreshFifoDashboard(true); }
 
      try {
           // ✅ 2. ထို့နောက်မှ Firebase ကို နောက်ကွယ်မှ လှမ်းပို့ပါမည်
@@ -5569,6 +5612,8 @@ function openAdmin() {
           await firebase.firestore().collection("exchange_history").doc(invId).update({ type: newType });
           allLoadedHistory[index].type = newType;
           renderHistoryRows(allLoadedHistory);
+          markFifoDataDirty();
+          refreshFifoDashboard(true);
       } catch(e) {
           console.error(e); alert("အမျိုးအစား ပြောင်းလဲခြင်း မအောင်မြင်ပါ။");
       }
@@ -5904,7 +5949,8 @@ function openAdmin() {
           window.closeAmtEditModal();
           renderHistoryRows(allLoadedHistory);
 
-          if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { updateDashboard(allLoadedHistory); }
+          markFifoDataDirty();
+          if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { refreshFifoDashboard(true); }
 
           alert("ပမာဏ အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
       } catch(e) {
@@ -5956,6 +6002,8 @@ function openAdmin() {
           const index = allLoadedHistory.findIndex(x => x.id === invId);
           if(index !== -1) { allLoadedHistory.splice(index, 1); }
           renderHistoryRows(allLoadedHistory);
+          markFifoDataDirty();
+          refreshFifoDashboard(true);
       } catch(e) {
           console.error(e); alert("မှတ်တမ်းဖျက်ခြင်း မအောင်မြင်ပါ။");
       }
@@ -6592,7 +6640,7 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
           if(loadMoreBtn) loadMoreBtn.classList.add('hidden');
       }
 
-      if(CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { updateDashboard(dataArray); }
+      if(CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { refreshFifoDashboard(); }
   }
 
   async function loadHistory() {
@@ -6605,16 +6653,16 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
       try {
           const snap = await firebase.firestore().collection("exchange_history")
               .orderBy("timestamp", "desc")
-              .limit(200)
+              .limit(150)
               .get();
               
           if(snap.empty) { 
               list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500">မှတ်တမ်းမရှိသေးပါ</td></tr>'; 
-              updateDashboard([]); 
+              refreshFifoDashboard(); 
               return; 
           }
           
-          if (snap.docs.length < 200) lastVisibleDoc = null;
+          if (snap.docs.length < 150) lastVisibleDoc = null;
           else lastVisibleDoc = snap.docs[snap.docs.length - 1]; 
           
           
@@ -6644,7 +6692,7 @@ renderHistoryRows(allLoadedHistory);
           const snap = await firebase.firestore().collection("exchange_history")
               .orderBy("timestamp", "desc")
               .startAfter(lastVisibleDoc)
-              .limit(200)
+              .limit(150)
               .get();
 
           if (snap.empty) {
@@ -6658,7 +6706,7 @@ renderHistoryRows(allLoadedHistory);
               return;
           }
 
-          if (snap.docs.length < 200) lastVisibleDoc = null;
+          if (snap.docs.length < 150) lastVisibleDoc = null;
           else lastVisibleDoc = snap.docs[snap.docs.length - 1];
           
           snap.forEach(doc => {
@@ -6771,14 +6819,31 @@ renderHistoryRows(allLoadedHistory);
     // 👇👇👇 ဤနေရာမှ စတင်၍ Code အသစ် ကူးထည့်ပါ 👇👇👇
     // --- 📥 Export Internal Transfers (Treasury Tab) ---
     window.exportInternalTransfersCSV = async function() {
+        // 🌟 Date-range ဖြင့် Firestore query ကို ကန့်သတ်ရန် — collection တစ်ခုလုံး မဆွဲတော့ပါ
+        // (activity_logs က action တိုင်း log ချထားတာမို့ collection အမြန်ဆုံးကြီးလာတတ်ပြီး
+        //  limit မတပ်ထားရင် export ခေါ်တိုင်း collection တစ်ခုလုံးကို ဆွဲရမှာမို့ ရက်ရွှေ့တိုင်း ပိုနှေးလာမှာပါ)
+        const today = new Date();
+        const defaultFrom = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
+        const defaultTo = today.toISOString().slice(0,10);
+
+        const fromStr = prompt("From (YYYY-MM-DD):", defaultFrom);
+        if (fromStr === null) return; // user cancelled
+        const toStr = prompt("To (YYYY-MM-DD):", defaultTo);
+        if (toStr === null) return;
+
+        const fromISO = new Date(fromStr + "T00:00:00").toISOString();
+        const toISO = new Date(toStr + "T23:59:59.999").toISOString();
+
         const btn = document.querySelector('button[onclick="exportInternalTransfersCSV()"]');
         const originalText = btn.innerHTML;
         btn.innerHTML = "⏳ Exporting...";
         btn.disabled = true;
 
         try {
-            // Logs Database ထဲမှ ဒေတာများကို ဆွဲယူခြင်း
+            // Logs Database ထဲမှ ရွေးထားတဲ့ date-range အတွင်းရှိ ဒေတာများကိုသာ ဆွဲယူခြင်း
             const snap = await firebase.firestore().collection("activity_logs")
+                .where("timestamp", ">=", fromISO)
+                .where("timestamp", "<=", toISO)
                 .orderBy("timestamp", "desc")
                 .get();
 
@@ -7820,6 +7885,11 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
                   let prefixText = uploadMode === 'in' ? "[ဝင်စလစ်]" : "[ထွက်စလစ်]";
                   data = `${prefixText} ${data}`;
                   blocks.push(data);
+
+                  // 🌟 BUG FIX: Slip ပုံတင်တိုင်း Telegram (Slip Topic) ကို ပို့ပေးရန် ချန်ထားခဲ့သည်ကို ပြင်ဆင်သည်
+                  let slipCaption = `🧾 <b>Customer စလစ်ပုံ ${prefixText}</b>\nID: <code>${invId}</code>\n${data}`;
+                  if (slipCaption.length > 1000) slipCaption = slipCaption.slice(0, 1000) + '…';
+                  sendTelegramPhoto(currentImgUrl, slipCaption, TELEGRAM_SLIP_TOPIC_ID);
               }
 
               // 🌟 combinedUrls (slipUrls) နဲ့ block အရေအတွက် အမြဲကိုက်ညီအောင် blocks[] ကို အခုမှ ပေါင်းစပ်ပါမည်
@@ -8001,6 +8071,13 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           });
           tx.slipUrls = combinedUrls; tx.slipUrl = combinedUrls[0] || null; tx.extractedInfo = finalExtractedInfo;
           renderHistoryRows(allLoadedHistory);
+
+          // 🌟 BUG FIX: Smart-Slip Match ဖြင့် တွဲထားတဲ့ ပုံတွေကိုလည်း Telegram (Slip Topic) ကို ပို့ပေးရန်
+          imgUrls.forEach((url, idx) => {
+              let cap = `🧾 <b>Customer စလစ်ပုံ ${prefixText}</b>\nID: <code>${invId}</code>\n${newBlocks[idx] || newBlocks[0] || ''}`;
+              if (cap.length > 1000) cap = cap.slice(0, 1000) + '…';
+              sendTelegramPhoto(url, cap, TELEGRAM_SLIP_TOPIC_ID);
+          });
 
           // 🌟 ဝင်စလစ် ဖြစ်ပြီး Invoice ရွေးလိုက်ရင် Success confirm modal ကို ချက်ချင်း ဖွင့်ပေးမည်
           // (ပိုက်ဆံအိတ် ဘယ်ဟာကနေဝင်/ထွက်မလဲ auto ရွေးပြီးသားမို့ "အတည်ပြုမည်" တစ်ခါပဲ ထပ်နှိပ်ရင် ရပါပြီ)
@@ -8218,7 +8295,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       if (nowHM < DAILY_REPORT_TIME) return;
       if (LAST_DAILY_REPORT_SENT_DATE === todayTzStr) return; // ဒီနေ့ ပို့ပြီးသား
 
-      const reportText = buildDailyReportText();
+      const reportText = await buildDailyReportText();
       // 🐛 BUG FIX: Telegram ဆီ တကယ်ရောက်မှသာ (success === true) "ပို့ပြီးပြီ" လို့ မှတ်မည်။
       // မရောက်ခဲ့ရင် lastSentDate ကို မပြောင်းဘဲ ထားခဲ့လို့ နောက် admin/staff တစ်ယောက်ယောက်
       // tab ဖွင့်လိုက်တဲ့အခါ (5 မိနစ်တစ်ခါ check ထဲမှာ) ပြန်ကြိုးစား ပို့ပေးပါလိမ့်မယ်
@@ -8233,7 +8310,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       }
   }
 
-  function buildDailyReportText() {
+  async function buildDailyReportText() {
       const { todayTzStr, tz } = getTzTodayAndTime();
       let successCount = 0, pendingCount = 0, cancelCount = 0;
       let volThb = 0, volMmk = 0, volVnd = 0;
@@ -8256,18 +8333,21 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       });
 
       // FIFO Profit Engine (Treasury Tab) ကို 'today' filter ဖြင့် ယာယီ run ပြီး ရလဒ်ကို ယူသုံးမည်
+      // 🌟 History Table ရဲ့ Pagination window ကို လုံးဝ မမှီခိုဘဲ၊ Success မှတ်တမ်း အားလုံးကို
+      // သီးခြား ဆွဲယူထားသော fifoFullHistory Cache ကို အသုံးပြု၍ တွက်ချက်မည်
       let profitText = "N/A";
       let profitThbBahtText = "";
       try {
+          const fifoData = await fetchAllSuccessHistoryForFifo(true);
           const filterSelect = document.getElementById('dashFilterSelect');
           const originalFilter = filterSelect ? filterSelect.value : null;
           if (filterSelect) filterSelect.value = 'today';
-          if (typeof updateDashboard === 'function') updateDashboard(allLoadedHistory);
+          if (typeof updateDashboard === 'function') updateDashboard(fifoData);
           const profitEl = document.getElementById('dash_total_profit');
           if (profitEl) profitText = profitEl.textContent;
           const profitThbBahtEl = document.getElementById('est_profit_thb_baht');
           if (profitThbBahtEl) profitThbBahtText = profitThbBahtEl.textContent;
-          if (filterSelect && originalFilter !== null) { filterSelect.value = originalFilter; updateDashboard(allLoadedHistory); }
+          if (filterSelect && originalFilter !== null) { filterSelect.value = originalFilter; updateDashboard(fifoData); }
       } catch (e) { console.error("Daily Report Profit Calc Error:", e); }
 
       const profitLine = profitThbBahtText
