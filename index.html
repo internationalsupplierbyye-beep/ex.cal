@@ -8037,16 +8037,17 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               let statusColor = tx.status === 'Success' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300';
               let statusHtml = `<span class="border rounded px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${statusColor}">${tx.status}</span>`;
 
-              // 🌟 ဒီ Invoice မှာ (ဝင်/ထွက်) စလစ် ချိတ်ထားပြီးသားလား စစ်ပြီး သတိပေး Badge ပြရန်
-              let slipArr = tx.slipUrls || [];
-              if (tx.slipUrl && slipArr.length === 0) slipArr = [tx.slipUrl];
-              let prefixCheck = smartSlipMode === 'in' ? '[ဝင်စလစ်]' : '[ထွက်စလစ်]';
-              let sameModeAttached = (tx.extractedInfo || '').includes(prefixCheck);
+              // 🌟 ဝင်စလစ် / ထွက်စလစ် ဘယ်ဟာက ချိတ်ပြီးသားလဲ သီးခြားစီ ခွဲပြီး Badge ပြရန်
+              let inAttached = (tx.extractedInfo || '').includes('[ဝင်စလစ်]');
+              let outAttached = (tx.extractedInfo || '').includes('[ထွက်စလစ်]');
               let attachedHtml = '';
-              if (sameModeAttached) {
-                  attachedHtml = `<span class="border rounded px-2 py-0.5 text-[10px] font-bold whitespace-nowrap bg-orange-100 text-orange-700 border-orange-300">⚠️ ${smartSlipMode === 'in' ? 'ဝင်' : 'ထွက်'}စလစ် ချိတ်ပြီးသား</span>`;
-              } else if (slipArr.length > 0) {
-                  attachedHtml = `<span class="border rounded px-2 py-0.5 text-[10px] font-bold whitespace-nowrap bg-gray-100 text-gray-600 border-gray-300">📎 စလစ် ${slipArr.length} ပုံ ရှိပြီးသား</span>`;
+              if (inAttached) {
+                  let isSameMode = smartSlipMode === 'in';
+                  attachedHtml += `<span class="border rounded px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${isSameMode ? 'bg-orange-100 text-orange-700 border-orange-300' : 'bg-blue-50 text-blue-600 border-blue-200'}">${isSameMode ? '⚠️ ' : ''}ဝင်ရှိ</span>`;
+              }
+              if (outAttached) {
+                  let isSameMode = smartSlipMode === 'out';
+                  attachedHtml += `<span class="border rounded px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${isSameMode ? 'bg-orange-100 text-orange-700 border-orange-300' : 'bg-blue-50 text-blue-600 border-blue-200'}">${isSameMode ? '⚠️ ' : ''}ထွက်ရှိ</span>`;
               }
 
               listDiv.innerHTML += `
