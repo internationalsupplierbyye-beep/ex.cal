@@ -7387,7 +7387,7 @@ renderHistoryRows(allLoadedHistory);
       "openrouter/free"
   ];
 
-  const SLIP_OCR_PROMPT = "ဒီပုံဟာ ဘဏ် (သို့) Mobile Banking/Wallet Application တစ်ခုခု (ဥပမာ - Thai PromptPay, KBank, SCB ကဲ့သို့ ထိုင်းဘဏ်များ (သို့) KPay, Wave Money, AYA Pay, CB Pay, KBZPay ကဲ့သို့ မြန်မာ Wallet App များ) ၏ ငွေလွှဲပြေစာ (Transfer Slip/Receipt) ဖြစ်ပါသည်။ ပုံထဲက အောက်ပါ အချက်အလက်များကို ရှာပေးပါ။ 'ဘဏ်/Wallet အမည်' ဆိုသည်မှာ ငွေလွှဲသူ၏ဘဏ်မဟုတ်ဘဲ ငွေ လက်ခံသူ (To / Receiver) ၏ ဘဏ် (သို့) Wallet App အမည် ဖြစ်ရပါမည်။\n\nဖြေရမည့် ပုံစံ (တစ်ကြောင်းတည်း၊ | ဖြင့်သာ ခွဲပါ) -\n'လက်ခံသူ၏ဘဏ်/Wallet အမည် | လက်ခံသူအမည် | အကောင့်နံပါတ်/ဖုန်းနံပါတ် | Transaction No (သို့) Ref No | ပမာဏ ငွေကြေးအမျိုးအစားနှင့်တကွ'\n\nဥပမာ ၁ (ထိုင်း) - 'PromptPay | BHONE MYAT THU | 094-xxx-5867 | 2026062213542623004940608 | 1,508.00 THB'\nဥပမာ ၂ (မြန်မာ) - 'KPay | DAW THIDAR WIN | 09-xxx-1234 | TQR_KPAY20260810001 | 500,000 MMK'\n\n(သတိပြုရန်: ငွေကြေးအမျိုးအစားကို ပမာဏ၏ နောက်ဆုံးတွင် THB (သို့) MMK (သို့) VND ဟု အတိအကျ ဖော်ပြပါ။ မြန်မာ Unicode စာလုံးများကို မှန်ကန်စွာ ဖတ်ပါ။ အချက်အလက်များကို | သင်္ကေတဖြင့်သာ ခြားပေးပါ။ ပမာဏတွင်ပါသော ကော်မာများကို မဖြုတ်ပါနှင့်။ အခြားပိုသော စာသားများ လုံးဝ မရေးပါနှင့်။)";
+  const SLIP_OCR_PROMPT = "ဒီပုံဟာ ဘဏ် (သို့) Mobile Banking/Wallet Application တစ်ခုခု (ဥပမာ - Thai PromptPay, KBank, SCB ကဲ့သို့ ထိုင်းဘဏ်များ (သို့) KPay, Wave Money, AYA Pay, CB Pay, KBZPay ကဲ့သို့ မြန်မာ Wallet App များ) ၏ ငွေလွှဲပြေစာ (Transfer Slip/Receipt) ဖြစ်ပါသည်။ ပုံထဲက အောက်ပါ အချက်အလက်များကို ရှာပေးပါ။ 'ဘဏ်/Wallet အမည်' ဆိုသည်မှာ ငွေလွှဲသူ၏ဘဏ်မဟုတ်ဘဲ ငွေ လက်ခံသူ (To / Receiver) ၏ ဘဏ် (သို့) Wallet App အမည် ဖြစ်ရပါမည်။\n\nအပို: ငွေလွှဲပို့သူ (From / Sender) ၏ အချက်အလက် (ဘဏ်/Wallet အမည်၊ အမည်၊ အကောင့်နံပါတ် (သို့) ဖုန်းနံပါတ်) ကို ပုံထဲတွင် ပါရှိသမျှ အတတ်နိုင်ဆုံး အပြည့်အစုံ ရှာဖော်ပြပါ (ထိုင်းဘဏ်စလစ်အများစုတွင် Sender အချက်အလက် အပြည့်အစုံ ပါရှိလေ့ရှိပြီး၊ မြန်မာ/ဗီယက်နမ် Wallet/ဘဏ်အချို့တွင် နည်းနိုင်သည် (သို့) လုံးဝ မပါနိုင်ပါ)။ ပုံထဲတွင် Sender အချက်အလက် တစ်စုံတစ်ရာမှ လုံးဝ မတွေ့ပါက ထိုနေရာတွင် '-' ဟုသာ ရေးပါ။\n\nဖြေရမည့် ပုံစံ (တစ်ကြောင်းတည်း၊ | ဖြင့်သာ ခွဲပါ) -\n'လက်ခံသူ၏ဘဏ်/Wallet အမည် | လက်ခံသူအမည် | အကောင့်နံပါတ်/ဖုန်းနံပါတ် | Transaction No (သို့) Ref No | လွှဲပို့သူ (Sender) ဘဏ်/Wallet အမည်၊ အမည်၊ အကောင့်နံပါတ်/ဖုန်းနံပါတ် (ရှိသမျှ အားလုံး ဖော်ပြပြီး ',' ဖြင့်သာ ခွဲပါ - မရှိလျှင် '-') | ပမာဏ ငွေကြေးအမျိုးအစားနှင့်တကွ'\n\nဥပမာ ၁ (ထိုင်း - Sender အချက်အလက် အပြည့်အစုံပါ) - 'PromptPay | BHONE MYAT THU | 094-xxx-5867 | 2026062213542623004940608 | Krungsri Bank, MR. HEIN SET AUNG, 497-0-xxx234 | 1,508.00 THB'\nဥပမာ ၂ (မြန်မာ - Sender အချက်အလက် မပါ) - 'KPay | DAW THIDAR WIN | 09-xxx-1234 | TQR_KPAY20260810001 | - | 500,000 MMK'\n\n(သတိပြုရန်: ငွေကြေးအမျိုးအစားကို ပမာဏ၏ နောက်ဆုံးတွင် THB (သို့) MMK (သို့) VND ဟု အတိအကျ ဖော်ပြပါ။ မြန်မာ Unicode စာလုံးများကို မှန်ကန်စွာ ဖတ်ပါ။ အချက်အလက်များကို | သင်္ကေတဖြင့်သာ ခြားပေးပါ (Sender field အတွင်းတွင်သာ ',' ဖြင့် ခွဲပါ)။ ပမာဏတွင်ပါသော ကော်မာများကို မဖြုတ်ပါနှင့်။ အခြားပိုသော စာသားများ လုံးဝ မရေးပါနှင့်။)";
 
   async function callSlipOcrModel(model, base64Image) {
       const url = "https://openrouter.ai/api/v1/chat/completions";
@@ -7433,7 +7433,7 @@ renderHistoryRows(allLoadedHistory);
       const parts = data.split('|').map(p => p.trim());
       let reason = '';
 
-      if (parts.length < 5) {
+      if (parts.length < 6) {
           reason = 'အချက်အလက် ချို့တဲ့နေသည်';
       } else {
           const amountPart = parts[parts.length - 1];
@@ -7682,11 +7682,12 @@ renderHistoryRows(allLoadedHistory);
   function checkDuplicateTransaction(extractedText, currentInvId) {
       if (!extractedText) return { isDuplicate: false };
       let parts = extractedText.split('|').map(s => s.trim());
-      if (parts.length >= 4) {
+      if (parts.length >= 6) {
           // 🌟 Front-index (parts[3]) မသုံးတော့ပါ — flagLowConfidenceOcr/Slip2Go warning တွေ ရှေ့ကနေ
-          // ထပ်ဝင်လာရင် index ရွေ့သွားနိုင်လို့ (Bug Fix)။ Amount ဟာ အမြဲနောက်ဆုံး field ဖြစ်တဲ့အတွက်
-          // Transaction No ကို "နောက်ဆုံးမှ ဒုတိယမြောက်" field အနေနဲ့ ယူပါ — ရှေ့က prefix ဘယ်နှခုပေါင်းပေါင်း မှားမည်မဟုတ်ပါ။
-          let refNo = parts[parts.length - 2];
+          // ထပ်ဝင်လာရင် index ရွေ့သွားနိုင်လို့ (Bug Fix)။ Amount ဟာ အမြဲနောက်ဆုံး field၊
+          // Sender info ဟာ အမြဲ နောက်ဆုံးမှ ဒုတိယမြောက် field ဖြစ်တဲ့အတွက်
+          // Transaction No ကို "နောက်ဆုံးမှ တတိယမြောက်" field အနေနဲ့ ယူပါ — ရှေ့က prefix ဘယ်နှခုပေါင်းပေါင်း မှားမည်မဟုတ်ပါ။
+          let refNo = parts[parts.length - 3];
           if (refNo && refNo.length > 4 && refNo.toLowerCase() !== 'n/a' && refNo !== '-') {
               let duplicateTx = allLoadedHistory.find(tx => {
                   if (tx.id === currentInvId) return false;
@@ -8341,7 +8342,34 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       let successCount = 0, pendingCount = 0, cancelCount = 0;
       let volThb = 0, volMmk = 0, volVnd = 0;
 
-      (allLoadedHistory || []).forEach(tx => {
+      // 🌟 BUG FIX: Status Count (Success/Pending/Cancel) များသည် `allLoadedHistory` ကို
+      // မှီခိုနေခဲ့ပြီး၊ Admin က History Tab ကို တစ်ခါမှ မဖွင့်ရသေးလျှင် (Scheduler က
+      // App စဖွင့်ပြီး ၁၀ စက္ကန့်အကြာမှာ auto-run ဖြစ်တတ်လို့) `allLoadedHistory` က [] အလွတ်
+      // ဖြစ်နေတတ်သဖြင့် အားလုံး 0 ပြနေခဲ့ခြင်း ဖြစ်သည်။ ဒီအတွက် History Tab ဖွင့်ထား/မထား
+      // မသက်ဆိုင်ဘဲ ယနေ့အတွက် Firestore ကနေ တိုက်ရိုက် ပြန်ဆွဲယူသည့် fallback ကို ထည့်သည်
+      let reportSourceData = allLoadedHistory;
+      const hasTodayInLoaded = (allLoadedHistory || []).some(tx => {
+          if (!tx.timestamp) return false;
+          try {
+              const d = new Date(new Date(tx.timestamp).toLocaleString('en-US', { timeZone: tz }));
+              return toYYYYMMDD(d) === todayTzStr;
+          } catch(e) { return false; }
+      });
+      if (!hasTodayInLoaded) {
+          try {
+              const snap = await firebase.firestore().collection("exchange_history")
+                  .orderBy("timestamp", "desc")
+                  .limit(300)
+                  .get();
+              reportSourceData = [];
+              snap.forEach(doc => reportSourceData.push(doc.data()));
+          } catch (e) {
+              console.error("Daily Report Fallback Fetch Error:", e);
+              reportSourceData = allLoadedHistory;
+          }
+      }
+
+      (reportSourceData || []).forEach(tx => {
           if (!tx.timestamp) return;
           let recDateObj;
           try { recDateObj = new Date(new Date(tx.timestamp).toLocaleString('en-US', { timeZone: tz })); } catch(e) { return; }
