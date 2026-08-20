@@ -2728,6 +2728,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     if (hasChanges) {
         try { await batch.commit(); } catch(e) { console.error("Auto Cancel Error", e); }
     }
+    return hasChanges;
 }
   // --- Admin General: Save Telegram Settings ---
   window.saveTelegramSettings = async function() {
@@ -6840,13 +6841,17 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
           if(loadMoreBtn) loadMoreBtn.classList.add('hidden');
       }
 
-      if(CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { refreshFifoDashboard(); }
-      renderStaffWorkQueue();
+      const activePaneId = document.querySelector('.tab-pane.active')?.id;
+      if (activePaneId === 'tab-dashboard' && (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin')) {
+          refreshFifoDashboard();
+      }
+      if (activePaneId === 'tab-work-queue') renderStaffWorkQueue();
   }
 
 let historyRequestSeq = 0;
 let historyReviewOnly = false;
 const HISTORY_LOAD_TIMEOUT_MS = 15000;
+const HISTORY_PAGE_SIZE = 50;
 
 function firestoreWithTimeout(promise, ms = HISTORY_LOAD_TIMEOUT_MS) {
   return Promise.race([
@@ -6863,7 +6868,10 @@ async function loadHistory() {
   const requestSeq = ++historyRequestSeq;
   historyReviewOnly = false;
 
-  list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>';
+  const hadExistingHistory = Array.isArray(allLoadedHistory) && allLoadedHistory.length > 0;
+  if (!hadExistingHistory) {
+    list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>';
+  }
   if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
   const searchInput = document.getElementById('searchInvId');
   if (searchInput) searchInput.value = '';
@@ -6875,21 +6883,21 @@ async function loadHistory() {
     const query = firebase.firestore()
       .collection('exchange_history')
       .orderBy('timestamp', 'desc')
-      .limit(150);
+      .limit(HISTORY_PAGE_SIZE);
 
     const snap = await firestoreWithTimeout(query.get());
     if (requestSeq !== historyRequestSeq) return;
 
     allLoadedHistory = snap.docs.map(doc => doc.data());
-    lastVisibleDoc = snap.docs.length === 150
+    lastVisibleDoc = snap.docs.length === HISTORY_PAGE_SIZE
       ? snap.docs[snap.docs.length - 1]
       : null;
 
     renderHistoryRows(allLoadedHistory);
 
     autoCancelOldPendingLots(allLoadedHistory)
-      .then(() => {
-        if (requestSeq === historyRequestSeq) renderHistoryRows(allLoadedHistory);
+      .then((hasChanges) => {
+        if (hasChanges && requestSeq === historyRequestSeq) renderHistoryRows(allLoadedHistory);
       })
       .catch(err => console.error('Background Auto Cancel Error:', err));
 
@@ -6916,7 +6924,7 @@ async function loadHistory() {
           const snap = await firebase.firestore().collection("exchange_history")
               .orderBy("timestamp", "desc")
               .startAfter(lastVisibleDoc)
-              .limit(150)
+              .limit(HISTORY_PAGE_SIZE)
               .get();
 
           if (snap.empty) {
@@ -6930,7 +6938,7 @@ async function loadHistory() {
               return;
           }
 
-          if (snap.docs.length < 150) lastVisibleDoc = null;
+          if (snap.docs.length < HISTORY_PAGE_SIZE) lastVisibleDoc = null;
           else lastVisibleDoc = snap.docs[snap.docs.length - 1];
           
           snap.forEach(doc => {
