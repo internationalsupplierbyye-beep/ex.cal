@@ -164,9 +164,13 @@
   width: 100%;
   min-width: 0;
   min-height: 0;
-  overflow-x: hidden !important;
+  /* Allow swiping in both directions on phones. */
+  overflow-x: auto !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 .history-table-viewport > table {
   min-width: 1120px;
@@ -175,14 +179,16 @@
 }
 .history-horizontal-scroll {
   display: block !important;
-  flex: 0 0 16px;
+  flex: 0 0 22px;
   width: 100%;
   min-width: 0;
-  height: 16px;
-  min-height: 16px;
+  height: 22px;
+  min-height: 22px;
   margin: 0;
   overflow-x: scroll !important;
   overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
   overscroll-behavior-x: contain;
   scrollbar-width: auto;
   scrollbar-color: #64748b #e2e8f0;
@@ -194,7 +200,7 @@
   min-height: 1px;
   width: 1120px;
 }
-.history-horizontal-scroll::-webkit-scrollbar { height: 14px; }
+.history-horizontal-scroll::-webkit-scrollbar { height: 18px; }
 .history-horizontal-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 999px; }
 .history-horizontal-scroll::-webkit-scrollbar-thumb { background: #64748b; border-radius: 999px; border: 3px solid #e2e8f0; }
 .history-horizontal-scroll::-webkit-scrollbar-thumb:hover { background: #334155; }
