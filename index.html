@@ -6641,41 +6641,62 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
       if(CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { refreshFifoDashboard(); }
   }
 
-  async function loadHistory() {
-      const list = document.getElementById('adminHistoryList');
-      list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>';
-      document.getElementById('searchInvId').value = '';
-      
-      lastVisibleDoc = null; 
-      
-      try {
-          const snap = await firebase.firestore().collection("exchange_history")
-              .orderBy("timestamp", "desc")
-              .limit(150)
-              .get();
-              
-          if(snap.empty) { 
-              list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500">မှတ်တမ်းမရှိသေးပါ</td></tr>'; 
-              refreshFifoDashboard(); 
-              return; 
-          }
-          
-          if (snap.docs.length < 150) lastVisibleDoc = null;
-          else lastVisibleDoc = snap.docs[snap.docs.length - 1]; 
-          
-          
-         allLoadedHistory = []; 
-snap.forEach(doc => allLoadedHistory.push(doc.data()));
+let historyRequestSeq = 0;
+const HISTORY_LOAD_TIMEOUT_MS = 15000;
 
-// Auto Cancel လုပ်ဆောင်ချက်ကို ပြန်ဖွင့်လိုက်သည်
-await autoCancelOldPendingLots(allLoadedHistory); 
-renderHistoryRows(allLoadedHistory);
-          
-      } catch(e) { 
-          console.error(e);
-          list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-red-500">Error loading history</td></tr>'; 
-      }
+function firestoreWithTimeout(promise, ms = HISTORY_LOAD_TIMEOUT_MS) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('History query timeout')), ms);
+    })
+  ]);
+}
+
+async function loadHistory() {
+  const list = document.getElementById('adminHistoryList');
+  const loadMoreContainer = document.getElementById('loadMoreContainer');
+  const requestSeq = ++historyRequestSeq;
+
+  list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>';
+  if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
+  const searchInput = document.getElementById('searchInvId');
+  if (searchInput) searchInput.value = '';
+
+  lastVisibleDoc = null;
+  isFetchingMore = false;
+
+  try {
+    const query = firebase.firestore()
+      .collection('exchange_history')
+      .orderBy('timestamp', 'desc')
+      .limit(150);
+
+    const snap = await firestoreWithTimeout(query.get());
+    if (requestSeq !== historyRequestSeq) return;
+
+    allLoadedHistory = snap.docs.map(doc => doc.data());
+    lastVisibleDoc = snap.docs.length === 150
+      ? snap.docs[snap.docs.length - 1]
+      : null;
+
+    renderHistoryRows(allLoadedHistory);
+
+    autoCancelOldPendingLots(allLoadedHistory)
+      .then(() => {
+        if (requestSeq === historyRequestSeq) renderHistoryRows(allLoadedHistory);
+      })
+      .catch(err => console.error('Background Auto Cancel Error:', err));
+
+  } catch (e) {
+    if (requestSeq !== historyRequestSeq) return;
+    console.error('History load error:', e);
+    list.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-red-500">
+      မှတ်တမ်းဆွဲယူမရပါ။ Internet / Firebase Permission ကို စစ်ပါ။<br>
+      <small>${e.message || e}</small>
+    </td></tr>`;
   }
+}
 
   window.loadMoreHistory = async function() {
       if (!lastVisibleDoc || isFetchingMore) return;
@@ -7791,29 +7812,66 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
   // ယခု ဘာသာစကား ၃ မျိုးလုံး (English/Thai/Myanmar) ၏ ငွေကြေးအမည်များကို တိုက်ရိုက်ရှာပေးသည်။
   // 🌟 AI ဖတ်ထားသော pipe-separated data ကို SENDER / Receiver / ID / Amount label တပ်ပြီး
   // ဖတ်ရလွယ်အောင် ပြန်ပြင်ဆင်ပေးသည့် Helper (Smart Match Modal, History Table နှစ်နေရာလုံးတွင် သုံးမည်)
+  // 🐛 BUG FIX: Slip ပုံ ၂ ပုံ (သို့) အထက် တစ်ခါတည်း ချိတ်ထားတဲ့ Invoice မှာ "[ပုံ N] |" markers ခွဲထားသော်လည်း
+  // ယခင် code က STRING တစ်ခုလုံးကို တစ်ခါတည်း split('|') လုပ်ပြီး "နောက်ဆုံးမှ N field" ဆိုတဲ့ Logic ကို
+  // သုံးခဲ့တာမို့ ပုံတစ်ခုချင်းစီရဲ့ Field တွေ အချင်းချင်း ရောနှောသွားခဲ့ပါတယ် (ဥပမာ - ပုံ ၁ ရဲ့ Sender ကို
+  // ပုံ ၂ ရဲ့ Receiver အဖြစ် မှားယွင်းပြခဲ့ခြင်း)။ ယခု getExtractedInfoBlocks() ဖြင့် ပုံတစ်ခုချင်းစီအလိုက်
+  // အရင်ခွဲထုတ်ပြီးမှသာ Field parsing ကို ပုံတစ်ခုချင်းစီအတွက် သီးခြားလုပ်ပေးပါသည်။
   function formatSlipFieldsForDisplay(text) {
       if (!text) return '';
-      let parts = text.split('|').map(p => p.trim());
+      const rawBlocks = getExtractedInfoBlocks(text);
+      const blocksToFormat = rawBlocks.length > 0 ? rawBlocks : [text];
+      const multi = blocksToFormat.length > 1;
 
-      // Sender field မပါသေးသော ဟောင်း format (parts 5 ခု) ကိုလည်း Backward-compatible ဖြစ်အောင် ကိုင်တွယ်ပါမည်
-      if (parts.length < 5) return text.replace(/\s*\|\s*/g, '<br>');
+      const formatOneBlock = (blockText) => {
+          // "[ပုံ N] |" split လုပ်ရင်း ကျန်ခဲ့တတ်သော pipe/space အကြွင်းအကျန်များကို ရှင်းပါ
+          let clean = String(blockText).replace(/^[\s|]+|[\s|]+$/g, '');
 
-      const hasSenderField = parts.length >= 6;
-      const amount = parts[parts.length - 1];
-      const sender = hasSenderField ? parts[parts.length - 2] : '';
-      const refNo = parts[parts.length - (hasSenderField ? 3 : 2)];
-      const account = parts[parts.length - (hasSenderField ? 4 : 3)];
-      const receiverName = parts[parts.length - (hasSenderField ? 5 : 4)];
-      const receiverBank = parts[parts.length - (hasSenderField ? 6 : 5)];
-      const warnings = parts.slice(0, parts.length - (hasSenderField ? 6 : 5));
+          // ဝင်စလစ်/ထွက်စလစ် Label ကို ပထမ field နဲ့ Space ဖြင့်သာ ကပ်နေတတ်သဖြင့် အရင်ခွဲထုတ်ပါ
+          let typeLabel = '';
+          clean = clean.replace(/^\[(ဝင်စလစ်|ထွက်စလစ်)\]\s*/, (m, g1) => { typeLabel = g1; return ''; });
 
-      let lines = [];
-      warnings.forEach(w => { if (w) lines.push(w); });
-      if (hasSenderField && sender && sender !== '-') lines.push(`👤 Sender: ${sender}`);
-      lines.push(`🏦 Receiver: ${receiverBank} - ${receiverName} (${account})`);
-      lines.push(`🆔 ID: ${refNo}`);
-      lines.push(`💰 Amount: ${amount}`);
-      return lines.join('<br>');
+          let parts = clean.split('|').map(p => p.trim());
+
+          // 🌟 SLIP2GO / Duplicate စသော သတိပေးချက် Segment များကို Emoji Pattern ဖြင့် အရင်ခွဲထုတ်ပါ
+          // (Field အရေအတွက်ကို ရေတွက်ပြီး Sender ပါ/မပါ ခန့်မှန်းရင် သတိပေးချက် ပါလာတိုင်း ရေတွက်မှား
+          // တတ်လို့ — ဥပမာ "Warning 1 ခု + Sender မပါသော ဟောင်း format 5 field" ဟာ "Warning 0 ခု +
+          // Sender ပါသော format 6 field" နှင့် ရေတွက်ရာတွင် အရေအတွက်တူနေတတ်သဖြင့် ခွဲခြားမရနိုင်ခဲ့ပါ)
+          let warnings = [];
+          while (parts.length > 0 && /^[⚠️✅🛑]/.test(parts[0])) {
+              warnings.push(parts.shift());
+          }
+
+          if (parts.length < 5) {
+              let fallback = warnings.concat(parts).join('<br>');
+              return { typeLabel, html: fallback };
+          }
+
+          const hasSenderField = parts.length >= 6;
+          const amount = parts[parts.length - 1];
+          const sender = hasSenderField ? parts[parts.length - 2] : '';
+          const refNo = parts[parts.length - (hasSenderField ? 3 : 2)];
+          const account = parts[parts.length - (hasSenderField ? 4 : 3)];
+          const receiverName = parts[parts.length - (hasSenderField ? 5 : 4)];
+          const receiverBank = parts[parts.length - (hasSenderField ? 6 : 5)];
+
+          let lines = [];
+          warnings.forEach(w => { if (w) lines.push(w); });
+          if (hasSenderField && sender && sender !== '-') lines.push(`👤 Sender: ${sender}`);
+          lines.push(`🏦 Receiver: ${receiverBank} - ${receiverName} (${account})`);
+          lines.push(`🆔 ID: ${refNo}`);
+          lines.push(`💰 Amount: ${amount}`);
+          return { typeLabel, html: lines.join('<br>') };
+      };
+
+      const formattedBlocks = blocksToFormat.map((b, idx) => {
+          const { typeLabel, html } = formatOneBlock(b);
+          if (!multi) return html;
+          const header = `<b>📷 ပုံ ${idx + 1}${typeLabel ? ' - ' + typeLabel : ''}</b>`;
+          return `${header}<br>${html}`;
+      });
+
+      return formattedBlocks.join('<br><br>');
   }
 
   function parseAiAmountCurrency(data) {
