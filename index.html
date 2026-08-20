@@ -2117,6 +2117,13 @@ window.showToast = function(message, icon = "✅") {
               let avgRate = totalQty > 0 ? (totalMmk / totalQty) : 0;
               
               if (curr === 'THB') window.GLOBAL_EST_RATE_THB = avgRate; // 🌟 THB Est Rate ကို လက်ကျန်ငွေ တွက်ရန် မှတ်ထားမည်
+
+              // 🌟 Daily Report ထဲက "လက်ကျန်ငွေ" သီးသန့် Section အတွက် Active Lot ရလဒ်ကို Global မှာ သိမ်းထားမည်
+              window.GLOBAL_ACTIVE_LOTS = window.GLOBAL_ACTIVE_LOTS || {};
+              window.GLOBAL_ACTIVE_LOTS[curr] = {
+                  qty: totalQty,
+                  label: activeArray.length === 0 ? '' : (shorts.length > 0 ? `${curr} ရောင်းရန်ကျန် (MMK ကိုင်ဆောင်ထား)` : `${curr} ကိုင်ဆောင်ထား (ဝယ်ရန်ကျန်)`)
+              };
               
               let estStr = '';
               if(avgRate > 0) {
@@ -6477,17 +6484,8 @@ function openAdmin() {
         // 🌟 AI ဖတ်ထားသော Data ရှိခဲ့လျှင် အောင်မြင်/မအောင်မြင် အရောင်ခွဲပြမည် 🌟
         let aiExtractedHtml = "";
         if (d.extractedInfo) {
-            let cleanInfo = d.extractedInfo
-                .replace(/Bank Name\s*:\s*/gi, '')
-                .replace(/Receiver Name\s*:\s*/gi, '')
-                .replace(/Acc No\s*:\s*/gi, '')
-                .replace(/Amount\s*:\s*/gi, '')
-                .replace(/Transaction No\s*:\s*/gi, '')
-                .replace(/Ref\s*:\s*/gi, '');
-
-            let formattedInfo = cleanInfo.replace(/\s*\|\s*/g, '<br>').replace(/,\s+(?![0-9]{3})/g, '<br>');
-
-            let colorClass = cleanInfo.includes("⚠️") ? "text-amber-600 border-amber-200" : "text-green-700 border-green-200";
+            let formattedInfo = formatSlipFieldsForDisplay(d.extractedInfo);
+            let colorClass = d.extractedInfo.includes("⚠️") ? "text-amber-600 border-amber-200" : "text-green-700 border-green-200";
             let infoId = "info-" + d.id;
             
             // 🌟 w-[145px] သို့ ချဲ့ထားပြီး break-all သုံးကာ Scrollbar မပေါ်စေရန် ပြင်ဆင်ထားပါသည်
@@ -7393,7 +7391,7 @@ renderHistoryRows(allLoadedHistory);
       const url = "https://openrouter.ai/api/v1/chat/completions";
       const payload = {
           "model": model,
-          "max_tokens": 200,
+          "max_tokens": 300,
           "messages": [
               {
                   "role": "user",
@@ -7791,6 +7789,33 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
   // အခြားစာလုံးများဖြင့် ရေးတတ်သောကြောင့် ယခင် code က ထို case များကို "MMK" ဟု အလိုအလျောက်
   // မှားယွင်း default လုပ်ခဲ့သည် (THB/VND မဟုတ်လျှင် အားလုံး MMK ဟု ယူဆခဲ့ခြင်း)။
   // ယခု ဘာသာစကား ၃ မျိုးလုံး (English/Thai/Myanmar) ၏ ငွေကြေးအမည်များကို တိုက်ရိုက်ရှာပေးသည်။
+  // 🌟 AI ဖတ်ထားသော pipe-separated data ကို SENDER / Receiver / ID / Amount label တပ်ပြီး
+  // ဖတ်ရလွယ်အောင် ပြန်ပြင်ဆင်ပေးသည့် Helper (Smart Match Modal, History Table နှစ်နေရာလုံးတွင် သုံးမည်)
+  function formatSlipFieldsForDisplay(text) {
+      if (!text) return '';
+      let parts = text.split('|').map(p => p.trim());
+
+      // Sender field မပါသေးသော ဟောင်း format (parts 5 ခု) ကိုလည်း Backward-compatible ဖြစ်အောင် ကိုင်တွယ်ပါမည်
+      if (parts.length < 5) return text.replace(/\s*\|\s*/g, '<br>');
+
+      const hasSenderField = parts.length >= 6;
+      const amount = parts[parts.length - 1];
+      const sender = hasSenderField ? parts[parts.length - 2] : '';
+      const refNo = parts[parts.length - (hasSenderField ? 3 : 2)];
+      const account = parts[parts.length - (hasSenderField ? 4 : 3)];
+      const receiverName = parts[parts.length - (hasSenderField ? 5 : 4)];
+      const receiverBank = parts[parts.length - (hasSenderField ? 6 : 5)];
+      const warnings = parts.slice(0, parts.length - (hasSenderField ? 6 : 5));
+
+      let lines = [];
+      warnings.forEach(w => { if (w) lines.push(w); });
+      if (hasSenderField && sender && sender !== '-') lines.push(`👤 Sender: ${sender}`);
+      lines.push(`🏦 Receiver: ${receiverBank} - ${receiverName} (${account})`);
+      lines.push(`🆔 ID: ${refNo}`);
+      lines.push(`💰 Amount: ${amount}`);
+      return lines.join('<br>');
+  }
+
   function parseAiAmountCurrency(data) {
       const parts = data.split('|');
       const lastPart = parts[parts.length - 1] || "";
@@ -8003,7 +8028,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
 
   function showSmartMatchModal(aiAmt, aiCurr, fullAiText, imgUrls) {
       document.getElementById('smartMatchAiAmt').textContent = aiAmt.toLocaleString() + ' ' + aiCurr;
-      document.getElementById('smartMatchAiDetails').textContent = fullAiText.replace(/\|/g, ' | ');
+      document.getElementById('smartMatchAiDetails').innerHTML = formatSlipFieldsForDisplay(fullAiText);
       document.getElementById('smartMatchTitle').textContent = smartSlipMode === 'in' ? "📥 ဝင်စလစ်နှင့် ကိုက်ညီသောမှတ်တမ်း" : "📤 ထွက်စလစ်နှင့် ကိုက်ညီသောမှတ်တမ်း";
 
       const listDiv = document.getElementById('smartMatchList'); listDiv.innerHTML = '';
@@ -8408,7 +8433,51 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           ? `📈 <b>ယနေ့ အမြတ်ငွေ (Est.)</b>: ${profitText} (${profitThbBahtText})`
           : `📈 <b>ယနေ့ အမြတ်ငွေ (Est.)</b>: ${profitText}`;
 
-      return `📊 <b>နေ့စဉ် အနှစ်ချုပ် (Daily Closing Report)</b>\n📅 ${todayTzStr}\n\n✅ အောင်မြင်: ${successCount}\n⏳ Pending: ${pendingCount}\n❌ Cancel: ${cancelCount}\n\n💰 <b>ယနေ့ Volume</b>\nTHB: ${volThb.toLocaleString()}\nMMK: ${volMmk.toLocaleString()}\nVND: ${volVnd.toLocaleString()}\n\n${profitLine}`;
+      // 🌟 လက်ကျန်ငွေ — FIFO Active Lot (Currency-level exposure) မဟုတ်တော့ဘဲ Treasury Tab ထဲက
+      // Bank/Wallet/QR အကောင့် တစ်ခုချင်းစီရဲ့ တကယ့် လက်ကျန်ငွေ (Real Balance) ကို ဖော်ပြမည်
+      let balanceLine = "N/A";
+      try {
+          let bankLines = [];
+          let totals = { MMK: 0, THB: 0, VND: 0 };
+          let useRate = window.GLOBAL_EST_RATE_THB || (LAST_RATE.inv || 0);
+
+          const pushAccountLine = (name, curr, bal) => {
+              totals[curr] = (totals[curr] || 0) + Number(bal || 0);
+              let line = `🏦 ${name} (${curr}): ${Number(bal || 0).toLocaleString()}`;
+              if (curr === 'MMK' && useRate > 0) {
+                  line += ` (≈ ${(Number(bal || 0) / useRate).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB)`;
+              }
+              bankLines.push(line);
+          };
+
+          FIREBASE_TREASURY_ORDER.forEach(key => {
+              const acc = FIREBASE_TREASURY[key];
+              if (!acc) return;
+              pushAccountLine(acc.name, acc.currency || 'MMK', acc.balance);
+          });
+          FIREBASE_BANK_ORDER.forEach(bId => {
+              const acc = FIREBASE_BANKS[bId];
+              if (acc && !acc.ledger) pushAccountLine(acc.name, acc.currency || 'MMK', acc.balance);
+          });
+          FIREBASE_QRS.forEach(acc => {
+              if (acc && !acc.ledger) {
+                  let name = acc.name || (acc.file ? acc.file.replace(/\.[^.]+$/, '') : "Unknown QR");
+                  pushAccountLine(name, acc.currency || 'MMK', acc.balance);
+              }
+          });
+
+          let totalLine = `Total MMK: ${(totals.MMK || 0).toLocaleString()}`;
+          if (useRate > 0 && totals.MMK > 0) {
+              totalLine += ` (≈ ${(totals.MMK / useRate).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB)`;
+          }
+          totalLine += `\nTotal THB: ${(totals.THB || 0).toLocaleString()}\nTotal VND: ${(totals.VND || 0).toLocaleString()}`;
+
+          balanceLine = bankLines.length > 0
+              ? `${bankLines.join('\n')}\n\n<b>― Total ―</b>\n${totalLine}`
+              : "အကောင့် မရှိသေးပါ";
+      } catch (e) { console.error("Daily Report Balance Calc Error:", e); }
+
+      return `📊 <b>နေ့စဉ် အနှစ်ချုပ် (Daily Closing Report)</b>\n📅 ${todayTzStr}\n\n✅ အောင်မြင်: ${successCount}\n⏳ Pending: ${pendingCount}\n❌ Cancel: ${cancelCount}\n\n💰 <b>ယနေ့ Volume</b>\nTHB: ${volThb.toLocaleString()}\nMMK: ${volMmk.toLocaleString()}\nVND: ${volVnd.toLocaleString()}\n\n${profitLine}\n\n🏦 <b>လက်ကျန်ငွေ (Account Balances)</b>\n${balanceLine}`;
   }
 
   // 🌟 Auto Scheduled Backup ကို အချိန်တန်လျှင် Telegram သို့ ပို့ခြင်း
