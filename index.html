@@ -148,23 +148,13 @@
   min-width: 0;
 }
 
-/* History table: keep vertical scrolling in a viewport and pin the horizontal scrollbar to the wrapper bottom. */
+/* History table: use one scroll container so phones can swipe freely in both directions. */
 .history-table-scroll {
-  display: flex;
-  flex-direction: column;
+  display: block;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: 65vh;
   max-height: 65vh;
-  overflow: hidden !important;
-}
-.history-table-viewport {
-  flex: 1 1 auto;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  /* Allow swiping in both directions on phones. */
   overflow-x: auto !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
@@ -172,42 +162,15 @@
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
-.history-table-viewport > table {
+.history-table-scroll > table {
   min-width: 1120px;
   width: 100%;
   table-layout: auto;
 }
-.history-horizontal-scroll {
-  display: block !important;
-  flex: 0 0 22px;
-  width: 100%;
-  min-width: 0;
-  height: 22px;
-  min-height: 22px;
-  margin: 0;
-  overflow-x: scroll !important;
-  overflow-y: hidden !important;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pinch-zoom;
-  overscroll-behavior-x: contain;
-  scrollbar-width: auto;
-  scrollbar-color: #64748b #e2e8f0;
-  background: #f1f5f9;
-}
-.history-horizontal-scroll[hidden] { display: block !important; }
-.history-horizontal-scroll > div {
-  height: 1px;
-  min-height: 1px;
-  width: 1120px;
-}
-.history-horizontal-scroll::-webkit-scrollbar { height: 18px; }
-.history-horizontal-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 999px; }
-.history-horizontal-scroll::-webkit-scrollbar-thumb { background: #64748b; border-radius: 999px; border: 3px solid #e2e8f0; }
-.history-horizontal-scroll::-webkit-scrollbar-thumb:hover { background: #334155; }
     .status-badge { white-space: nowrap; }
 
     /* Compact history date/time column: date on top, time below. */
-    #historyTableViewport > table th.history-date-header,
+    #historyTableScroll > table th.history-date-header,
     #adminHistoryList td.history-date-cell {
       width: 92px;
       min-width: 92px;
@@ -215,7 +178,7 @@
       padding: .5rem .65rem !important;
       vertical-align: middle;
     }
-    #historyTableViewport > table th.history-date-header {
+    #historyTableScroll > table th.history-date-header {
       white-space: normal !important;
     }
     #adminHistoryList td.history-date-cell {
@@ -1076,8 +1039,7 @@
           <button id="btnClearHistory" onclick="clearAllHistory()" class="btn bg-red-600 hover:bg-red-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="မှတ်တမ်းအားလုံးကို ဖျက်မည်">🗑 Clear All</button>
         </div>
       </div>
-      <div id="historyTableScroll" class="history-table-scroll border rounded-xl bg-white shadow-sm" style="height: 65vh; max-height: 65vh;">
-        <div id="historyTableViewport" class="history-table-viewport">
+      <div id="historyTableScroll" class="history-table-scroll border rounded-xl bg-white shadow-sm" style="max-height: 65vh;">
         <table class="w-full text-left text-sm whitespace-nowrap">
           <thead class="bg-gray-100 text-gray-600 sticky top-0 shadow-sm z-10">
             <tr>
@@ -1102,10 +1064,6 @@
             <button onclick="window.loadMoreHistory()" class="btn2 !bg-blue-50 !border-blue-200 !text-blue-600 w-full sm:w-1/2 font-bold py-2">
                 နောက်ထပ်မှတ်တမ်းများ ကြည့်ရန် (Load More) ➕
             </button>
-        </div>
-        </div>
-        <div id="historyHorizontalScroll" class="history-horizontal-scroll" aria-label="History table အလျားလိုက် ရွှေ့ရန်">
-          <div id="historyHorizontalScrollInner"></div>
         </div>
       </div>
     </div>
@@ -3735,7 +3693,6 @@ function openAdmin() {
     if (btnElement) btnElement.classList.add('active');
 
     if (tabId === 'tab-history' || tabId === 'tab-dashboard' || tabId === 'tab-work-queue') loadHistory();
-    if (tabId === 'tab-history') setTimeout(syncHistoryHorizontalScroll, 0);
     if (tabId === 'tab-work-queue') renderStaffWorkQueue();
     if (tabId === 'tab-general') { loadAdminDevices(); loadUserRoles(); }
     if (tabId === 'tab-customers') renderCustomerAdminList();
@@ -7650,56 +7607,7 @@ async function loadHistory() {
       return `${reportText}\n\n⚠️ <b>Data Check Warning</b>\n${notes}`;
   }
 
-  function syncHistoryHorizontalScroll() {
-      const viewport = document.getElementById('historyTableViewport');
-      const bar = document.getElementById('historyHorizontalScroll');
-      const inner = document.getElementById('historyHorizontalScrollInner');
-      const table = viewport?.querySelector('table');
-      if (!viewport || !bar || !inner || !table) return;
-
-      const viewportWidth = viewport.clientWidth;
-      const contentWidth = Math.max(viewport.scrollWidth, table.scrollWidth, 1120);
-      inner.style.width = `${contentWidth}px`;
-      bar.hidden = false;
-      if (!bar.dataset.syncing) bar.scrollLeft = viewport.scrollLeft;
-  }
-
-  function initializeHistoryHorizontalScroll() {
-      const viewport = document.getElementById('historyTableViewport');
-      const bar = document.getElementById('historyHorizontalScroll');
-      const inner = document.getElementById('historyHorizontalScrollInner');
-      const table = viewport?.querySelector('table');
-      const tbody = document.getElementById('adminHistoryList');
-      if (!viewport || !bar || !inner || !table || viewport.dataset.scrollBound === 'true') return;
-      viewport.dataset.scrollBound = 'true';
-
-      viewport.addEventListener('scroll', () => {
-          if (bar.dataset.syncing === 'true') return;
-          bar.dataset.syncing = 'true';
-          bar.scrollLeft = viewport.scrollLeft;
-          requestAnimationFrame(() => { bar.dataset.syncing = ''; });
-      }, { passive: true });
-      bar.addEventListener('scroll', () => {
-          if (bar.dataset.syncing === 'true') return;
-          bar.dataset.syncing = 'true';
-          viewport.scrollLeft = bar.scrollLeft;
-          requestAnimationFrame(() => { bar.dataset.syncing = ''; });
-      }, { passive: true });
-      window.addEventListener('resize', syncHistoryHorizontalScroll);
-      if (window.ResizeObserver) {
-          const ro = new ResizeObserver(syncHistoryHorizontalScroll);
-          ro.observe(viewport);
-          ro.observe(table);
-      }
-      if (window.MutationObserver && tbody) {
-          const mo = new MutationObserver(syncHistoryHorizontalScroll);
-          mo.observe(tbody, { childList: true, subtree: true, characterData: true });
-      }
-      syncHistoryHorizontalScroll();
-  }
-
   function initializeSmartOperations() {
-      initializeHistoryHorizontalScroll();
       loadRetryQueueFromStorage();
       updateConnectionStatus(navigator.onLine !== false);
       if (!window._smartOperationsListenersBound) {
