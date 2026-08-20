@@ -130,20 +130,148 @@
     .tab-btn:hover { color: #111827; background: #f1f5f9; }
     .tab-btn.active { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
     
-    .tab-pane { 
-  display: none !important; 
-  padding-top: 16px; 
-  flex: 1; 
-  overflow-y: auto; 
-  overflow-x: auto; 
+    .tab-pane {
+  display: none !important;
+  padding-top: 16px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
 }
+
+.tab-pane.active { display: block !important; }
 
 .overflow-auto {
-  overflow-x: auto; 
+  overflow-x: auto;
   width: 100%;
+  min-width: 0;
 }
-    .tab-pane.active { display: block !important; }
 
+/* History table: keep vertical scrolling in a viewport and pin the horizontal scrollbar to the wrapper bottom. */
+.history-table-scroll {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 65vh;
+  max-height: 65vh;
+  overflow: hidden !important;
+}
+.history-table-viewport {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+.history-table-viewport > table {
+  min-width: 1120px;
+  width: 100%;
+  table-layout: auto;
+}
+.history-horizontal-scroll {
+  display: block !important;
+  flex: 0 0 16px;
+  width: 100%;
+  min-width: 0;
+  height: 16px;
+  min-height: 16px;
+  margin: 0;
+  overflow-x: scroll !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  scrollbar-width: auto;
+  scrollbar-color: #64748b #e2e8f0;
+  background: #f1f5f9;
+}
+.history-horizontal-scroll[hidden] { display: block !important; }
+.history-horizontal-scroll > div {
+  height: 1px;
+  min-height: 1px;
+  width: 1120px;
+}
+.history-horizontal-scroll::-webkit-scrollbar { height: 14px; }
+.history-horizontal-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 999px; }
+.history-horizontal-scroll::-webkit-scrollbar-thumb { background: #64748b; border-radius: 999px; border: 3px solid #e2e8f0; }
+.history-horizontal-scroll::-webkit-scrollbar-thumb:hover { background: #334155; }
+    .status-badge { white-space: nowrap; }
+
+    /* Compact history date/time column: date on top, time below. */
+    #historyTableViewport > table th.history-date-header,
+    #adminHistoryList td.history-date-cell {
+      width: 92px;
+      min-width: 92px;
+      max-width: 92px;
+      padding: .5rem .65rem !important;
+      vertical-align: middle;
+    }
+    #historyTableViewport > table th.history-date-header {
+      white-space: normal !important;
+    }
+    #adminHistoryList td.history-date-cell {
+      white-space: normal !important;
+    }
+    #adminHistoryList .history-date-time {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      line-height: 1.25;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    #adminHistoryList .history-date,
+    #adminHistoryList .history-time {
+      display: block;
+      white-space: nowrap;
+      font-size: .72rem;
+    }
+    #adminHistoryList .history-time {
+      margin-top: .08rem;
+    }
+
+
+
+#adminTitleBar {
+  position: relative;
+  min-width: 0;
+  padding-right: 76px;
+}
+#adminTitleBar > h2 {
+  min-width: 0;
+  line-height: 1.25;
+}
+#adminTitleActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+#systemStatusBar {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+#btnSwitchToDeviceMode {
+  position: static !important;
+  flex: 0 0 auto;
+  margin: 0;
+  z-index: auto !important;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  #adminTitleBar { padding-right: 42px; align-items: flex-start; }
+  #adminTitleBar > h2 { flex: 1 1 100%; }
+  #adminTitleActions { width: 100%; justify-content: flex-start; }
+  #systemStatusBar { max-width: 100%; overflow-x: auto; }
+}
     .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; background: #f8fafc; transition: background 0.2s; }
     .list-item.dragging { opacity: 0.5; background: #e2e8f0; border: 2px dashed #94a3b8; }
     .list-item.drag-over { border-top: 2px solid #2563eb; }
@@ -756,12 +884,23 @@
 
 <div id="adminModal">
   <div class="admin-content relative">
-    <button onclick="closeAdmin()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl z-10">✕</button>
-    <button id="btnSwitchToDeviceMode" onclick="switchToDeviceMode()" style="display:none;" class="absolute top-3 right-14 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-2 py-1 rounded z-10">🔄 Device Mode ပြန်ပြောင်း</button>
-    <h2 id="adminModalTitle" class="text-xl font-black mb-4 flex items-center gap-2">⚙️ Admin Settings</h2>
+    <button id="btnCloseAdmin" onclick="closeAdmin()" class="absolute top-3 right-4 text-gray-500 hover:text-black font-bold text-2xl z-10">✕</button>
+    <div id="adminTitleBar" class="flex flex-wrap items-center justify-between gap-2 mb-4">
+      <h2 id="adminModalTitle" class="text-xl font-black flex items-center gap-2">⚙️ Admin Settings</h2>
+      <div id="adminTitleActions">
+        <div id="systemStatusBar" class="inline-flex items-center justify-end gap-2 px-2.5 py-1 rounded-full border border-slate-200 bg-slate-50 text-[11px] font-bold shadow-sm">
+          <span id="connectionStatusBadge" class="status-badge text-slate-600">🔄 Connection စစ်နေသည်...</span>
+          <span class="text-slate-300">|</span>
+          <span id="retryQueueSummary" class="status-badge text-slate-500">Retry Queue: 0</span>
+          <button id="btnRetryFailedOperations" onclick="retryFailedOperations()" class="btn2 !py-0.5 !px-2 !text-[11px] !rounded-full whitespace-nowrap">🔁 Retry</button>
+        </div>
+        <button id="btnSwitchToDeviceMode" onclick="switchToDeviceMode()" style="display:none;" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold px-2 py-1 rounded">🔄 Device Mode ပြန်ပြောင်း</button>
+      </div>
+    </div>
     
     <div class="flex border-b mb-4 overflow-x-auto shrink-0 pb-1" id="adminTabsHeader">
-      <button class="tab-btn active" onclick="switchTab('tab-dashboard', this)">📊 Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('tab-work-queue', this)" id="btnTabWorkQueue">📋 Work Queue</button>
+      <button class="tab-btn active" onclick="switchTab('tab-dashboard', this)" id="btnTabDashboard">📊 Dashboard</button>
       <button class="tab-btn" onclick="switchTab('tab-history', this)" id="btnTabHistory">📜 မှတ်တမ်းများ</button>
       <button class="tab-btn" onclick="switchTab('tab-general', this)">အထွေထွေ</button>
       <button class="tab-btn" onclick="switchTab('tab-banks', this)">ဘဏ်များ</button>
@@ -773,6 +912,38 @@
       <button class="tab-btn" onclick="switchTab('tab-expenses', this)" id="btnTabExpenses">💸 အသုံးစရိတ်</button>
       
       <button class="tab-btn" onclick="switchTab('tab-logs', this)" id="btnTabLogs">📝 Logs</button>
+    </div>
+
+    <div id="tab-work-queue" class="tab-pane">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+        <div>
+          <h3 class="font-bold text-gray-800">📋 ဝန်ထမ်းအလုပ်စာရင်း (Staff Work Queue)</h3>
+          <p class="text-xs text-gray-500 mt-1">လုပ်ရန်ကျန်နေသော Pending/Owing၊ စလစ်ပြန်စစ်ရန်လိုသော record နှင့် မအောင်မြင်သေးသောလုပ်ဆောင်ချက်များ</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="renderStaffWorkQueue(); loadHistory()" class="btn2 !py-1.5 !px-3 !text-sm">🔄 Refresh</button>
+          <button onclick="retryFailedOperations()" class="btn bg-amber-600 hover:bg-amber-700 !py-1.5 !px-3 !text-sm">🔁 Retry Failed</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <button onclick="openQueueFilter('Pending')" class="text-left bg-amber-50 border border-amber-200 rounded-xl p-3 shadow-sm hover:shadow-md transition">
+          <div class="text-xs font-bold text-amber-700">⏳ Pending</div><div id="queuePendingCount" class="text-2xl font-black text-amber-800 mt-1">0</div>
+        </button>
+        <button onclick="openQueueFilter('Owing')" class="text-left bg-purple-50 border border-purple-200 rounded-xl p-3 shadow-sm hover:shadow-md transition">
+          <div class="text-xs font-bold text-purple-700">💸 Owing</div><div id="queueOwingCount" class="text-2xl font-black text-purple-800 mt-1">0</div>
+        </button>
+        <button onclick="openQueueFilter('Review')" class="text-left bg-rose-50 border border-rose-200 rounded-xl p-3 shadow-sm hover:shadow-md transition">
+          <div class="text-xs font-bold text-rose-700">🔎 ပြန်စစ်ရန်</div><div id="queueReviewCount" class="text-2xl font-black text-rose-800 mt-1">0</div>
+        </button>
+        <button onclick="openQueueFilter('Retry')" class="text-left bg-orange-50 border border-orange-200 rounded-xl p-3 shadow-sm hover:shadow-md transition">
+          <div class="text-xs font-bold text-orange-700">🔁 Retry</div><div id="queueRetryCount" class="text-2xl font-black text-orange-800 mt-1">0</div>
+        </button>
+      </div>
+      <div id="staffQueueList" class="border rounded-xl bg-white shadow-sm divide-y divide-slate-100 overflow-hidden">
+        <p class="p-5 text-center text-sm text-slate-500">Work Queue ကို ဖတ်နေပါသည်...</p>
+      </div>
+      <div id="retryQueueList" class="mt-4 border rounded-xl bg-orange-50 border-orange-200 p-3 hidden"></div>
+      <p class="text-[11px] text-slate-500 mt-3">⚠️ Save permission မရှိသောဝန်ထမ်းများသည် record အသစ်ကို မသိမ်းနိုင်ပါ။ Permission ရှိသူကသာ Smart Validation အောင်မြင်ပြီးနောက် Save လုပ်နိုင်ပါသည်။</p>
     </div>
 
     <div id="tab-dashboard" class="tab-pane active">
@@ -899,12 +1070,13 @@
           <button id="btnClearHistory" onclick="clearAllHistory()" class="btn bg-red-600 hover:bg-red-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="မှတ်တမ်းအားလုံးကို ဖျက်မည်">🗑 Clear All</button>
         </div>
       </div>
-      <div class="overflow-auto border rounded-xl bg-white shadow-sm" style="max-height: 65vh;">
+      <div id="historyTableScroll" class="history-table-scroll border rounded-xl bg-white shadow-sm" style="height: 65vh; max-height: 65vh;">
+        <div id="historyTableViewport" class="history-table-viewport">
         <table class="w-full text-left text-sm whitespace-nowrap">
           <thead class="bg-gray-100 text-gray-600 sticky top-0 shadow-sm z-10">
             <tr>
               <th class="p-3 border-b font-bold text-center">Invoice ID</th>
-              <th class="p-3 border-b font-bold">ရက်စွဲ/အချိန်</th>
+              <th class="p-3 border-b font-bold history-date-header">ရက်စွဲ/အချိန်</th>
               <th class="p-3 border-b font-bold text-purple-700">Customer</th>
               <th class="p-3 border-b font-bold">Device</th>
               <th class="p-3 border-b font-bold text-purple-700">Rate</th> 
@@ -924,6 +1096,10 @@
             <button onclick="window.loadMoreHistory()" class="btn2 !bg-blue-50 !border-blue-200 !text-blue-600 w-full sm:w-1/2 font-bold py-2">
                 နောက်ထပ်မှတ်တမ်းများ ကြည့်ရန် (Load More) ➕
             </button>
+        </div>
+        </div>
+        <div id="historyHorizontalScroll" class="history-horizontal-scroll" aria-label="History table အလျားလိုက် ရွှေ့ရန်">
+          <div id="historyHorizontalScrollInner"></div>
         </div>
       </div>
     </div>
@@ -1388,6 +1564,11 @@
   let SESSION_START_AT = null; // Email Login ဝင်ချိန် (Session Timeout / Force Logout တွက်ချက်ရန်)
   let IS_EMAIL_SESSION = false;
   let SESSION_TIMEOUT_HOURS = 24; // Admin Settings ကနေ ပြောင်းနိုင်သည်
+  let CURRENT_ACCESS_CONFIG = {};
+  let RETRY_OPERATION_QUEUE = [];
+  const RETRY_QUEUE_STORAGE_KEY = 'tg_excal_retry_queue_v1';
+  let retryQueueRunning = false;
+  let REPORT_VALIDATION_STATE = null;
 
   // --- Global States ---
   let FIREBASE_BANKS = {};
@@ -1553,6 +1734,31 @@ let calcLock = false;
   function fmt6(n){ return new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:6}).format(n); }
   function formatRate(num) { return num.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 4}); }
   function formatMmk(num) { return num.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}); }
+
+  // History table date/time: keep the date above the time to save horizontal space.
+  function formatHistoryDateTime(timestamp, timeZone) {
+    const dateObj = new Date(timestamp);
+    const tz = timeZone || 'Asia/Bangkok';
+    const dateStr = dateObj.toLocaleDateString('en-GB', {
+      timeZone: tz,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    const timeStr = dateObj.toLocaleTimeString('en-US', {
+      timeZone: tz,
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    }).toLowerCase();
+
+    return `
+      <span class="history-date-time">
+        <span class="history-date">${dateStr}</span>
+        <span class="history-time">${timeStr}</span>
+      </span>`;
+  }
 
   // 🌟 Customer ဘက်ကနေ လွှဲရလွယ်ကူအောင် "လွှဲရမည့် ငွေပမာဏ" ကို အနီးဆုံး ဂဏန်းအတန်းသို့ Round-up ပြသပေးမည့် Function 🌟
   // သတိပြုရန်: ဒါက Receipt/Copy Text မှာသာ ပြသရန် ရည်ရွယ်သည်။ Ledger/မှတ်တမ်း (in/out Amt၊ Treasury၊ profit)
@@ -3047,6 +3253,7 @@ if (file.startsWith('PP:')) {
       if (switchBtn) switchBtn.style.display = 'block';
       try {
         const docRef = await firebase.firestore().collection("user_roles").doc(user.email).get();
+        CURRENT_ACCESS_CONFIG = docRef.exists ? (docRef.data() || {}) : {};
         CURRENT_ROLE = (docRef.exists && docRef.data().role) ? docRef.data().role : 'guest';
       } catch (e) {
         CURRENT_ROLE = 'guest';
@@ -3075,7 +3282,9 @@ if (file.startsWith('PP:')) {
                     location.reload();
                     return;
                 }
-                const newRole = (snap.data().role || 'guest').toLowerCase();
+                const roleData = snap.data() || {};
+                CURRENT_ACCESS_CONFIG = roleData;
+                const newRole = (roleData.role || 'guest').toLowerCase();
                 if (CURRENT_ROLE !== newRole) {
                     if (!stillElevated.includes(newRole)) {
                         alert("သင့် Account ၏ Access ကို ပြန်လည်ရုပ်သိမ်းလိုက်ပါသည်။");
@@ -3084,10 +3293,10 @@ if (file.startsWith('PP:')) {
                         return;
                     } else {
                         CURRENT_ROLE = newRole;
-                        setupUIForRole(CURRENT_ROLE);
                     }
                 }
-                const fLogout = snap.data().forceLogoutAt;
+                setupUIForRole(CURRENT_ROLE);
+                const fLogout = roleData.forceLogoutAt;
                 if (fLogout && typeof fLogout.toMillis === 'function' && SESSION_START_AT && fLogout.toMillis() > SESSION_START_AT) {
                     alert("Admin မှ သင့် Session ကို Force Logout ထုတ်လိုက်ပါသည်။");
                     firebase.auth().signOut();
@@ -3135,10 +3344,12 @@ if (file.startsWith('PP:')) {
         .onSnapshot((snap) => {
           const previousRole = CURRENT_ROLE;
           if (snap.exists && snap.data().role) {
-            FIREBASE_DEVICE_PERMISSIONS[user.uid] = { name: snap.data().name || '', role: snap.data().role };
+            FIREBASE_DEVICE_PERMISSIONS[user.uid] = { ...(snap.data() || {}), name: snap.data().name || '', role: snap.data().role };
+            CURRENT_ACCESS_CONFIG = FIREBASE_DEVICE_PERMISSIONS[user.uid];
             CURRENT_ROLE = snap.data().role.toLowerCase();
           } else {
             delete FIREBASE_DEVICE_PERMISSIONS[user.uid];
+            CURRENT_ACCESS_CONFIG = {};
             CURRENT_ROLE = 'guest';
           }
           setupUIForRole(CURRENT_ROLE);
@@ -3409,9 +3620,9 @@ function openAdmin() {
           // Bypass: Role ပေးထားပြီးသားဖြစ်၍ Password မလိုဘဲ တန်းဝင်မည်
           document.getElementById('adminModal').style.display = 'block'; 
           if (CURRENT_ROLE === 'staff') {
-              switchTab('tab-history', document.getElementById('btnTabHistory')); 
+              switchTab('tab-work-queue', document.getElementById('btnTabWorkQueue')); 
           } else {
-              switchTab('tab-dashboard', document.querySelector('.tab-btn')); 
+              switchTab('tab-dashboard', document.getElementById('btnTabDashboard')); 
           }
           renderAdminLists();
       } else {
@@ -3464,6 +3675,7 @@ function openAdmin() {
             startSessionTimeoutWatcher();
 
             // ၃။ Database ထဲရှိ role ("staff", "admin", "main admin") ကို CURRENT_ROLE သို့ ထည့်ပေးခြင်း
+            CURRENT_ACCESS_CONFIG = roleData || {};
             CURRENT_ROLE = roleData.role || 'guest';
             
             setupUIForRole(CURRENT_ROLE);
@@ -3499,11 +3711,26 @@ function openAdmin() {
   };
 
   function switchTab(tabId, btnElement) {
-    document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+    const targetPane = document.getElementById(tabId);
+    if (!targetPane) return;
+
+    // Always hide every pane explicitly. This prevents a stale active pane from
+    // appearing beneath/inside the selected tab when the modal is reopened.
+    document.querySelectorAll('.tab-pane').forEach(el => {
+      el.classList.remove('active');
+      el.style.setProperty('display', 'none', 'important');
+      el.setAttribute('aria-hidden', 'true');
+    });
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active'); if (btnElement) btnElement.classList.add('active');
-    
-    if (tabId === 'tab-history' || tabId === 'tab-dashboard') loadHistory();
+
+    targetPane.classList.add('active');
+    targetPane.style.setProperty('display', 'block', 'important');
+    targetPane.setAttribute('aria-hidden', 'false');
+    if (btnElement) btnElement.classList.add('active');
+
+    if (tabId === 'tab-history' || tabId === 'tab-dashboard' || tabId === 'tab-work-queue') loadHistory();
+    if (tabId === 'tab-history') setTimeout(syncHistoryHorizontalScroll, 0);
+    if (tabId === 'tab-work-queue') renderStaffWorkQueue();
     if (tabId === 'tab-general') { loadAdminDevices(); loadUserRoles(); }
     if (tabId === 'tab-customers') renderCustomerAdminList();
     if (tabId === 'tab-logs') loadActivityLogs(); 
@@ -4712,11 +4939,13 @@ function openAdmin() {
         
         const currentName = FIREBASE_DEVICE_NAMES[id] || '';
         const currentConfig = FIREBASE_DEVICE_PERMISSIONS[id] || { role: 'guest' };
-        const currentRole = currentConfig.role.toLowerCase();
+        const currentRole = (currentConfig.role || 'guest').toLowerCase();
+        const currentCanSave = currentConfig.canSave === true || ['admin', 'main admin'].includes(currentRole);
         
-        // Main Admin မှလွဲ၍ အခြားသူများ Role ပြင်ခွင့်မရှိစေရန် (Disabled)
+        // Main Admin မှလွဲ၍ အခြားသူများ Role/Save Permission ပြင်ခွင့်မရှိစေရန် (Disabled)
         const isMainAdmin = (CURRENT_ROLE === 'main admin');
         const disableSelect = isMainAdmin ? '' : 'disabled';
+        const disableSavePermission = isMainAdmin ? '' : 'disabled';
         
         html += `
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 mb-2 gap-2 bg-white p-3 rounded-xl border border-slate-100">
@@ -4729,6 +4958,10 @@ function openAdmin() {
              <option value="admin" ${currentRole === 'admin' ? 'selected' : ''}>Admin (Full)</option>
              <option value="main admin" ${currentRole === 'main admin' ? 'selected' : ''}>Main Admin</option>
           </select>
+          <label class="flex items-center gap-1 text-[10px] font-bold text-emerald-700 whitespace-nowrap" title="ဤ Device ကိုသာ transaction Save ခွင့်ပေးမည်">
+             <input type="checkbox" id="devsave_${id}" ${currentCanSave ? 'checked' : ''} ${disableSavePermission}>
+             Save ခွင့်
+          </label>
           
           <div class="flex gap-1 w-full sm:w-auto mt-2 sm:mt-0 justify-end">
              <button onclick="saveDeviceAccess('${id}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-xs whitespace-nowrap">Save</button>
@@ -4746,16 +4979,20 @@ function openAdmin() {
   async function saveDeviceAccess(id) {
     const nameInput = document.getElementById(`devname_${id}`); 
     const roleSelect = document.getElementById(`devrole_${id}`);
+    const savePermissionInput = document.getElementById(`devsave_${id}`);
     if(!nameInput || !roleSelect) return;
     
     const name = nameInput.value.trim();
     const role = roleSelect.value;
+    const existingConfig = FIREBASE_DEVICE_PERMISSIONS[id] || {};
+    const canSave = ['admin', 'main admin'].includes(role) || (CURRENT_ROLE === 'main admin' && !!savePermissionInput?.checked) || (CURRENT_ROLE !== 'main admin' && existingConfig.canSave === true);
     
     // Name Update (admin_data.deviceNames field ထဲမှာ ဆက်ထားမည် - sensitive မဟုတ်ပါ)
     if(name === "") { delete FIREBASE_DEVICE_NAMES[id]; }
     else { FIREBASE_DEVICE_NAMES[id] = name; }
 
-    const btn = roleSelect.nextElementSibling.querySelector('button'); 
+    const btn = roleSelect.parentElement ? roleSelect.parentElement.querySelector('button') : null; 
+    if (!btn) return;
     const originalText = btn.textContent;
     btn.textContent = "..."; btn.disabled = true;
     
@@ -4772,7 +5009,7 @@ function openAdmin() {
               delete FIREBASE_DEVICE_PERMISSIONS[id];
               await roleDocRef.delete();
           } else {
-              const roleData = { name: name || id, role: role };
+              const roleData = { name: name || id, role: role, canSave: !!canSave };
               FIREBASE_DEVICE_PERMISSIONS[id] = roleData;
               await roleDocRef.set(roleData, { merge: true });
           }
@@ -6474,18 +6711,20 @@ function openAdmin() {
       let totalOverdue = 0; // 🌟 Overdue အရေအတွက်ရေရန်
       
       dataArray.forEach(d => {
-        let dateObj = new Date(d.timestamp);
-        let dateStr = dateObj.toLocaleString('en-GB', { timeZone: d.tz || 'Asia/Bangkok', hour12: true });
+        let dateTimeHtml = formatHistoryDateTime(d.timestamp, d.tz || 'Asia/Bangkok');
         let mappedDeviceName = FIREBASE_DEVICE_NAMES[d.deviceId] || d.deviceId || "Unknown";
         let displayRate = d.rate || "-";
         let status = d.status || 'Pending';
         let method = d.method || "-";
         
-        // 🌟 AI ဖတ်ထားသော Data ရှိခဲ့လျှင် အောင်မြင်/မအောင်မြင် အရောင်ခွဲပြမည် 🌟
+        // 🌟 AI ဖတ်ထားသော Data ရှိခဲ့လျှင် review အခြေအနေအလိုက် အရောင်ခွဲပြမည် 🌟
         let aiExtractedHtml = "";
         if (d.extractedInfo) {
             let formattedInfo = formatSlipFieldsForDisplay(d.extractedInfo);
-            let colorClass = d.extractedInfo.includes("⚠️") ? "text-amber-600 border-amber-200" : "text-green-700 border-green-200";
+            let reviewWarning = hasReviewWarning(d);
+            let reviewDone = d.reviewCompleted === true || d.reviewStatus === 'completed';
+            let colorClass = reviewWarning && !reviewDone ? "text-amber-600 border-amber-200" : "text-green-700 border-green-200";
+            let reviewStateLabel = reviewWarning && reviewDone ? '<span class="ml-1 text-emerald-600">✅ စစ်ပြီးပါပြီ</span>' : '';
             let infoId = "info-" + d.id;
             
             // 🌟 w-[145px] သို့ ချဲ့ထားပြီး break-all သုံးကာ Scrollbar မပေါ်စေရန် ပြင်ဆင်ထားပါသည်
@@ -6495,7 +6734,7 @@ function openAdmin() {
                     ▼
                 </button>
                 <div id="${infoId}" class="text-[10px] font-bold leading-tight overflow-hidden break-words flex-1 pt-0.5" style="max-height: 14px; white-space: normal; transition: max-height 0.2s ease-in-out;" title="စလစ် အချက်အလက်များ">
-                    ${formattedInfo}
+                    ${formattedInfo}${reviewStateLabel}
                 </div>
             </div>`;
         }
@@ -6613,7 +6852,7 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
 
         html += `<tr class="${rowClass}">
           <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${d.id}</td>
-          <td class="p-3 text-xs">${dateStr}</td>
+          <td class="p-3 text-xs history-date-cell">${dateTimeHtml}</td>
           <td class="p-3">${cusHtml}</td>
           <td class="p-3 font-bold text-indigo-700 text-xs">${mappedDeviceName}</td>
           <td class="p-3 text-xs font-bold text-purple-600">${displayRate}</td>
@@ -6639,9 +6878,11 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
       }
 
       if(CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { refreshFifoDashboard(); }
+      renderStaffWorkQueue();
   }
 
 let historyRequestSeq = 0;
+let historyReviewOnly = false;
 const HISTORY_LOAD_TIMEOUT_MS = 15000;
 
 function firestoreWithTimeout(promise, ms = HISTORY_LOAD_TIMEOUT_MS) {
@@ -6657,6 +6898,7 @@ async function loadHistory() {
   const list = document.getElementById('adminHistoryList');
   const loadMoreContainer = document.getElementById('loadMoreContainer');
   const requestSeq = ++historyRequestSeq;
+  historyReviewOnly = false;
 
   list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔄 Loading History...</td></tr>';
   if (loadMoreContainer) loadMoreContainer.classList.add('hidden');
@@ -6744,17 +6986,19 @@ async function loadHistory() {
       }
   }
 
-  async function searchHistoryLocally() {
+  async function searchHistoryLocally(fromUserInput = false) {
+      if (fromUserInput) historyReviewOnly = false;
       const searchId = document.getElementById('searchInvId').value.trim().toLowerCase();
       const searchDate = document.getElementById('searchDate') ? document.getElementById('searchDate').value : "";
       const searchStatus = document.getElementById('searchStatus') ? document.getElementById('searchStatus').value : "";
 
-      if (!searchId && !searchDate && !searchStatus) { 
+      if (!searchId && !searchDate && !searchStatus && !historyReviewOnly) { 
           renderHistoryRows(allLoadedHistory); 
           return; 
       }
       
       let filtered = allLoadedHistory;
+      if (historyReviewOnly) filtered = filtered.filter(isQueueReviewRecord);
 
       if (searchStatus) {
           filtered = filtered.filter(d => (d.status || 'Pending') === searchStatus);
@@ -6986,6 +7230,480 @@ async function loadHistory() {
     const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = replaceVars(customTexts.thanks); }
   }
 
+
+  // ==========================================
+  // 🧠 Staff Work Queue / Smart Save / Retry Center
+  // ==========================================
+  function smartEscapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+  }
+
+  function smartParseAmount(value) {
+      const n = parseFloat(String(value == null ? '' : value).replace(/[^\d.-]/g, ''));
+      return Number.isFinite(n) ? n : 0;
+  }
+
+  function smartTimestampMs(value) {
+      if (!value) return NaN;
+      try {
+          if (typeof value.toMillis === 'function') return value.toMillis();
+          if (typeof value.toDate === 'function') return value.toDate().getTime();
+          const ms = new Date(value).getTime();
+          return Number.isFinite(ms) ? ms : NaN;
+      } catch (e) { return NaN; }
+  }
+
+  function smartDateKey(value, tz = (ADMIN_TIMEZONE || 'Asia/Bangkok')) {
+      const ms = smartTimestampMs(value);
+      if (!Number.isFinite(ms)) return '';
+      try {
+          const d = new Date(new Date(ms).toLocaleString('en-US', { timeZone: tz }));
+          return typeof toYYYYMMDD === 'function' ? toYYYYMMDD(d) : d.toISOString().slice(0, 10);
+      } catch (e) { return ''; }
+  }
+
+  function getCurrentAccessConfig() {
+      return CURRENT_ACCESS_CONFIG && Object.keys(CURRENT_ACCESS_CONFIG).length
+          ? CURRENT_ACCESS_CONFIG
+          : (FIREBASE_DEVICE_PERMISSIONS[CURRENT_DEVICE_ID] || {});
+  }
+
+  function canSaveTransactions() {
+      const role = String(CURRENT_ROLE || 'guest').toLowerCase();
+      if (role === 'main admin' || role === 'admin') return true;
+      return role === 'staff' && getCurrentAccessConfig().canSave === true;
+  }
+
+  function isRetryableSmartError(error) {
+      const code = String(error?.code || '').toLowerCase();
+      const msg = String(error?.message || error || '').toLowerCase();
+      return !code || ['unavailable', 'deadline-exceeded', 'aborted', 'network-request-failed'].includes(code)
+          || /network|offline|timeout|timed out|fetch|connection|unavailable|deadline/.test(msg);
+  }
+
+  function persistRetryQueue() {
+      try { localStorage.setItem(RETRY_QUEUE_STORAGE_KEY, JSON.stringify(RETRY_OPERATION_QUEUE.slice(0, 50))); } catch (e) {}
+  }
+
+  function loadRetryQueueFromStorage() {
+      try {
+          const raw = localStorage.getItem(RETRY_QUEUE_STORAGE_KEY);
+          const parsed = raw ? JSON.parse(raw) : [];
+          RETRY_OPERATION_QUEUE = Array.isArray(parsed) ? parsed.filter(x => x && x.type && x.payload) : [];
+      } catch (e) { RETRY_OPERATION_QUEUE = []; }
+      renderRetryQueue();
+  }
+
+  function hasPendingRetry(kind, date = '') {
+      return RETRY_OPERATION_QUEUE.some(op => op.meta && op.meta.kind === kind && (!date || op.meta.date === date));
+  }
+
+  function queueRetryOperation(operation) {
+      const op = {
+          id: operation.id || ('retry_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)),
+          type: operation.type,
+          payload: operation.payload || {},
+          meta: operation.meta || {},
+          attempts: Number(operation.attempts || 0),
+          createdAt: operation.createdAt || new Date().toISOString(),
+          lastError: operation.lastError || ''
+      };
+      const duplicate = RETRY_OPERATION_QUEUE.some(existing =>
+          existing.type === op.type && existing.meta?.kind === op.meta?.kind &&
+          (op.meta?.invId ? existing.meta?.invId === op.meta.invId : false) &&
+          (op.meta?.date ? existing.meta?.date === op.meta.date : true)
+      );
+      if (!duplicate) RETRY_OPERATION_QUEUE.push(op);
+      persistRetryQueue();
+      renderRetryQueue();
+      updateConnectionStatus(navigator.onLine !== false, duplicate ? 'Retry item ရှိပြီးသား' : 'မအောင်မြင်သေးသောအလုပ်ကို သိမ်းထားသည်');
+      return op;
+  }
+
+  function updateConnectionStatus(online, detail = '') {
+      window.APP_NETWORK_ONLINE = online !== false;
+      const badge = document.getElementById('connectionStatusBadge');
+      if (badge) {
+          badge.className = window.APP_NETWORK_ONLINE ? 'status-badge text-emerald-700' : 'status-badge text-red-700';
+          badge.textContent = window.APP_NETWORK_ONLINE ? `🟢 Online${detail ? ' — ' + detail : ''}` : `🔴 Offline / Connection Error${detail ? ' — ' + detail : ''}`;
+      }
+      renderRetryQueue();
+  }
+
+  function renderRetryQueue() {
+      const count = RETRY_OPERATION_QUEUE.length;
+      const summary = document.getElementById('retryQueueSummary');
+      if (summary) summary.textContent = `Retry Queue: ${count}`;
+      const countEl = document.getElementById('queueRetryCount');
+      if (countEl) countEl.textContent = String(count);
+      const list = document.getElementById('retryQueueList');
+      if (!list) return;
+      if (!count) { list.classList.add('hidden'); list.innerHTML = ''; return; }
+      list.classList.remove('hidden');
+      list.innerHTML = `<div class="font-bold text-orange-800 mb-2">🔁 မအောင်မြင်သေးသောလုပ်ဆောင်ချက်များ (${count})</div>` + RETRY_OPERATION_QUEUE.slice(0, 8).map(op => {
+          const label = op.type === 'firestore-set' ? 'Transaction Save' : (op.type === 'firestore-update' ? 'Review Complete' : (op.type === 'telegram-alert' ? 'Telegram Report/Alert' : 'Telegram Backup'));
+          return `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white border border-orange-100 rounded-lg p-2 mb-1 text-xs">
+            <span><b>${smartEscapeHtml(label)}</b> <span class="text-slate-500">${smartEscapeHtml(op.meta?.invId || op.meta?.date || '')}</span><br><span class="text-slate-400">ကြိုးစားမှု: ${op.attempts || 0}</span></span>
+            <button onclick="retryFailedOperations()" class="btn bg-orange-500 hover:bg-orange-600 !py-1 !px-2 !text-xs">Retry Now</button>
+          </div>`;
+      }).join('');
+  }
+
+  async function retryFailedOperations() {
+      if (retryQueueRunning) return;
+      if (navigator.onLine === false) { updateConnectionStatus(false, 'Internet ပြန်ချိတ်ပြီးမှ Retry လုပ်ပါ'); return; }
+      if (!RETRY_OPERATION_QUEUE.length) { renderRetryQueue(); return; }
+      retryQueueRunning = true;
+      const button = document.getElementById('btnRetryFailedOperations');
+      const original = button ? button.innerHTML : '';
+      if (button) { button.disabled = true; button.innerHTML = '⏳ Retrying...'; }
+      try {
+          const snapshot = RETRY_OPERATION_QUEUE.slice();
+          for (const op of snapshot) {
+              let ok = false;
+              let errorText = '';
+              try {
+                  if (op.type === 'firestore-set') {
+                      await firestoreWithTimeout(firebase.firestore().collection(op.payload.collection).doc(op.payload.docId).set(op.payload.data), 15000);
+                      ok = true;
+                  } else if (op.type === 'firestore-update') {
+                      await firestoreWithTimeout(firebase.firestore().collection(op.payload.collection).doc(op.payload.docId).update(op.payload.data), 15000);
+                      ok = true;
+                  } else if (op.type === 'telegram-alert') {
+                      ok = await sendTelegramAlert(op.payload.messageText, op.payload.topicId);
+                  } else if (op.type === 'telegram-backup') {
+                      ok = await sendBackupToTelegram(!!op.payload.isAuto, { skipQueue: true });
+                  }
+              } catch (e) { errorText = e.message || String(e); ok = false; }
+              if (ok) {
+                  RETRY_OPERATION_QUEUE = RETRY_OPERATION_QUEUE.filter(item => item.id !== op.id);
+                  if (op.meta?.kind === 'review-complete' && op.meta.invId) {
+                      const reviewed = (Array.isArray(allLoadedHistory) ? allLoadedHistory : []).find(item => item.id === op.meta.invId);
+                      if (reviewed) Object.assign(reviewed, {
+                          reviewCompleted: true,
+                          reviewStatus: 'completed',
+                          reviewedAt: op.payload?.data?.reviewedAt || new Date().toISOString(),
+                          reviewedBy: op.payload?.data?.reviewedBy || 'unknown'
+                      });
+                  }
+                  if (op.meta?.kind === 'daily-report' && op.meta.date) {
+                      LAST_DAILY_REPORT_SENT_DATE = op.meta.date;
+                      if (dbRef) dbRef.set({ dailyReport: { enabled: DAILY_REPORT_ENABLED, time: DAILY_REPORT_TIME, topicId: TELEGRAM_DAILY_REPORT_TOPIC_ID, lastSentDate: op.meta.date } }, { merge: true }).catch(() => {});
+                  }
+                  if (op.meta?.kind === 'scheduled-backup' && op.meta.date) {
+                      LAST_AUTO_BACKUP_SENT_DATE = op.meta.date;
+                      if (dbRef) dbRef.set({ scheduledBackup: { enabled: AUTO_BACKUP_ENABLED, time: AUTO_BACKUP_TIME, topicId: TELEGRAM_BACKUP_TOPIC_ID, lastSentDate: op.meta.date } }, { merge: true }).catch(() => {});
+                  }
+              } else {
+                  const current = RETRY_OPERATION_QUEUE.find(item => item.id === op.id);
+                  if (current) { current.attempts = Number(current.attempts || 0) + 1; current.lastError = errorText || 'Send/Save failed'; }
+              }
+          }
+          persistRetryQueue();
+          updateConnectionStatus(true, RETRY_OPERATION_QUEUE.length ? 'တချို့အလုပ်များ မအောင်မြင်သေးပါ' : 'Retry အားလုံး အောင်မြင်');
+          if (!RETRY_OPERATION_QUEUE.length && typeof window.showToast === 'function') window.showToast('Retry Queue ရှင်းပြီးပါပြီ။', '✅');
+      } finally {
+          retryQueueRunning = false;
+          if (button) { button.disabled = false; button.innerHTML = original || '🔁 Retry'; }
+          renderRetryQueue();
+          renderStaffWorkQueue();
+      }
+  }
+
+  const REVIEW_WARNING_PATTERN = /⚠️|❌|error|မအောင်မြင်|ပြန်စစ်/i;
+
+  function hasReviewWarning(tx) {
+      const info = String(tx?.extractedInfo || '');
+      return !!info && REVIEW_WARNING_PATTERN.test(info);
+  }
+
+  function isQueueReviewRecord(tx) {
+      if (!tx || tx.reviewCompleted === true || tx.reviewStatus === 'completed') return false;
+      return hasReviewWarning(tx);
+  }
+
+  function reviewActorName() {
+      try {
+          const user = firebase.auth && firebase.auth().currentUser;
+          return user?.email || CURRENT_DEVICE_ID || CURRENT_ROLE || 'unknown';
+      } catch (e) {
+          return CURRENT_DEVICE_ID || CURRENT_ROLE || 'unknown';
+      }
+  }
+
+  window.markReviewComplete = async function(invId, button) {
+      if (!canSaveTransactions()) {
+          alert('ပြန်စစ်ပြီးကြောင်း သိမ်းရန် Save Permission ရှိသော Staff/Admin သာ လုပ်နိုင်ပါသည်။');
+          return;
+      }
+      const tx = (Array.isArray(allLoadedHistory) ? allLoadedHistory : []).find(item => item.id === invId);
+      if (!tx) {
+          alert('ဤ Invoice မှတ်တမ်းကို မတွေ့ပါ။ History ကို Refresh ပြန်လုပ်ပါ။');
+          return;
+      }
+      if (!isQueueReviewRecord(tx)) {
+          renderStaffWorkQueue();
+          return;
+      }
+
+      const originalText = button ? button.innerHTML : '';
+      if (button) { button.disabled = true; button.innerHTML = '⏳ သိမ်းနေသည်'; }
+
+      const patch = {
+          reviewCompleted: true,
+          reviewStatus: 'completed',
+          reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          reviewedBy: reviewActorName()
+      };
+
+      try {
+          await firestoreWithTimeout(
+              firebase.firestore().collection('exchange_history').doc(invId).update(patch),
+              15000
+          );
+          Object.assign(tx, {
+              reviewCompleted: true,
+              reviewStatus: 'completed',
+              reviewedAt: new Date().toISOString(),
+              reviewedBy: patch.reviewedBy
+          });
+          renderHistoryRows(allLoadedHistory);
+          renderStaffWorkQueue();
+          if (typeof window.showToast === 'function') window.showToast('ပြန်စစ်ပြီးပါပြီ။ Queue မှ ဖယ်ရှားပြီးပါပြီ။', '✅');
+      } catch (error) {
+          if (isRetryableSmartError(error)) {
+              queueRetryOperation({
+                  type: 'firestore-update',
+                  payload: { collection: 'exchange_history', docId: invId, data: { ...patch, reviewedAt: new Date().toISOString() } },
+                  meta: { kind: 'review-complete', invId },
+                  lastError: error.message || String(error)
+              });
+              if (typeof window.showToast === 'function') window.showToast('Connection မကောင်းသဖြင့် Retry Queue ထဲ သိမ်းထားပါသည်။', '⚠️');
+          } else {
+              alert('ပြန်စစ်ပြီးကြောင်း သိမ်းမရပါ။ Permission/Connection ကို စစ်ပါ။');
+          }
+      } finally {
+          if (button) { button.disabled = false; button.innerHTML = originalText || '✅ စစ်ပြီးပါပြီ'; }
+      }
+  };
+
+  function renderStaffWorkQueue() {
+      const list = document.getElementById('staffQueueList');
+      if (!list) return;
+      const history = Array.isArray(allLoadedHistory) ? allLoadedHistory : [];
+      const pending = history.filter(tx => tx.status === 'Pending');
+      const owing = history.filter(tx => tx.status === 'Owing');
+      const review = history.filter(isQueueReviewRecord);
+      const pendingIds = new Set([...pending, ...owing].map(tx => tx.id));
+      const items = history.filter(tx => pendingIds.has(tx.id) || isQueueReviewRecord(tx)).sort((a, b) => {
+          const score = tx => tx.status === 'Pending' ? 0 : (tx.status === 'Owing' ? 1 : 2);
+          return score(a) - score(b) || (smartTimestampMs(a.timestamp) || 0) - (smartTimestampMs(b.timestamp) || 0);
+      }).slice(0, 40);
+      const setCount = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
+      setCount('queuePendingCount', pending.length);
+      setCount('queueOwingCount', owing.length);
+      setCount('queueReviewCount', review.length);
+      setCount('queueRetryCount', RETRY_OPERATION_QUEUE.length);
+      renderRetryQueue();
+      if (!items.length) {
+          list.innerHTML = `<p class="p-6 text-center text-sm text-emerald-700 font-bold">✅ လုပ်ရန်ကျန်သော History အလုပ် မရှိပါ။</p>`;
+          return;
+      }
+      list.innerHTML = items.map(tx => {
+          const status = tx.status || 'Unknown';
+          const ageHours = smartTimestampMs(tx.timestamp) ? Math.max(0, (Date.now() - smartTimestampMs(tx.timestamp)) / 3600000) : 0;
+          const isReviewItem = isQueueReviewRecord(tx);
+          const reviewBadge = isReviewItem ? '<span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700 text-[10px] font-bold">🔎 ပြန်စစ်ရန်</span>' : '';
+          const reviewAction = isReviewItem ? `<button onclick="markReviewComplete('${smartEscapeHtml(tx.id || '')}', this)" class="btn bg-emerald-600 hover:bg-emerald-700 !py-1 !px-2 !text-xs">✅ စစ်ပြီးပါပြီ</button>` : '';
+          const statusClass = status === 'Pending' ? 'bg-amber-100 text-amber-800' : (status === 'Owing' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-700');
+          return `<div class="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50">
+            <div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><b class="text-sm text-slate-800">${smartEscapeHtml(tx.id || '—')}</b><span class="px-2 py-0.5 rounded ${statusClass} text-[10px] font-bold">${smartEscapeHtml(status)}</span>${reviewBadge}</div>
+              <div class="text-xs text-slate-600 mt-1 truncate">${smartEscapeHtml(tx.customerName || 'Customer မရွေးရသေး')} · ${smartEscapeHtml(tx.type || '')}</div>
+              <div class="text-[10px] text-slate-400 mt-1">${smartEscapeHtml(tx.inAmt || '')} ➜ ${smartEscapeHtml(tx.outAmt || '')} · ${ageHours.toFixed(1)} နာရီ</div></div>
+            <div class="flex gap-1 shrink-0">${reviewAction}<button onclick="openWorkQueueItem('${smartEscapeHtml(tx.id || '')}')" class="btn bg-blue-600 hover:bg-blue-700 !py-1 !px-2 !text-xs">ဖွင့်မည်</button>${tx.slipUrls?.length || tx.slipUrl ? `<button onclick="openSlipModal('${smartEscapeHtml(tx.id || '')}')" class="btn2 !py-1 !px-2 !text-xs">🧾 စလစ်</button>` : ''}</div>
+          </div>`;
+      }).join('');
+  }
+
+  window.openQueueFilter = function(filter) {
+      if (filter === 'Retry') { renderRetryQueue(); return; }
+      const input = document.getElementById('searchStatus');
+      const search = document.getElementById('searchInvId');
+      const date = document.getElementById('searchDate');
+      const tab = document.getElementById('btnTabHistory');
+      switchTab('tab-history', tab);
+      if (filter === 'Review') {
+          historyReviewOnly = true;
+          if (search) search.value = '';
+          if (date) date.value = '';
+          if (input) input.value = '';
+          searchHistoryLocally();
+      } else if (input) {
+          historyReviewOnly = false;
+          input.value = filter;
+          searchHistoryLocally(true);
+      }
+  };
+
+  window.openWorkQueueItem = function(invId) {
+      historyReviewOnly = false;
+      const search = document.getElementById('searchInvId');
+      const status = document.getElementById('searchStatus');
+      if (search) search.value = invId || '';
+      if (status) status.value = '';
+      switchTab('tab-history', document.getElementById('btnTabHistory'));
+      setTimeout(() => { if (typeof searchHistoryLocally === 'function') searchHistoryLocally(true); }, 50);
+  };
+
+  function validateReceiptBeforeSave(sectionId) {
+      const errors = [], warnings = [];
+      if (!canSaveTransactions()) errors.push('ဤ Account/Device တွင် Transaction Save permission မရှိပါ။ Main Admin မှ Save ခွင့်ပေးရန်လိုပါသည်။');
+      const section = document.getElementById(sectionId);
+      if (!section) errors.push('Transaction section မတွေ့ပါ။');
+      if (section) {
+          const amountInputs = Array.from(section.querySelectorAll('input.amt-input'));
+          const inInput = amountInputs.find(el => !String(el.id || '').toLowerCase().includes('out'));
+          const outInput = amountInputs.find(el => String(el.id || '').toLowerCase().includes('out'));
+          const inValue = smartParseAmount(inInput?.value);
+          const outValue = smartParseAmount(outInput?.value);
+          if (!(inValue > 0)) errors.push('လွှဲဝင်မည့် ပမာဏကို မှန်ကန်စွာ ထည့်ပါ။');
+          if (!(outValue > 0)) errors.push('လက်ခံရမည့် ပမာဏကို မှန်ကန်စွာ ထည့်ပါ။');
+          const rate = sectionId.includes('vnd') ? smartParseAmount(LAST_RATE.vnd) : smartParseAmount(LAST_RATE.r);
+          if (!(rate > 0)) errors.push('ငွေလဲနှုန်း မရှိသေးပါ။ Rate ကို အရင်သိမ်းပါ။');
+          const recType = sectionId === 'box-thb2mmk' ? 'THB ➔ MMK' : sectionId === 'box-mmk2thb' ? 'MMK ➔ THB' : sectionId === 'box-vnd2mmk' ? 'VND ➔ MMK' : 'MMK ➔ VND';
+          const now = Date.now();
+          const duplicate = (Array.isArray(allLoadedHistory) ? allLoadedHistory : []).find(tx => {
+              const txMs = smartTimestampMs(tx.timestamp);
+              return tx.status !== 'Cancelled' && tx.status !== 'Auto Cancel' && tx.type === recType && Math.abs(now - txMs) < 120000 && smartParseAmount(tx.inAmt) === inValue && smartParseAmount(tx.outAmt) === outValue;
+          });
+          if (duplicate) warnings.push(`တူညီသောပမာဏ/အမျိုးအစားကို မကြာသေးမီက ID ${duplicate.id} ဖြင့် သိမ်းထားပြီးပါပြီ။`);
+      }
+      return { ok: errors.length === 0, errors, warnings };
+  }
+  window.validateReceiptBeforeSave = validateReceiptBeforeSave;
+
+  function validateBackupDataObject(data) {
+      const errors = [], warnings = [];
+      if (!data || typeof data !== 'object') errors.push('Backup payload မရှိပါ။');
+      if (data && typeof data.banks !== 'object') errors.push('Banks data ပျက်နေပါသည်။');
+      if (data && !Array.isArray(data.bankOrder)) errors.push('Bank order data မမှန်ပါ။');
+      if (data && typeof data.customers !== 'object') errors.push('Customers data ပျက်နေပါသည်။');
+      if (data && !Array.isArray(data.customerOrder)) errors.push('Customer order data မမှန်ပါ။');
+      if (data && typeof data.treasuryAccounts !== 'object') warnings.push('Treasury data မရှိပါ။');
+      if (data && typeof data.expenses !== 'object') warnings.push('Expense data မရှိပါ။');
+      if (data && data.apiKeys && typeof data.apiKeys !== 'object') errors.push('API key payload မမှန်ပါ။');
+      const result = { ok: errors.length === 0, errors, warnings, checkedAt: new Date().toISOString() };
+      REPORT_VALIDATION_STATE = { kind: 'backup', ...result };
+      return result;
+  }
+
+  function validateReportRecords(records, dateKey, tz, meta = {}) {
+      const errors = [], warnings = [], seen = new Set();
+      let todayCount = 0;
+      (records || []).forEach((tx, index) => {
+          const id = String(tx?.id || tx?.invoiceId || `row-${index}`);
+          if (seen.has(id)) errors.push(`Duplicate Invoice ID: ${id}`);
+          seen.add(id);
+          const rowDate = smartDateKey(tx?.timestamp, tz);
+          if (!rowDate) { warnings.push(`${id}: timestamp မဖတ်နိုင်ပါ`); return; }
+          if (rowDate !== dateKey) return;
+          todayCount++;
+          const status = String(tx?.status || '');
+          if (!['Success', 'Pending', 'Owing', 'Cancelled', 'Auto Cancel'].includes(status)) warnings.push(`${id}: မသိသော status ${status || '(empty)'}`);
+          if (status === 'Success') {
+              if (!(smartParseAmount(tx.inAmt) > 0)) errors.push(`${id}: Success ဖြစ်သော်လည်း inAmt မမှန်ပါ`);
+              if (!(smartParseAmount(tx.outAmt) > 0)) errors.push(`${id}: Success ဖြစ်သော်လည်း outAmt မမှန်ပါ`);
+              if (!tx.type) warnings.push(`${id}: transaction type မရှိပါ`);
+          }
+      });
+      if (meta.complete === false) errors.push(meta.error || 'ယနေ့ Report အတွက် History အားလုံး မရရှိသေးပါ။');
+      return { ok: errors.length === 0, errors: [...new Set(errors)], warnings: [...new Set(warnings)], todayCount, checkedCount: (records || []).length, complete: meta.complete !== false, checkedAt: new Date().toISOString() };
+  }
+
+  async function fetchDailyReportHistoryData(todayKey, tz) {
+      let records = [], cursor = null, complete = false, error = '';
+      try {
+          for (let page = 0; page < 20; page++) {
+              let query = firebase.firestore().collection('exchange_history').orderBy('timestamp', 'desc').limit(300);
+              if (cursor) query = query.startAfter(cursor);
+              const snap = await firestoreWithTimeout(query.get(), 15000);
+              if (snap.empty) { complete = true; break; }
+              snap.docs.forEach(doc => records.push(doc.data()));
+              cursor = snap.docs[snap.docs.length - 1];
+              const oldestKey = smartDateKey(snap.docs[snap.docs.length - 1].data()?.timestamp, tz);
+              if (snap.docs.length < 300 || (oldestKey && oldestKey < todayKey)) { complete = true; break; }
+          }
+          if (!complete) error = 'Report query page limit ရောက်သွားသော်လည်း ယနေ့ record အားလုံးကို အတည်မပြုနိုင်ပါ။';
+      } catch (e) { error = `Report History Fetch Error: ${e.message || e}`; }
+      return { records, complete, error };
+  }
+
+  function appendReportValidationNote(reportText, check) {
+      if (!check || !check.warnings?.length) return reportText;
+      const notes = check.warnings.slice(0, 5).map(x => `• ${x}`).join('\n');
+      return `${reportText}\n\n⚠️ <b>Data Check Warning</b>\n${notes}`;
+  }
+
+  function syncHistoryHorizontalScroll() {
+      const viewport = document.getElementById('historyTableViewport');
+      const bar = document.getElementById('historyHorizontalScroll');
+      const inner = document.getElementById('historyHorizontalScrollInner');
+      const table = viewport?.querySelector('table');
+      if (!viewport || !bar || !inner || !table) return;
+
+      const viewportWidth = viewport.clientWidth;
+      const contentWidth = Math.max(viewport.scrollWidth, table.scrollWidth, 1120);
+      inner.style.width = `${contentWidth}px`;
+      bar.hidden = false;
+      if (!bar.dataset.syncing) bar.scrollLeft = viewport.scrollLeft;
+  }
+
+  function initializeHistoryHorizontalScroll() {
+      const viewport = document.getElementById('historyTableViewport');
+      const bar = document.getElementById('historyHorizontalScroll');
+      const inner = document.getElementById('historyHorizontalScrollInner');
+      const table = viewport?.querySelector('table');
+      const tbody = document.getElementById('adminHistoryList');
+      if (!viewport || !bar || !inner || !table || viewport.dataset.scrollBound === 'true') return;
+      viewport.dataset.scrollBound = 'true';
+
+      viewport.addEventListener('scroll', () => {
+          if (bar.dataset.syncing === 'true') return;
+          bar.dataset.syncing = 'true';
+          bar.scrollLeft = viewport.scrollLeft;
+          requestAnimationFrame(() => { bar.dataset.syncing = ''; });
+      }, { passive: true });
+      bar.addEventListener('scroll', () => {
+          if (bar.dataset.syncing === 'true') return;
+          bar.dataset.syncing = 'true';
+          viewport.scrollLeft = bar.scrollLeft;
+          requestAnimationFrame(() => { bar.dataset.syncing = ''; });
+      }, { passive: true });
+      window.addEventListener('resize', syncHistoryHorizontalScroll);
+      if (window.ResizeObserver) {
+          const ro = new ResizeObserver(syncHistoryHorizontalScroll);
+          ro.observe(viewport);
+          ro.observe(table);
+      }
+      if (window.MutationObserver && tbody) {
+          const mo = new MutationObserver(syncHistoryHorizontalScroll);
+          mo.observe(tbody, { childList: true, subtree: true, characterData: true });
+      }
+      syncHistoryHorizontalScroll();
+  }
+
+  function initializeSmartOperations() {
+      initializeHistoryHorizontalScroll();
+      loadRetryQueueFromStorage();
+      updateConnectionStatus(navigator.onLine !== false);
+      if (!window._smartOperationsListenersBound) {
+          window._smartOperationsListenersBound = true;
+          window.addEventListener('online', () => { updateConnectionStatus(true); retryFailedOperations(); });
+          window.addEventListener('offline', () => updateConnectionStatus(false, 'Internet connection မရှိပါ'));
+          setInterval(() => { renderRetryQueue(); renderStaffWorkQueue(); }, 30000);
+      }
+  }
+
   async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
     let origText = '';
     if (btnElement) {
@@ -6996,6 +7714,12 @@ async function loadHistory() {
     }
 
     try {
+        const saveCheck = validateReceiptBeforeSave(sectionId);
+        if (!saveCheck.ok) {
+            alert('Save မလုပ်နိုင်ပါ။\n\n' + saveCheck.errors.join('\n'));
+            return;
+        }
+        if (saveCheck.warnings.length && !confirm('⚠️ Smart Validation သတိပေးချက်\n\n' + saveCheck.warnings.join('\n') + '\n\nဆက်လက် Save လုပ်မလား?')) return;
         await document.fonts?.ready; 
         recalc(); recalcVND();
         
@@ -7319,22 +8043,39 @@ async function loadHistory() {
               tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: savedCustomerName 
           };
           
-          try { 
-              await firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord); 
+          try {
+              await firestoreWithTimeout(firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord), 15000);
 
               // 🌟 Web Refresh မလုပ်ဘဲ Smart Slip (Ctrl+V) က ချက်ချင်းရှာတွေ့အောင် memory cache ထဲ တန်းထည့်ပေးမည်
               if (!allLoadedHistory.some(t => t.id === invId)) allLoadedHistory.unshift(historyRecord);
-              
-              // 🌟 ပြေစာအသစ် ထုတ်ကြောင်းကို Log ထဲ မှတ်မည်
               logActivity("Receipt Generated", `ID: ${invId} ပြေစာအသစ် ထုတ်ယူခဲ့သည်။`);
-              
-              let alertMsg = `✅ <b>ငွေလွှဲပြေစာ အသစ် (Auto)</b>\n\nID: <code>${invId}</code>\n`;
-              if (savedCustomerName !== "—") alertMsg += `Customer: <b>${savedCustomerName}</b>\n`;
-              alertMsg += `အမျိုးအစား: <b>${recType}</b>\nပမာဏ: <code>${inValueStr}</code> ➔ <code>${outValueStr}</code>\nငွေဈေး: <code>${savedRate}</code>\nနည်းလမ်း: ${paymentMethodName}\n`;
-              let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId; 
+
+              let alertMsg = `✅ <b>ငွေလွှဲပြေစာ အသစ် (Auto)</b>
+
+ID: <code>${invId}</code>
+`;
+              if (savedCustomerName !== "—") alertMsg += `Customer: <b>${savedCustomerName}</b>
+`;
+              alertMsg += `အမျိုးအစား: <b>${recType}</b>
+ပမာဏ: <code>${inValueStr}</code> ➔ <code>${outValueStr}</code>
+ငွေဈေး: <code>${savedRate}</code>
+နည်းလမ်း: ${paymentMethodName}
+`;
+              let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
               alertMsg += `Device: <b>${mappedDeviceName}</b>`;
-              sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID); 
-          } catch(e) {}
+              const telegramSent = await sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID);
+              if (!telegramSent && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+                  queueRetryOperation({ type: 'telegram-alert', payload: { messageText: alertMsg, topicId: TELEGRAM_TOPIC_ID }, meta: { kind: 'receipt-alert', invId } });
+              }
+              renderStaffWorkQueue();
+          } catch(e) {
+              if (isRetryableSmartError(e)) {
+                  queueRetryOperation({ type: 'firestore-set', payload: { collection: 'exchange_history', docId: invId, data: historyRecord }, meta: { kind: 'transaction', invId } });
+                  if (typeof window.showToast === 'function') window.showToast('Connection မကောင်းသဖြင့် Save ကို Retry Queue ထဲသိမ်းထားပါသည်။', '⚠️');
+              } else {
+                  throw e;
+              }
+          }
           
           const mimeType = fmt === 'jpg' ? 'image/jpeg' : 'image/png'; 
           const fileExt = fmt === 'jpg' ? '.jpg' : '.png'; 
@@ -8349,6 +9090,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
 
   function exportDatabaseBackup() {
       const backupData = buildBackupDataObject();
+      const backupCheck = validateBackupDataObject(backupData);
+      if (!backupCheck.ok) { alert('Backup data စစ်ဆေးမှု မအောင်မြင်ပါ။\n\n' + backupCheck.errors.join('\n')); return; }
       
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
       const downloadAnchorNode = document.createElement('a');
@@ -8361,13 +9104,16 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
   }
 
   // 🌟 Backup ဖိုင်ကို Telegram သို့ .json Document အဖြစ် ပို့ခြင်း
-  async function sendBackupToTelegram(isAuto) {
+  async function sendBackupToTelegram(isAuto, options = {}) {
+      const skipQueue = !!options.skipQueue;
       if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
           console.warn("Telegram Backup: Bot Token/Chat ID မရှိပါ။");
           return false;
       }
       try {
           const backupData = buildBackupDataObject();
+          const backupCheck = validateBackupDataObject(backupData);
+          if (!backupCheck.ok) { console.error('Backup validation failed:', backupCheck.errors); return false; }
           const dateStr = new Date().toISOString().slice(0, 10);
           const jsonBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
 
@@ -8381,10 +9127,14 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument`;
           const res = await fetch(url, { method: 'POST', body: formData });
           const result = await res.json();
-          if (!result.ok) { console.error("Telegram Backup Send Failed:", result); return false; }
+          if (!result.ok) throw new Error(result.description || 'Telegram Backup Send Failed');
           return true;
       } catch (e) {
           console.error("Telegram Backup Error:", e);
+          if (!skipQueue && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+              const date = new Date().toISOString().slice(0, 10);
+              queueRetryOperation({ type: 'telegram-backup', payload: { isAuto: !!isAuto }, meta: { kind: isAuto ? 'scheduled-backup' : 'manual-backup', date } });
+          }
           return false;
       }
   }
@@ -8405,12 +9155,22 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       if (nowHM < DAILY_REPORT_TIME) return;
       if (LAST_DAILY_REPORT_SENT_DATE === todayTzStr) return; // ဒီနေ့ ပို့ပြီးသား
 
-      const reportText = await buildDailyReportText();
-      // 🐛 BUG FIX: Telegram ဆီ တကယ်ရောက်မှသာ (success === true) "ပို့ပြီးပြီ" လို့ မှတ်မည်။
-      // မရောက်ခဲ့ရင် lastSentDate ကို မပြောင်းဘဲ ထားခဲ့လို့ နောက် admin/staff တစ်ယောက်ယောက်
-      // tab ဖွင့်လိုက်တဲ့အခါ (5 မိနစ်တစ်ခါ check ထဲမှာ) ပြန်ကြိုးစား ပို့ပေးပါလိမ့်မယ်
-      const success = await sendTelegramAlert(reportText, TELEGRAM_DAILY_REPORT_TOPIC_ID || TELEGRAM_TOPIC_ID);
-      if (!success) { console.error("Daily Report: Telegram ပို့မှု မအောင်မြင်ပါ၊ နောက်တစ်ကြိမ် ပြန်ကြိုးစားပါမည်။"); return; }
+      if (hasPendingRetry('daily-report', todayTzStr)) return;
+      let reportText = '';
+      try {
+          reportText = await buildDailyReportText();
+      } catch (e) {
+          console.error('Daily Report data validation/build failed:', e);
+          return;
+      }
+      // Telegram ဆီ မရောက်သေးလျှင် နောက်ကွယ် Retry Queue ထဲသိမ်းပြီး အောင်မြင်မှသာ sent date မှတ်မည်။
+      const reportTopicId = TELEGRAM_DAILY_REPORT_TOPIC_ID || TELEGRAM_TOPIC_ID;
+      const success = await sendTelegramAlert(reportText, reportTopicId);
+      if (!success) {
+          queueRetryOperation({ type: 'telegram-alert', payload: { messageText: reportText, topicId: reportTopicId }, meta: { kind: 'daily-report', date: todayTzStr } });
+          console.error("Daily Report: Telegram ပို့မှု မအောင်မြင်ပါ၊ Retry Queue ထဲသိမ်းထားပါသည်။");
+          return;
+      }
 
       LAST_DAILY_REPORT_SENT_DATE = todayTzStr;
       if (dbRef) {
@@ -8422,7 +9182,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
 
   async function buildDailyReportText() {
       const { todayTzStr, tz } = getTzTodayAndTime();
-      let successCount = 0, pendingCount = 0, cancelCount = 0;
+      let successCount = 0, pendingCount = 0, owingCount = 0, cancelCount = 0;
       let volThb = 0, volMmk = 0, volVnd = 0;
 
       // 🌟 BUG FIX: Status Count (Success/Pending/Cancel) များသည် `allLoadedHistory` ကို
@@ -8430,26 +9190,15 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       // App စဖွင့်ပြီး ၁၀ စက္ကန့်အကြာမှာ auto-run ဖြစ်တတ်လို့) `allLoadedHistory` က [] အလွတ်
       // ဖြစ်နေတတ်သဖြင့် အားလုံး 0 ပြနေခဲ့ခြင်း ဖြစ်သည်။ ဒီအတွက် History Tab ဖွင့်ထား/မထား
       // မသက်ဆိုင်ဘဲ ယနေ့အတွက် Firestore ကနေ တိုက်ရိုက် ပြန်ဆွဲယူသည့် fallback ကို ထည့်သည်
-      let reportSourceData = allLoadedHistory;
-      const hasTodayInLoaded = (allLoadedHistory || []).some(tx => {
-          if (!tx.timestamp) return false;
-          try {
-              const d = new Date(new Date(tx.timestamp).toLocaleString('en-US', { timeZone: tz }));
-              return toYYYYMMDD(d) === todayTzStr;
-          } catch(e) { return false; }
-      });
-      if (!hasTodayInLoaded) {
-          try {
-              const snap = await firebase.firestore().collection("exchange_history")
-                  .orderBy("timestamp", "desc")
-                  .limit(300)
-                  .get();
-              reportSourceData = [];
-              snap.forEach(doc => reportSourceData.push(doc.data()));
-          } catch (e) {
-              console.error("Daily Report Fallback Fetch Error:", e);
-              reportSourceData = allLoadedHistory;
-          }
+      const fetchedReport = await fetchDailyReportHistoryData(todayTzStr, tz);
+      let reportSourceData = fetchedReport.records;
+      if ((!Array.isArray(reportSourceData) || reportSourceData.length === 0) && Array.isArray(allLoadedHistory) && allLoadedHistory.length) {
+          reportSourceData = allLoadedHistory;
+      }
+      const reportCheck = validateReportRecords(reportSourceData, todayTzStr, tz, { complete: fetchedReport.complete, error: fetchedReport.error });
+      REPORT_VALIDATION_STATE = { kind: 'daily-report', ...reportCheck };
+      if (!reportCheck.ok) {
+          throw new Error('Daily Report data check မအောင်မြင်ပါ: ' + reportCheck.errors.slice(0, 4).join('; '));
       }
 
       (reportSourceData || []).forEach(tx => {
@@ -8466,6 +9215,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               else if (type.startsWith('MMK')) volMmk += inAmt;
               else if (type.startsWith('VND')) volVnd += inAmt;
           } else if (tx.status === 'Pending') pendingCount++;
+          else if (tx.status === 'Owing') owingCount++;
           else if (tx.status === 'Cancelled' || tx.status === 'Auto Cancel') cancelCount++;
       });
 
@@ -8535,7 +9285,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               : "အကောင့် မရှိသေးပါ";
       } catch (e) { console.error("Daily Report Balance Calc Error:", e); }
 
-      return `📊 <b>နေ့စဉ် အနှစ်ချုပ် (Daily Closing Report)</b>\n📅 ${todayTzStr}\n\n✅ အောင်မြင်: ${successCount}\n⏳ Pending: ${pendingCount}\n❌ Cancel: ${cancelCount}\n\n💰 <b>ယနေ့ Volume</b>\nTHB: ${volThb.toLocaleString()}\nMMK: ${volMmk.toLocaleString()}\nVND: ${volVnd.toLocaleString()}\n\n${profitLine}\n\n🏦 <b>လက်ကျန်ငွေ (Account Balances)</b>\n${balanceLine}`;
+      const reportBase = `📊 <b>နေ့စဉ် အနှစ်ချုပ် (Daily Closing Report)</b>\n📅 ${todayTzStr}\n\n✅ အောင်မြင်: ${successCount}\n⏳ Pending: ${pendingCount}\n💸 Owing: ${owingCount}\n❌ Cancel: ${cancelCount}\n\n💰 <b>ယနေ့ Volume</b>\nTHB: ${volThb.toLocaleString()}\nMMK: ${volMmk.toLocaleString()}\nVND: ${volVnd.toLocaleString()}\n\n${profitLine}\n\n🏦 <b>လက်ကျန်ငွေ (Account Balances)</b>\n${balanceLine}`;
+      return appendReportValidationNote(reportBase, reportCheck);
   }
 
   // 🌟 Auto Scheduled Backup ကို အချိန်တန်လျှင် Telegram သို့ ပို့ခြင်း
@@ -8544,6 +9295,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       const { todayTzStr, nowHM } = getTzTodayAndTime();
       if (nowHM < AUTO_BACKUP_TIME) return;
       if (LAST_AUTO_BACKUP_SENT_DATE === todayTzStr) return; // ဒီနေ့ ပို့ပြီးသား
+      if (hasPendingRetry('scheduled-backup', todayTzStr)) return;
 
       const success = await sendBackupToTelegram(true);
       if (success) {
@@ -8728,6 +9480,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       const btnExport = document.getElementById('btnExportCSV');
       const btnClear = document.getElementById('btnClearHistory');
       const smartSlipBox = document.getElementById('smartSlipContainer');
+      const workQueueBtn = document.getElementById('btnTabWorkQueue');
 
       // 🌟 Smart Slip (ဝင်စလစ်/ထွက်စလစ် Auto စစ်ဆေးမည့်) Button တွေကို Admin/Staff အတွက်သာ ပြသမည်
       if (smartSlipBox) {
@@ -8736,6 +9489,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       }
 
       document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
+      if (workQueueBtn) workQueueBtn.style.display = ['main admin', 'admin', 'staff'].includes(role) ? 'inline-block' : 'none';
       
       if (role === 'main admin' || role === 'admin') {
           adminBtn.innerHTML = role === 'main admin' ? "⚙️ Main Admin" : "🛡️ Admin";
@@ -8748,6 +9502,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           modalTitle.innerHTML = "📜 ငွေလွှဲမှတ်တမ်းများ (Staff View)";
           document.getElementById('btnTabHistory').style.display = 'inline-block';
           document.getElementById('btnTabCustomers').style.display = 'inline-block';
+          if (workQueueBtn) workQueueBtn.style.display = 'inline-block';
           if(btnExport) btnExport.style.display = 'none';
           if(btnClear) btnClear.style.display = 'none';
       } else {
@@ -8788,6 +9543,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           default: return 'assets/logo/main_logo.png';
       }
   };
+
+  initializeSmartOperations();
 </script>
 </body>
 </html>
