@@ -51,6 +51,11 @@
     .label{ font-size:1.05rem; font-weight:900; display:inline-flex; align-items:center; gap:.45rem; line-height:1.6; padding-bottom:6px; }
     .sub{ font-size:.82rem; color:#6b7280; margin-bottom:.25rem; line-height:1.5; padding-bottom:4px; }
     .rate-note{ font-size:.95rem; color:#64748b; margin-top:.45rem; font-weight:900; line-height:1.8; padding-bottom:6px; display: inline-block; }
+    .rate-panel-box { max-width: 820px; width:100%; box-sizing:border-box; margin-left:auto; margin-right:auto; padding:.75rem !important; }
+    .rate-panel-grid { gap:.55rem !important; }
+    .rate-panel-card { padding:.6rem !important; }
+    .rate-panel-summary-wrap { margin-top:.55rem !important; padding-top:.5rem !important; gap:.3rem !important; }
+    .rate-panel-summary { font-size:.72rem !important; line-height:1.22 !important; font-weight:800 !important; white-space:normal; display:block !important; }
     .thanks{ color:#059669; font-size:.88rem; margin-top:.45rem; font-weight:800; line-height:1.8; padding-bottom:6px; display: inline-block; }
     .lang-warn1, .lang-warn2, .lang-warn3 { line-height: 1.8; padding-bottom: 6px; display: inline-block; }
 
@@ -81,6 +86,17 @@
     }
     .amt-input::placeholder{ color:#9aa4b2 !important; font-weight:700 !important; }
     .amt-input:focus{ outline:none !important; border-color:#111827 !important; box-shadow:0 0 0 4px rgba(17,24,39,.10) !important; }
+    .rate-card-input {
+      font-size: .98rem !important; font-weight: 900 !important; color:#0f172a !important;
+      background:#ffffff !important; border:1.5px solid #cbd5e1 !important;
+      border-radius:10px !important; padding:7px 9px !important; height:40px !important;
+      line-height:1.25 !important; font-variant-numeric: tabular-nums !important;
+      box-sizing:border-box; width:100%;
+    }
+    .rate-card-input:focus { outline:none !important; border-color:#2563eb !important; box-shadow:0 0 0 3px rgba(37,99,235,.12) !important; }
+    .rate-card-label { display:block; font-size:.72rem; line-height:1.35; font-weight:800; color:#64748b; margin-bottom:4px; }
+    .rate-card-title { display:flex; align-items:center; gap:.35rem; font-size:.9rem; line-height:1.4; font-weight:900; color:#334155; margin-bottom:8px; }
+    .rate-card-field + .rate-card-field { margin-top:8px; }
 
     .radio-row{ display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid #e5e7eb; border-radius:14px; margin-top:8px; user-select:none; }
     .radio-row input[type="radio"]{ width:20px; height:20px; accent-color:#111827; cursor:pointer; flex:0 0 auto; }
@@ -255,7 +271,7 @@
     /* 🌙 Dark Mode Styles */
     /* 🌟 Dark/Light ပြောင်းချိန် ရုတ်တရက်မဟုတ်ဘဲ ညင်သာစွာ ပြောင်းလဲစေရန် (Smooth Transition) */
     body, header, .box, .card, .admin-content, .login-box, #customCusDropdown,
-    .amt-input, select, input, .list-item, tr, td, th,
+    .amt-input, .rate-card-input, select, input, .list-item, tr, td, th,
     .bg-white, .bg-gray-50, .bg-gray-100, .bg-blue-50, .bg-emerald-50, .bg-orange-50,
     .bg-indigo-50, .bg-red-50, .bg-green-50, .bg-yellow-50, .bg-pink-50, .bg-purple-50,
     .bg-indigo-100, .bg-blue-100, .bg-orange-100, .bg-green-100, .bg-red-100,
@@ -264,13 +280,14 @@
     }
     html.dark body { background-color: #0f172a; color: #f1f5f9; }
     html.dark .box, html.dark .card, html.dark .admin-content, html.dark .login-box, html.dark #customCusDropdown { background-color: #1e293b !important; border-color: #334155 !important; }
-    html.dark .amt-input, html.dark select, html.dark input[type="text"], html.dark input[type="date"], html.dark input[type="number"], html.dark input[type="password"], html.dark input[type="email"] { 
+    html.dark .amt-input, html.dark .rate-card-input, html.dark select, html.dark input[type="text"], html.dark input[type="date"], html.dark input[type="number"], html.dark input[type="password"], html.dark input[type="email"] { 
         background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; 
     }
-    html.dark .amt-input:focus, html.dark input:focus, html.dark select:focus { box-shadow: 0 0 0 4px rgba(255,255,255,.10) !important; }
+    html.dark .amt-input:focus, html.dark .rate-card-input:focus, html.dark input:focus, html.dark select:focus { box-shadow: 0 0 0 4px rgba(255,255,255,.10) !important; }
     html.dark select option { background-color: #1e293b; color: #e2e8f0; }
     html.dark optgroup { background-color: #0f172a; color: #94a3b8; }
-    html.dark .label, html.dark h1, html.dark h2, html.dark h3, html.dark th { color: #f8fafc !important; } 
+    html.dark .label, html.dark h1, html.dark h2, html.dark h3, html.dark th, html.dark .rate-card-title { color: #f8fafc !important; } 
+    html.dark .rate-card-label { color: #94a3b8 !important; }
     html.dark .sub, html.dark .muted, html.dark .rate-note { color: #94a3b8 !important; }
     html.dark .text-gray-800, html.dark .text-gray-700, html.dark .text-slate-800, html.dark .text-slate-700, html.dark .text-black { color: #f1f5f9 !important; }
     html.dark .text-gray-600, html.dark .text-gray-500, html.dark .text-gray-400, html.dark .text-slate-600, html.dark .text-slate-500 { color: #94a3b8 !important; }
@@ -465,28 +482,48 @@
   </div>
   <input type="file" id="smartSlipUploader" accept="image/*" multiple style="display: none;" onchange="handleSmartSlipUpload(event)">
 
-  <section class="box">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <div>
-        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="rate_thb_100k">၁ သိန်း အတွက် ဘတ် (THB)</span></label>
-        <p class="sub" data-i18n="rate_thb_sub">THB per 100,000 MMK</p>
-        <input id="rate100k" class="amt-input w-full" type="text" inputmode="decimal" data-i18n-ph="ph_ex1" placeholder="ဥပမာ - 820">
+  <section class="box rate-panel-box">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 rate-panel-grid">
+      <div class="rounded-xl border border-blue-100 bg-blue-50/40 p-3 rate-panel-card">
+        <div class="rate-card-title"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag">ဘတ် → ကျပ် <span class="text-[10px] text-blue-500">(အဝင်)</span></div>
+        <div class="rate-card-field">
+          <label class="rate-card-label">၁ သိန်း MMK = ? THB</label>
+          <input id="rate100kIn" class="rate-card-input" type="text" inputmode="decimal" placeholder="ဥပမာ - 767">
+        </div>
+        <div class="rate-card-field">
+          <label class="rate-card-label">၁ THB = ? MMK</label>
+          <input id="ratePerThbIn" class="rate-card-input" type="text" inputmode="decimal" placeholder="ဥပမာ - 130.38">
+        </div>
       </div>
-      <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="rate_mmk_1thb">၁ ဘတ် အတွက် ကျပ် (MMK)</span></label>
-        <p class="sub" data-i18n="rate_mmk_sub">MMK per 1 THB</p>
-        <input id="ratePerThb" class="amt-input w-full" type="text" inputmode="decimal" data-i18n-ph="ph_ex2" placeholder="ဥပမာ - 121.95">
+
+      <div class="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3 rate-panel-card">
+        <div class="rate-card-title"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag">ကျပ် → ဘတ် <span class="text-[10px] text-emerald-600">(အထွက်)</span></div>
+        <div class="rate-card-field">
+          <label class="rate-card-label">၁ သိန်း MMK = ? THB</label>
+          <input id="rate100kOut" class="rate-card-input" type="text" inputmode="decimal" placeholder="ဥပမာ - 760">
+        </div>
+        <div class="rate-card-field">
+          <label class="rate-card-label">၁ THB = ? MMK</label>
+          <input id="ratePerThbOut" class="rate-card-input" type="text" inputmode="decimal" placeholder="ဥပမာ - 131.58">
+        </div>
       </div>
-      <div>
-        <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span data-i18n="rate_vnd_1mmk">၁ ကျပ် အတွက် ဒေါင် (VND)</span></label>
-        <p class="sub" data-i18n="rate_vnd_sub">VND per 1 MMK</p>
-        <input id="rateVnd" class="amt-input w-full" type="text" inputmode="decimal" data-i18n-ph="ph_ex3" placeholder="ဥပမာ - 6.5">
+
+      <div class="rounded-xl border border-red-100 bg-red-50/40 p-3 rate-panel-card">
+        <div class="rate-card-title"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag">ဒေါင် ↔ ကျပ်</div>
+        <div class="rate-card-field">
+          <label class="rate-card-label">ဒေါင် → ကျပ်: ၁ ကျပ် = ? VND</label>
+          <input id="rateVndIn" class="rate-card-input" type="text" inputmode="decimal" placeholder="ဥပမာ - 6.33">
+        </div>
+        <div class="rate-card-field">
+          <label class="rate-card-label">ကျပ် → ဒေါင်: ၁ ကျပ် = ? VND</label>
+          <input id="rateVndOut" class="rate-card-input" type="text" inputmode="decimal" placeholder="ဥပမာ - 6.20">
+        </div>
       </div>
     </div>
-    
-    <div class="mt-3 flex flex-col sm:flex-row sm:gap-6 gap-1 border-t pt-3 border-slate-100">
-        <p class="rate-note !m-0 !p-0" id="rateNoteTop"></p>
-        <p class="rate-note !m-0 !p-0" id="rateNoteVndTop"></p>
+    <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-1 border-t pt-3 border-slate-100 rate-panel-summary-wrap">
+      <p class="rate-note rate-panel-summary !m-0 !p-0 text-center" id="rateNoteTopIn"></p>
+      <p class="rate-note rate-panel-summary !m-0 !p-0 text-center" id="rateNoteTopOut"></p>
+      <p class="rate-note rate-panel-summary !m-0 !p-0 text-center" id="rateNoteVndTop"></p>
     </div>
   </section>
 
@@ -1598,7 +1635,7 @@
   };
 
   let CURRENT_QR = { owner:'', normal:null, big:null, hasBig:false };
-  let LAST_RATE = { r:null, inv:null, vnd:null };
+  let LAST_RATE = { r:null, inv:null, vnd:null, thbIn:null, thbInInv:null, thbOut:null, thbOutInv:null, vndIn:null, vndOut:null };
   let ADMIN_TIMEZONE = 'Asia/Bangkok'; 
   let ALERT_TIMEOUT_HOURS = 1; // Pending အချက်ပြရန် Default (၁ နာရီ)
   let CURRENT_RECEIPT_THEME = 'default'; // 🌟 ပြေစာ Theme အသစ်အတွက် State
@@ -1781,73 +1818,190 @@ let calcLock = false;
       }
   }
 
-  // --- Calc Logic ---
-  function getRate() { const a=parseNum(document.getElementById('rate100k').value), b=parseNum(document.getElementById('ratePerThb').value); if(Number.isFinite(a) && a>0) return a; if(Number.isFinite(b) && b>0) return 100000/b; return NaN; }
-  function refreshRateNote() {
-    const r=getRate();
-    if(Number.isFinite(r) && r>0){ LAST_RATE.r=r; LAST_RATE.inv=100000/r; const msg=`မြန်မာငွေ ၁ သိန်း = ${fmt6(r)} ဘတ် | ၁ ဘတ် = ${fmt6(100000/r)} ကျပ်`;
-      document.getElementById('rateNote1').textContent=msg; document.getElementById('rateNote2').textContent=msg; document.getElementById('rateNoteTop').textContent=msg;
-    }else{ document.getElementById('rateNote1').textContent=''; document.getElementById('rateNote2').textContent=''; document.getElementById('rateNoteTop').textContent=''; LAST_RATE.r=null; LAST_RATE.inv=null; }
+  // --- Direction-aware Calc Logic ---
+  function getThbRate(direction = 'in') {
+    const suffix = direction === 'out' ? 'Out' : 'In';
+    const a = parseNum(document.getElementById(`rate100k${suffix}`)?.value);
+    const b = parseNum(document.getElementById(`ratePerThb${suffix}`)?.value);
+    if (Number.isFinite(a) && a > 0) return { per100k: a, perThb: 100000 / a };
+    if (Number.isFinite(b) && b > 0) return { per100k: 100000 / b, perThb: b };
+    return { per100k: NaN, perThb: NaN };
+  }
+  function getRate(direction = 'in') { return getThbRate(direction).per100k; }
+  function getVndRate(direction = 'in') {
+    const suffix = direction === 'out' ? 'Out' : 'In';
+    const v = parseNum(document.getElementById(`rateVnd${suffix}`)?.value);
+    return (Number.isFinite(v) && v > 0) ? v : NaN;
   }
 
-  function getVndRate() { const v = parseNum(document.getElementById('rateVnd').value); return (Number.isFinite(v) && v>0) ? v : NaN; }
+  function refreshRateNote() {
+    const incoming = getThbRate('in');
+    const outgoing = getThbRate('out');
+    LAST_RATE.thbIn = Number.isFinite(incoming.per100k) ? incoming.per100k : null;
+    LAST_RATE.thbInInv = Number.isFinite(incoming.perThb) ? incoming.perThb : null;
+    LAST_RATE.thbOut = Number.isFinite(outgoing.per100k) ? outgoing.per100k : null;
+    LAST_RATE.thbOutInv = Number.isFinite(outgoing.perThb) ? outgoing.perThb : null;
+    LAST_RATE.r = LAST_RATE.thbOut || LAST_RATE.thbIn || null;
+    LAST_RATE.inv = LAST_RATE.thbOutInv || LAST_RATE.thbInInv || null;
+    const inMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt6(incoming.per100k)} ဘတ် | ၁ ဘတ် = ${fmt6(incoming.perThb)} ကျပ်` : '';
+    const outMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt6(outgoing.per100k)} ဘတ် | ၁ ဘတ် = ${fmt6(outgoing.perThb)} ကျပ်` : '';
+    const inTopMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt6(incoming.per100k)} ဘတ်<br>၁ ဘတ် = ${fmt6(incoming.perThb)} ကျပ်` : '';
+    const outTopMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt6(outgoing.per100k)} ဘတ်<br>၁ ဘတ် = ${fmt6(outgoing.perThb)} ကျပ်` : '';
+    const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+    const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+    setText('rateNote1', inMsg); setText('rateNote2', outMsg);
+    setHtml('rateNoteTopIn', inTopMsg); setHtml('rateNoteTopOut', outTopMsg);
+  }
+
   function refreshVndRateNote() {
-    const r=getVndRate();
-    if(Number.isFinite(r) && r>0){ LAST_RATE.vnd = r; const msg=`၁ ကျပ် = ${fmt6(r)} ဒေါင် (VND)`;
-      document.getElementById('rateNoteVnd1').textContent = msg; document.getElementById('rateNoteVnd2').textContent = msg; document.getElementById('rateNoteVndTop').textContent = msg;
-    }else{ document.getElementById('rateNoteVnd1').textContent=''; document.getElementById('rateNoteVnd2').textContent=''; document.getElementById('rateNoteVndTop').textContent=''; LAST_RATE.vnd=null;}
+    const incoming = getVndRate('in');
+    const outgoing = getVndRate('out');
+    LAST_RATE.vndIn = Number.isFinite(incoming) ? incoming : null;
+    LAST_RATE.vndOut = Number.isFinite(outgoing) ? outgoing : null;
+    LAST_RATE.vnd = LAST_RATE.vndOut || LAST_RATE.vndIn || null;
+    const inMsg = Number.isFinite(incoming) && incoming > 0 ? `ဒေါင် → ကျပ်: ၁ ကျပ် = ${fmt6(incoming)} ဒေါင် (VND)` : '';
+    const outMsg = Number.isFinite(outgoing) && outgoing > 0 ? `ကျပ် → ဒေါင်: ၁ ကျပ် = ${fmt6(outgoing)} ဒေါင် (VND)` : '';
+    const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+    const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+    setText('rateNoteVnd1', inMsg); setText('rateNoteVnd2', outMsg);
+    setHtml('rateNoteVndTop', [inMsg, outMsg].filter(Boolean).join('<br>'));
   }
 
   function recalc() {
     if(calcLock) return; calcLock = true;
-    const rate = getRate();
+    const rateIn = getRate('in');
+    const rateOut = getRate('out');
     const thbIn = parseNum(document.getElementById('thbIn').value);
     const mmkIn = parseNum(document.getElementById('mmkIn').value);
-    
-    if(Number.isFinite(rate) && Number.isFinite(thbIn)) updateVal('mmkOut', thbIn * 100000 / rate, false);
+    if(Number.isFinite(rateIn) && Number.isFinite(thbIn)) updateVal('mmkOut', thbIn * 100000 / rateIn, false);
     else document.getElementById('mmkOut').value = '';
-    
-    if(Number.isFinite(rate) && Number.isFinite(mmkIn)) updateVal('thbOut', mmkIn * rate / 100000, true);
+    if(Number.isFinite(rateOut) && Number.isFinite(mmkIn)) updateVal('thbOut', mmkIn * rateOut / 100000, true);
     else document.getElementById('thbOut').value = '';
-    
     calcLock = false;
   }
-  
+
   function recalcVND() {
     if(calcLock) return; calcLock = true;
-    const rate = getVndRate();
+    const rateIn = getVndRate('in');
+    const rateOut = getVndRate('out');
     const vndIn = parseNum(document.getElementById('vndIn').value);
     const mmkIn2 = parseNum(document.getElementById('mmkIn2').value);
-    
-    if(Number.isFinite(rate) && Number.isFinite(vndIn)) updateVal('mmkOut2', vndIn / rate, false);
+    if(Number.isFinite(rateIn) && Number.isFinite(vndIn)) updateVal('mmkOut2', vndIn / rateIn, false);
     else document.getElementById('mmkOut2').value = '';
-    
-    if(Number.isFinite(rate) && Number.isFinite(mmkIn2)) updateVal('vndOut', mmkIn2 * rate, false);
+    if(Number.isFinite(rateOut) && Number.isFinite(mmkIn2)) updateVal('vndOut', mmkIn2 * rateOut, false);
     else document.getElementById('vndOut').value = '';
-    
     calcLock = false;
   }
 
-  function syncFrom100k() { if(calcLock) return; calcLock=true; const r=parseNum(document.getElementById('rate100k').value); if(Number.isFinite(r) && r>0){ document.getElementById('ratePerThb').value = fmt6(100000/r); formatInputThousands(document.getElementById('ratePerThb'),true); }else document.getElementById('ratePerThb').value=''; calcLock=false; refreshRateNote(); recalc(); }
-  function syncFromPerThb() { if(calcLock) return; calcLock=true; const inv=parseNum(document.getElementById('ratePerThb').value); if(Number.isFinite(inv) && inv>0){ document.getElementById('rate100k').value = fmt6(100000/inv); formatInputThousands(document.getElementById('rate100k'),true); }else document.getElementById('rate100k').value=''; calcLock=false; refreshRateNote(); recalc(); }
+  function syncThbPair(direction, source) {
+    if(calcLock) return;
+    calcLock = true;
+    const suffix = direction === 'out' ? 'Out' : 'In';
+    const topEl = document.getElementById(`rate100k${suffix}`);
+    const perEl = document.getElementById(`ratePerThb${suffix}`);
+    if (source === '100k') {
+      const r = parseNum(topEl?.value);
+      if (Number.isFinite(r) && r > 0) { perEl.value = fmt6(100000 / r); formatInputThousands(perEl, true); }
+      else if (perEl) perEl.value = '';
+    } else {
+      const inv = parseNum(perEl?.value);
+      if (Number.isFinite(inv) && inv > 0) { topEl.value = fmt6(100000 / inv); formatInputThousands(topEl, true); }
+      else if (topEl) topEl.value = '';
+    }
+    calcLock = false;
+    refreshRateNote(); recalc();
+  }
+  function syncFrom100k(direction = 'in') { syncThbPair(direction, '100k'); }
+  function syncFromPerThb(direction = 'in') { syncThbPair(direction, 'perThb'); }
 
-  // Global Listeners
-  ['rate100k','ratePerThb'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshRateNote(); recalc(); }); });
-  if(document.getElementById('rate100k')) document.getElementById('rate100k').addEventListener('input', syncFrom100k); 
-  if(document.getElementById('ratePerThb')) document.getElementById('ratePerThb').addEventListener('input', syncFromPerThb);
-  ['rateVnd'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('input', ()=>{ refreshVndRateNote(); recalcVND(); }); });
+  function collectRateValues() {
+    const out = {};
+    ['rate100kIn','ratePerThbIn','rate100kOut','ratePerThbOut','rateVndIn','rateVndOut'].forEach(id => {
+      const n = parseNum(document.getElementById(id)?.value);
+      if (Number.isFinite(n) && n > 0) out[id] = n;
+    });
+    return out;
+  }
+
+  function getSectionRateInfo(sectionId) {
+    if (sectionId === 'box-thb2mmk') {
+      const r = getThbRate('in');
+      return { kind:'thb', per100k:r.per100k, perThb:r.perThb };
+    }
+    if (sectionId === 'box-mmk2thb') {
+      const r = getThbRate('out');
+      return { kind:'thb', per100k:r.per100k, perThb:r.perThb };
+    }
+    if (sectionId === 'box-vnd2mmk') return { kind:'vnd', vnd:getVndRate('in') };
+    if (sectionId === 'box-mmk2vnd') return { kind:'vnd', vnd:getVndRate('out') };
+    return { kind:'unknown', per100k:NaN, perThb:NaN, vnd:NaN };
+  }
+
+  function formatSectionRate(sectionId) {
+    const info = getSectionRateInfo(sectionId);
+    if (info.kind === 'thb' && Number.isFinite(info.per100k) && Number.isFinite(info.perThb)) {
+      return `100K = ${fmt6(info.per100k)} THB | 1 THB = ${fmt6(info.perThb)} MMK`;
+    }
+    if (info.kind === 'vnd' && Number.isFinite(info.vnd)) return `1 MMK = ${fmt6(info.vnd)} VND`;
+    return '';
+  }
+
+  function applySavedRates(saved, onlyIfEmpty = false) {
+    if (!saved) return;
+    const pairs = [
+      { direction:'in', top:'rate100kIn', per:'ratePerThbIn', oldTop:'rate100k' },
+      { direction:'out', top:'rate100kOut', per:'ratePerThbOut', oldTop:'rate100k' }
+    ];
+    pairs.forEach(pair => {
+      const topSaved = saved[pair.top] ?? (saved[pair.oldTop] ?? null);
+      const perSaved = saved[pair.per] ?? null;
+      const topEl = document.getElementById(pair.top);
+      const perEl = document.getElementById(pair.per);
+      if (!topEl || !perEl) return;
+      if (onlyIfEmpty && (parseNum(topEl.value) > 0 || parseNum(perEl.value) > 0)) return;
+      if (Number.isFinite(Number(topSaved)) && Number(topSaved) > 0) {
+        topEl.value = topSaved;
+        formatInputThousands(topEl, true);
+        syncThbPair(pair.direction, '100k');
+      } else if (Number.isFinite(Number(perSaved)) && Number(perSaved) > 0) {
+        perEl.value = perSaved;
+        formatInputThousands(perEl, true);
+        syncThbPair(pair.direction, 'perThb');
+      }
+    });
+    const vndPairs = [['rateVndIn','rateVnd'], ['rateVndOut','rateVnd']];
+    vndPairs.forEach(([id, oldId]) => {
+      const el = document.getElementById(id);
+      const savedValue = saved[id] ?? saved[oldId] ?? null;
+      if (!el || (onlyIfEmpty && parseNum(el.value) > 0)) return;
+      if (Number.isFinite(Number(savedValue)) && Number(savedValue) > 0) {
+        el.value = savedValue;
+        formatInputThousands(el, true);
+      }
+    });
+    refreshRateNote(); refreshVndRateNote(); recalc(); recalcVND();
+  }
+
+  [['rate100kIn', 'in', '100k'], ['ratePerThbIn', 'in', 'perThb'], ['rate100kOut', 'out', '100k'], ['ratePerThbOut', 'out', 'perThb']].forEach(([id, direction, source]) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => syncThbPair(direction, source));
+  });
+  [['rateVndIn', 'in'], ['rateVndOut', 'out']].forEach(([id]) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => { refreshVndRateNote(); recalcVND(); });
+  });
 
   // BI-DIRECTIONAL INPUT LISTENERS
   document.getElementById('thbIn').addEventListener('input', () => {
       if(calcLock) return; calcLock = true;
-      const rate = getRate(); const v = parseNum(document.getElementById('thbIn').value);
+      const rate = getRate('in'); const v = parseNum(document.getElementById('thbIn').value);
       if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('mmkOut', v * 100000 / rate, false);
       else document.getElementById('mmkOut').value = '';
       calcLock = false;
   });
   document.getElementById('mmkOut').addEventListener('input', () => {
       if(calcLock) return; calcLock = true;
-      const rate = getRate(); const v = parseNum(document.getElementById('mmkOut').value);
+      const rate = getRate('in'); const v = parseNum(document.getElementById('mmkOut').value);
       if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('thbIn', v * rate / 100000, true);
       else document.getElementById('thbIn').value = '';
       calcLock = false;
@@ -1855,14 +2009,14 @@ let calcLock = false;
 
   document.getElementById('mmkIn').addEventListener('input', () => {
       if(calcLock) return; calcLock = true;
-      const rate = getRate(); const v = parseNum(document.getElementById('mmkIn').value);
+      const rate = getRate('out'); const v = parseNum(document.getElementById('mmkIn').value);
       if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('thbOut', v * rate / 100000, true);
       else document.getElementById('thbOut').value = '';
       calcLock = false;
   });
   document.getElementById('thbOut').addEventListener('input', () => {
       if(calcLock) return; calcLock = true;
-      const rate = getRate(); const v = parseNum(document.getElementById('thbOut').value);
+      const rate = getRate('out'); const v = parseNum(document.getElementById('thbOut').value);
       if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('mmkIn', v * 100000 / rate, false);
       else document.getElementById('mmkIn').value = '';
       calcLock = false;
@@ -1870,14 +2024,14 @@ let calcLock = false;
 
   document.getElementById('vndIn').addEventListener('input', () => {
       if(calcLock) return; calcLock = true;
-      const rate = getVndRate(); const v = parseNum(document.getElementById('vndIn').value);
+      const rate = getVndRate('in'); const v = parseNum(document.getElementById('vndIn').value);
       if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('mmkOut2', v / rate, false);
       else document.getElementById('mmkOut2').value = '';
       calcLock = false;
   });
   document.getElementById('mmkOut2').addEventListener('input', () => {
       if(calcLock) return; calcLock = true;
-      const rate = getVndRate(); const v = parseNum(document.getElementById('mmkOut2').value);
+      const rate = getVndRate('in'); const v = parseNum(document.getElementById('mmkOut2').value);
       if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('vndIn', v * rate, false);
       else document.getElementById('vndIn').value = '';
       calcLock = false;
@@ -1885,14 +2039,14 @@ let calcLock = false;
 
   document.getElementById('mmkIn2').addEventListener('input', () => {
       if(calcLock) return; calcLock = true;
-      const rate = getVndRate(); const v = parseNum(document.getElementById('mmkIn2').value);
+      const rate = getVndRate('out'); const v = parseNum(document.getElementById('mmkIn2').value);
       if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('vndOut', v * rate, false);
       else document.getElementById('vndOut').value = '';
       calcLock = false;
   });
   document.getElementById('vndOut').addEventListener('input', () => {
       if(calcLock) return; calcLock = true;
-      const rate = getVndRate(); const v = parseNum(document.getElementById('vndOut').value);
+      const rate = getVndRate('out'); const v = parseNum(document.getElementById('vndOut').value);
       if(Number.isFinite(rate) && Number.isFinite(v)) updateVal('mmkIn2', v / rate, false);
       else document.getElementById('mmkIn2').value = '';
       calcLock = false;
@@ -1900,7 +2054,7 @@ let calcLock = false;
 
   bindAutoSeparator('thbIn', true); bindAutoSeparator('mmkIn', true); bindAutoSeparator('vndIn', true); bindAutoSeparator('mmkIn2', true);
   bindAutoSeparator('mmkOut', false); bindAutoSeparator('thbOut', true); bindAutoSeparator('mmkOut2', false); bindAutoSeparator('vndOut', false);
-  bindAutoSeparator('rate100k', true); bindAutoSeparator('ratePerThb', true); bindAutoSeparator('rateVnd', true);
+  ['rate100kIn','ratePerThbIn','rate100kOut','ratePerThbOut','rateVndIn','rateVndOut'].forEach(id => bindAutoSeparator(id, true));
 
 // 🔔 OK နှိပ်စရာမလိုဘဲ Auto ပျောက်သွားစေမည့် Function
 window.showToast = function(message, icon = "✅") {
@@ -1950,19 +2104,19 @@ window.showToast = function(message, icon = "✅") {
       if (sectionId === 'box-thb2mmk') {
           flag1 = '🇹🇭 '; label1 = 'ဘတ်ငွေ (လွှဲငွေ)';
           flag2 = '🇲🇲 '; label2 = 'မြန်မာကျပ် (ရငွေ)';
-          rateStr = LAST_RATE.r ? `ငွေဈေး ၁ သိန်းကျပ် = ${fmt6(LAST_RATE.r)} ဘတ်` : '';
+          rateStr = formatSectionRate(sectionId);
       } else if (sectionId === 'box-mmk2thb') {
           flag1 = '🇲🇲 '; label1 = 'မြန်မာကျပ် (လွှဲငွေ)';
           flag2 = '🇹🇭 '; label2 = 'ဘတ်ငွေ (ရငွေ)';
-          rateStr = LAST_RATE.r ? `ငွေဈေး ၁ သိန်းကျပ် = ${fmt6(LAST_RATE.r)} ဘတ်` : '';
+          rateStr = formatSectionRate(sectionId);
       } else if (sectionId === 'box-vnd2mmk') {
           flag1 = '🇻🇳 '; label1 = 'ဒေါင်ငွေ (လွှဲငွေ)';
           flag2 = '🇲🇲 '; label2 = 'မြန်မာကျပ် (ရငွေ)';
-          rateStr = LAST_RATE.vnd ? `ငွေဈေး ၁ ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : '';
+          rateStr = formatSectionRate(sectionId);
       } else if (sectionId === 'box-mmk2vnd') {
           flag1 = '🇲🇲 '; label1 = 'မြန်မာကျပ် (လွှဲငွေ)';
           flag2 = '🇻🇳 '; label2 = 'ဒေါင်ငွေ (ရငွေ)';
-          rateStr = LAST_RATE.vnd ? `ငွေဈေး ၁ ကျပ် = ${fmt6(LAST_RATE.vnd)} ဒေါင်` : '';
+          rateStr = formatSectionRate(sectionId);
       }
 
       let val1 = inputs[0] ? (inputs[0].value || '0') : '0';
@@ -3109,7 +3263,7 @@ if (file.startsWith('PP:')) {
     }
 
     updateReceiptUI();
-    initDropdowns(); syncFrom100k(); refreshVndRateNote(); recalcVND();
+    initDropdowns(); syncFrom100k('in'); syncFrom100k('out'); refreshRateNote(); refreshVndRateNote(); recalc(); recalcVND();
 
     const savedLang = localStorage.getItem('sys_lang_pref') || 'my';
     document.getElementById('sysLangSelect').value = savedLang;
@@ -3167,20 +3321,7 @@ if (file.startsWith('PP:')) {
         }
 
         // Rate ကို guest ကိုယ်တိုင် ရိုက်ထားခြင်း မရှိသေးပါက၊ Admin သိမ်းထားသော နောက်ဆုံး rate ကို ကူညီဖြည့်ပေးမည်
-        if (pd.lastRates) {
-          const r100kEl = document.getElementById('rate100k');
-          const rVndEl = document.getElementById('rateVnd');
-          if (pd.lastRates.rate100k && r100kEl && !parseNum(r100kEl.value)) {
-            r100kEl.value = pd.lastRates.rate100k;
-            formatInputThousands(r100kEl, true);
-            syncFrom100k();
-          }
-          if (pd.lastRates.rateVnd && rVndEl && !parseNum(rVndEl.value)) {
-            rVndEl.value = pd.lastRates.rateVnd;
-            formatInputThousands(rVndEl, true);
-            refreshVndRateNote(); recalcVND();
-          }
-        }
+        if (pd.lastRates) applySavedRates(pd.lastRates, true);
 
         initDropdowns();
       }).catch((e) => {
@@ -3434,10 +3575,7 @@ if (data.expenseOrder) {
             if(document.getElementById('customThemeUrlInput')) document.getElementById('customThemeUrlInput').value = CUSTOM_THEME_URL;
         }
         if(typeof window.toggleCustomThemeInput === 'function') window.toggleCustomThemeInput();
-        if (data.lastRates) {
-          if (data.lastRates.rate100k) { document.getElementById('rate100k').value = data.lastRates.rate100k; formatInputThousands(document.getElementById('rate100k'), true); syncFrom100k(); }
-          if (data.lastRates.rateVnd) { document.getElementById('rateVnd').value = data.lastRates.rateVnd; formatInputThousands(document.getElementById('rateVnd'), true); refreshVndRateNote(); recalcVND(); }
-        }
+        if (data.lastRates) applySavedRates(data.lastRates, false);
         
        if (data.timeSettings) {
     if (data.timeSettings.pendingAlertHours) ALERT_TIMEOUT_HOURS = parseFloat(data.timeSettings.pendingAlertHours);
@@ -3530,9 +3668,7 @@ if (data.telegram) {
         // 🌟 admin_data အောင်မြင်စွာ ဆွဲယူတိုင်း Guest public_data ကိုပါ (Banks/QR/Rate) လက်ရှိအတိုင်း Sync ပြန်ချပေးမည်
         // (public_data document ကို ပထမဆုံးအကြိမ် အလိုအလျောက် ဖန်တီးပေးရာလည်း ကျပါသည်)
         if (typeof syncPublicData === 'function') {
-          const currentLastRates = {};
-          if (data.lastRates && data.lastRates.rate100k) currentLastRates.rate100k = data.lastRates.rate100k;
-          if (data.lastRates && data.lastRates.rateVnd) currentLastRates.rateVnd = data.lastRates.rateVnd;
+          const currentLastRates = data.lastRates ? { ...data.lastRates } : {};
           syncPublicData({ banks: true, qrs: true, rates: Object.keys(currentLastRates).length ? currentLastRates : undefined });
         }
       }
@@ -3569,21 +3705,19 @@ else payload = { banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIR
   }
 
   let rateSaveTimer;
-  ['rate100k','ratePerThb','rateVnd'].forEach(id => {
+  ['rate100kIn','ratePerThbIn','rate100kOut','ratePerThbOut','rateVndIn','rateVndOut'].forEach(id => {
       const el = document.getElementById(id);
       if(el) {
           el.addEventListener('input', () => {
               clearTimeout(rateSaveTimer);
               rateSaveTimer = setTimeout(async () => {
                   if (!dbRef) return;
-                  const r100k = parseNum(document.getElementById('rate100k').value); const rVnd = parseNum(document.getElementById('rateVnd').value);
-                  let ratesToSave = {};
-                  if (Number.isFinite(r100k) && r100k > 0) ratesToSave.rate100k = r100k; if (Number.isFinite(rVnd) && rVnd > 0) ratesToSave.rateVnd = rVnd;
+                  const ratesToSave = collectRateValues();
                   if (Object.keys(ratesToSave).length > 0) {
-                      try { await dbRef.set({ lastRates: ratesToSave }, { merge: true }); } catch (err) { }
-                      if (typeof syncPublicData === 'function') { try { await syncPublicData({ rates: ratesToSave }); } catch (err) { } } // 🌟 Guest ဘက်ကလည်း Rate အသစ်မြင်ရအောင်
+                      try { await dbRef.set({ lastRates: ratesToSave }, { merge: true }); } catch (err) { console.warn('Rate save error:', err); }
+                      if (typeof syncPublicData === 'function') { try { await syncPublicData({ rates: ratesToSave }); } catch (err) { console.warn('Public rate sync error:', err); } }
                   }
-              }, 1500); 
+              }, 1500);
           });
       }
   });
@@ -7208,8 +7342,15 @@ async function loadHistory() {
     
     const rateP=clone.querySelector('.rate-note');
     if(rateP) {
-      if(clone.id==='box-thb2mmk' || clone.id==='box-mmk2thb'){ rateP.textContent = T.rateTpl.replace('{r}',fmt6(LAST_RATE.r)).replace('{inv}',fmt6(LAST_RATE.inv)); rateP.innerHTML += '<br>'; }
-      if(clone.id==='box-vnd2mmk' || clone.id==='box-mmk2vnd'){ rateP.textContent = T.rateVndTpl.replace('{v}',fmt6(LAST_RATE.vnd)); rateP.innerHTML += '<br>'; }
+      const info = getSectionRateInfo(clone.id);
+      if(info.kind === 'thb' && Number.isFinite(info.per100k) && Number.isFinite(info.perThb)) {
+        rateP.textContent = T.rateTpl.replace('{r}',fmt6(info.per100k)).replace('{inv}',fmt6(info.perThb));
+        rateP.innerHTML += '<br>';
+      }
+      if(info.kind === 'vnd' && Number.isFinite(info.vnd)) {
+        rateP.textContent = T.rateVndTpl.replace('{v}',fmt6(info.vnd));
+        rateP.innerHTML += '<br>';
+      }
     }
 
     const w1 = clone.querySelector('.lang-warn1'); if(w1 && customTexts.warn1) { w1.textContent = replaceVars(customTexts.warn1); }
@@ -7556,7 +7697,8 @@ async function loadHistory() {
           const outValue = smartParseAmount(outInput?.value);
           if (!(inValue > 0)) errors.push('လွှဲဝင်မည့် ပမာဏကို မှန်ကန်စွာ ထည့်ပါ။');
           if (!(outValue > 0)) errors.push('လက်ခံရမည့် ပမာဏကို မှန်ကန်စွာ ထည့်ပါ။');
-          const rate = sectionId.includes('vnd') ? smartParseAmount(LAST_RATE.vnd) : smartParseAmount(LAST_RATE.r);
+          const rateInfo = getSectionRateInfo(sectionId);
+          const rate = rateInfo.kind === 'vnd' ? smartParseAmount(rateInfo.vnd) : smartParseAmount(rateInfo.per100k);
           if (!(rate > 0)) errors.push('ငွေလဲနှုန်း မရှိသေးပါ။ Rate ကို အရင်သိမ်းပါ။');
           const recType = sectionId === 'box-thb2mmk' ? 'THB ➔ MMK' : sectionId === 'box-mmk2thb' ? 'MMK ➔ THB' : sectionId === 'box-vnd2mmk' ? 'VND ➔ MMK' : 'MMK ➔ VND';
           const now = Date.now();
@@ -7580,6 +7722,7 @@ async function loadHistory() {
       if (data && typeof data.treasuryAccounts !== 'object') warnings.push('Treasury data မရှိပါ။');
       if (data && typeof data.expenses !== 'object') warnings.push('Expense data မရှိပါ။');
       if (data && data.apiKeys && typeof data.apiKeys !== 'object') errors.push('API key payload မမှန်ပါ။');
+      if (data && data.lastRates && typeof data.lastRates !== 'object') errors.push('Rate payload မမှန်ပါ။');
       const result = { ok: errors.length === 0, errors, warnings, checkedAt: new Date().toISOString() };
       REPORT_VALIDATION_STATE = { kind: 'backup', ...result };
       return result;
@@ -7969,11 +8112,11 @@ async function loadHistory() {
           
           ctx.drawImage(canvas, margin, margin);
 
-          let recType = ""; let savedRate = ""; 
-          if(sectionId==='box-thb2mmk') { recType = "THB ➔ MMK"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; } 
-          else if(sectionId==='box-mmk2thb') { recType = "MMK ➔ THB"; savedRate = `100K = ${fmt6(LAST_RATE.r)} THB`; } 
-          else if(sectionId==='box-vnd2mmk') { recType = "VND ➔ MMK"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; } 
-          else if(sectionId==='box-mmk2vnd') { recType = "MMK ➔ VND"; savedRate = `1 MMK = ${fmt6(LAST_RATE.vnd)} VND`; }
+          let recType = ""; let savedRate = formatSectionRate(sectionId);
+          if(sectionId==='box-thb2mmk') recType = "THB ➔ MMK";
+          else if(sectionId==='box-mmk2thb') recType = "MMK ➔ THB";
+          else if(sectionId==='box-vnd2mmk') recType = "VND ➔ MMK";
+          else if(sectionId==='box-mmk2vnd') recType = "MMK ➔ VND";
           
           const currentDeviceId = CURRENT_DEVICE_ID || "Unknown";
           const historyRecord = { 
@@ -9064,7 +9207,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           },
           device_permissions: FIREBASE_DEVICE_PERMISSIONS,
           system_passwords: FIREBASE_SYSTEM_PASSWORDS,
-          adminTimezone: ADMIN_TIMEZONE
+          adminTimezone: ADMIN_TIMEZONE,
+          lastRates: collectRateValues()
       };
   }
 
