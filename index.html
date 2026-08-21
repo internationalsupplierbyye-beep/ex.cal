@@ -1784,6 +1784,7 @@ let calcLock = false;
   }
   function fmt0ceil(n){ return new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.ceil(n)); }
   function fmt6(n){ return new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:6}).format(n); }
+  function fmt2(n){ return new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:2}).format(n); }
   function formatRate(num) { return num.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 4}); }
   function formatMmk(num) { return num.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0}); }
 
@@ -1886,10 +1887,10 @@ let calcLock = false;
     LAST_RATE.thbOutInv = Number.isFinite(outgoing.perThb) ? outgoing.perThb : null;
     LAST_RATE.r = LAST_RATE.thbOut || LAST_RATE.thbIn || null;
     LAST_RATE.inv = LAST_RATE.thbOutInv || LAST_RATE.thbInInv || null;
-    const inMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt6(incoming.per100k)} ဘတ် | ၁ ဘတ် = ${fmt6(incoming.perThb)} ကျပ်` : '';
-    const outMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt6(outgoing.per100k)} ဘတ် | ၁ ဘတ် = ${fmt6(outgoing.perThb)} ကျပ်` : '';
-    const inTopMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt6(incoming.per100k)} ဘတ်<br>၁ ဘတ် = ${fmt6(incoming.perThb)} ကျပ်` : '';
-    const outTopMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt6(outgoing.per100k)} ဘတ်<br>၁ ဘတ် = ${fmt6(outgoing.perThb)} ကျပ်` : '';
+    const inMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(incoming.per100k)} ဘတ် | ၁ ဘတ် = ${fmt2(incoming.perThb)} ကျပ်` : '';
+    const outMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(outgoing.per100k)} ဘတ် | ၁ ဘတ် = ${fmt2(outgoing.perThb)} ကျပ်` : '';
+    const inTopMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(incoming.per100k)} ဘတ်<br>၁ ဘတ် = ${fmt2(incoming.perThb)} ကျပ်` : '';
+    const outTopMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(outgoing.per100k)} ဘတ်<br>၁ ဘတ် = ${fmt2(outgoing.perThb)} ကျပ်` : '';
     const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
     const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
     setText('rateNote1', inMsg); setText('rateNote2', outMsg);
@@ -1902,8 +1903,8 @@ let calcLock = false;
     LAST_RATE.vndIn = Number.isFinite(incoming) ? incoming : null;
     LAST_RATE.vndOut = Number.isFinite(outgoing) ? outgoing : null;
     LAST_RATE.vnd = LAST_RATE.vndOut || LAST_RATE.vndIn || null;
-    const inMsg = Number.isFinite(incoming) && incoming > 0 ? `ဒေါင် → ကျပ်: ၁ ကျပ် = ${fmt6(incoming)} ဒေါင် (VND)` : '';
-    const outMsg = Number.isFinite(outgoing) && outgoing > 0 ? `ကျပ် → ဒေါင်: ၁ ကျပ် = ${fmt6(outgoing)} ဒေါင် (VND)` : '';
+    const inMsg = Number.isFinite(incoming) && incoming > 0 ? `ဒေါင် → ကျပ်: ၁ ကျပ် = ${fmt2(incoming)} ဒေါင် (VND)` : '';
+    const outMsg = Number.isFinite(outgoing) && outgoing > 0 ? `ကျပ် → ဒေါင်: ၁ ကျပ် = ${fmt2(outgoing)} ဒေါင် (VND)` : '';
     const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
     const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
     setText('rateNoteVnd1', inMsg); setText('rateNoteVnd2', outMsg);
@@ -1986,6 +1987,14 @@ let calcLock = false;
       return `100K = ${fmt6(info.per100k)} THB | 1 THB = ${fmt6(info.perThb)} MMK`;
     }
     if (info.kind === 'vnd' && Number.isFinite(info.vnd)) return `1 MMK = ${fmt6(info.vnd)} VND`;
+    return '';
+  }
+  function formatSectionRateDisplay(sectionId) {
+    const info = getSectionRateInfo(sectionId);
+    if (info.kind === 'thb' && Number.isFinite(info.per100k) && Number.isFinite(info.perThb)) {
+      return `100K = ${fmt2(info.per100k)} THB | 1 THB = ${fmt2(info.perThb)} MMK`;
+    }
+    if (info.kind === 'vnd' && Number.isFinite(info.vnd)) return `1 MMK = ${fmt2(info.vnd)} VND`;
     return '';
   }
 
@@ -2147,19 +2156,19 @@ window.showToast = function(message, icon = "✅") {
       if (sectionId === 'box-thb2mmk') {
           flag1 = '🇹🇭 '; label1 = 'ဘတ်ငွေ (လွှဲငွေ)';
           flag2 = '🇲🇲 '; label2 = 'မြန်မာကျပ် (ရငွေ)';
-          rateStr = formatSectionRate(sectionId);
+          rateStr = formatSectionRateDisplay(sectionId);
       } else if (sectionId === 'box-mmk2thb') {
           flag1 = '🇲🇲 '; label1 = 'မြန်မာကျပ် (လွှဲငွေ)';
           flag2 = '🇹🇭 '; label2 = 'ဘတ်ငွေ (ရငွေ)';
-          rateStr = formatSectionRate(sectionId);
+          rateStr = formatSectionRateDisplay(sectionId);
       } else if (sectionId === 'box-vnd2mmk') {
           flag1 = '🇻🇳 '; label1 = 'ဒေါင်ငွေ (လွှဲငွေ)';
           flag2 = '🇲🇲 '; label2 = 'မြန်မာကျပ် (ရငွေ)';
-          rateStr = formatSectionRate(sectionId);
+          rateStr = formatSectionRateDisplay(sectionId);
       } else if (sectionId === 'box-mmk2vnd') {
           flag1 = '🇲🇲 '; label1 = 'မြန်မာကျပ် (လွှဲငွေ)';
           flag2 = '🇻🇳 '; label2 = 'ဒေါင်ငွေ (ရငွေ)';
-          rateStr = formatSectionRate(sectionId);
+          rateStr = formatSectionRateDisplay(sectionId);
       }
 
       let val1 = inputs[0] ? (inputs[0].value || '0') : '0';
@@ -2558,6 +2567,106 @@ window.showToast = function(message, icon = "✅") {
       }
   }
 
+  // Daily Report အတွက် Dashboard UI ကို မပြင်ဘဲ FIFO အမြတ်ကို သီးခြားတွက်မည့် Pure Calculation Helper
+  function calculateDailyProfitMetrics(dataArray, todayTzStr, tz) {
+      const getCleanNum = (str) => parseFloat(String(str).replace(/[^\d.]/g, '')) || 0;
+      let thbLongs = [], thbShorts = [];
+      let vndLongs = [], vndShorts = [];
+      let periodProfitThb = 0, periodProfitVnd = 0;
+      let periodProfitThbInBaht = 0;
+
+      const sortedTxs = (Array.isArray(dataArray) ? dataArray : []).slice().sort((a, b) => {
+          const tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+          const tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          return tA - tB;
+      });
+
+      sortedTxs.forEach(tx => {
+          if (!tx || tx.status !== 'Success') return;
+
+          const txType = tx.type || '';
+          const txTime = tx.timestamp || new Date().toISOString();
+          let recDateObj;
+          try {
+              recDateObj = new Date(new Date(txTime).toLocaleString('en-US', { timeZone: tz }));
+          } catch (e) {
+              recDateObj = new Date(txTime);
+          }
+          if (isNaN(recDateObj.getTime())) return;
+
+          const recDateStr = toYYYYMMDD(recDateObj);
+          const includeThisRecord = recDateStr === todayTzStr;
+          const inNum = getCleanNum(tx.inAmt);
+          const outNum = getCleanNum(tx.outAmt);
+          const currency = txType.includes('THB') ? 'THB' : (txType.includes('VND') ? 'VND' : '');
+          if (!currency) return;
+
+          const isBuy = txType === 'THB ➔ MMK' || txType === 'VND ➔ MMK';
+          const isSell = txType === 'MMK ➔ THB' || txType === 'MMK ➔ VND';
+          if (!isBuy && !isSell) return;
+
+          const fAmt = isBuy ? inNum : outNum;
+          const mAmt = isBuy ? outNum : inNum;
+          if (fAmt <= 0 || mAmt <= 0) return;
+
+          const rate = mAmt / fAmt;
+          let qtyToProcess = fAmt;
+          const targetLongs = currency === 'THB' ? thbLongs : vndLongs;
+          const targetShorts = currency === 'THB' ? thbShorts : vndShorts;
+
+          if (isBuy) {
+              while (qtyToProcess > 0 && targetShorts.length > 0) {
+                  const shortLot = targetShorts[0];
+                  const matchQty = Math.min(qtyToProcess, shortLot.qty);
+                  const profit = (shortLot.rate - rate) * matchQty;
+                  if (includeThisRecord) {
+                      if (currency === 'THB') {
+                          periodProfitThb += profit;
+                          periodProfitThbInBaht += rate > 0 ? (profit / rate) : 0;
+                      } else {
+                          periodProfitVnd += profit;
+                      }
+                  }
+                  qtyToProcess -= matchQty;
+                  shortLot.qty -= matchQty;
+                  if (shortLot.qty <= 0) targetShorts.shift();
+              }
+              if (qtyToProcess > 0) targetLongs.push({ qty: qtyToProcess, rate, date: tx.timestamp });
+          } else {
+              while (qtyToProcess > 0 && targetLongs.length > 0) {
+                  const longLot = targetLongs[0];
+                  const matchQty = Math.min(qtyToProcess, longLot.qty);
+                  const profit = (rate - longLot.rate) * matchQty;
+                  if (includeThisRecord) {
+                      if (currency === 'THB') {
+                          periodProfitThb += profit;
+                          periodProfitThbInBaht += rate > 0 ? (profit / rate) : 0;
+                      } else {
+                          periodProfitVnd += profit;
+                      }
+                  }
+                  qtyToProcess -= matchQty;
+                  longLot.qty -= matchQty;
+                  if (longLot.qty <= 0) targetLongs.shift();
+              }
+              if (qtyToProcess > 0) targetShorts.push({ qty: qtyToProcess, rate, date: tx.timestamp });
+          }
+      });
+
+      const activeThbLots = thbShorts.length > 0 ? thbShorts : thbLongs;
+      const totalThbQty = activeThbLots.reduce((sum, lot) => sum + Number(lot.qty || 0), 0);
+      const totalThbMmk = activeThbLots.reduce((sum, lot) => sum + (Number(lot.qty || 0) * Number(lot.rate || 0)), 0);
+      const estimatedThbRate = totalThbQty > 0 ? (totalThbMmk / totalThbQty) : 0;
+
+      return {
+          periodProfitThb,
+          periodProfitVnd,
+          periodProfitThbInBaht,
+          totalProfit: periodProfitThb + periodProfitVnd,
+          estimatedThbRate
+      };
+  }
+
   // --- 🌟 PDF Generation Function ---
   async function generatePDFReport() {
       const thbIn = document.getElementById('dash_thb_in').textContent;
@@ -2754,10 +2863,15 @@ window.showToast = function(message, icon = "✅") {
       const invId = "MAN-" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
 
       let savedRate = "";
+      let displayRate = "";
       if(type.includes('THB')) {
-          savedRate = `100K = ${fmt6((fAmt/mAmt)*100000)} THB`;
+          const r = (fAmt/mAmt)*100000;
+          savedRate = `100K = ${fmt6(r)} THB`;
+          displayRate = `100K = ${fmt2(r)} THB | 1 THB = ${fmt2(100000/r)} MMK`;
       } else {
-          savedRate = `1 MMK = ${fmt6(fAmt/mAmt)} VND`;
+          const v = fAmt/mAmt;
+          savedRate = `1 MMK = ${fmt6(v)} VND`;
+          displayRate = `1 MMK = ${fmt2(v)} VND`;
       }
       
       const currentDeviceId = CURRENT_DEVICE_ID || "Unknown";
@@ -2787,7 +2901,7 @@ window.showToast = function(message, icon = "✅") {
           alertMsg += `ID: <code>${invId}</code>\n`;
           alertMsg += `အမျိုးအစား: <b>${type}</b>\n`;
           alertMsg += `ပမာဏ: <code>${inAmtStr}</code> ➔ <code>${outAmtStr}</code>\n`;
-          alertMsg += `ငွေဈေး: <code>${savedRate}</code>\n`;
+          alertMsg += `ငွေဈေး: <code>${displayRate}</code>\n`;
           
           let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
           alertMsg += `Device: <b>${mappedDeviceName}</b>`;
@@ -3045,6 +3159,19 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         const opt = document.createElement('option'); opt.value = tz; opt.textContent = tz.replace(/_/g, ' '); group.appendChild(opt);
       });
     } catch(e) {}
+  }
+
+  // Coalesce bursts of Firebase/admin updates into one dropdown rebuild.
+  // The initial page setup still calls initDropdowns() directly; subsequent
+  // data changes use scheduleDropdownRefresh() to avoid repeated DOM work.
+  let dropdownRefreshTimer = null;
+  function scheduleDropdownRefresh(delay = 60) {
+    if (dropdownRefreshTimer) clearTimeout(dropdownRefreshTimer);
+    dropdownRefreshTimer = setTimeout(() => {
+      dropdownRefreshTimer = null;
+      initDropdowns();
+      if (typeof syncAllLedgerDropdowns === 'function') syncAllLedgerDropdowns();
+    }, delay);
   }
 
   function initDropdowns() {
@@ -3366,7 +3493,7 @@ if (file.startsWith('PP:')) {
         // Rate ကို guest ကိုယ်တိုင် ရိုက်ထားခြင်း မရှိသေးပါက၊ Admin သိမ်းထားသော နောက်ဆုံး rate ကို ကူညီဖြည့်ပေးမည်
         if (pd.lastRates) applySavedRates(pd.lastRates, true);
 
-        initDropdowns();
+        scheduleDropdownRefresh();
       }).catch((e) => {
         if (e.code !== 'permission-denied') console.warn("public_data load error:", e);
       });
@@ -3705,8 +3832,7 @@ if (data.telegram) {
         
         loadReceiptTextsToInputs();
         updateReceiptUI();
-        initDropdowns(); 
-        if (typeof syncAllLedgerDropdowns === 'function') syncAllLedgerDropdowns(); // 👈 ဤစာကြောင်းကို အသစ်ထပ်ထည့်ပါ
+        scheduleDropdownRefresh();
 
         // 🌟 admin_data အောင်မြင်စွာ ဆွဲယူတိုင်း Guest public_data ကိုပါ (Banks/QR/Rate) လက်ရှိအတိုင်း Sync ပြန်ချပေးမည်
         // (public_data document ကို ပထမဆုံးအကြိမ် အလိုအလျောက် ဖန်တီးပေးရာလည်း ကျပါသည်)
@@ -3878,7 +4004,17 @@ function openAdmin() {
     targetPane.setAttribute('aria-hidden', 'false');
     if (btnElement) btnElement.classList.add('active');
 
-    if (tabId === 'tab-history' || tabId === 'tab-dashboard' || tabId === 'tab-work-queue') loadHistory();
+    if (tabId === 'tab-history' || tabId === 'tab-dashboard' || tabId === 'tab-work-queue') {
+        // Only load history if it hasn't been loaded yet, to avoid unnecessary timeouts/flickers when switching tabs
+        if (!allLoadedHistory || allLoadedHistory.length === 0) {
+            loadHistory();
+        } else if (tabId === 'tab-history') {
+            // Just re-render existing data if switching to history tab
+            renderHistoryRows(allLoadedHistory);
+        } else if (tabId === 'tab-dashboard' && (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin')) {
+            refreshFifoDashboard();
+        }
+    }
     if (tabId === 'tab-work-queue') renderStaffWorkQueue();
     if (tabId === 'tab-general') { loadAdminDevices(); loadUserRoles(); }
     if (tabId === 'tab-customers') renderCustomerAdminList();
@@ -4052,7 +4188,7 @@ function openAdmin() {
           updateTarget = 'treasury';
       }
       
-      initDropdowns(); 
+      scheduleDropdownRefresh();
       if (dragType === 'customer') renderCustomerAdminList();
       else if (dragType === 'treasury') loadTreasuryData();
       else renderAdminLists();
@@ -4174,7 +4310,7 @@ function openAdmin() {
 
           clearCustomerForm();
           renderCustomerAdminList();
-          populateCustomerDropdown();
+          scheduleDropdownRefresh();
 
           btn.className = "btn bg-green-600 hover:bg-green-700 !py-1 w-2/3 text-sm";
           btn.textContent = isNew ? "✅ အသစ်သိမ်းပြီးပါပြီ" : "✅ Update ပြီးပါပြီ";
@@ -4332,7 +4468,7 @@ function openAdmin() {
       FIREBASE_CUSTOMER_ORDER.push(cusId);
 
       renderCustomerAdminList(); 
-      populateCustomerDropdown();
+      scheduleDropdownRefresh();
       document.getElementById('mainCustomerSelect').value = cusId;
       document.getElementById('customCusSelectLabel').textContent = name + (social ? ` (${social})` : '');
       
@@ -4364,7 +4500,7 @@ function openAdmin() {
               [`customers.${id}`]: firebase.firestore.FieldValue.delete(),
               customerOrder: firebase.firestore.FieldValue.arrayRemove(id)
           });
-          renderCustomerAdminList(); populateCustomerDropdown();
+          renderCustomerAdminList(); scheduleDropdownRefresh();
       } catch(e) { alert("Error deleting."); }
   }
 
@@ -4910,7 +5046,7 @@ function openAdmin() {
       try {
           await updateFirebase('banks');
           clearBankForm();
-          initDropdowns();
+          scheduleDropdownRefresh();
           renderAdminLists();
           alert(mode === 'update' ? "ဘဏ်အချက်အလက် Update လုပ်ပြီးပါပြီ။" : "ဘဏ်အချက်အလက် သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) { alert("Error: " + e.message); }
@@ -4922,7 +5058,7 @@ function openAdmin() {
       FIREBASE_BANK_ORDER = FIREBASE_BANK_ORDER.filter(item => item !== id);
       try {
           await updateFirebase('banks');
-          initDropdowns();
+          scheduleDropdownRefresh();
           renderAdminLists();
       } catch(e) { alert("Error deleting bank."); }
   }
@@ -4981,7 +5117,7 @@ function openAdmin() {
       try {
           await updateFirebase('qrs');
           clearQrForm();
-          initDropdowns();
+          scheduleDropdownRefresh();
           renderAdminLists();
           alert(mode === 'update' ? "QR အချက်အလက် Update လုပ်ပြီးပါပြီ။" : "QR အချက်အလက် သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) { alert("Error: " + e.message); }
@@ -4992,7 +5128,7 @@ function openAdmin() {
       FIREBASE_QRS.splice(index, 1);
       try {
           await updateFirebase('qrs');
-          initDropdowns();
+          scheduleDropdownRefresh();
           renderAdminLists();
       } catch(e) { alert("Error deleting QR."); }
   }
@@ -5005,7 +5141,7 @@ function openAdmin() {
       
       try {
           await updateFirebase('all');
-          initDropdowns();
+          scheduleDropdownRefresh();
           renderAdminLists();
           alert("Data များ အောင်မြင်စွာ ထည့်သွင်းပြီးပါပြီ!");
       } catch(e) {
@@ -5023,7 +5159,7 @@ function openAdmin() {
       
       try {
           await updateFirebase('all');
-          initDropdowns();
+          scheduleDropdownRefresh();
           renderAdminLists();
           renderCustomerAdminList();
           alert("Data အားလုံး ရှင်းလင်းပြီးပါပြီ!");
@@ -5944,7 +6080,17 @@ function openAdmin() {
 
      // ✅ 1. မျက်နှာပြင် (UI) ကို ချက်ချင်း အရင် Update လုပ်ပါမည် (Delay မဖြစ်စေရန်)
      tx.status = newStatus;
-     renderHistoryRows(allLoadedHistory);
+     
+     // 🌟 Targeted row update instead of full render
+     const rowEl = document.getElementById(`history-row-${invId}`);
+     if (rowEl) {
+         const tempDiv = document.createElement('tbody');
+         tempDiv.innerHTML = generateHistoryRowHTML(tx, null);
+         rowEl.replaceWith(tempDiv.firstElementChild);
+     } else {
+         renderHistoryRows(allLoadedHistory);
+     }
+     
      markFifoDataDirty();
      if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { refreshFifoDashboard(true); }
 
@@ -5973,7 +6119,22 @@ function openAdmin() {
           
           alertMsg += `အမျိုးအစား: <b>${tx.type}</b>\n`;
           alertMsg += `ပမာဏ: <code>${tx.inAmt}</code> ➔ <code>${tx.outAmt}</code>\n`;
-          alertMsg += `ငွေဈေး: <code>${tx.rate || "-"}</code>\n`; 
+          
+          let alertRate = tx.rate || "-";
+          if (alertRate.includes('100K =')) {
+              const m = alertRate.match(/100K\s*=\s*([\d,.]+)/);
+              if (m && m[1]) {
+                  const r = parseFloat(m[1].replace(/,/g, ''));
+                  if (r > 0) alertRate = `100K = ${fmt2(r)} THB | 1 THB = ${fmt2(100000/r)} MMK`;
+              }
+          } else if (alertRate.includes('1 MMK =')) {
+              const m = alertRate.match(/1 MMK\s*=\s*([\d,.]+)/);
+              if (m && m[1]) {
+                  const v = parseFloat(m[1].replace(/,/g, ''));
+                  if (v > 0) alertRate = `1 MMK = ${fmt2(v)} VND`;
+              }
+          }
+          alertMsg += `ငွေဈေး: <code>${alertRate}</code>\n`; 
           alertMsg += `နည်းလမ်း: <b>${tx.method || "-"}</b>\n`;
           alertMsg += `Status အသစ်: <b>${newStatus}</b>\n`;
           
@@ -5994,7 +6155,16 @@ function openAdmin() {
           console.error(e); 
           // 🌟 Rollback optimistic UI update on failure
           tx.status = oldStatus;
-          renderHistoryRows(allLoadedHistory);
+          
+          const rowElRollback = document.getElementById(`history-row-${invId}`);
+          if (rowElRollback) {
+              const tempDiv = document.createElement('tbody');
+              tempDiv.innerHTML = generateHistoryRowHTML(tx, null);
+              rowElRollback.replaceWith(tempDiv.firstElementChild);
+          } else {
+              renderHistoryRows(allLoadedHistory);
+          }
+          
           markFifoDataDirty();
           if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { refreshFifoDashboard(true); }
           alert("Status ပြောင်းလဲခြင်း မအောင်မြင်ပါ။ Connection ကိုစစ်ဆေးပါ။");
@@ -6010,7 +6180,16 @@ function openAdmin() {
       try {
           await firebase.firestore().collection("exchange_history").doc(invId).update({ type: newType });
           allLoadedHistory[index].type = newType;
-          renderHistoryRows(allLoadedHistory);
+          
+          const rowEl = document.getElementById(`history-row-${invId}`);
+          if (rowEl) {
+              const tempDiv = document.createElement('tbody');
+              tempDiv.innerHTML = generateHistoryRowHTML(allLoadedHistory[index], null);
+              rowEl.replaceWith(tempDiv.firstElementChild);
+          } else {
+              renderHistoryRows(allLoadedHistory);
+          }
+          
           markFifoDataDirty();
           refreshFifoDashboard(true);
       } catch(e) {
@@ -6031,7 +6210,15 @@ function openAdmin() {
           await firebase.firestore().collection("exchange_history").doc(invId).update({ customerName: finalName });
           allLoadedHistory[index].customerName = finalName;
           logActivity("Customer Linked", `ID: ${invId} ကို Customer "${finalName}" နှင့် ချိတ်ဆက်ခဲ့သည်။`);
-          renderHistoryRows(allLoadedHistory);
+          
+          const rowEl = document.getElementById(`history-row-${invId}`);
+          if (rowEl) {
+              const tempDiv = document.createElement('tbody');
+              tempDiv.innerHTML = generateHistoryRowHTML(allLoadedHistory[index], null);
+              rowEl.replaceWith(tempDiv.firstElementChild);
+          } else {
+              renderHistoryRows(allLoadedHistory);
+          }
       } catch(e) {
           console.error(e); alert("Customer ချိတ်ဆက်ခြင်း မအောင်မြင်ပါ။");
       }
@@ -6116,7 +6303,14 @@ function openAdmin() {
           allLoadedHistory[index].outAmt = newOutAmt;
           allLoadedHistory[index].type = newType;
           
-          renderHistoryRows(allLoadedHistory);
+          const rowEl = document.getElementById(`history-row-${invId}`);
+          if (rowEl) {
+              const tempDiv = document.createElement('tbody');
+              tempDiv.innerHTML = generateHistoryRowHTML(allLoadedHistory[index], null);
+              rowEl.replaceWith(tempDiv.firstElementChild);
+          } else {
+              renderHistoryRows(allLoadedHistory);
+          }
       } catch(e) {
           console.error(e); alert("ပမာဏ နှင့် အမျိုးအစား ပြောင်းလဲခြင်း မအောင်မြင်ပါ။");
       }
@@ -6346,7 +6540,15 @@ function openAdmin() {
           allLoadedHistory[index].rate = newRate;
 
           window.closeAmtEditModal();
-          renderHistoryRows(allLoadedHistory);
+          
+          const rowEl = document.getElementById(`history-row-${invId}`);
+          if (rowEl) {
+              const tempDiv = document.createElement('tbody');
+              tempDiv.innerHTML = generateHistoryRowHTML(allLoadedHistory[index], null);
+              rowEl.replaceWith(tempDiv.firstElementChild);
+          } else {
+              renderHistoryRows(allLoadedHistory);
+          }
 
           markFifoDataDirty();
           if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { refreshFifoDashboard(true); }
@@ -6400,7 +6602,14 @@ function openAdmin() {
           logActivity("Delete Record", `ID: ${invId} မှတ်တမ်းအား ဖျက်ပစ်ခဲ့သည်။`);
           const index = allLoadedHistory.findIndex(x => x.id === invId);
           if(index !== -1) { allLoadedHistory.splice(index, 1); }
-          renderHistoryRows(allLoadedHistory);
+          
+          const rowEl = document.getElementById(`history-row-${invId}`);
+          if (rowEl) {
+              rowEl.remove();
+          } else {
+              renderHistoryRows(allLoadedHistory);
+          }
+          
           markFifoDataDirty();
           refreshFifoDashboard(true);
       } catch(e) {
@@ -6485,7 +6694,7 @@ function openAdmin() {
                       const r = parseFloat(match[1].replace(/,/g, ''));
                       if (r > 0) {
                           const inv = 100000 / r;
-                          histRateText = rTpl.replace('{r}', fmt6(r)).replace('{inv}', fmt6(inv));
+                          histRateText = rTpl.replace('{r}', fmt2(r)).replace('{inv}', fmt2(inv));
                       }
                   }
               } else if (histRateText.includes('1 MMK =')) {
@@ -6493,7 +6702,7 @@ function openAdmin() {
                   if (match && match[1]) {
                       const v = parseFloat(match[1].replace(/,/g, ''));
                       if (v > 0) {
-                          histRateText = vTpl.replace('{v}', fmt6(v));
+                          histRateText = vTpl.replace('{v}', fmt2(v));
                       }
                   }
               }
@@ -6852,23 +7061,23 @@ function openAdmin() {
       }
   }
 
-  function renderHistoryRows(dataArray) {
-      const list = document.getElementById('adminHistoryList');
-      const loadMoreBtn = document.getElementById('loadMoreContainer');
-      
-      if(dataArray.length === 0) { 
-          list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-red-500">ရှာဖွေထားသော မှတ်တမ်း မတွေ့ပါ</td></tr>'; 
-          if(loadMoreBtn) loadMoreBtn.classList.add('hidden');
-          return; 
-      }
-      
-      let html = '';
-      let totalOverdue = 0; // 🌟 Overdue အရေအတွက်ရေရန်
-      
-      dataArray.forEach(d => {
+  function generateHistoryRowHTML(d, totalOverdueRef) {
         let dateTimeHtml = formatHistoryDateTime(d.timestamp, d.tz || 'Asia/Bangkok');
         let mappedDeviceName = FIREBASE_DEVICE_NAMES[d.deviceId] || d.deviceId || "Unknown";
         let displayRate = d.rate || "-";
+        if (displayRate.includes('100K =')) {
+            const m = displayRate.match(/100K\s*=\s*([\d,.]+)/);
+            if (m && m[1]) {
+                const r = parseFloat(m[1].replace(/,/g, ''));
+                if (r > 0) displayRate = `100K = ${fmt2(r)} THB`;
+            }
+        } else if (displayRate.includes('1 MMK =')) {
+            const m = displayRate.match(/1 MMK\s*=\s*([\d,.]+)/);
+            if (m && m[1]) {
+                const v = parseFloat(m[1].replace(/,/g, ''));
+                if (v > 0) displayRate = `1 MMK = ${fmt2(v)} VND`;
+            }
+        }
         let status = d.status || 'Pending';
         let method = d.method || "-";
         
@@ -6882,7 +7091,6 @@ function openAdmin() {
             let reviewStateLabel = reviewWarning && reviewDone ? '<span class="ml-1 text-emerald-600">✅ စစ်ပြီးပါပြီ</span>' : '';
             let infoId = "info-" + d.id;
             
-            // 🌟 w-[145px] သို့ ချဲ့ထားပြီး break-all သုံးကာ Scrollbar မပေါ်စေရန် ပြင်ဆင်ထားပါသည်
             aiExtractedHtml = `
             <div class="mt-1 border-t pt-1 ${colorClass} w-[260px] flex items-start gap-1.5">
                 <button onclick="const el = document.getElementById('${infoId}'); if(el.style.maxHeight === '14px') { el.style.maxHeight = '500px'; this.innerHTML = '▲'; } else { el.style.maxHeight = '14px'; this.innerHTML = '▼'; }" class="text-[9px] text-gray-500 hover:text-blue-500 bg-gray-50 hover:bg-blue-50 rounded border border-gray-200 transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center w-4 h-4 mt-0.5" title="အကျယ်ကြည့်ရန်">
@@ -6895,10 +7103,8 @@ function openAdmin() {
         }
         
         let cusName = d.customerName || "—";
-        
         let cusHtml = `<div class="max-w-[60px] truncate text-[11px] font-bold text-slate-700" title="${cusName}">${cusName}</div>`;
 
-        // 🌟 Staff+ အတွက် Customer ကို နောက်ကျမှ ပြန်ချိတ်/ပြင်ဆင်နိုင်ရန် (Guest ထုတ်ထားသော Slip များအတွက် အထူးအသုံးဝင်သည်)
         if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff') {
             const escCusName = String(cusName).replace(/'/g, "\\'");
             cusHtml = `
@@ -6909,7 +7115,6 @@ function openAdmin() {
             `;
         }
         
-        // 🌟 Pending ဖြစ်ပြီး ၁ နာရီကျော်သွားပါက အနီရောင်ဖြင့် သတိပေးရန် 🌟
         let isOverdue = false;
         let statusColor = '';
         
@@ -6920,16 +7125,15 @@ function openAdmin() {
         } else if (status === 'Cancelled' || status === 'Auto Cancel') {
             statusColor = 'bg-red-100 text-red-800 border-red-300';
         } else {
-            // Pending ဖြစ်နေလျှင် အချိန်စစ်ဆေးမည်
             let txTime = new Date(d.timestamp).getTime();
             let now = Date.now();
             let hoursDiff = (now - txTime) / (1000 * 60 * 60);
 
-if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်ထားသော နာရီကျော်သွားလျှင်
-    statusColor = 'bg-red-600 text-white border-red-800 animate-pulse shadow-md font-black';
-    isOverdue = true;
-    totalOverdue++;
-} else {
+            if (hoursDiff >= ALERT_TIMEOUT_HOURS) { 
+                statusColor = 'bg-red-600 text-white border-red-800 animate-pulse shadow-md font-black';
+                isOverdue = true;
+                if (totalOverdueRef) totalOverdueRef.count++;
+            } else {
                 statusColor = 'bg-yellow-100 text-yellow-800 border-yellow-300';
             }
         }
@@ -7002,10 +7206,9 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
         </div>
         `;
         
-        // 🌟 နောက်ခံအရောင်ကို အနီရောင်ဖျော့ဖျော့ ပြောင်းရန် 🌟
         let rowClass = isOverdue ? "border-b bg-red-50 hover:bg-red-100 transition-colors" : "border-b hover:bg-gray-50";
 
-        html += `<tr class="${rowClass}">
+        return `<tr class="${rowClass}" id="history-row-${d.id}">
           <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${d.id}</td>
           <td class="p-3 text-xs history-date-cell">${dateTimeHtml}</td>
           <td class="p-3">${cusHtml}</td>
@@ -7017,7 +7220,25 @@ if (hoursDiff >= ALERT_TIMEOUT_HOURS) { // Setting မှ သတ်မှတ်�
           <td class="p-3 text-center">${actionHtml}</td>
           <td class="p-3 text-xs" style="white-space:normal;"><div class="max-w-[260px]"><div class="font-bold text-gray-800 break-words" style="white-space:normal;">${method}</div>${aiExtractedHtml}</div></td>
         </tr>`;
+  }
+
+  function renderHistoryRows(dataArray) {
+      const list = document.getElementById('adminHistoryList');
+      const loadMoreBtn = document.getElementById('loadMoreContainer');
+      
+      if(dataArray.length === 0) { 
+          list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-red-500">ရှာဖွေထားသော မှတ်တမ်း မတွေ့ပါ</td></tr>'; 
+          if(loadMoreBtn) loadMoreBtn.classList.add('hidden');
+          return; 
+      }
+      
+      let html = '';
+      let totalOverdueRef = { count: 0 };
+      
+      dataArray.forEach(d => {
+        html += generateHistoryRowHTML(d, totalOverdueRef);
       });
+      let totalOverdue = totalOverdueRef.count;
       
       // 🌟 အပေါ်ဆုံးတွင် သတိပေးစာပြရန် 🌟
       if (totalOverdue > 0) {
@@ -7097,7 +7318,8 @@ async function loadHistory() {
     console.error('History load error:', e);
     list.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-red-500">
       မှတ်တမ်းဆွဲယူမရပါ။ Internet / Firebase Permission ကို စစ်ပါ။<br>
-      <small>${e.message || e}</small>
+      <small>${e.message || e}</small><br>
+      <button onclick="loadHistory()" class="mt-2 btn2 !py-1 !px-4 !text-sm">🔄 ထပ်မံကြိုးစားမည် (Retry)</button>
     </td></tr>`;
   }
 }
@@ -7112,11 +7334,12 @@ async function loadHistory() {
       isFetchingMore = true;
 
       try {
-          const snap = await firebase.firestore().collection("exchange_history")
+          const query = firebase.firestore().collection("exchange_history")
               .orderBy("timestamp", "desc")
               .startAfter(lastVisibleDoc)
-              .limit(HISTORY_PAGE_SIZE)
-              .get();
+              .limit(HISTORY_PAGE_SIZE);
+              
+          const snap = await firestoreWithTimeout(query.get());
 
           if (snap.empty) {
               btn.innerHTML = "မှတ်တမ်းကုန်သွားပါပြီ";
@@ -7210,7 +7433,7 @@ async function loadHistory() {
          const list = document.getElementById('adminHistoryList');
          list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-blue-600 font-bold">🔍 Database တွင် ရှာဖွေနေပါသည်...</td></tr>';
          try {
-             const docRef = await firebase.firestore().collection("exchange_history").doc(searchId.toUpperCase()).get();
+             const docRef = await firestoreWithTimeout(firebase.firestore().collection("exchange_history").doc(searchId.toUpperCase()).get());
              if(docRef.exists) { renderHistoryRows([docRef.data()]); } else { renderHistoryRows([]); }
          } catch(e) { renderHistoryRows([]); }
       } else { 
@@ -7387,11 +7610,11 @@ async function loadHistory() {
     if(rateP) {
       const info = getSectionRateInfo(clone.id);
       if(info.kind === 'thb' && Number.isFinite(info.per100k) && Number.isFinite(info.perThb)) {
-        rateP.textContent = T.rateTpl.replace('{r}',fmt6(info.per100k)).replace('{inv}',fmt6(info.perThb));
+        rateP.textContent = T.rateTpl.replace('{r}',fmt2(info.per100k)).replace('{inv}',fmt2(info.perThb));
         rateP.innerHTML += '<br>';
       }
       if(info.kind === 'vnd' && Number.isFinite(info.vnd)) {
-        rateP.textContent = T.rateVndTpl.replace('{v}',fmt6(info.vnd));
+        rateP.textContent = T.rateVndTpl.replace('{v}',fmt2(info.vnd));
         rateP.innerHTML += '<br>';
       }
     }
@@ -8181,9 +8404,24 @@ ID: <code>${invId}</code>
 `;
               if (savedCustomerName !== "—") alertMsg += `Customer: <b>${savedCustomerName}</b>
 `;
+              let alertRate = savedRate;
+              if (alertRate.includes('100K =')) {
+                  const m = alertRate.match(/100K\s*=\s*([\d,.]+)/);
+                  if (m && m[1]) {
+                      const r = parseFloat(m[1].replace(/,/g, ''));
+                      if (r > 0) alertRate = `100K = ${fmt2(r)} THB | 1 THB = ${fmt2(100000/r)} MMK`;
+                  }
+              } else if (alertRate.includes('1 MMK =')) {
+                  const m = alertRate.match(/1 MMK\s*=\s*([\d,.]+)/);
+                  if (m && m[1]) {
+                      const v = parseFloat(m[1].replace(/,/g, ''));
+                      if (v > 0) alertRate = `1 MMK = ${fmt2(v)} VND`;
+                  }
+              }
+
               alertMsg += `အမျိုးအစား: <b>${recType}</b>
 ပမာဏ: <code>${inValueStr}</code> ➔ <code>${outValueStr}</code>
-ငွေဈေး: <code>${savedRate}</code>
+ငွေဈေး: <code>${alertRate}</code>
 နည်းလမ်း: ${paymentMethodName}
 `;
               let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
@@ -9386,22 +9624,20 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           else if (tx.status === 'Cancelled' || tx.status === 'Auto Cancel') cancelCount++;
       });
 
-      // FIFO Profit Engine (Treasury Tab) ကို 'today' filter ဖြင့် ယာယီ run ပြီး ရလဒ်ကို ယူသုံးမည်
-      // 🌟 History Table ရဲ့ Pagination window ကို လုံးဝ မမှီခိုဘဲ၊ Success မှတ်တမ်း အားလုံးကို
-      // သီးခြား ဆွဲယူထားသော fifoFullHistory Cache ကို အသုံးပြု၍ တွက်ချက်မည်
+      // FIFO အမြတ်ကို Dashboard UI ကို ယာယီပြောင်းလဲခြင်းမရှိဘဲ နောက်ကွယ်တွင်သာ တွက်ချက်မည်
+      // History pagination window ကို မမှီခိုဘဲ Success မှတ်တမ်း အားလုံးကို အသုံးပြုမည်
       let profitText = "N/A";
       let profitThbBahtText = "";
       try {
           const fifoData = await fetchAllSuccessHistoryForFifo(true);
-          const filterSelect = document.getElementById('dashFilterSelect');
-          const originalFilter = filterSelect ? filterSelect.value : null;
-          if (filterSelect) filterSelect.value = 'today';
-          if (typeof updateDashboard === 'function') updateDashboard(fifoData);
-          const profitEl = document.getElementById('dash_total_profit');
-          if (profitEl) profitText = profitEl.textContent;
-          const profitThbBahtEl = document.getElementById('est_profit_thb_baht');
-          if (profitThbBahtEl) profitThbBahtText = profitThbBahtEl.textContent;
-          if (filterSelect && originalFilter !== null) { filterSelect.value = originalFilter; updateDashboard(fifoData); }
+          const profitMetrics = calculateDailyProfitMetrics(fifoData, todayTzStr, tz);
+          const totalProfit = profitMetrics.totalProfit;
+          const thbProfit = profitMetrics.periodProfitThb;
+          const thbProfitInBaht = profitMetrics.periodProfitThbInBaht;
+          profitText = (totalProfit >= 0 ? "+ " : "") + formatMmk(totalProfit) + " MMK";
+          profitThbBahtText = (thbProfitInBaht >= 0 ? "+ " : "") + thbProfitInBaht.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " THB";
+          // Report balance section က Dashboard ရဲ့ နောက်ဆုံး Est Rate ကို ဆက်အသုံးပြုနိုင်ရန်
+          if (profitMetrics.estimatedThbRate > 0) window.GLOBAL_EST_RATE_THB = profitMetrics.estimatedThbRate;
       } catch (e) { console.error("Daily Report Profit Calc Error:", e); }
 
       const profitLine = profitThbBahtText
