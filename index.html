@@ -1195,8 +1195,8 @@
             <input type="text" id="adminImgbbKey" class="admin-input-box text-sm bg-gray-900 text-white border-gray-600 focus:border-blue-500" placeholder="ImgBB Key ထည့်ပါ">
           </div>
           <div class="mb-3">
-            <label class="text-xs font-bold text-gray-300">OpenRouter API Key (AI စလစ်ဖတ်ရန်)</label>
-            <input type="password" id="adminOpenRouterKey" class="admin-input-box text-sm bg-gray-900 text-white border-gray-600 focus:border-blue-500" placeholder="OpenRouter Key ထည့်ပါ">
+            <label class="text-xs font-bold text-gray-300">Gemini API Key (AI စလစ်ဖတ်ရန်)</label>
+            <input type="password" id="adminGeminiKey" class="admin-input-box text-sm bg-gray-900 text-white border-gray-600 focus:border-blue-500" placeholder="Gemini Key ထည့်ပါ">
           </div>
           <div class="mb-3 border-t border-gray-600 pt-3">
             <label class="text-xs font-bold text-gray-300">Slip2Go API Key (စလစ် အတု/အစစ် စစ်ရန်)</label>
@@ -1553,7 +1553,7 @@
   // 🌟 API Keys Globals 🌟
   let TELEGRAM_BOT_TOKEN = ""; // Admin Setting မှ ရောက်လာပါလိမ့်မည်
   let IMGBB_API_KEY = "";
-  let OPENROUTER_API_KEY = "";
+  let GEMINI_API_KEY = "";
   let SLIP2GO_API_KEY = ""; // 🌟 အသစ်
   let TELEGRAM_CHAT_ID = "-1003987703326";
   let TELEGRAM_TOPIC_ID = "2";
@@ -1661,8 +1661,8 @@ let calcLock = false;
   }
 
    // 🌟 (အသစ်ထည့်ရန်) Telegram သို့ ပုံပို့မည့် Function 🌟
-  function sendTelegramPhoto(photoUrl, captionText, specificTopicId = null) {
-      if(!TELEGRAM_CHAT_ID || !TELEGRAM_BOT_TOKEN) return; 
+  async function sendTelegramPhoto(photoUrl, captionText, specificTopicId = null) {
+      if(!TELEGRAM_CHAT_ID || !TELEGRAM_BOT_TOKEN) return false; 
       
       const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
       const payload = {
@@ -1677,11 +1677,19 @@ let calcLock = false;
           payload.message_thread_id = finalTopicId;
       }
 
-      fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-      }).catch(e => console.error("Telegram Photo Send Error:", e));
+      try {
+          const res = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+          });
+          const result = await res.json();
+          if (!result.ok) { console.error("Telegram Photo Send Failed:", result); return false; }
+          return true;
+      } catch (e) {
+          console.error("Telegram Photo Send Error:", e);
+          return false;
+      }
   }
 
   // --- Calculator Utility Functions ---
@@ -2807,7 +2815,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
 	window.saveApiKeys = async function() {
       const botToken = document.getElementById('adminBotToken').value.trim();
       const imgbb = document.getElementById('adminImgbbKey').value.trim();
-      const openrouter = document.getElementById('adminOpenRouterKey').value.trim();
+      const geminiKey = document.getElementById('adminGeminiKey').value.trim();
       const slip2go = document.getElementById('adminSlip2GoKey').value.trim(); // 🌟 အသစ်
       
       const btn = document.getElementById('btnApiSave');
@@ -2816,11 +2824,11 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       try {
           if (botToken) TELEGRAM_BOT_TOKEN = botToken;
           if (imgbb) IMGBB_API_KEY = imgbb;
-          if (openrouter) OPENROUTER_API_KEY = openrouter;
+          if (geminiKey) GEMINI_API_KEY = geminiKey;
           if (slip2go) SLIP2GO_API_KEY = slip2go; // 🌟 အသစ်
           
           if(dbRef) {
-              await dbRef.set({ apiKeys: { botToken, imgbb, openrouter, slip2go } }, { merge: true });
+              await dbRef.set({ apiKeys: { botToken, imgbb, geminiKey, slip2go } }, { merge: true });
           }
           alert("API Keys များကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) {
@@ -3452,13 +3460,13 @@ if (data.telegram) {
 	if (data.apiKeys) {
             if(data.apiKeys.botToken) TELEGRAM_BOT_TOKEN = data.apiKeys.botToken;
             if(data.apiKeys.imgbb) IMGBB_API_KEY = data.apiKeys.imgbb;
-            if(data.apiKeys.openrouter) OPENROUTER_API_KEY = data.apiKeys.openrouter;
+            if(data.apiKeys.geminiKey) GEMINI_API_KEY = data.apiKeys.geminiKey;
             if(data.apiKeys.slip2go) SLIP2GO_API_KEY = data.apiKeys.slip2go; // 🌟 အသစ်
         }
         
         if(document.getElementById('adminBotToken')) document.getElementById('adminBotToken').value = TELEGRAM_BOT_TOKEN;
         if(document.getElementById('adminImgbbKey')) document.getElementById('adminImgbbKey').value = IMGBB_API_KEY;
-        if(document.getElementById('adminOpenRouterKey')) document.getElementById('adminOpenRouterKey').value = OPENROUTER_API_KEY; 
+        if(document.getElementById('adminGeminiKey')) document.getElementById('adminGeminiKey').value = GEMINI_API_KEY; 
         if(document.getElementById('adminSlip2GoKey')) document.getElementById('adminSlip2GoKey').value = SLIP2GO_API_KEY; // 🌟 အသစ်        
 
         const tgChatInput = document.getElementById('adminTgChatId');
@@ -5806,7 +5814,13 @@ function openAdmin() {
           }
           
       } catch(e) {
-          console.error(e); alert("Status ပြောင်းလဲခြင်း မအောင်မြင်ပါ။");
+          console.error(e); 
+          // 🌟 Rollback optimistic UI update on failure
+          tx.status = oldStatus;
+          renderHistoryRows(allLoadedHistory);
+          markFifoDataDirty();
+          if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { refreshFifoDashboard(true); }
+          alert("Status ပြောင်းလဲခြင်း မအောင်မြင်ပါ။ Connection ကိုစစ်ဆေးပါ။");
       }
   }
 
@@ -7035,10 +7049,13 @@ async function loadHistory() {
           let dateStr = dateObj.toLocaleString('en-GB', { timeZone: d.tz || 'Asia/Bangkok', hour12: true }).replace(/,/g, '');
           let mappedDeviceName = FIREBASE_DEVICE_NAMES[d.deviceId] || d.deviceId || "Unknown";
           
-          let id = `"${d.id}"`; let dt = `"${dateStr}"`; let dev = `"${mappedDeviceName}"`;
-          let cusName = `"${d.customerName || '-'}"`;
-          let rateVal = `"${d.rate || '-'}"`; let type = `"${d.type}"`; 
-          let amt = `"${d.inAmt} -> ${d.outAmt}"`; let method = `"${d.method || '-'}"`; let statusVal = `"${d.status || 'Pending'}"`;
+          // 🌟 Escape quotes properly for CSV
+          const escapeCsv = (str) => `"${String(str).replace(/"/g, '""')}"`;
+          
+          let id = escapeCsv(d.id); let dt = escapeCsv(dateStr); let dev = escapeCsv(mappedDeviceName);
+          let cusName = escapeCsv(d.customerName || '-');
+          let rateVal = escapeCsv(d.rate || '-'); let type = escapeCsv(d.type); 
+          let amt = escapeCsv(`${d.inAmt} -> ${d.outAmt}`); let method = escapeCsv(d.method || '-'); let statusVal = escapeCsv(d.status || 'Pending');
           
           csvContent += `${id},${dt},${cusName},${dev},${rateVal},${type},${amt},${statusVal},${method}\n`;
       });
@@ -7985,6 +8002,7 @@ ID: <code>${invId}</code>
 `;
               let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
               alertMsg += `Device: <b>${mappedDeviceName}</b>`;
+              // 🌟 Delaying the Telegram alert queue push until we are sure it failed
               const telegramSent = await sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID);
               if (!telegramSent && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
                   queueRetryOperation({ type: 'telegram-alert', payload: { messageText: alertMsg, topicId: TELEGRAM_TOPIC_ID }, meta: { kind: 'receipt-alert', invId } });
@@ -8061,37 +8079,48 @@ ID: <code>${invId}</code>
       reader.onerror = error => reject(error);
   });
 
-  // --- AI Slip Reader (OpenRouter Free Tier) ---
-  // 🌟 Free model တစ်ခုတည်းကိုသာ မှီခိုမည့်အစား - overload/down ဖြစ်တတ်တဲ့ free tier အတွက် Fallback list ထားရှိသည်
+  // --- AI Slip Reader (Gemini API) ---
+  // 🌟 Model တစ်ခုတည်းကိုသာ မှီခိုမည့်အစား Fallback list ထားရှိသည်
   const SLIP_OCR_MODELS = [
-      "google/gemma-4-31b-it:free",
-      "google/gemma-4-26b-a4b-it:free",
-      "openrouter/free"
+      "gemini-3.6-flash",
+      "gemini-3.1-pro-preview"
   ];
 
-  const SLIP_OCR_PROMPT = "ဒီပုံဟာ ဘဏ် (သို့) Mobile Banking/Wallet Application တစ်ခုခု (ဥပမာ - Thai PromptPay, KBank, SCB ကဲ့သို့ ထိုင်းဘဏ်များ (သို့) KPay, Wave Money, AYA Pay, CB Pay, KBZPay ကဲ့သို့ မြန်မာ Wallet App များ) ၏ ငွေလွှဲပြေစာ (Transfer Slip/Receipt) ဖြစ်ပါသည်။ ပုံထဲက အောက်ပါ အချက်အလက်များကို ရှာပေးပါ။ 'ဘဏ်/Wallet အမည်' ဆိုသည်မှာ ငွေလွှဲသူ၏ဘဏ်မဟုတ်ဘဲ ငွေ လက်ခံသူ (To / Receiver) ၏ ဘဏ် (သို့) Wallet App အမည် ဖြစ်ရပါမည်။\n\nအပို: ငွေလွှဲပို့သူ (From / Sender) ၏ အချက်အလက် (ဘဏ်/Wallet အမည်၊ အမည်၊ အကောင့်နံပါတ် (သို့) ဖုန်းနံပါတ်) ကို ပုံထဲတွင် ပါရှိသမျှ အတတ်နိုင်ဆုံး အပြည့်အစုံ ရှာဖော်ပြပါ (ထိုင်းဘဏ်စလစ်အများစုတွင် Sender အချက်အလက် အပြည့်အစုံ ပါရှိလေ့ရှိပြီး၊ မြန်မာ/ဗီယက်နမ် Wallet/ဘဏ်အချို့တွင် နည်းနိုင်သည် (သို့) လုံးဝ မပါနိုင်ပါ)။ ပုံထဲတွင် Sender အချက်အလက် တစ်စုံတစ်ရာမှ လုံးဝ မတွေ့ပါက ထိုနေရာတွင် '-' ဟုသာ ရေးပါ။\n\nဖြေရမည့် ပုံစံ (တစ်ကြောင်းတည်း၊ | ဖြင့်သာ ခွဲပါ) -\n'လက်ခံသူ၏ဘဏ်/Wallet အမည် | လက်ခံသူအမည် | အကောင့်နံပါတ်/ဖုန်းနံပါတ် | Transaction No (သို့) Ref No | လွှဲပို့သူ (Sender) ဘဏ်/Wallet အမည်၊ အမည်၊ အကောင့်နံပါတ်/ဖုန်းနံပါတ် (ရှိသမျှ အားလုံး ဖော်ပြပြီး ',' ဖြင့်သာ ခွဲပါ - မရှိလျှင် '-') | ပမာဏ ငွေကြေးအမျိုးအစားနှင့်တကွ'\n\nဥပမာ ၁ (ထိုင်း - Sender အချက်အလက် အပြည့်အစုံပါ) - 'PromptPay | BHONE MYAT THU | 094-xxx-5867 | 2026062213542623004940608 | Krungsri Bank, MR. HEIN SET AUNG, 497-0-xxx234 | 1,508.00 THB'\nဥပမာ ၂ (မြန်မာ - Sender အချက်အလက် မပါ) - 'KPay | DAW THIDAR WIN | 09-xxx-1234 | TQR_KPAY20260810001 | - | 500,000 MMK'\n\n(သတိပြုရန်: ငွေကြေးအမျိုးအစားကို ပမာဏ၏ နောက်ဆုံးတွင် THB (သို့) MMK (သို့) VND ဟု အတိအကျ ဖော်ပြပါ။ မြန်မာ Unicode စာလုံးများကို မှန်ကန်စွာ ဖတ်ပါ။ အချက်အလက်များကို | သင်္ကေတဖြင့်သာ ခြားပေးပါ (Sender field အတွင်းတွင်သာ ',' ဖြင့် ခွဲပါ)။ ပမာဏတွင်ပါသော ကော်မာများကို မဖြုတ်ပါနှင့်။ အခြားပိုသော စာသားများ လုံးဝ မရေးပါနှင့်။)";
+  // 🌟 Bug Fix: AI က တခါတလေ | နဲ့ ဖြတ်ရမယ့် format ကို လိုက်မနာဘဲ အလယ်မှာ ရပ်သွားတာမျိုး၊
+  // JSON လိုမျိုး ပုံစံပြောင်းပြန်ပေးတာမျိုးတွေ ဖြစ်တတ်ပါတယ်။
+  // ဒါကြောင့် Prompt ကို JSON အနေနဲ့ တောင်းပြီးမှ Client-side မှာ `|` format ကို ကိုယ်တိုင်ပြန်စီပါမယ်။
+  const SLIP_OCR_PROMPT = `You are an expert OCR and data extraction system. Extract data from this bank transfer slip or e-wallet receipt. 
+Do not output any conversational text, explanations, or rules. Output ONLY a valid JSON object matching the following schema.
+
+Extract these fields:
+1. "receiver_bank": The destination bank or wallet name (e.g., "KBZPay", "KBank", "SCB", "Wave Money"). If not found, use "-".
+2. "receiver_name": The name of the person receiving the money. If not found, use "-".
+3. "receiver_account": The account number or phone number of the receiver. If not found, use "-".
+4. "transaction_no": The transaction reference number, ID, or trace number. If not found, use "-".
+5. "sender_info": All available details about the sender (bank, name, account). If not found, use "-".
+6. "amount_with_currency": The transfer amount including currency. Convert "Ks" or "ကျပ်" to "MMK", and "บาท" to "THB" (e.g., "1500.00 THB", "50000 MMK"). If not found, use "-".
+
+Return ONLY JSON.`;
 
   async function callSlipOcrModel(model, base64Image) {
-      const url = "https://openrouter.ai/api/v1/chat/completions";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
       const payload = {
-          "model": model,
-          "max_tokens": 300,
-          "messages": [
-              {
-                  "role": "user",
-                  "content": [
-                      { "type": "text", "text": SLIP_OCR_PROMPT },
-                      { "type": "image_url", "image_url": { "url": `data:image/jpeg;base64,${base64Image}` } }
-                  ]
-              }
-          ]
+          "contents": [{
+              "parts": [
+                  { "text": SLIP_OCR_PROMPT },
+                  { "inline_data": { "mime_type": "image/jpeg", "data": base64Image } }
+              ]
+          }],
+          "generationConfig": {
+              "maxOutputTokens": 1024, // 🌟 တချို့စလစ်တွေက စာရှည်ရင် 300 token နဲ့ မလောက်ဘဲ တစ်ဝက်မှာ ရပ်သွားတတ်လို့ တိုးထားပါတယ်
+              "responseMimeType": "application/json"
+          }
       };
 
       const response = await fetch(url, {
           method: "POST",
           headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${OPENROUTER_API_KEY}`
+              "Content-Type": "application/json"
           },
           body: JSON.stringify(payload)
       });
@@ -8102,8 +8131,17 @@ ID: <code>${invId}</code>
           const errMsg = data.error?.message || `HTTP ${response.status}`;
           throw new Error(`[${model}] ${errMsg}`);
       }
-      if (data.choices && data.choices.length > 0 && data.choices[0].message?.content) {
-          return data.choices[0].message.content.trim();
+      if (data.candidates && data.candidates.length > 0 && data.candidates[0].content?.parts?.length > 0) {
+          let aiText = data.candidates[0].content.parts[0].text.trim();
+          try {
+              // 🌟 JSON အနေနဲ့ရလာတဲ့ Data ကို မူလ System က လက်ခံတဲ့ `|` Format ကို ပြန်ပြောင်းပေးမယ်
+              let parsed = JSON.parse(aiText);
+              let formattedStr = `${parsed.receiver_bank || '-'} | ${parsed.receiver_name || '-'} | ${parsed.receiver_account || '-'} | ${parsed.transaction_no || '-'} | ${parsed.sender_info || '-'} | ${parsed.amount_with_currency || '-'}`;
+              return formattedStr;
+          } catch (e) {
+              // JSON parse မရခဲ့ရင် (ဥပမာ - စာတစ်ဝက်နဲ့ ရပ်သွားရင်) Fallback အနေနဲ့ အမှားပြပြီး Model အသစ်ပြောင်းခိုင်းမယ်
+              throw new Error("AI မှ အချက်အလက် အပြည့်အစုံ မပေးပို့ပါ။ နောက်တစ်ကြိမ် ထပ်မံကြိုးစားပါ။");
+          }
       }
       throw new Error(`[${model}] Empty response - ${JSON.stringify(data).slice(0, 200)}`);
   }
@@ -8136,7 +8174,7 @@ ID: <code>${invId}</code>
   }
 
   async function extractSlipDataWithGemini(base64Image) {
-      if(!OPENROUTER_API_KEY) return "⚠️ API Key မထည့်ရသေးပါ။ Admin > အထွေထွေ တွင်ထည့်ပါ။"; 
+      if(!GEMINI_API_KEY) return "⚠️ API Key မထည့်ရသေးပါ။ Admin > အထွေထွေ တွင်ထည့်ပါ။"; 
 
       let lastError = null;
       for (const model of SLIP_OCR_MODELS) {
@@ -8538,14 +8576,30 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
   }
 
   function parseAiAmountCurrency(data) {
+      // 🌟 Bug Fix: AI က တခါတလေ `|` မသုံးဘဲ ပမာဏကို စာကြောင်းအလယ်မှာ ရောရေးတတ်ပါတယ်။
+      // ဒါကြောင့် နောက်ဆုံးအပိုင်း (lastPart) ကနေပဲ ရှာတာထက် စာကြောင်းတစ်ခုလုံး (data) ကနေပါ 
+      // ငွေကြေးသင်္ကေတနဲ့ တွဲနေတဲ့ ပမာဏကို backup အနေနဲ့ ရှာပေးပါမယ်။
       const parts = data.split('|');
       const lastPart = parts[parts.length - 1] || "";
-      // ပမာဏကို ဂဏန်း/ကော်မာ/အစက်ရှိသမျှ ဟုန်းရာမှ ဆွဲယူမည် (နောက်ဆုံးအပိုင်းကသာ ပမာဏဖြစ်နိုင်ဆုံး)
+      
+      let amount = 0;
+      let haystack = lastPart;
+      
       const numMatch = lastPart.match(/([\d][\d,]*\.?\d*)/);
-      const amount = numMatch ? (parseFloat(numMatch[1].replace(/,/g, '')) || 0) : 0;
+      if (numMatch) {
+          amount = parseFloat(numMatch[1].replace(/,/g, '')) || 0;
+      } else {
+          // 🌟 Backup: နောက်ဆုံးအပိုင်းမှာ ဂဏန်းမတွေ့ရင် စာကြောင်းတစ်ခုလုံးကနေ ငွေကြေးနဲ့ကပ်နေတဲ့ ဂဏန်းကို ရှာမယ်
+          const globalMatch = data.match(/([\d][\d,]*\.?\d*)\s*(THB|MMK|VND|บาท|baht|ဘတ်|VNĐ|₫|đồng|dong|ကျပ်|kyat|Ks)/i);
+          if (globalMatch) {
+              amount = parseFloat(globalMatch[1].replace(/,/g, '')) || 0;
+              haystack = globalMatch[2]; // Currency ကို အဲ့ဒီနားကနေပဲ ယူမယ်
+          } else {
+              haystack = data; // ဘာမှမတွေ့ရင် တစ်ကြောင်းလုံးမှာ currency လိုက်ရှာမယ်
+          }
+      }
 
-      const haystack = lastPart; // case-sensitive အတွက် Thai/Myanmar စာလုံးများကို မူရင်းအတိုင်း စစ်မည်
-      const upper = lastPart.toUpperCase();
+      const upper = haystack.toUpperCase();
 
       let currency = '';
       if (/\bTHB\b/.test(upper) || /บาท/.test(haystack) || /baht/i.test(haystack) || /ဘတ်/.test(haystack)) {
@@ -8741,7 +8795,10 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               if (aiParsedData.amount > 0) {
                   document.getElementById('smartMatchModal').style.zIndex = "99999";
                   showSmartMatchModal(aiParsedData.amount, aiParsedData.currency, newExtractedText, uploadedUrls);
-              } else { alert("စလစ်ထဲမှ ငွေပမာဏကို ဖတ်၍မရပါ။ ပုံမကြည်လင်ခြင်း ဖြစ်နိုင်ပါသည်။"); }
+              } else { 
+                  // 🌟 Bug Fix: ပမာဏ သုညဖြစ်နေရင်တောင် AI ရဲ့ raw text ကို Alert ထဲမှာ ပြပေးမယ်
+                  alert("စလစ်ထဲမှ ငွေပမာဏကို အလိုအလျောက် ဆွဲထုတ်၍မရပါ။\n\nAI ဖတ်ထားသောစာ:\n" + newExtractedText); 
+              }
           } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
       } catch (e) { alert("အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။"); } 
       finally { if (origBtn) { origBtn.innerHTML = origText; origBtn.disabled = false; } window.hideUploadingIndicator(); }
@@ -8991,7 +9048,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           apiKeys: { 
               botToken: TELEGRAM_BOT_TOKEN, 
               imgbb: IMGBB_API_KEY, 
-              openrouter: OPENROUTER_API_KEY 
+              geminiKey: GEMINI_API_KEY,
+              slip2go: SLIP2GO_API_KEY
           },
           telegram: { 
               chatId: TELEGRAM_CHAT_ID, 
