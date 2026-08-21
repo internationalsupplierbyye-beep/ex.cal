@@ -107,6 +107,25 @@
     .radio-row{ display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid #e5e7eb; border-radius:14px; margin-top:8px; user-select:none; }
     .radio-row input[type="radio"]{ width:20px; height:20px; accent-color:#111827; cursor:pointer; flex:0 0 auto; }
     .radio-row span{ font-weight:900; font-size:.95rem; cursor:pointer; line-height:1.5; padding-bottom: 2px;}
+    .save-mode-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.45rem; width:100%; }
+    .save-mode-option { display:flex; align-items:center; justify-content:center; gap:.32rem; min-width:0; padding:.48rem .38rem; border:1px solid #e5e7eb; border-radius:12px; background:#fff; user-select:none; white-space:nowrap; }
+    .save-mode-option input[type="radio"] { width:17px; height:17px; margin:0; accent-color:#111827; cursor:pointer; flex:0 0 auto; }
+    .save-mode-option span { min-width:0; overflow:hidden; text-overflow:ellipsis; font-weight:900; font-size:.76rem; line-height:1.35; cursor:pointer; }
+    .selector-balance-status { display:flex; align-items:center; gap:.35rem; min-height:1.05rem; margin-top:.25rem; font-size:.68rem; line-height:1.2; font-weight:800; white-space:nowrap; overflow:hidden; }
+    .selector-balance-dot { display:inline-block; width:10px; height:10px; border-radius:999px; border:1px solid rgba(15,23,42,.20); box-shadow:0 0 0 2px rgba(255,255,255,.72); flex:0 0 auto; }
+    .selector-balance-dot.status-red { background:#ef4444; }
+    .selector-balance-dot.status-yellow { background:#facc15; }
+    .selector-balance-dot.status-green { background:#22c55e; }
+    .selector-balance-dot.status-unknown { background:#94a3b8; }
+    .selector-balance-text { min-width:0; overflow:hidden; text-overflow:ellipsis; color:#64748b; font-size:.68rem; font-weight:800; }
+    html.dark .save-mode-option { background:#0f172a; border-color:#334155; }
+    html.dark .save-mode-option span { color:#f1f5f9; }
+    html.dark .selector-balance-dot { border-color:rgba(248,250,252,.35); box-shadow:0 0 0 2px rgba(15,23,42,.72); }
+    html.dark .selector-balance-dot.status-red { background:#f87171; }
+    html.dark .selector-balance-dot.status-yellow { background:#fde047; }
+    html.dark .selector-balance-dot.status-green { background:#4ade80; }
+    html.dark .selector-balance-dot.status-unknown { background:#64748b; }
+    html.dark .selector-balance-text { color:#94a3b8; }
     .compact select{ padding:.6rem .75rem !important; border-radius:14px !important; font-weight:900 !important; width: 100%; }
 
     #adminModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; padding: 20px; overflow-y: auto; }
@@ -676,19 +695,21 @@
             <div>
                 <p class="font-black mb-1 pb-1 text-xs" data-i18n="lbl_qr_sel">QR Select</p>
                 <select id="qrSelect" class="compact border rounded-lg w-full text-sm"></select>
+                <div id="qrBalanceStatus" class="selector-balance-status hidden" aria-live="polite"></div>
             </div>
             <div>
                 <p class="font-black mb-1 pb-1 text-xs" data-i18n="lbl_bank_sel">Bank Select</p>
                 <select id="bankSelect" class="compact border rounded-lg w-full text-sm"></select>
+                <div id="bankBalanceStatus" class="selector-balance-status hidden" aria-live="polite"></div>
             </div>
         </div>
 
         <hr class="my-3 border-gray-200">
         <p class="font-black mb-1 pb-1 text-sm" data-i18n="lbl_inc">Export ထဲ ဘာထည့်မလဲ</p>
-        <div class="grid grid-cols-1 gap-1">
-            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="none" checked><span data-i18n="rad_none">မပါ (Default)</span></label>
-            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="qr"><span data-i18n="rad_qr">QR ပဲပါ</span></label>
-            <label class="radio-row !mt-1"><input type="radio" name="saveMode" value="bank"><span data-i18n="rad_bank">Bank Info ပဲပါ</span></label>
+        <div class="save-mode-options" role="radiogroup" aria-label="Export ထဲ ဘာထည့်မလဲ">
+            <label class="save-mode-option"><input type="radio" name="saveMode" value="none" checked><span>မပါ(D)</span></label>
+            <label class="save-mode-option"><input type="radio" name="saveMode" value="qr"><span>QR</span></label>
+            <label class="save-mode-option"><input type="radio" name="saveMode" value="bank"><span>BANK</span></label>
         </div>
 
         <div class="mt-4 border-t pt-3 border-gray-200">
@@ -1159,7 +1180,35 @@
       <label class="text-xs font-bold text-gray-600">Auto Cancel ပြုလုပ်မည့် အချိန် (ရက်)</label>
       <input type="number" id="adminAutoCancel" class="admin-input-box text-sm" placeholder="ဥပမာ: 3, 5, 7">
     </div>
-    <button onclick="saveTimeSettings()" id="btnTimeSave" class="btn bg-red-600 hover:bg-red-700 w-full">အချိန်သတ်မှတ်ချက်များ သိမ်းမည်</button>
+    
+    <h3 class="font-bold text-red-800 mt-4 mb-2 text-sm">🎨 လက်ကျန်ငွေ အရောင်သတ်မှတ်ချက်များ</h3>
+    <p class="text-xs text-gray-600 mb-3 leading-relaxed">
+      QR/Bank ရွေးချယ်သည့်နေရာတွင် ပြသသော လက်ကျန်အရောင် (အနီ / အဝါ / အစိမ်း) အတွက် အဆင့်သတ်မှတ်ချက်များကို ပြင်ဆင်နိုင်ပါသည်။<br>
+      အနိမ့်ဆုံးပမာဏအောက်နည်းလျှင် <b class="text-red-600">အနီ</b>၊ ကြားထဲရှိလျှင် <b class="text-yellow-600">အဝါ</b>၊ အမြင့်ဆုံးပမာဏနှင့်အထက်ဆိုလျှင် <b class="text-green-600">အစိမ်း</b> ပြပါမည်။
+    </p>
+    
+    <div class="grid grid-cols-3 gap-2 mb-2 text-xs font-bold text-gray-600">
+        <div>ငွေကြေး</div>
+        <div>အနီ (အောက်)</div>
+        <div>အစိမ်း (အထက်)</div>
+    </div>
+    <div class="grid grid-cols-3 gap-2 mb-2">
+        <div class="font-bold text-sm flex items-center">MMK</div>
+        <input type="number" id="adminThreshMmkLow" class="admin-input-box text-sm" placeholder="300000">
+        <input type="number" id="adminThreshMmkHigh" class="admin-input-box text-sm" placeholder="1000000">
+    </div>
+    <div class="grid grid-cols-3 gap-2 mb-2">
+        <div class="font-bold text-sm flex items-center">THB</div>
+        <input type="number" id="adminThreshThbLow" class="admin-input-box text-sm" placeholder="3000">
+        <input type="number" id="adminThreshThbHigh" class="admin-input-box text-sm" placeholder="10000">
+    </div>
+    <div class="grid grid-cols-3 gap-2 mb-3">
+        <div class="font-bold text-sm flex items-center">VND</div>
+        <input type="number" id="adminThreshVndLow" class="admin-input-box text-sm" placeholder="3000000">
+        <input type="number" id="adminThreshVndHigh" class="admin-input-box text-sm" placeholder="10000000">
+    </div>
+
+    <button onclick="saveTimeSettings()" id="btnTimeSave" class="btn bg-red-600 hover:bg-red-700 w-full mt-2">ဆက်တင်များအားလုံး သိမ်းမည်</button>
   </div>
 
   <div class="bg-pink-50 border border-pink-200 p-4 rounded-xl mb-4">
@@ -3003,19 +3052,38 @@ window.showToast = function(message, icon = "✅") {
         return alert("အချိန်များကို မှန်ကန်စွာ ဂဏန်းဖြင့် ထည့်ပါ။");
     }
 
+    let mmkL = parseFloat(document.getElementById('adminThreshMmkLow').value) || 300000;
+    let mmkH = parseFloat(document.getElementById('adminThreshMmkHigh').value) || 1000000;
+    let thbL = parseFloat(document.getElementById('adminThreshThbLow').value) || 3000;
+    let thbH = parseFloat(document.getElementById('adminThreshThbHigh').value) || 10000;
+    let vndL = parseFloat(document.getElementById('adminThreshVndLow').value) || 3000000;
+    let vndH = parseFloat(document.getElementById('adminThreshVndHigh').value) || 10000000;
+
+    const thresholdPairs = [[mmkL, mmkH, 'MMK'], [thbL, thbH, 'THB'], [vndL, vndH, 'VND']];
+    if (thresholdPairs.some(([low, high]) => !Number.isFinite(low) || !Number.isFinite(high) || low < 0 || high <= low)) {
+        return alert('အရောင်သတ်မှတ်ချက်များတွင် အနီအဆင့်သည် ၀ ထက်မနည်းရ၊ အစိမ်းအဆင့်သည် အနီအဆင့်ထက် ကြီးရပါမည်။');
+    }
+
     const btn = document.getElementById('btnTimeSave');
     btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
     try {
         ALERT_TIMEOUT_HOURS = pendingVal;
         AUTO_CANCEL_DAYS = cancelVal;
+        SELECTOR_BALANCE_THRESHOLDS = sanitizeSelectorBalanceThresholds({
+            MMK: { low: mmkL, healthy: mmkH },
+            THB: { low: thbL, healthy: thbH },
+            VND: { low: vndL, healthy: vndH }
+        });
         
         if(dbRef) {
             await dbRef.set({ 
-                timeSettings: { pendingAlertHours: pendingVal, autoCancelDays: cancelVal } 
+                timeSettings: { pendingAlertHours: pendingVal, autoCancelDays: cancelVal },
+                balanceThresholds: SELECTOR_BALANCE_THRESHOLDS
             }, { merge: true });
         }
-        alert("အချိန်သတ်မှတ်ချက်များကို အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
+        updateSelectorBalanceStatuses();
+        alert("ဆက်တင်များကို အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
         loadHistory(); 
     } catch(e) {
         alert("Error: " + e.message);
@@ -3200,6 +3268,17 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         } catch(e) { return ''; }
     };
 
+    const getEmojiPrefix = (record) => {
+        if (!record) return '';
+        const ledger = record.ledger && FIREBASE_TREASURY[record.ledger] ? FIREBASE_TREASURY[record.ledger] : null;
+        const source = ledger || (Object.prototype.hasOwnProperty.call(record, 'balance') ? record : null);
+        if (!source) return '';
+        const currency = String(source.currency || record.currency || 'MMK').toUpperCase();
+        const balance = typeof source.balance === 'string' ? Number(source.balance.replace(/,/g, '')) : Number(source.balance);
+        const state = getSelectorFundingStatus(source, balance, currency);
+        return state === 'green' ? '🟢 ' : (state === 'yellow' ? '🟡 ' : (state === 'red' ? '🔴 ' : ''));
+    };
+
     const bankSelect = document.getElementById('bankSelect');
     if(bankSelect) {
       bankSelect.innerHTML = `<option value="" data-i18n="ph_bank_sel">${dict.ph_bank_sel || '— ဘဏ်ရွေးပါ —'}</option>`;
@@ -3210,7 +3289,8 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           o.value = key; 
           
           let ownerAbbr = getInitials(info.accName); // အတိုကောက် ယူမည်
-          o.textContent = info.name + ownerAbbr; // နာမည်ဘေးတွင် ကပ်ပြမည်
+          let emoji = getEmojiPrefix(info);
+          o.textContent = emoji + info.name + ownerAbbr; // နာမည်ဘေးတွင် ကပ်ပြမည်
           
           bankSelect.appendChild(o);
         }
@@ -3227,15 +3307,17 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         // ပိုင်ရှင်အမည်ကို ယူမည်
         let ownerName = (typeof qr === 'object' && qr.owner) ? qr.owner : getOwnerFromKey(val.replace(/\.[^.]+$/, ''));
         let ownerAbbr = getInitials(ownerName); // အတိုကောက် ယူမည်
+        let emoji = typeof qr === 'object' ? getEmojiPrefix(qr) : '';
 
         const o = document.createElement('option'); 
         o.value = val; 
-        o.textContent = text + ownerAbbr; // နာမည်ဘေးတွင် ကပ်ပြမည်
+        o.textContent = emoji + text + ownerAbbr; // နာမည်ဘေးတွင် ကပ်ပြမည်
         qrSelect.appendChild(o);
       });
     }
     
     populateCustomerDropdown();
+    updateSelectorBalanceStatuses();
     refreshBankInfo();
     refreshQrPreview();
 
@@ -3247,10 +3329,95 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     }
   }
 
+  // --- QR/Bank balance color indicator ---
+  // MAIN ADMIN တွင် Balance ပမာဏနှင့် အရောင်စက်လေးကို ပြမည်။ ADMIN/STAFF တွင် အရောင်စက်လေးသာ ပြမည်။
+  const DEFAULT_SELECTOR_BALANCE_THRESHOLDS = {
+    MMK: { low: 300000, healthy: 1000000 },
+    THB: { low: 3000, healthy: 10000 },
+    VND: { low: 3000000, healthy: 10000000 }
+  };
+
+  function sanitizeSelectorBalanceThresholds(raw) {
+    const source = raw && typeof raw === 'object' ? raw : {};
+    const clean = {};
+    Object.keys(DEFAULT_SELECTOR_BALANCE_THRESHOLDS).forEach(currency => {
+      const defaults = DEFAULT_SELECTOR_BALANCE_THRESHOLDS[currency];
+      const candidate = source[currency] || {};
+      const low = Number(candidate.low);
+      const healthy = Number(candidate.healthy);
+      clean[currency] = Number.isFinite(low) && Number.isFinite(healthy) && low >= 0 && healthy > low
+        ? { low, healthy }
+        : { ...defaults };
+    });
+    return clean;
+  }
+
+  let SELECTOR_BALANCE_THRESHOLDS = sanitizeSelectorBalanceThresholds();
+
+  function getSelectorFundingStatus(account, balance, currency) {
+    const amount = typeof balance === 'string' ? Number(balance.replace(/,/g, '')) : Number(balance);
+    if (!Number.isFinite(amount)) return 'unknown';
+    const limits = SELECTOR_BALANCE_THRESHOLDS[currency] || { low: 1, healthy: 10 };
+    if (amount < Number(limits.low)) return 'red';
+    if (amount < Number(limits.healthy)) return 'yellow';
+    return 'green';
+  }
+
+  function getSelectorAccount(kind, selectedValue) {
+    if (!selectedValue) return null;
+    if (kind === 'bank') {
+      const bank = ACTIVE_BANK_INFO[selectedValue];
+      if (!bank) return null;
+      const ledger = bank.ledger && FIREBASE_TREASURY[bank.ledger] ? FIREBASE_TREASURY[bank.ledger] : null;
+      return { record: bank, balanceSource: ledger || (Object.prototype.hasOwnProperty.call(bank, 'balance') ? bank : null) };
+    }
+
+    const qr = FIREBASE_QRS.find(q => (typeof q === 'string' ? q : q.file) === selectedValue);
+    if (!qr) return null;
+    const qrRecord = typeof qr === 'string' ? { file: qr } : qr;
+    const ledger = qrRecord.ledger && FIREBASE_TREASURY[qrRecord.ledger] ? FIREBASE_TREASURY[qrRecord.ledger] : null;
+    return { record: qrRecord, balanceSource: ledger || (Object.prototype.hasOwnProperty.call(qrRecord, 'balance') ? qrRecord : null) };
+  }
+
+  function updateSelectorBalanceStatus(kind) {
+    const selectId = kind === 'bank' ? 'bankSelect' : 'qrSelect';
+    const statusId = kind === 'bank' ? 'bankBalanceStatus' : 'qrBalanceStatus';
+    const select = document.getElementById(selectId);
+    const statusEl = document.getElementById(statusId);
+    if (!select || !statusEl) return;
+
+    statusEl.classList.add('hidden');
+    statusEl.innerHTML = '';
+    if (!['main admin', 'admin', 'staff'].includes(String(CURRENT_ROLE || '').toLowerCase()) || !select.value) return;
+
+    const selected = getSelectorAccount(kind, select.value);
+    if (!selected) return;
+    const record = selected.record || {};
+    const source = selected.balanceSource;
+    const currency = String((source && source.currency) || record.currency || 'MMK').toUpperCase();
+    const balance = source && Object.prototype.hasOwnProperty.call(source, 'balance')
+      ? (typeof source.balance === 'string' ? Number(source.balance.replace(/,/g, '')) : Number(source.balance))
+      : NaN;
+    const state = getSelectorFundingStatus(source || record, balance, currency);
+    const dotClass = state === 'green' ? 'status-green' : (state === 'yellow' ? 'status-yellow' : (state === 'red' ? 'status-red' : 'status-unknown'));
+    const isMainAdmin = String(CURRENT_ROLE || '').toLowerCase() === 'main admin';
+    const balanceText = isMainAdmin && Number.isFinite(balance) ? `<span class="selector-balance-text">${formatMmk(balance)} ${currency}</span>` : '';
+    const stateLabel = state === 'green' ? 'များ' : (state === 'yellow' ? 'ဒုတိယအဆင့်' : (state === 'red' ? 'နည်း' : 'လက်ကျန်မချိတ်ထားပါ'));
+
+    statusEl.innerHTML = `<span class="selector-balance-dot ${dotClass}" title="${stateLabel}" aria-label="${stateLabel}"></span>${balanceText}`;
+    statusEl.classList.remove('hidden');
+  }
+
+  function updateSelectorBalanceStatuses() {
+    updateSelectorBalanceStatus('qr');
+    updateSelectorBalanceStatus('bank');
+  }
+
   // --- AUTO/MANUAL RADIO LOGIC ---
   let isAutoChanging = false;
 
   function refreshBankInfo(skipRadioUpdate = false) {
+    updateSelectorBalanceStatus('bank');
     const bankSelect = document.getElementById('bankSelect'); if(!bankSelect) return;
     const key = bankSelect.value; 
     const mini = document.getElementById('bankPreviewMini');
@@ -3297,6 +3464,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
   // 🌟 Dynamic PromptPay QR ကို System နဲ့ ချိတ်ဆက်ပေးမည့်အပိုင်း 🌟
   let qrDebounceTimer;
   async function refreshQrPreview(skipRadioUpdate = false) {
+    updateSelectorBalanceStatus('qr');
     clearTimeout(qrDebounceTimer);
     qrDebounceTimer = setTimeout(() => {
         const qrSelect = document.getElementById('qrSelect');
@@ -3751,12 +3919,24 @@ if (data.expenseOrder) {
     if (data.timeSettings.pendingAlertHours) ALERT_TIMEOUT_HOURS = parseFloat(data.timeSettings.pendingAlertHours);
     if (data.timeSettings.autoCancelDays) AUTO_CANCEL_DAYS = parseFloat(data.timeSettings.autoCancelDays);
 }
+if (data.balanceThresholds) {
+    SELECTOR_BALANCE_THRESHOLDS = sanitizeSelectorBalanceThresholds(data.balanceThresholds);
+}
 
 // UI သေတ္တာထဲသို့ တန်ဖိုးပြန်ဖြည့်ခြင်း
 const pendingInput = document.getElementById('adminPendingAlert');
 if (pendingInput) pendingInput.value = ALERT_TIMEOUT_HOURS;
 const cancelInput = document.getElementById('adminAutoCancel');
 if (cancelInput) cancelInput.value = AUTO_CANCEL_DAYS;
+
+if (document.getElementById('adminThreshMmkLow')) {
+    document.getElementById('adminThreshMmkLow').value = SELECTOR_BALANCE_THRESHOLDS.MMK?.low || 300000;
+    document.getElementById('adminThreshMmkHigh').value = SELECTOR_BALANCE_THRESHOLDS.MMK?.healthy || 1000000;
+    document.getElementById('adminThreshThbLow').value = SELECTOR_BALANCE_THRESHOLDS.THB?.low || 3000;
+    document.getElementById('adminThreshThbHigh').value = SELECTOR_BALANCE_THRESHOLDS.THB?.healthy || 10000;
+    document.getElementById('adminThreshVndLow').value = SELECTOR_BALANCE_THRESHOLDS.VND?.low || 3000000;
+    document.getElementById('adminThreshVndHigh').value = SELECTOR_BALANCE_THRESHOLDS.VND?.healthy || 10000000;
+}
 
 if (data.telegram) {
      if(data.telegram.chatId) TELEGRAM_CHAT_ID = data.telegram.chatId;
@@ -5601,6 +5781,7 @@ function openAdmin() {
       if (qrChanged) {
           await dbRef.update({ qrs: FIREBASE_QRS });
       }
+      updateSelectorBalanceStatuses();
   };
   // 🌟 Currency အလိုက် သီးသန့်စစ်ထုတ်ပေးမည့် Function 🌟
   window.filterAndInitSuccessDropdowns = function(inCurr, outCurr) {
@@ -9486,6 +9667,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               pendingAlertHours: ALERT_TIMEOUT_HOURS, 
               autoCancelDays: AUTO_CANCEL_DAYS 
           },
+          balanceThresholds: SELECTOR_BALANCE_THRESHOLDS,
           device_permissions: FIREBASE_DEVICE_PERMISSIONS,
           system_passwords: FIREBASE_SYSTEM_PASSWORDS,
           adminTimezone: ADMIN_TIMEZONE,
@@ -9914,6 +10096,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       
       const timeSettingsBlock = document.getElementById('timeSettingsBlock');
       if (timeSettingsBlock) { timeSettingsBlock.style.display = (role === 'main admin') ? 'block' : 'none'; }
+      updateSelectorBalanceStatuses();
   }
 
   // (checkDeviceBypassAndInit() ကို ဖယ်ရှားလိုက်ပါပြီ — Role ကို 'device_roles/{uid}' real-time listener
