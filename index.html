@@ -170,6 +170,58 @@
     .tab-btn { padding: 10px 16px; font-weight: bold; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
     .tab-btn:hover { color: #111827; background: #f1f5f9; }
     .tab-btn.active { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
+
+    /* General Settings nested tabs: compact layout matching the approved preview. */
+    .general-settings-shell { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:16px; box-shadow:0 8px 24px rgba(15,23,42,.05); }
+    .general-settings-title-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:3px; }
+    .general-settings-title { font-size:1.25rem; line-height:1.5rem; font-weight:900; color:#16213c; }
+    .general-settings-role-pill { display:inline-flex; align-items:center; border:1px solid #b9b5ff; border-radius:999px; padding:4px 9px; background:#f3f2ff; color:#5144cf; font-size:.68rem; font-weight:900; }
+    .general-settings-subtitle { margin:0 0 14px; color:#64748b; font-size:.75rem; line-height:1.25rem; }
+    .general-settings-tab-shell { border:1px solid #e2e8f0; border-radius:14px; background:#fbfdff; padding:6px; }
+    .general-settings-tab-nav { display:flex; gap:5px; overflow-x:auto; border-bottom:1px solid #e2e8f0; padding:0 1px 6px; scrollbar-width:thin; }
+    .general-settings-subtab-btn { min-height:38px; padding:8px 12px; border:0; border-radius:10px; background:transparent; color:#64748b; cursor:pointer; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; font-size:.78rem; font-weight:900; transition:all .18s ease; }
+    .general-settings-subtab-btn:hover { color:#3730a3; background:#eef2ff; }
+    .general-settings-subtab-btn.active { color:#fff; background:#4f46e5; box-shadow:0 5px 12px rgba(79,70,229,.20); }
+    .general-settings-subtab-btn { flex:0 0 auto; touch-action:manipulation; }
+    .general-settings-tab-nav { -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; }
+    .general-settings-subtab-panel { display:none; padding:14px 2px 2px; }
+    .general-settings-subtab-panel.active { display:block; }
+    .general-settings-panel-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 4px 12px; }
+    .general-settings-panel-heading h3 { margin:0; color:#3730a3; font-size:.95rem; font-weight:900; }
+    .general-settings-panel-heading p { margin:0; color:#94a3b8; font-size:.65rem; }
+    .general-settings-subsection { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin-bottom:12px; }
+    .general-settings-subsection > h3 { margin-top:0; }
+    .general-settings-subtab-panel > .bg-pink-50,
+    .general-settings-subtab-panel > .bg-red-50,
+    .general-settings-subtab-panel > .bg-orange-50,
+    .general-settings-subtab-panel > .bg-amber-50,
+    .general-settings-subtab-panel > .bg-gray-50,
+    .general-settings-subtab-panel > .bg-indigo-50,
+    .general-settings-subtab-panel > .bg-rose-50,
+    .general-settings-subtab-panel > .bg-gray-800 { margin-bottom:12px !important; }
+    .general-settings-system-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; }
+    .general-settings-system-grid > * { min-width:0; }
+    html.dark .general-settings-shell { background:#0f172a; border-color:#334155; box-shadow:0 8px 24px rgba(0,0,0,.18); }
+    html.dark .general-settings-title { color:#f8fafc; }
+    html.dark .general-settings-role-pill { background:#312e81; border-color:#6366f1; color:#e0e7ff; }
+    html.dark .general-settings-subtitle,
+    html.dark .general-settings-panel-heading p { color:#94a3b8; }
+    html.dark .general-settings-tab-shell { background:#111827; border-color:#334155; }
+    html.dark .general-settings-tab-nav { border-color:#334155; }
+    html.dark .general-settings-subtab-btn { color:#cbd5e1; }
+    html.dark .general-settings-subtab-btn:hover { color:#e0e7ff; background:#1e1b4b; }
+    html.dark .general-settings-subtab-btn.active { color:#fff; background:#4f46e5; }
+    html.dark .general-settings-panel-heading h3 { color:#c7d2fe; }
+    html.dark .general-settings-subsection { background:#111827; border-color:#334155; }
+    @media (max-width: 760px) {
+      .general-settings-shell { padding:12px; }
+      .general-settings-system-grid { grid-template-columns:1fr; }
+      .general-settings-tab-nav { margin-right:-2px; scrollbar-width:none; }
+      .general-settings-tab-nav::-webkit-scrollbar { display:none; }
+      .general-settings-subtab-btn { min-height:36px; padding:8px 10px; font-size:.72rem; }
+      .general-settings-subtab-panel { padding:12px 0 2px; }
+      .general-settings-panel-heading { align-items:flex-start; flex-direction:column; gap:2px; }
+    }
     
     .tab-pane {
   display: none !important;
@@ -4166,6 +4218,141 @@ function openAdmin() {
       firebase.auth().signOut().then(() => location.reload());
   };
 
+  function initGeneralSettingsSubTabs() {
+    const root = document.getElementById('tab-general');
+    if (!root || root.dataset.generalSubtabsReady === '1') return;
+
+    const originalNodes = Array.from(root.children);
+    const findDirect = (predicate) => originalNodes.find((node) => node && node.nodeType === 1 && predicate(node));
+    const findDirectById = (id) => findDirect((node) => node.id === id);
+    const findHeading = (needle) => findDirect((node) => node.tagName === 'H3' && (node.textContent || '').includes(needle));
+    const takeHeadingSection = (heading, stopPredicate) => {
+      if (!heading) return [];
+      const startIndex = originalNodes.indexOf(heading);
+      const section = [];
+      for (let i = startIndex; i < originalNodes.length; i += 1) {
+        const node = originalNodes[i];
+        if (i > startIndex && stopPredicate && stopPredicate(node)) break;
+        section.push(node);
+      }
+      return section;
+    };
+
+    const shell = document.createElement('div');
+    shell.id = 'generalSettingsShell';
+    shell.className = 'general-settings-shell';
+    shell.innerHTML = `
+      <div class="general-settings-title-row">
+        <h2 class="general-settings-title">⚙️ General Settings</h2>
+        <span class="general-settings-role-pill">Main Admin</span>
+      </div>
+      <p class="general-settings-subtitle">အထွေထွေ Settings များကို အပိုင်းလိုက် သီးခြားစီ စီမံနိုင်ပါသည်။</p>
+      <div class="general-settings-tab-shell">
+        <nav class="general-settings-tab-nav" aria-label="General Settings sections"></nav>
+        <div class="general-settings-panels"></div>
+      </div>`;
+    root.appendChild(shell);
+
+    const nav = shell.querySelector('.general-settings-tab-nav');
+    const panels = shell.querySelector('.general-settings-panels');
+    const subTabs = [
+      { id: 'system', icon: '⚙️', label: 'System', title: '⚙️ System Settings', note: 'စနစ်နှင့် လက်ကျန်အရောင်သတ်မှတ်ချက်များ' },
+      { id: 'receipt', icon: '🧾', label: 'Receipt', title: '🧾 Receipt Settings', note: 'ပြေစာဒီဇိုင်းနှင့် စာသားများ' },
+      { id: 'integrations', icon: '🔗', label: 'Integrations', title: '🔗 Integrations', note: 'Telegram နှင့် Developer API များ' },
+      { id: 'automation', icon: '🤖', label: 'Automation', title: '🤖 Automation & Data', note: 'Report၊ Auto Backup နှင့် Database' },
+      { id: 'access', icon: '👥', label: 'Access', title: '👥 Access & Security', note: 'Device၊ Account နှင့် Session ခွင့်ပြုချက်များ' }
+    ];
+    const panelById = {};
+    const buttonById = {};
+
+    subTabs.forEach((tab) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'general-settings-subtab-btn';
+      button.dataset.generalSubtab = tab.id;
+      button.setAttribute('aria-controls', `general-settings-panel-${tab.id}`);
+      button.setAttribute('aria-selected', 'false');
+      button.innerHTML = `<span aria-hidden="true">${tab.icon}</span><span>${tab.label}</span>`;
+      button.addEventListener('click', () => switchGeneralSettingsSubTab(tab.id));
+      nav.appendChild(button);
+      buttonById[tab.id] = button;
+
+      const panel = document.createElement('section');
+      panel.id = `general-settings-panel-${tab.id}`;
+      panel.className = 'general-settings-subtab-panel';
+      panel.dataset.generalSubtabPanel = tab.id;
+      panel.setAttribute('aria-hidden', 'true');
+      panel.innerHTML = `<div class="general-settings-panel-heading"><h3>${tab.title}</h3><p>${tab.note}</p></div>`;
+      panels.appendChild(panel);
+      panelById[tab.id] = panel;
+    });
+
+    const timeSettingsBlock = findDirectById('timeSettingsBlock');
+    const receiptCard = findDirect((node) => node.classList.contains('bg-pink-50'));
+    const apiCard = findDirect((node) => node.classList.contains('bg-gray-800'));
+    const deviceCard = findDirect((node) => node.classList.contains('bg-indigo-50'));
+    const roleCard = findDirect((node) => node.classList.contains('bg-rose-50'));
+    const timezoneCard = findDirect((node) => node.classList.contains('bg-orange-50'));
+    const sessionCard = findDirect((node) => node.classList.contains('bg-amber-50'));
+    const backupCard = findDirect((node) => node.classList.contains('bg-gray-50'));
+    const sectionStopAtHr = (node) => node.tagName === 'HR';
+    const telegramSection = takeHeadingSection(findHeading('Telegram Bot'), sectionStopAtHr);
+    const dailySection = takeHeadingSection(findHeading('Daily Closing Report'), sectionStopAtHr);
+    const autoBackupSection = takeHeadingSection(findHeading('Auto Scheduled Backup'), (node) => node === apiCard);
+
+    const appendNodes = (panel, nodes, subsection = true) => {
+      if (!panel || !nodes || !nodes.length) return;
+      const holder = subsection ? document.createElement('div') : panel;
+      if (subsection) holder.className = 'general-settings-subsection';
+      nodes.forEach((node) => {
+        if (node && node.parentNode) holder.appendChild(node);
+      });
+      if (subsection) panel.appendChild(holder);
+    };
+    const appendCard = (panel, card) => appendNodes(panel, card ? [card] : [], true);
+
+    appendCard(panelById.system, timeSettingsBlock);
+    appendCard(panelById.system, timezoneCard);
+    appendCard(panelById.receipt, receiptCard);
+    appendNodes(panelById.integrations, telegramSection, true);
+    appendCard(panelById.integrations, apiCard);
+    appendNodes(panelById.automation, dailySection, true);
+    appendNodes(panelById.automation, autoBackupSection, true);
+    appendCard(panelById.automation, backupCard);
+    appendCard(panelById.access, deviceCard);
+    appendCard(panelById.access, roleCard);
+    appendCard(panelById.access, sessionCard);
+
+    // Remove only leftover separators/unknown direct nodes; all settings cards above are retained.
+    Array.from(root.children).forEach((node) => {
+      if (node !== shell) node.remove();
+    });
+    root.dataset.generalSubtabsReady = '1';
+    switchGeneralSettingsSubTab('system');
+  }
+
+  function switchGeneralSettingsSubTab(subTabId) {
+    const root = document.getElementById('tab-general');
+    if (!root) return;
+    if (root.dataset.generalSubtabsReady !== '1') initGeneralSettingsSubTabs();
+    const shell = document.getElementById('generalSettingsShell');
+    if (!shell) return;
+    const buttons = shell.querySelectorAll('[data-general-subtab]');
+    const panels = shell.querySelectorAll('[data-general-subtab-panel]');
+    const validSubTabIds = Array.from(buttons).map((button) => button.dataset.generalSubtab);
+    if (!validSubTabIds.includes(subTabId)) subTabId = 'system';
+    buttons.forEach((button) => {
+      const active = button.dataset.generalSubtab === subTabId;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    panels.forEach((panel) => {
+      const active = panel.dataset.generalSubtabPanel === subTabId;
+      panel.classList.toggle('active', active);
+      panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+    });
+  }
+
   function switchTab(tabId, btnElement) {
     const targetPane = document.getElementById(tabId);
     if (!targetPane) return;
@@ -4196,7 +4383,7 @@ function openAdmin() {
         }
     }
     if (tabId === 'tab-work-queue') renderStaffWorkQueue();
-    if (tabId === 'tab-general') { loadAdminDevices(); loadUserRoles(); }
+    if (tabId === 'tab-general') { initGeneralSettingsSubTabs(); loadAdminDevices(); loadUserRoles(); }
     if (tabId === 'tab-customers') renderCustomerAdminList();
     if (tabId === 'tab-logs') loadActivityLogs(); 
     if (tabId === 'tab-treasury') loadTreasuryData(); // 🌟 Treasury Tab သို့သွားလျှင် Data ဆွဲတင်မည်
@@ -7242,6 +7429,11 @@ function openAdmin() {
       }
   }
 
+  function cleanHistoryMethodDisplay(value) {
+        const text = String(value ?? '').trim();
+        if (!text) return '-';
+        return text.replace(/^\s*(?:🔴|🟡|🟢)\s*/u, '').trim() || '-';
+  }
   function generateHistoryRowHTML(d, totalOverdueRef) {
         let dateTimeHtml = formatHistoryDateTime(d.timestamp, d.tz || 'Asia/Bangkok');
         let mappedDeviceName = FIREBASE_DEVICE_NAMES[d.deviceId] || d.deviceId || "Unknown";
@@ -7260,7 +7452,8 @@ function openAdmin() {
             }
         }
         let status = d.status || 'Pending';
-        let method = d.method || "-";
+        // Dropdown တွင်သုံးသော အရောင်သင်္ကေတကို History မှာ မပြဘဲ Account နာမည်သီးသန့်သာ ပြမည်။
+        let method = cleanHistoryMethodDisplay(d.method || "-");
         
         // 🌟 AI ဖတ်ထားသော Data ရှိခဲ့လျှင် review အခြေအနေအလိုက် အရောင်ခွဲပြမည် 🌟
         let aiExtractedHtml = "";
