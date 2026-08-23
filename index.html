@@ -128,6 +128,14 @@
     html.dark .selector-balance-text { color:#94a3b8; }
     .compact select{ padding:.6rem .75rem !important; border-radius:14px !important; font-weight:900 !important; width: 100%; }
 
+    /* 🌟 Currency ရောင်စုံ QR/Bank Select ★ MMK=အဝါ / THB=အပြာ / VND=အနီ */
+    .compact select option.opt-mmk{ color:#b45309; background:#fffbeb; }
+    .compact select option.opt-thb{ color:#2563eb; background:#eff6ff; }
+    .compact select option.opt-vnd{ color:#dc2626; background:#fef2f2; }
+    html.dark .compact select option.opt-mmk{ color:#fcd34d; background:#3a2a06; }
+    html.dark .compact select option.opt-thb{ color:#93c5fd; background:#0f2138; }
+    html.dark .compact select option.opt-vnd{ color:#fca5a5; background:#3a0f0f; }
+
     #adminModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; padding: 20px; overflow-y: auto; }
     
     .admin-content { 
@@ -3320,6 +3328,17 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         } catch(e) { return ''; }
     };
 
+    // 🌟 Currency အလိုက် အရောင်စတုရန်း (MMK/THB/VND) သတ်မှတ်ရန် Function 🌟
+    // Note: Flag emoji (🇹🇭🇲🇲🇻🇳) များသည် Windows/webview အချို့တွင် font support မရှိသဖြင့်
+    // "TH"/"MM"/"VN" ဟု စာလုံးအဖြစ်ချည်း ပေါ်တတ်သောကြောင့် Platform တိုင်းတွင် တည်ငြိမ်စွာပေါ်မည့်
+    // Colored Square Emoji (🟪🟦🟧) ကို အစားထိုးအသုံးပြုသည်။
+    const getCurrencyMeta = (currencyRaw) => {
+        const currency = String(currencyRaw || 'MMK').toUpperCase();
+        if (currency === 'THB') return { flag: '🟦 ', cls: 'opt-thb' };
+        if (currency === 'VND') return { flag: '🟥 ', cls: 'opt-vnd' };
+        return { flag: '🟨 ', cls: 'opt-mmk' };
+    };
+
     const getEmojiPrefix = (record) => {
         if (!record) return '';
         const ledger = record.ledger && FIREBASE_TREASURY[record.ledger] ? FIREBASE_TREASURY[record.ledger] : null;
@@ -3342,7 +3361,9 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           
           let ownerAbbr = getInitials(info.accName); // အတိုကောက် ယူမည်
           let emoji = getEmojiPrefix(info);
-          o.textContent = emoji + info.name + ownerAbbr; // နာမည်ဘေးတွင် ကပ်ပြမည်
+          let curMeta = getCurrencyMeta(info.currency); // 🌟 Currency အရောင်/အလံ
+          o.textContent = emoji + curMeta.flag + info.name + ownerAbbr; // နာမည်ဘေးတွင် ကပ်ပြမည်
+          o.className = curMeta.cls;
           
           bankSelect.appendChild(o);
         }
@@ -3360,10 +3381,12 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         let ownerName = (typeof qr === 'object' && qr.owner) ? qr.owner : getOwnerFromKey(val.replace(/\.[^.]+$/, ''));
         let ownerAbbr = getInitials(ownerName); // အတိုကောက် ယူမည်
         let emoji = typeof qr === 'object' ? getEmojiPrefix(qr) : '';
+        let curMeta = getCurrencyMeta(typeof qr === 'object' ? qr.currency : ''); // 🌟 Currency အရောင်/အလံ
 
         const o = document.createElement('option'); 
         o.value = val; 
-        o.textContent = emoji + text + ownerAbbr; // နာမည်ဘေးတွင် ကပ်ပြမည်
+        o.textContent = emoji + curMeta.flag + text + ownerAbbr; // နာမည်ဘေးတွင် ကပ်ပြမည်
+        o.className = curMeta.cls;
         qrSelect.appendChild(o);
       });
     }
