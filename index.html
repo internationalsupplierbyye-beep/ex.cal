@@ -8901,10 +8901,23 @@ ID: <code>${invId}</code>
   });
 
   // --- AI Slip Reader (Gemini API) ---
-  // 🌟 Model တစ်ခုတည်းကိုသာ မှီခိုမည့်အစား Fallback list ထားရှိသည်
+  // 🌟 Quality-First Cascade: OCR အတိကျမှု "အကောင်းဆုံး" Model ကနေ အစဉ်လိုက် စမ်းသည်
+  // (RPD Quota ပမာဏ အလိုက် မဟုတ်ဘဲ Model Version/Tier အလိုက် စီထားသည်)
+  // Model တစ်ခုမှာ Error/404/Quota ကုန်ခြင်း ဖြစ်ပါက callSlipOcrModel() က catch ဖမ်းပြီး
+  // for-loop ကို ဆက်လက်လည်ပတ်စေသဖြင့် နောက် Model ဆီ အလိုအလျောက် ပြောင်းသွားပါသည်။
+  // Flash (Non-Lite) tier က Lite ထက် OCR quality ပိုကောင်းလို့ အရင်ထားသည်၊
+  // Version အသစ်ဆုံးကို ဦးစားပေးသည် (3.7 > 3.6 > 3.5 > 3 > 2.5)
+  // Lite models (RPD 500) နှင့် Pro (Billing လိုသည်) ကို နောက်ဆုံး Safety-net အဖြစ်သာ ထားသည်
   const SLIP_OCR_MODELS = [
-      "gemini-3.6-flash",
-      "gemini-3.1-pro-preview"
+      "gemini-3.7-flash",              // 1. အသစ်ဆုံး Flash (Quality အကောင်းဆုံး ယူဆ)
+      "gemini-3.6-flash",              // 2. လက်ရှိ အသုံးများနေသော Model
+      "gemini-3.5-flash",              // 3.
+      "gemini-3-flash",                // 4.
+      "gemini-2.5-flash",              // 5. အောက်ဆုံး Flash tier
+      "gemini-3.5-flash-lite",         // 6. Lite (RPD 500) — Flash tier ကုန်မှသာ သုံး
+      "gemini-3.1-flash-lite-preview", // 7. Lite (RPD 500) — Backup ထပ်
+      "gemini-2.5-flash-lite",         // 8. Lite (RPD 20) — နောက်ဆုံး Free-tier Backup
+      "gemini-3.1-pro-preview"         // 9. Paid-only Model — Billing ချိတ်မှသာ အလုပ်လုပ်မည်
   ];
 
   // 🌟 Bug Fix: AI က တခါတလေ | နဲ့ ဖြတ်ရမယ့် format ကို လိုက်မနာဘဲ အလယ်မှာ ရပ်သွားတာမျိုး၊
@@ -9690,7 +9703,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
                       <p>အဝင် (In): <span class="font-bold text-green-700">${inMethod}</span></p>
                       <p>ပမာဏ: <span class="font-black text-green-700 text-sm">${targetAmtStr}</span></p>
                   </div>
-                  <button onclick='confirmSmartMatch("${tx.id}", ${JSON.stringify(imgUrls)}, ${JSON.stringify(fullAiText)})' class="w-full text-white font-bold py-1.5 rounded-lg shadow-sm text-sm ${btnClass}">${btnText}</button>
+                  <button onclick='confirmSmartMatch("${tx.id}", ${JSON.stringify(imgUrls).replace(/'/g, "&#39;")}, ${JSON.stringify(fullAiText).replace(/'/g, "&#39;")})' class="w-full text-white font-bold py-1.5 rounded-lg shadow-sm text-sm ${btnClass}">${btnText}</button>
               </div>`;
           });
       }
