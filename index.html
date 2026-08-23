@@ -111,7 +111,9 @@
     .save-mode-option { display:flex; align-items:center; justify-content:center; gap:.32rem; min-width:0; padding:.48rem .38rem; border:1px solid #e5e7eb; border-radius:12px; background:#fff; user-select:none; white-space:nowrap; }
     .save-mode-option input[type="radio"] { width:17px; height:17px; margin:0; accent-color:#111827; cursor:pointer; flex:0 0 auto; }
     .save-mode-option span { min-width:0; overflow:hidden; text-overflow:ellipsis; font-weight:900; font-size:.76rem; line-height:1.35; cursor:pointer; }
-    .selector-balance-status { display:flex; align-items:center; gap:.35rem; min-height:1.05rem; margin-top:.25rem; font-size:.68rem; line-height:1.2; font-weight:800; white-space:nowrap; overflow:hidden; }
+    .selector-balance-status { display:flex; align-items:center; gap:.35rem; min-height:1.05rem; font-size:.68rem; line-height:1.2; font-weight:800; white-space:nowrap; overflow:hidden; flex:0 0 auto; max-width:60%; }
+    .selector-row { display:flex; align-items:center; gap:.5rem; }
+    .selector-row select { flex:1 1 auto; min-width:0; }
     .selector-balance-dot { display:inline-block; width:10px; height:10px; border-radius:999px; border:1px solid rgba(15,23,42,.20); box-shadow:0 0 0 2px rgba(255,255,255,.72); flex:0 0 auto; }
     .selector-balance-dot.status-red { background:#ef4444; }
     .selector-balance-dot.status-yellow { background:#facc15; }
@@ -751,16 +753,20 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start mt-3">
       <div class="card p-3">
-        <div class="grid grid-cols-2 gap-3 mb-2">
+        <div class="grid grid-cols-1 gap-3 mb-2">
             <div>
-                <p class="font-black mb-1 pb-1 text-xs" data-i18n="lbl_qr_sel">QR Select</p>
+                <div class="flex items-center justify-between gap-2 mb-1 pb-1 flex-wrap">
+                    <p class="font-black text-xs" data-i18n="lbl_qr_sel">QR Select</p>
+                    <div id="qrBalanceStatus" class="selector-balance-status hidden" aria-live="polite"></div>
+                </div>
                 <select id="qrSelect" class="compact border rounded-lg w-full text-sm"></select>
-                <div id="qrBalanceStatus" class="selector-balance-status hidden" aria-live="polite"></div>
             </div>
             <div>
-                <p class="font-black mb-1 pb-1 text-xs" data-i18n="lbl_bank_sel">Bank Select</p>
+                <div class="flex items-center justify-between gap-2 mb-1 pb-1 flex-wrap">
+                    <p class="font-black text-xs" data-i18n="lbl_bank_sel">Bank Select</p>
+                    <div id="bankBalanceStatus" class="selector-balance-status hidden" aria-live="polite"></div>
+                </div>
                 <select id="bankSelect" class="compact border rounded-lg w-full text-sm"></select>
-                <div id="bankBalanceStatus" class="selector-balance-status hidden" aria-live="polite"></div>
             </div>
         </div>
 
@@ -3694,6 +3700,10 @@ if (file.startsWith('PP:')) {
   // --- Firebase Connection ---
   let dbRef = null;
   let publicDbRef = null; // 🌟 Guest/Public users (login/role မလိုဘဲ) Banks + QR + Rate ဖတ်ရန် document
+  let ocrQuotaRef = null; // 🌟 Slip OCR Model Quota (429) Skip-List ကို Device အားလုံး Share ဖြစ်အောင် Firestore တွင် မှတ်ရန်
+  // Firestore doc ရဲ့ Cache — extractSlipDataWithGemini() က Network Read မလိုဘဲ ချက်ချင်း စစ်နိုင်ရန်
+  // (onSnapshot Listener က Firestore ပြောင်းတိုင်း ဒီ Cache ကို Real-time Update ပေးနေမည်)
+  let OCR_QUOTA_CACHE = { date: null, exhausted: [] };
   try {
     const firebaseConfig = { apiKey: "AIzaSyDr4ada9hQah9C2ZX0xFBfxYDdXUQl3oa4", authDomain: "excal-570ed.firebaseapp.com", projectId: "excal-570ed", storageBucket: "excal-570ed.firebasestorage.app", messagingSenderId: "84544400626", appId: "1:84544400626:web:3393a4e339d3f41a60f46b", measurementId: "G-4KLYMEPPGT" };
     firebase.initializeApp(firebaseConfig);
@@ -3711,6 +3721,21 @@ if (file.startsWith('PP:')) {
 
     dbRef = firebase.firestore().collection("exchange_app").doc("admin_data");
     publicDbRef = firebase.firestore().collection("exchange_app").doc("public_data");
+    ocrQuotaRef = firebase.firestore().collection("exchange_app").doc("ocr_quota_status");
+
+    // 🌟 Slip OCR Skip-List ကို Real-time Listen လုပ်ထားခြင်း — Device/Browser မတူရင်တောင်
+    // Device တစ်ခုက Model တစ်ခု Quota ကုန်ကြောင်း မှတ်လိုက်တာနဲ့ တခြား Device/Admin အားလုံးဆီ
+    // ချက်ချင်း ရောက်သွားပြီး ထို Model ကို ကျော်သွားစေမည် (localStorage လို Device-only မဟုတ်တော့ပါ)
+    // Login/Role မလိုဘဲ Guest အနေနဲ့လည်း Slip တင်နိုင်စေရန် Rules ထဲမှာ ဒီ document ကို
+    // public read/write ခွင့်ပြုပေးထားဖို့ လိုအပ်ပါသည် (public_data နှင့်အတူတူပင်)
+    ocrQuotaRef.onSnapshot((snap) => {
+        if (snap.exists) {
+            const d = snap.data();
+            OCR_QUOTA_CACHE = { date: d.date || null, exhausted: Array.isArray(d.exhausted) ? d.exhausted : [] };
+        } else {
+            OCR_QUOTA_CACHE = { date: null, exhausted: [] };
+        }
+    }, (err) => console.warn("ocr_quota_status listen error:", err.code));
 
     // 🌟 GUEST/PUBLIC: Login/Role လုံးဝ မလိုဘဲ Banks + QR + Rate ကို ဖတ်ပြီး Calculator ကို
     // အသုံးပြုနိုင်ရန် (Firestore Rule အရ exchange_app/public_data document ကို public read ခွင့်ပြုထားသည်)
@@ -7455,7 +7480,10 @@ function openAdmin() {
   function cleanHistoryMethodDisplay(value) {
         const text = String(value ?? '').trim();
         if (!text) return '-';
-        return text.replace(/^\s*(?:🔴|🟡|🟢)\s*/u, '').trim() || '-';
+        // 🌟 QR/Bank ကို Select လုပ်တုန်းက Text ထဲ ထည့်ခဲ့ဖူးတဲ့ (ယခင် Version) Balance Dot (🔴🟡🟢)
+        // နှင့် Currency Square (🟦🟥🟨) Emoji တွေကို string ရဲ့ ဘယ်နေရာမှာပဲပါပါ ဖယ်ရှားမည်
+        // (Text အစမှာချည်းမဟုတ်ဘဲ "QR (🔴 🟦 name)" လိုမျိုး ကွင်းအတွင်းက ပါလာလည်း ရှင်းနိုင်ရန်)
+        return text.replace(/[\u{1F534}\u{1F7E1}\u{1F7E2}\u{1F7E6}\u{1F7E5}\u{1F7E8}]\s*/gu, '').trim() || '-';
   }
   function generateHistoryRowHTML(d, totalOverdueRef) {
         let dateTimeHtml = formatHistoryDateTime(d.timestamp, d.tz || 'Asia/Bangkok');
@@ -9010,14 +9038,46 @@ Return ONLY JSON.`;
   async function extractSlipDataWithGemini(base64Image) {
       if(!GEMINI_API_KEY) return "⚠️ API Key မထည့်ရသေးပါ။ Admin > အထွေထွေ တွင်ထည့်ပါ။"; 
 
+      // 🌟 Smart Skip: ဒီနေ့ Quota ကုန်ပြီးသား Model ကို မှတ်ထားပြီး ထပ်မစမ်းတော့ဘဲ ကျော်ရန်
+      // (429 quota-exceeded ဖြစ်တိုင်း Network round-trip တစ်ခါစီ ကုန်နေတာမို့ Slip တင်တိုင်း
+      //  နှေးနေမှာမို့ Firestore (ocrQuotaRef) ထဲ ဒီနေ့စွဲနဲ့ မှတ်ထားပြီး Device/Admin
+      //  အားလုံး Share ဖြစ်အောင် — နောက်ထပ် Slip ဘယ် Device က တင်တင် တန်းကျော်စေမည်)
+      const todayStr = new Date().toISOString().slice(0, 10);
+      // OCR_QUOTA_CACHE ကို onSnapshot Listener က Real-time update ထားပြီးသားမို့ Network Read
+      // ထပ်မလိုဘဲ ချက်ချင်း စစ်နိုင်သည် (Cache ရဲ့ date က ဒီနေ့နဲ့ မကိုက်ရင် ညနေခင်း/ရက်ကူးသွားပြီး
+      // ဟောင်းနေတာမို့ လက်ရှိတွက်ရာမှာ မသုံးဘဲ Empty List အဖြစ် သဘောထားမည်)
+      let exhaustedToday = (OCR_QUOTA_CACHE.date === todayStr) ? [...OCR_QUOTA_CACHE.exhausted] : [];
+      const markExhausted = (model) => {
+          if (exhaustedToday.includes(model)) return;
+          exhaustedToday.push(model);
+          // Local loop အတွက် ချက်ချင်း သိစေပြီး၊ Firestore ဘက်ကိုလည်း Sync ပို့မည်
+          const isNewDay = OCR_QUOTA_CACHE.date !== todayStr;
+          OCR_QUOTA_CACHE = { date: todayStr, exhausted: isNewDay ? [model] : [...new Set([...OCR_QUOTA_CACHE.exhausted, model])] };
+          if (ocrQuotaRef) {
+              const writeData = isNewDay
+                  ? { date: todayStr, exhausted: [model] } // ရက်ကူးသွားပြီဆိုရင် ဟောင်း Array ကို လုံးဝ Overwrite (Reset)
+                  : { date: todayStr, exhausted: firebase.firestore.FieldValue.arrayUnion(model) }; // ဒီနေ့ထဲပဲဆိုရင် ပေါင်းထည့်
+              ocrQuotaRef.set(writeData, { merge: true })
+                  .catch(e => console.warn('ocr_quota_status write failed:', e));
+          }
+      };
+
       let lastError = null;
       for (const model of SLIP_OCR_MODELS) {
+          if (exhaustedToday.includes(model)) {
+              console.log(`⏭️ ${model} — ဒီနေ့ Quota ကုန်ပြီးသားမို့ ကျော်လိုက်သည်`);
+              continue;
+          }
           try {
               const result = await callSlipOcrModel(model, base64Image);
               if (result) return result;
           } catch (error) {
-              console.error(`Slip OCR failed with ${model}:`, error.message || error);
+              const msg = String(error.message || error);
+              console.error(`Slip OCR failed with ${model}:`, msg);
               lastError = error;
+              // 🌟 Quota ကုန်ခြင်း (429/quota) ဖြစ်မှသာ ဒီနေ့အတွက် Skip List ထဲ ထည့်မည်
+              // (503 High-demand လိုမျိုး ယာယီ Error တွေကိုတော့ Skip List ထဲ မထည့်ပါ — ခဏနေရင် ပြန်ကောင်းနိုင်လို့)
+              if (msg.includes('429') || /quota/i.test(msg)) markExhausted(model);
               // ဒီ model မရရင် နောက် fallback model ကို ဆက်စမ်းမည်
               continue;
           }
@@ -9025,6 +9085,7 @@ Return ONLY JSON.`;
       console.error("All Slip OCR models failed. Last error:", lastError);
       return "⚠️ စလစ်ဖတ်၍မရပါ (Model အားလုံး Error - Console (F12) တွင် အသေးစိတ် စစ်ပါ)";
   }
+
 
   // 🌟 Quick Amount Button အတွက် Function အသစ် 🌟
   window.addQuickAmt = function(inputId, amt, clear = false) {
