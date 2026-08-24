@@ -1038,9 +1038,9 @@
       <button class="tab-btn" onclick="switchTab('tab-work-queue', this)" id="btnTabWorkQueue">📋 Work Queue</button>
       <button class="tab-btn active" onclick="switchTab('tab-dashboard', this)" id="btnTabDashboard">📊 Dashboard</button>
       <button class="tab-btn" onclick="switchTab('tab-history', this)" id="btnTabHistory">📜 မှတ်တမ်းများ</button>
-      <button class="tab-btn" onclick="switchTab('tab-general', this)">အထွေထွေ</button>
-      <button class="tab-btn" onclick="switchTab('tab-banks', this)">ဘဏ်များ</button>
-      <button class="tab-btn" onclick="switchTab('tab-qrs', this)">QR များ</button>
+      <button class="tab-btn" onclick="switchTab('tab-general', this)" id="btnTabGeneral">အထွေထွေ</button>
+      <button class="tab-btn" onclick="switchTab('tab-banks', this)" id="btnTabBanks">ဘဏ်များ</button>
+      <button class="tab-btn" onclick="switchTab('tab-qrs', this)" id="btnTabQrs">QR များ</button>
       <button class="tab-btn" onclick="switchTab('tab-customers', this)" id="btnTabCustomers">👥 Customers</button>
       <button class="tab-btn" onclick="switchTab('tab-treasury', this)" id="btnTabTreasury">💰 လက်ကျန်ငွေ</button>
       
@@ -3360,7 +3360,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     if(bankSelect) {
       bankSelect.innerHTML = `<option value="" data-i18n="ph_bank_sel">${dict.ph_bank_sel || '— ဘဏ်ရွေးပါ —'}</option>`;
       finalBankOrder.forEach(key => {
-        if(ACTIVE_BANK_INFO[key]) {
+        if(ACTIVE_BANK_INFO[key] && ACTIVE_BANK_INFO[key].active !== false) {
           const info = ACTIVE_BANK_INFO[key];
           const o = document.createElement('option'); 
           o.value = key; 
@@ -3380,6 +3380,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     if(qrSelect) {
       qrSelect.innerHTML = `<option value="" data-i18n="ph_qr_sel">${dict.ph_qr_sel || '— QR ရွေးပါ —'}</option>`;
       finalQRs.forEach(qr => {
+        if (typeof qr === 'object' && qr.active === false) return; // 🌟 Inactive QR ကို Main Page Select တွင် မပြပါ
         const val = typeof qr === 'string' ? qr : qr.file;
         const text = typeof qr === 'string' ? qr.replace(/\.[^.]+$/, '') : (qr.name || val.replace(/\.[^.]+$/, ''));
         
@@ -4630,8 +4631,13 @@ function openAdmin() {
         
         // 🌟 Currency Badge လေး ထပ်ထည့်ပါသည် 🌟
         let currBadge = bank.currency ? `<span class="bg-gray-100 text-gray-700 text-[9px] px-1.5 py-0.5 rounded ml-1 border border-gray-300 font-bold uppercase">${bank.currency}</span>` : '';
+
+        // 🌟 Active / Inactive Badge — Main Admin ကသာ ပြောင်းခွင့်ရှိသည် (Main Page Select တွင် ပြမည် / မပြမည် ထိန်းချုပ်သည်)
+        let isActive = bank.active !== false;
+        let canToggleActive = String(CURRENT_ROLE || '').toLowerCase() === 'main admin';
+        let activeBadge = `<button onclick="toggleBankActive('${id}')" title="${canToggleActive ? (isActive ? 'နှိပ်၍ Inactive ပြောင်းမည် (Main Admin)' : 'နှိပ်၍ Active ပြောင်းမည် (Main Admin)') : 'Main Admin သာ ပြောင်းခွင့်ရှိသည်'}" class="text-[9px] px-1.5 py-0.5 rounded ml-1 border font-bold whitespace-nowrap ${isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-200 text-gray-500 border-gray-300'} ${canToggleActive ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}">${isActive ? '🟢 Active' : '⚪ Inactive'}</button>`;
         
-        bankListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="bank" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate flex items-center"><span class="font-bold text-sm">${bank.name}</span> <span class="text-xs text-gray-500 ml-1">(${id})</span> ${currBadge} ${ledgerBadge}</div></div><div class="action-btns flex-shrink-0"><button onclick="editBank('${id}')" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteBank('${id}')" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
+        bankListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="bank" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate flex items-center"><span class="font-bold text-sm">${bank.name}</span> <span class="text-xs text-gray-500 ml-1">(${id})</span> ${currBadge} ${ledgerBadge} ${activeBadge}</div></div><div class="action-btns flex-shrink-0"><button onclick="editBank('${id}')" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteBank('${id}')" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
       });
     }
     
@@ -4650,7 +4656,12 @@ function openAdmin() {
         // 🌟 Currency Badge လေး ထပ်ထည့်ပါသည် 🌟
         let currBadge = (typeof qr === 'object' && qr.currency) ? `<span class="bg-gray-100 text-gray-700 text-[9px] px-1.5 py-0.5 rounded ml-1 border border-gray-300 font-bold uppercase">${qr.currency}</span>` : '';
 
-        qrListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="qr" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate flex items-center"><span class="font-bold text-sm">${name}</span> <span class="text-xs text-gray-500 ml-1">(${file})</span> ${currBadge} ${ledgerBadge}</div></div><div class="action-btns flex-shrink-0"><button onclick="editQR(${index})" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteQR(${index})" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
+        // 🌟 Active / Inactive Badge — Main Admin ကသာ ပြောင်းခွင့်ရှိသည် (Main Page Select တွင် ပြမည် / မပြမည် ထိန်းချုပ်သည်)
+        let isActive = (typeof qr === 'object' ? qr.active : true) !== false;
+        let canToggleActive = String(CURRENT_ROLE || '').toLowerCase() === 'main admin';
+        let activeBadge = `<button onclick="toggleQRActive(${index})" title="${canToggleActive ? (isActive ? 'နှိပ်၍ Inactive ပြောင်းမည် (Main Admin)' : 'နှိပ်၍ Active ပြောင်းမည် (Main Admin)') : 'Main Admin သာ ပြောင်းခွင့်ရှိသည်'}" class="text-[9px] px-1.5 py-0.5 rounded ml-1 border font-bold whitespace-nowrap ${isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-200 text-gray-500 border-gray-300'} ${canToggleActive ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}">${isActive ? '🟢 Active' : '⚪ Inactive'}</button>`;
+
+        qrListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="qr" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate flex items-center"><span class="font-bold text-sm">${name}</span> <span class="text-xs text-gray-500 ml-1">(${file})</span> ${currBadge} ${ledgerBadge} ${activeBadge}</div></div><div class="action-btns flex-shrink-0"><button onclick="editQR(${index})" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteQR(${index})" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
       });
     }
   }
@@ -5439,9 +5450,12 @@ function openAdmin() {
           return alert("Bank Code ထဲမှာ dot (.) ခွင့်မပြုပါ (ဥပမာ 'K.B.Z' အစား 'KBZ' လို့ရေးပါ)။");
       }
 
+      // 🌟 Active status ကို မပျက်စေရန် Update ချိန်တွင် ယခင်တန်ဖိုးကို ဆက်ထိန်းထားမည် (Save/Duplicate အသစ်များကတော့ Active အနေဖြင့် စတင်မည်)
+      const prevActiveForUpdate = (origId && FIREBASE_BANKS[origId]) ? (FIREBASE_BANKS[origId].active !== false) : true;
+
       if (mode === 'save') {
           if (FIREBASE_BANKS[id]) return alert("ဤ Bank Code ဖြင့် ရှိပြီးသားဖြစ်နေပါသည်။ 'Update' ကို နှိပ်ပါ သို့မဟုတ် Code နာမည် အသစ်ပြောင်းပါ။");
-          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg", ledger, currency };
+          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg", ledger, currency, active: true };
           FIREBASE_BANK_ORDER.push(id);
       } else if (mode === 'update') {
           if (!origId) return alert("ကျေးဇူးပြု၍ ပြင်ဆင်လိုသော ဘဏ်ကို အရင် ✏️ Edit နှိပ်ပြီးမှ Update လုပ်ပါ။");
@@ -5451,10 +5465,10 @@ function openAdmin() {
               if (index > -1) FIREBASE_BANK_ORDER[index] = id;
               delete FIREBASE_BANKS[origId];
           }
-          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg", ledger, currency };
+          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg", ledger, currency, active: prevActiveForUpdate };
       } else if (mode === 'duplicate') {
           if (id === origId || FIREBASE_BANKS[id]) return alert("Duplicate လုပ်ရန်အတွက် Bank Code အသစ် ပြောင်းပေးပါ။");
-          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg", ledger, currency };
+          FIREBASE_BANKS[id] = { name, accName, accNo, logo: logo || "default.jpg", ledger, currency, active: true };
           FIREBASE_BANK_ORDER.push(id);
       }
 
@@ -5464,6 +5478,19 @@ function openAdmin() {
           scheduleDropdownRefresh();
           renderAdminLists();
           alert(mode === 'update' ? "ဘဏ်အချက်အလက် Update လုပ်ပြီးပါပြီ။" : "ဘဏ်အချက်အလက် သိမ်းဆည်းပြီးပါပြီ။");
+      } catch(e) { alert("Error: " + e.message); }
+  }
+
+  // 🌟 Bank Active/Inactive — Main Admin ကသာ ပြောင်းခွင့်ရှိသည်။ Inactive ဖြစ်ပါက Main Page ရှိ
+  // Bank Select dropdown တွင် ပေါ်မည်မဟုတ်ပါ (initDropdowns() ထဲတွင် စစ်ဆေးထားသည်)
+  async function toggleBankActive(id) {
+      if (String(CURRENT_ROLE || '').toLowerCase() !== 'main admin') return alert("Main Admin သာ Active/Inactive ပြောင်းလဲခွင့်ရှိပါသည်။");
+      const bank = FIREBASE_BANKS[id]; if(!bank) return;
+      bank.active = (bank.active === false); // toggle: false -> true, true/undefined -> false
+      try {
+          await updateFirebase('banks');
+          scheduleDropdownRefresh();
+          renderAdminLists();
       } catch(e) { alert("Error: " + e.message); }
   }
 
@@ -5517,16 +5544,19 @@ function openAdmin() {
 
       const isDuplicateFile = FIREBASE_QRS.some((q, i) => i !== origIndex && (typeof q === 'string' ? q : q.file) === file);
 
+      // 🌟 Active status ကို မပျက်စေရန် Update ချိန်တွင် ယခင်တန်ဖိုးကို ဆက်ထိန်းထားမည် (Save/Duplicate အသစ်များကတော့ Active အနေဖြင့် စတင်မည်)
+      const prevQrActiveForUpdate = (origIndex > -1 && FIREBASE_QRS[origIndex]) ? (FIREBASE_QRS[origIndex].active !== false) : true;
+
       if (mode === 'save') {
           if (FIREBASE_QRS.some(q => (typeof q === 'string' ? q : q.file) === file)) return alert("ဤ ဖိုင်နာမည်ဖြင့် ရှိပြီးသားဖြစ်နေပါသည်။ 'Update' လုပ်ပါ သို့မဟုတ် ဖိုင်နာမည် ပြောင်းပါ။");
-          FIREBASE_QRS.push({ file, name, owner, ledger, currency });
+          FIREBASE_QRS.push({ file, name, owner, ledger, currency, active: true });
       } else if (mode === 'update') {
           if (origIndex === -1) return alert("ကျေးဇူးပြု၍ ပြင်ဆင်လိုသော QR ကို အရင် ✏️ Edit နှိပ်ပြီးမှ Update လုပ်ပါ။");
           if (isDuplicateFile) return alert("ပြောင်းလဲလိုသော ဖိုင်နာမည်သည် အခြား QR ၏ ဖိုင်နာမည်နှင့် တူညီနေပါသည်။");
-          FIREBASE_QRS[origIndex] = { file, name, owner, ledger, currency };
+          FIREBASE_QRS[origIndex] = { file, name, owner, ledger, currency, active: prevQrActiveForUpdate };
       } else if (mode === 'duplicate') {
           if (FIREBASE_QRS.some(q => (typeof q === 'string' ? q : q.file) === file)) return alert("Duplicate လုပ်ရန် ဖိုင်နာမည် အသစ် ပြောင်းပေးပါ။");
-          FIREBASE_QRS.push({ file, name, owner, ledger, currency });
+          FIREBASE_QRS.push({ file, name, owner, ledger, currency, active: true });
       }
 
       try {
@@ -5535,6 +5565,19 @@ function openAdmin() {
           scheduleDropdownRefresh();
           renderAdminLists();
           alert(mode === 'update' ? "QR အချက်အလက် Update လုပ်ပြီးပါပြီ။" : "QR အချက်အလက် သိမ်းဆည်းပြီးပါပြီ။");
+      } catch(e) { alert("Error: " + e.message); }
+  }
+
+  // 🌟 QR Active/Inactive — Main Admin ကသာ ပြောင်းခွင့်ရှိသည်။ Inactive ဖြစ်ပါက Main Page ရှိ
+  // QR Select dropdown တွင် ပေါ်မည်မဟုတ်ပါ (initDropdowns() ထဲတွင် စစ်ဆေးထားသည်)
+  async function toggleQRActive(index) {
+      if (String(CURRENT_ROLE || '').toLowerCase() !== 'main admin') return alert("Main Admin သာ Active/Inactive ပြောင်းလဲခွင့်ရှိပါသည်။");
+      const qr = FIREBASE_QRS[index]; if(!qr || typeof qr !== 'object') return;
+      qr.active = (qr.active === false); // toggle: false -> true, true/undefined -> false
+      try {
+          await updateFirebase('qrs');
+          scheduleDropdownRefresh();
+          renderAdminLists();
       } catch(e) { alert("Error: " + e.message); }
   }
 
@@ -10372,6 +10415,13 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'inline-block');
           if(btnExport) btnExport.style.display = 'inline-block';
           if(btnClear) btnClear.style.display = 'inline-block';
+
+          // 🌟 Main Admin သီးသန့် Tabs — အထွေထွေ / ဘဏ်များ / QR များ / လက်ကျန်ငွေ ကို Admin (Main Admin မဟုတ်သူ) အတွက် ဖျောက်ထားမည်
+          const mainAdminOnlyTabIds = ['btnTabGeneral', 'btnTabBanks', 'btnTabQrs', 'btnTabTreasury'];
+          mainAdminOnlyTabIds.forEach(id => {
+              const el = document.getElementById(id);
+              if (el) el.style.display = (role === 'main admin') ? 'inline-block' : 'none';
+          });
       } else if (role === 'staff') {
           adminBtn.innerHTML = "📜 Staff";
           modalTitle.innerHTML = "📜 ငွေလွှဲမှတ်တမ်းများ (Staff View)";
