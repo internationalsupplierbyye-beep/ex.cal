@@ -152,14 +152,14 @@
     .export-actions > button { flex:0 0 90px; width:90px; max-width:90px; min-width:90px; height:40px; min-height:40px; box-sizing:border-box; padding:.3rem .2rem !important; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; text-align:center; font-size:.72rem; line-height:1.1; border-radius:11px; }
     .btn-private-save { background:#0f766e !important; color:#fff !important; border:1px solid #0f766e !important; }
     .btn-private-save:hover { background:#115e59 !important; }
-    #customToast { top:8.35rem !important; right:.75rem !important; left:.75rem !important; width:auto !important; z-index:45 !important; pointer-events:none !important; justify-content:flex-end; }
+    #customToast { top:auto !important; bottom:1rem !important; right:1rem !important; left:auto !important; width:min(34rem,calc(100vw - 2rem)) !important; z-index:55 !important; pointer-events:none !important; justify-content:flex-end; }
     #customToast > div { max-width:min(34rem,100%); max-height:3.5rem; overflow:hidden; padding:.55rem .75rem !important; font-size:.76rem; line-height:1.35; pointer-events:none !important; }
     #toastMessage { display:block; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:normal; overflow-wrap:anywhere; }
     @media (max-width:640px) {
       .export-actions { display:grid !important; grid-template-columns:repeat(2,90px); justify-content:center; gap:.35rem; }
       .export-actions > button:last-child { grid-column:1 / -1; justify-self:center; }
       .export-actions > button { flex:0 0 90px; width:90px; min-width:90px; height:40px; min-height:40px; font-size:.68rem; }
-      #customToast { top:6.25rem !important; }
+      #customToast { top:auto !important; bottom:calc(1rem + env(safe-area-inset-bottom)) !important; right:.75rem !important; left:auto !important; width:calc(100vw - 1.5rem) !important; }
     }
 
     /* 🌟 Currency ရောင်စုံ QR/Bank Select ★ MMK=အဝါ / THB=အပြာ / VND=အနီ */
@@ -1716,6 +1716,11 @@
     <div class="flex justify-between items-center mb-3 border-b pb-2">
        <h3 class="text-base font-black text-green-700">👁️ Customer စလစ်များ</h3>
        <button onclick="document.getElementById('slipViewModal').style.display='none'" class="text-gray-500 hover:text-red-500 font-bold text-2xl leading-none">✕</button>
+    </div>
+    <div id="slipViewReuploadBar" class="mb-3 pb-3 border-b border-indigo-100">
+        <button id="slipViewReuploadBtn" onclick="triggerSlipUpload(document.getElementById('uploadTargetInvId').value); document.getElementById('slipViewModal').style.display='none';" class="btn bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 w-full !py-2 !text-sm flex items-center justify-center gap-2">
+            <span class="text-lg">➕</span> စလစ်ပုံ ထပ်တင်မည်
+        </button>
     </div>
     <div id="slipViewContent" class="overflow-y-auto flex-1 space-y-4 text-center pb-2">
         </div>
@@ -10247,6 +10252,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
   window.openSlipModal = function(invId) {
       const tx = allLoadedHistory.find(x => x.id === invId); if(!tx) return;
       let slipArr = tx.slipUrls || []; if (tx.slipUrl && slipArr.length === 0) slipArr = [tx.slipUrl];
+      const targetInput = document.getElementById('uploadTargetInvId');
+      if (targetInput) targetInput.value = invId;
       const contentDiv = document.getElementById('slipViewContent'); contentDiv.innerHTML = '';
       
       if (slipArr.length === 0) contentDiv.innerHTML = '<p class="text-gray-500">ပုံမရှိပါ။</p>';
@@ -10263,14 +10270,6 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               `;
           });
       }
-      
-      contentDiv.innerHTML += `
-          <div class="mt-1 border-t pt-3 pb-1">
-              <button onclick="triggerSlipUpload('${invId}'); document.getElementById('slipViewModal').style.display='none';" class="btn bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-700 w-full !py-2 !text-sm flex items-center justify-center gap-2">
-                  <span class="text-lg">➕</span> စလစ်ပုံ ထပ်တင်မည်
-              </button>
-          </div>
-      `;
       
       document.getElementById('slipViewModal').style.display = 'flex';
   }
