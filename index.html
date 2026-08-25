@@ -129,6 +129,38 @@
     html.dark .selector-balance-dot.status-unknown { background:#64748b; }
     html.dark .selector-balance-text { color:#94a3b8; }
     .compact select{ padding:.6rem .75rem !important; border-radius:14px !important; font-weight:900 !important; width: 100%; }
+    .compact select.balance-red { border-color:#fca5a5 !important; color:#b91c1c !important; background:#fff1f2 !important; box-shadow:0 0 0 2px rgba(239,68,68,.08); }
+    .compact select.balance-yellow { border-color:#facc15 !important; color:#a16207 !important; background:#fffbeb !important; box-shadow:0 0 0 2px rgba(234,179,8,.08); }
+    .compact select.balance-green { border-color:#86efac !important; color:#15803d !important; background:#f0fdf4 !important; box-shadow:0 0 0 2px rgba(34,197,94,.08); }
+    .compact select.balance-unknown { border-color:#cbd5e1 !important; }
+    .method-link-wrap { display:flex; align-items:center; gap:.28rem; min-width:0; }
+    .method-link-preview { width:24px; height:24px; border-radius:6px; border:1px solid #cbd5e1; object-fit:cover; flex:0 0 auto; background:#f8fafc; }
+    .method-link-btn { width:24px; height:24px; padding:0; border-radius:7px; border:1px solid #c4b5fd; background:#f5f3ff; color:#6d28d9; cursor:pointer; font-size:.76rem; line-height:1; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; }
+    .method-link-btn:hover { background:#ede9fe; }
+    .list-item[data-type="bank"], .list-item[data-type="qr"] { touch-action:pan-y; }
+    .order-btns { display:flex; flex-direction:column; gap:2px; }
+    .order-btns button { width:28px; height:22px; padding:0; border:1px solid #cbd5e1; border-radius:5px; background:#f8fafc; color:#475569; cursor:pointer; font-size:.7rem; font-weight:900; line-height:1; }
+    .order-btns button:hover { background:#dbeafe; color:#1d4ed8; border-color:#93c5fd; }
+    .admin-list-scroll-hint { color:#64748b; font-size:.68rem; margin:-4px 0 8px; }
+    html.dark .compact select.balance-red { border-color:#f87171 !important; color:#fecaca !important; background:#3f1d24 !important; }
+    html.dark .compact select.balance-yellow { border-color:#fde047 !important; color:#fef08a !important; background:#3a2a06 !important; }
+    html.dark .compact select.balance-green { border-color:#4ade80 !important; color:#bbf7d0 !important; background:#12351f !important; }
+    html.dark .method-link-preview { border-color:#475569; background:#0f172a; }
+    html.dark .method-link-btn { border-color:#7c3aed; background:#2e1065; color:#ddd6fe; }
+    html.dark .order-btns button { background:#0f172a; color:#cbd5e1; border-color:#475569; }
+    .export-actions { display:flex !important; flex-wrap:nowrap; justify-content:center; gap:.45rem; align-items:center; width:100%; }
+    .export-actions > button { flex:0 0 90px; width:90px; max-width:90px; min-width:90px; height:40px; min-height:40px; box-sizing:border-box; padding:.3rem .2rem !important; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; text-align:center; font-size:.72rem; line-height:1.1; border-radius:11px; }
+    .btn-private-save { background:#0f766e !important; color:#fff !important; border:1px solid #0f766e !important; }
+    .btn-private-save:hover { background:#115e59 !important; }
+    #customToast { top:8.35rem !important; right:.75rem !important; left:.75rem !important; width:auto !important; z-index:45 !important; pointer-events:none !important; justify-content:flex-end; }
+    #customToast > div { max-width:min(34rem,100%); max-height:3.5rem; overflow:hidden; padding:.55rem .75rem !important; font-size:.76rem; line-height:1.35; pointer-events:none !important; }
+    #toastMessage { display:block; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:normal; overflow-wrap:anywhere; }
+    @media (max-width:640px) {
+      .export-actions { display:grid !important; grid-template-columns:repeat(2,90px); justify-content:center; gap:.35rem; }
+      .export-actions > button:last-child { grid-column:1 / -1; justify-self:center; }
+      .export-actions > button { flex:0 0 90px; width:90px; min-width:90px; height:40px; min-height:40px; font-size:.68rem; }
+      #customToast { top:6.25rem !important; }
+    }
 
     /* 🌟 Currency ရောင်စုံ QR/Bank Select ★ MMK=အဝါ / THB=အပြာ / VND=အနီ */
     .compact select option.opt-mmk{ color:#b45309; background:#fffbeb; }
@@ -686,11 +718,12 @@
         <div class="lang-thanks thanks"></div>
     </div>
     </div>
-    <div class="flex flex-wrap gap-2 mt-3">
-      <button class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'download', this)" data-i18n="btn_png">Save PNG</button>
-      <button class="btn2" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg', 'download', this)" data-i18n="btn_jpg">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'share', this)" data-i18n="btn_share">📤 Share</button>
-      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-thb2mmk', this)" data-i18n="btn_copy">📋 Copy Text</button>
+    <div class="flex flex-wrap gap-2 mt-3 export-actions">
+      <button class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'download', this)">PNG</button>
+      <button class="btn2" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg', 'download', this)">JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'share', this)">SHARE</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-thb2mmk', this)">COPY</button>
+      <button class="btn btn-private-save" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'internal', this)" title="Invoice ကို System ထဲသီးသန့် သိမ်းပြီး Telegram ပို့မည်">SYSTEM</button>
     </div>
   </section>
 
@@ -729,11 +762,12 @@
           <div class="lang-thanks thanks"></div>
       </div>
     </div>
-    <div class="flex flex-wrap gap-2 mt-3">
-      <button class="btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'download', this)" data-i18n="btn_png">Save PNG</button>
-      <button class="btn2" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg', 'download', this)" data-i18n="btn_jpg">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'share', this)" data-i18n="btn_share">📤 Share</button>
-      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2thb', this)" data-i18n="btn_copy">📋 Copy Text</button>
+    <div class="flex flex-wrap gap-2 mt-3 export-actions">
+      <button class="btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'download', this)">PNG</button>
+      <button class="btn2" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg', 'download', this)">JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'share', this)">SHARE</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2thb', this)">COPY</button>
+      <button class="btn btn-private-save" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'internal', this)" title="Invoice ကို System ထဲသီးသန့် သိမ်းပြီး Telegram ပို့မည်">SYSTEM</button>
     </div>
   </section>
 
@@ -855,11 +889,12 @@
           <div class="lang-thanks thanks"></div>
       </div>
     </div>
-    <div class="flex flex-wrap gap-2 mt-3">
-      <button class="btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'download', this)" data-i18n="btn_png">Save PNG</button>
-      <button class="btn2" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','jpg', 'download', this)" data-i18n="btn_jpg">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'share', this)" data-i18n="btn_share">📤 Share</button>
-      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-vnd2mmk', this)" data-i18n="btn_copy">📋 Copy Text</button>
+    <div class="flex flex-wrap gap-2 mt-3 export-actions">
+      <button class="btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'download', this)">PNG</button>
+      <button class="btn2" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','jpg', 'download', this)">JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'share', this)">SHARE</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-vnd2mmk', this)">COPY</button>
+      <button class="btn btn-private-save" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','png', 'internal', this)" title="Invoice ကို System ထဲသီးသန့် သိမ်းပြီး Telegram ပို့မည်">SYSTEM</button>
     </div>
   </section>
 
@@ -898,11 +933,12 @@
           <div class="lang-thanks thanks"></div>
       </div>
     </div>
-    <div class="flex flex-wrap gap-2 mt-3">
-      <button class="btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'download', this)" data-i18n="btn_png">Save PNG</button>
-      <button class="btn2" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','jpg', 'download', this)" data-i18n="btn_jpg">Save JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'share', this)" data-i18n="btn_share">📤 Share</button>
-      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2vnd', this)" data-i18n="btn_copy">📋 Copy Text</button>
+    <div class="flex flex-wrap gap-2 mt-3 export-actions">
+      <button class="btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'download', this)">PNG</button>
+      <button class="btn2" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','jpg', 'download', this)">JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'share', this)">SHARE</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2vnd', this)">COPY</button>
+      <button class="btn btn-private-save" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','png', 'internal', this)" title="Invoice ကို System ထဲသီးသန့် သိမ်းပြီး Telegram ပို့မည်">SYSTEM</button>
     </div>
   </section>
 
@@ -1519,6 +1555,7 @@
             </div>
           </div>
           <h3 class="font-bold text-sm text-gray-600 mb-2 shrink-0">📋 ထည့်သွင်းထားသော ဘဏ်များ (ဆွဲရွှေ့ပါ)</h3>
+          <p class="admin-list-scroll-hint">▲ ▼ ခလုတ်ဖြင့်လည်း အပေါ်/အောက် ရွှေ့နိုင်ပါသည်။</p>
           <div id="adminBankList" class="overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1"></div>
       </div>
     </div>
@@ -1543,6 +1580,7 @@
             </div>
           </div>
           <h3 class="font-bold text-sm text-gray-600 mb-2 shrink-0">📋 ထည့်သွင်းထားသော QR များ (ဆွဲရွှေ့ပါ)</h3>
+          <p class="admin-list-scroll-hint">▲ ▼ ခလုတ်ဖြင့်လည်း အပေါ်/အောက် ရွှေ့နိုင်ပါသည်။</p>
           <div id="adminQRList" class="overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1"></div>
       </div>
     </div>
@@ -1699,6 +1737,31 @@
         <p class="text-xs text-gray-500 mt-1.5 leading-relaxed" id="smartMatchAiDetails"></p>
     </div>
     <div id="smartMatchList" class="flex-1 overflow-y-auto space-y-2 mb-4 pr-1"></div>
+  </div>
+</div>
+
+<!-- 🔗 History Payment Method Relink Modal -->
+<div id="linkMethodModal" class="fixed inset-0 bg-slate-900/60 z-[70] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="linkMethodTitle">
+  <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl shadow-2xl p-4">
+    <div class="flex items-center justify-between gap-3 mb-2">
+      <h3 id="linkMethodTitle" class="font-black text-slate-800 dark:text-white">🔗 Bank / QR ပြန်ချိတ်မည်</h3>
+      <button type="button" onclick="window.closeMethodLinkModal()" class="text-slate-400 hover:text-red-500 text-lg" aria-label="ပိတ်မည်">✕</button>
+    </div>
+    <p class="text-xs text-slate-500 dark:text-slate-300 mb-3">Invoice ID: <span id="linkMethodInvIdLabel" class="font-black text-blue-700 dark:text-blue-300"></span></p>
+    <label class="block text-xs font-black text-slate-600 dark:text-slate-200 mb-1" for="linkMethodSelect">Bank / QR ရွေးပါ</label>
+    <select id="linkMethodSelect" class="compact border rounded-xl w-full text-sm mb-3"></select>
+    <div class="rounded-xl border border-dashed border-purple-300 bg-purple-50/60 dark:bg-purple-950/30 p-3">
+      <div class="flex items-center justify-between gap-2">
+        <label class="text-xs font-black text-purple-800 dark:text-purple-200" for="linkMethodImage">နည်းလမ်းပုံ (Optional)</label>
+        <button type="button" onclick="window.clearMethodImage()" class="text-[10px] font-black text-red-600 hover:text-red-800">ပုံဖျက်မည်</button>
+      </div>
+      <input id="linkMethodImage" type="file" accept="image/*" class="mt-2 w-full text-xs" onchange="window.handleMethodImageSelected(event)">
+      <img id="linkMethodPreview" class="method-link-preview mt-2" style="display:none;width:52px;height:52px;" alt="နည်းလမ်းပုံ Preview">
+    </div>
+    <div class="flex gap-2 mt-4">
+      <button type="button" onclick="window.closeMethodLinkModal()" class="btn2 w-1/2">မလုပ်တော့ပါ</button>
+      <button type="button" id="linkMethodSaveBtn" onclick="window.saveMethodLink()" class="btn bg-violet-600 hover:bg-violet-700 w-1/2">ချိတ်ပြီးသိမ်းမည်</button>
+    </div>
   </div>
 </div>
 
@@ -2224,6 +2287,9 @@ let calcLock = false;
   ['rate100kIn','ratePerThbIn','rate100kOut','ratePerThbOut','rateVndIn','rateVndOut'].forEach(id => bindAutoSeparator(id, true));
 
 // 🔔 OK နှိပ်စရာမလိုဘဲ Auto ပျောက်သွားစေမည့် Function
+let toastShowTimer = null;
+let toastHideTimer = null;
+let toastRemoveTimer = null;
 window.showToast = function(message, icon = "✅") {
     const toast = document.getElementById('customToast');
     const toastMsg = document.getElementById('toastMessage');
@@ -2231,19 +2297,18 @@ window.showToast = function(message, icon = "✅") {
     
     if(!toast || !toastMsg) return;
     
+    clearTimeout(toastShowTimer);
+    clearTimeout(toastHideTimer);
+    clearTimeout(toastRemoveTimer);
     toastIcon.textContent = icon;
     toastMsg.textContent = message;
+    toast.classList.remove('hidden', 'scale-90', 'opacity-0');
+    toast.classList.add('scale-100', 'opacity-100');
     
-    toast.classList.remove('hidden');
-    setTimeout(() => {
-        toast.classList.remove('scale-90', 'opacity-0');
-        toast.classList.add('scale-100', 'opacity-100');
-    }, 10);
-    
-    setTimeout(() => {
+    toastHideTimer = setTimeout(() => {
         toast.classList.remove('scale-100', 'opacity-100');
         toast.classList.add('scale-90', 'opacity-0');
-        setTimeout(() => toast.classList.add('hidden'), 300);
+        toastRemoveTimer = setTimeout(() => toast.classList.add('hidden'), 300);
     }, 2500);
 };
 
@@ -3149,6 +3214,7 @@ window.showToast = function(message, icon = "✅") {
             }, { merge: true });
         }
         updateSelectorBalanceStatuses();
+        if (typeof renderAdminLists === 'function') renderAdminLists();
         alert("ဆက်တင်များကို အောင်မြင်စွာ ပြင်ဆင်ပြီးပါပြီ။");
         loadHistory(); 
     } catch(e) {
@@ -3445,6 +3511,27 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     return 'green';
   }
 
+  function getAccountBalanceVisual(record) {
+    const source = record && record.ledger && FIREBASE_TREASURY[record.ledger]
+      ? FIREBASE_TREASURY[record.ledger]
+      : (record && Object.prototype.hasOwnProperty.call(record, 'balance') ? record : null);
+    const currency = String((source && source.currency) || (record && record.currency) || 'MMK').toUpperCase();
+    const balance = source && Object.prototype.hasOwnProperty.call(source, 'balance')
+      ? (typeof source.balance === 'string' ? Number(source.balance.replace(/,/g, '')) : Number(source.balance))
+      : NaN;
+    const state = getSelectorFundingStatus(source || record, balance, currency);
+    const label = state === 'green' ? 'လက်ကျန်များ (အစိမ်း)' : state === 'yellow' ? 'လက်ကျန်အလယ်အလတ် (အဝါ)' : state === 'red' ? 'လက်ကျန်နည်း (အနီ)' : 'လက်ကျန်မချိတ်ထားပါ';
+    const text = Number.isFinite(balance) ? `${formatMmk(balance)} ${currency}` : 'မချိတ်ထားပါ';
+    return { state, label, text };
+  }
+
+  function renderAccountBalanceBadge(record) {
+    const visual = getAccountBalanceVisual(record);
+    const badgeClass = visual.state === 'green' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : visual.state === 'yellow' ? 'bg-amber-50 text-amber-700 border-amber-200' : visual.state === 'red' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-50 text-slate-500 border-slate-200';
+    const dotClass = visual.state === 'green' ? 'status-green' : visual.state === 'yellow' ? 'status-yellow' : visual.state === 'red' ? 'status-red' : 'status-unknown';
+    return `<span class="${badgeClass} text-[9px] px-1.5 py-0.5 rounded ml-1 border font-bold whitespace-nowrap inline-flex items-center gap-1" title="${visual.label}"><span class="selector-balance-dot ${dotClass}" style="width:7px;height:7px;box-shadow:none;"></span>${visual.text}</span>`;
+  }
+
   function getSelectorAccount(kind, selectedValue) {
     if (!selectedValue) return null;
     if (kind === 'bank') {
@@ -3470,6 +3557,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
 
     statusEl.classList.add('hidden');
     statusEl.innerHTML = '';
+    select.classList.remove('balance-red', 'balance-yellow', 'balance-green', 'balance-unknown');
     if (!['main admin', 'admin', 'staff'].includes(String(CURRENT_ROLE || '').toLowerCase()) || !select.value) return;
 
     const selected = getSelectorAccount(kind, select.value);
@@ -3482,6 +3570,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       : NaN;
     const state = getSelectorFundingStatus(source || record, balance, currency);
     const dotClass = state === 'green' ? 'status-green' : (state === 'yellow' ? 'status-yellow' : (state === 'red' ? 'status-red' : 'status-unknown'));
+    select.classList.add(`balance-${state}`);
     const isMainAdmin = String(CURRENT_ROLE || '').toLowerCase() === 'main admin';
     const balanceText = isMainAdmin && Number.isFinite(balance) ? `<span class="selector-balance-text">${formatMmk(balance)} ${currency}</span>` : '';
     const stateLabel = state === 'green' ? 'များ' : (state === 'yellow' ? 'ဒုတိယအဆင့်' : (state === 'red' ? 'နည်း' : 'လက်ကျန်မချိတ်ထားပါ'));
@@ -4551,6 +4640,27 @@ function openAdmin() {
   // --- Drag & Drop (Banks/QRs/Customers) ---
   // --- Drag & Drop (Optimized) ---
   let dragStartIndex = null; let dragType = null;
+
+  window.moveOrderedItem = async function(type, index, direction) {
+      const step = Number(direction);
+      if (!Number.isInteger(index) || ![-1, 1].includes(step)) return;
+      const order = type === 'bank' ? FIREBASE_BANK_ORDER : type === 'qr' ? FIREBASE_QRS : null;
+      const updateTarget = type === 'bank' ? 'banks' : type === 'qr' ? 'qrs' : '';
+      if (!Array.isArray(order) || !updateTarget) return;
+      const nextIndex = index + step;
+      if (nextIndex < 0 || nextIndex >= order.length) return;
+      [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
+      renderAdminLists();
+      scheduleDropdownRefresh();
+      try {
+          await updateFirebase(updateTarget);
+          if (typeof window.showToast === 'function') window.showToast('အစီအစဉ်ကို သိမ်းပြီးပါပြီ။', '↕️');
+      } catch (e) {
+          [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
+          renderAdminLists();
+          alert('အစီအစဉ်သိမ်းရာတွင် အခက်အခဲရှိပါသည်။');
+      }
+  };
   
   function handleDragStart(e) { 
       dragStartIndex = parseInt(e.currentTarget.getAttribute('data-index')); 
@@ -4631,13 +4741,14 @@ function openAdmin() {
         
         // 🌟 Currency Badge လေး ထပ်ထည့်ပါသည် 🌟
         let currBadge = bank.currency ? `<span class="bg-gray-100 text-gray-700 text-[9px] px-1.5 py-0.5 rounded ml-1 border border-gray-300 font-bold uppercase">${bank.currency}</span>` : '';
+        let balanceBadge = renderAccountBalanceBadge(bank);
 
         // 🌟 Active / Inactive Badge — Main Admin ကသာ ပြောင်းခွင့်ရှိသည် (Main Page Select တွင် ပြမည် / မပြမည် ထိန်းချုပ်သည်)
         let isActive = bank.active !== false;
         let canToggleActive = String(CURRENT_ROLE || '').toLowerCase() === 'main admin';
         let activeBadge = `<button onclick="toggleBankActive('${id}')" title="${canToggleActive ? (isActive ? 'နှိပ်၍ Inactive ပြောင်းမည် (Main Admin)' : 'နှိပ်၍ Active ပြောင်းမည် (Main Admin)') : 'Main Admin သာ ပြောင်းခွင့်ရှိသည်'}" class="text-[9px] px-1.5 py-0.5 rounded ml-1 border font-bold whitespace-nowrap ${isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-200 text-gray-500 border-gray-300'} ${canToggleActive ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}">${isActive ? '🟢 Active' : '⚪ Inactive'}</button>`;
         
-        bankListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="bank" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate flex items-center"><span class="font-bold text-sm">${bank.name}</span> <span class="text-xs text-gray-500 ml-1">(${id})</span> ${currBadge} ${ledgerBadge} ${activeBadge}</div></div><div class="action-btns flex-shrink-0"><button onclick="editBank('${id}')" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteBank('${id}')" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
+        bankListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="bank" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate flex items-center"><span class="font-bold text-sm">${bank.name}</span> <span class="text-xs text-gray-500 ml-1">(${id})</span> ${currBadge} ${balanceBadge} ${ledgerBadge} ${activeBadge}</div></div><div class="flex items-center gap-1 shrink-0"><div class="order-btns"><button onclick="moveOrderedItem('bank', ${index}, -1)" title="အပေါ်ရွှေ့မည်" ${index === 0 ? 'disabled' : ''}>▲</button><button onclick="moveOrderedItem('bank', ${index}, 1)" title="အောက်ရွှေ့မည်" ${index === FIREBASE_BANK_ORDER.length - 1 ? 'disabled' : ''}>▼</button></div><div class="action-btns flex-shrink-0"><button onclick="editBank('${id}')" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteBank('${id}')" title="ဖျက်မည်" class="btn-delete">✕</button></div></div></div>`;
       });
     }
     
@@ -4655,13 +4766,14 @@ function openAdmin() {
 
         // 🌟 Currency Badge လေး ထပ်ထည့်ပါသည် 🌟
         let currBadge = (typeof qr === 'object' && qr.currency) ? `<span class="bg-gray-100 text-gray-700 text-[9px] px-1.5 py-0.5 rounded ml-1 border border-gray-300 font-bold uppercase">${qr.currency}</span>` : '';
+        let balanceBadge = renderAccountBalanceBadge(typeof qr === 'object' ? qr : { currency: '', balance: NaN });
 
         // 🌟 Active / Inactive Badge — Main Admin ကသာ ပြောင်းခွင့်ရှိသည် (Main Page Select တွင် ပြမည် / မပြမည် ထိန်းချုပ်သည်)
         let isActive = (typeof qr === 'object' ? qr.active : true) !== false;
         let canToggleActive = String(CURRENT_ROLE || '').toLowerCase() === 'main admin';
         let activeBadge = `<button onclick="toggleQRActive(${index})" title="${canToggleActive ? (isActive ? 'နှိပ်၍ Inactive ပြောင်းမည် (Main Admin)' : 'နှိပ်၍ Active ပြောင်းမည် (Main Admin)') : 'Main Admin သာ ပြောင်းခွင့်ရှိသည်'}" class="text-[9px] px-1.5 py-0.5 rounded ml-1 border font-bold whitespace-nowrap ${isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-200 text-gray-500 border-gray-300'} ${canToggleActive ? 'cursor-pointer' : 'cursor-not-allowed opacity-80'}">${isActive ? '🟢 Active' : '⚪ Inactive'}</button>`;
 
-        qrListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="qr" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate flex items-center"><span class="font-bold text-sm">${name}</span> <span class="text-xs text-gray-500 ml-1">(${file})</span> ${currBadge} ${ledgerBadge} ${activeBadge}</div></div><div class="action-btns flex-shrink-0"><button onclick="editQR(${index})" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteQR(${index})" title="ဖျက်မည်" class="btn-delete">✕</button></div></div>`;
+        qrListDiv.innerHTML += `<div class="list-item bg-white" draggable="true" data-index="${index}" data-type="qr" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)"><div class="flex items-center truncate mr-2 w-full"><span class="drag-handle" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span><div class="truncate flex items-center"><span class="font-bold text-sm">${name}</span> <span class="text-xs text-gray-500 ml-1">(${file})</span> ${currBadge} ${balanceBadge} ${ledgerBadge} ${activeBadge}</div></div><div class="flex items-center gap-1 shrink-0"><div class="order-btns"><button onclick="moveOrderedItem('qr', ${index}, -1)" title="အပေါ်ရွှေ့မည်" ${index === 0 ? 'disabled' : ''}>▲</button><button onclick="moveOrderedItem('qr', ${index}, 1)" title="အောက်ရွှေ့မည်" ${index === FIREBASE_QRS.length - 1 ? 'disabled' : ''}>▼</button></div><div class="action-btns flex-shrink-0"><button onclick="editQR(${index})" title="ပြင်မည်" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button><button onclick="deleteQR(${index})" title="ဖျက်မည်" class="btn-delete">✕</button></div></div></div>`;
       });
     }
   }
@@ -7528,6 +7640,179 @@ function openAdmin() {
         // (Text အစမှာချည်းမဟုတ်ဘဲ "QR (🔴 🟦 name)" လိုမျိုး ကွင်းအတွင်းက ပါလာလည်း ရှင်းနိုင်ရန်)
         return text.replace(/[\u{1F534}\u{1F7E1}\u{1F7E2}\u{1F7E6}\u{1F7E5}\u{1F7E8}]\s*/gu, '').trim() || '-';
   }
+  let methodLinkState = { invId: null, imageData: '' };
+
+  function canManageHistoryMethodLink() {
+      return ['main admin', 'admin', 'staff'].includes(String(CURRENT_ROLE || '').toLowerCase());
+  }
+
+  function getMethodLinkLabel(type, key) {
+      if (type === 'bank') {
+          const info = ACTIVE_BANK_INFO && ACTIVE_BANK_INFO[key];
+          return info ? `Bank (${info.name || key})` : 'Bank';
+      }
+      const qr = FIREBASE_QRS.find(item => (typeof item === 'string' ? item : item.file) === key);
+      const name = typeof qr === 'object' ? (qr.name || qr.file) : (qr || key);
+      return `QR (${name || key})`;
+  }
+
+  function populateMethodLinkOptions(selectedMethodKey = '') {
+      const select = document.getElementById('linkMethodSelect');
+      if (!select) return;
+      select.innerHTML = '';
+      const none = document.createElement('option');
+      none.value = '';
+      none.textContent = 'မပါ (None)';
+      select.appendChild(none);
+
+      const bankOrder = (FIREBASE_BANK_ORDER && FIREBASE_BANK_ORDER.length) ? FIREBASE_BANK_ORDER : (typeof DEFAULT_BANK_ORDER !== 'undefined' ? DEFAULT_BANK_ORDER : []);
+      const bankSource = (ACTIVE_BANK_INFO && Object.keys(ACTIVE_BANK_INFO).length) ? ACTIVE_BANK_INFO : (typeof DEFAULT_BANK_INFO !== 'undefined' ? DEFAULT_BANK_INFO : {});
+      const bankGroup = document.createElement('optgroup');
+      bankGroup.label = 'BANK';
+      bankOrder.forEach(key => {
+          const info = bankSource[key];
+          if (!info) return;
+          const option = document.createElement('option');
+          option.value = `bank|${key}`;
+          option.textContent = `${info.name || key}${info.currency ? ` (${info.currency})` : ''}`;
+          bankGroup.appendChild(option);
+      });
+      if (bankGroup.children.length) select.appendChild(bankGroup);
+
+      const qrSource = (FIREBASE_QRS && FIREBASE_QRS.length) ? FIREBASE_QRS : (typeof DEFAULT_QR_FILES !== 'undefined' ? DEFAULT_QR_FILES.map(file => ({ file, name: file.replace(/\.[^.]+$/, '') })) : []);
+      const qrGroup = document.createElement('optgroup');
+      qrGroup.label = 'QR';
+      qrSource.forEach(item => {
+          const key = typeof item === 'string' ? item : item.file;
+          if (!key) return;
+          const option = document.createElement('option');
+          option.value = `qr|${key}`;
+          option.textContent = typeof item === 'object' ? (item.name || key) : key;
+          qrGroup.appendChild(option);
+      });
+      if (qrGroup.children.length) select.appendChild(qrGroup);
+      select.value = selectedMethodKey || '';
+  }
+
+  function setMethodLinkPreview(dataUrl) {
+      methodLinkState.imageData = dataUrl || '';
+      const preview = document.getElementById('linkMethodPreview');
+      if (!preview) return;
+      if (dataUrl) {
+          preview.src = dataUrl;
+          preview.style.display = 'block';
+      } else {
+          preview.removeAttribute('src');
+          preview.style.display = 'none';
+      }
+  }
+
+  function resizeMethodImageToDataUrl(file, maxSide = 320) {
+      return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+              const img = new Image();
+              img.onload = () => {
+                  const scale = Math.min(1, maxSide / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+                  const canvas = document.createElement('canvas');
+                  canvas.width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+                  canvas.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+                  const ctx = canvas.getContext('2d');
+                  ctx.fillStyle = '#ffffff';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                  resolve(canvas.toDataURL('image/jpeg', 0.76));
+              };
+              img.onerror = () => reject(new Error('Image preview မဖတ်နိုင်ပါ'));
+              img.src = reader.result;
+          };
+          reader.onerror = () => reject(new Error('Image ဖတ်ရာတွင် အခက်အခဲရှိပါသည်'));
+          reader.readAsDataURL(file);
+      });
+  }
+
+  window.handleMethodImageSelected = async function(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      try {
+          setMethodLinkPreview(await resizeMethodImageToDataUrl(file));
+      } catch (e) {
+          alert('နည်းလမ်းပုံကို မဖတ်နိုင်ပါ။ အခြားပုံတစ်ပုံဖြင့် ထပ်မံကြိုးစားပါ။');
+      } finally {
+          event.target.value = '';
+      }
+  };
+
+  window.clearMethodImage = function() { setMethodLinkPreview(''); };
+
+  window.openMethodLinkModal = function(invId) {
+      if (!canManageHistoryMethodLink()) {
+          alert('Staff နှင့် အထက် Role များသာ နည်းလမ်းပြန်ချိတ်နိုင်ပါသည်။');
+          return;
+      }
+      const tx = (Array.isArray(allLoadedHistory) ? allLoadedHistory : []).find(item => item.id === invId);
+      if (!tx) return;
+      methodLinkState = { invId, imageData: tx.paymentMethodImage || tx.methodImage || '' };
+      const selectedKey = tx.methodType && tx.methodKey ? `${tx.methodType}|${tx.methodKey}` : '';
+      document.getElementById('linkMethodInvIdLabel').textContent = invId;
+      populateMethodLinkOptions(selectedKey);
+      setMethodLinkPreview(methodLinkState.imageData);
+      const modal = document.getElementById('linkMethodModal');
+      if (modal) { modal.classList.remove('hidden'); modal.style.display = 'flex'; }
+  };
+
+  window.closeMethodLinkModal = function() {
+      const modal = document.getElementById('linkMethodModal');
+      if (modal) { modal.style.display = 'none'; modal.classList.add('hidden'); }
+      methodLinkState = { invId: null, imageData: '' };
+      setMethodLinkPreview('');
+  };
+
+  window.saveMethodLink = async function() {
+      if (!canManageHistoryMethodLink()) return alert('Staff နှင့် အထက် Role များသာ နည်းလမ်းပြန်ချိတ်နိုင်ပါသည်။');
+      const invId = methodLinkState.invId;
+      const select = document.getElementById('linkMethodSelect');
+      const txIndex = Array.isArray(allLoadedHistory) ? allLoadedHistory.findIndex(item => item.id === invId) : -1;
+      if (!invId || !select || txIndex < 0) return;
+      const value = select.value || '';
+      let method = 'မပါ (None)';
+      let methodType = '';
+      let methodKey = '';
+      if (value) {
+          const splitAt = value.indexOf('|');
+          methodType = splitAt > -1 ? value.slice(0, splitAt) : '';
+          methodKey = splitAt > -1 ? value.slice(splitAt + 1) : '';
+          method = getMethodLinkLabel(methodType, methodKey);
+      }
+      const button = document.getElementById('linkMethodSaveBtn');
+      const original = button ? button.innerHTML : '';
+      if (button) { button.disabled = true; button.innerHTML = 'သိမ်းနေသည်...'; }
+      const updatePayload = {
+          method,
+          methodType: methodType || firebase.firestore.FieldValue.delete(),
+          methodKey: methodKey || firebase.firestore.FieldValue.delete(),
+          paymentMethodLinkedAt: new Date().toISOString(),
+          paymentMethodLinkedBy: CURRENT_DEVICE_ID || 'Unknown',
+          paymentMethodImage: methodLinkState.imageData || firebase.firestore.FieldValue.delete()
+      };
+      try {
+          await firestoreWithTimeout(firebase.firestore().collection('exchange_history').doc(invId).update(updatePayload), 15000);
+          const tx = allLoadedHistory[txIndex];
+          tx.method = method;
+          tx.methodType = methodType;
+          tx.methodKey = methodKey;
+          tx.paymentMethodImage = methodLinkState.imageData || null;
+          logActivity('Payment Method Linked', `ID: ${invId} ကို ${method} နှင့် နောက်ကျမှ ပြန်ချိတ်ခဲ့သည်။`);
+          window.closeMethodLinkModal();
+          renderHistoryRows(allLoadedHistory);
+          if (typeof window.showToast === 'function') window.showToast('နည်းလမ်းကို အောင်မြင်စွာ ပြန်ချိတ်ပြီးပါပြီ။', '🔗');
+      } catch (e) {
+          alert('နည်းလမ်းပြန်ချိတ်၍ မရပါ။ Internet / Firebase Permission ကို စစ်ပါ။');
+      } finally {
+          if (button) { button.disabled = false; button.innerHTML = original; }
+      }
+  };
+
   function generateHistoryRowHTML(d, totalOverdueRef) {
         let dateTimeHtml = formatHistoryDateTime(d.timestamp, d.tz || 'Asia/Bangkok');
         let mappedDeviceName = FIREBASE_DEVICE_NAMES[d.deviceId] || d.deviceId || "Unknown";
@@ -7548,6 +7833,11 @@ function openAdmin() {
         let status = d.status || 'Pending';
         // Dropdown တွင်သုံးသော အရောင်သင်္ကေတကို History မှာ မပြဘဲ Account နာမည်သီးသန့်သာ ပြမည်။
         let method = cleanHistoryMethodDisplay(d.method || "-");
+        const canLinkMethod = canManageHistoryMethodLink();
+        const methodImage = d.paymentMethodImage || d.methodImage || '';
+        const methodImageHtml = methodImage ? `<img src="${smartEscapeHtml(methodImage)}" class="method-link-preview" alt="နည်းလမ်းပုံ" title="နည်းလမ်းပုံ">` : '';
+        const methodLinkButton = canLinkMethod ? `<button onclick="window.openMethodLinkModal('${smartEscapeHtml(d.id)}')" class="method-link-btn" title="Bank / QR နည်းလမ်းကို ပြန်ချိတ်ရန်" aria-label="Bank / QR နည်းလမ်းကို ပြန်ချိတ်ရန်">🔗</button>` : '';
+        const methodHtml = `<div class="method-link-wrap">${methodImageHtml}<div class="font-bold text-gray-800 break-words" style="white-space:normal;">${smartEscapeHtml(method)}</div>${methodLinkButton}</div>`;
         
         // 🌟 AI ဖတ်ထားသော Data ရှိခဲ့လျှင် review အခြေအနေအလိုက် အရောင်ခွဲပြမည် 🌟
         let aiExtractedHtml = "";
@@ -7686,7 +7976,7 @@ function openAdmin() {
           <td class="p-3">${amountHtml}</td>
           <td class="p-3 text-center" style="max-width:150px;">${statusHtml}</td>
           <td class="p-3 text-center">${actionHtml}</td>
-          <td class="p-3 text-xs" style="white-space:normal;"><div class="max-w-[260px]"><div class="font-bold text-gray-800 break-words" style="white-space:normal;">${method}</div>${aiExtractedHtml}</div></td>
+          <td class="p-3 text-xs" style="white-space:normal;"><div class="max-w-[260px]">${methodHtml}${aiExtractedHtml}</div></td>
         </tr>`;
   }
 
@@ -8520,6 +8810,90 @@ async function loadHistory() {
       }
   }
 
+  function getCurrentPaymentMethodForSystemSave() {
+      const mode = document.querySelector('input[name="saveMode"]:checked')?.value || 'none';
+      if (mode === 'bank') {
+          const key = document.getElementById('bankSelect')?.value || '';
+          const info = key && ACTIVE_BANK_INFO ? ACTIVE_BANK_INFO[key] : null;
+          return { method: info ? `Bank (${info.name || key})` : 'မပါ (None)', methodType: info ? 'bank' : '', methodKey: info ? key : '' };
+      }
+      if (mode === 'qr') {
+          const key = document.getElementById('qrSelect')?.value || '';
+          const selected = key && FIREBASE_QRS.find(item => (typeof item === 'string' ? item : item.file) === key);
+          const name = typeof selected === 'object' ? (selected.name || key) : (selected || key);
+          return { method: key ? `QR (${name})` : 'မပါ (None)', methodType: key ? 'qr' : '', methodKey: key };
+      }
+      return { method: 'မပါ (None)', methodType: '', methodKey: '' };
+  }
+
+  function buildSystemSaveTelegramText(record) {
+      const esc = value => smartEscapeHtml(value == null ? '' : value);
+      const deviceName = FIREBASE_DEVICE_NAMES[record.deviceId] || record.deviceId || 'Unknown';
+      let text = `✅ <b>ငွေလွှဲပြေစာ အသစ် (System Save)</b>\n\n`;
+      text += `ID: <code>${esc(record.id)}</code>\n`;
+      if (record.customerName && record.customerName !== '—') text += `Customer: <b>${esc(record.customerName)}</b>\n`;
+      text += `အမျိုးအစား: <b>${esc(record.type || '-')}</b>\n`;
+      text += `ပမာဏ: <code>${esc(record.inAmt || '-')}</code> ➔ <code>${esc(record.outAmt || '-')}</code>\n`;
+      text += `ငွေဈေး: <code>${esc(record.rate || '-')}</code>\n`;
+      text += `နည်းလမ်း: ${esc(record.method || 'မပါ (None)')}\n`;
+      text += `Device: <b>${esc(deviceName)}</b>`;
+      return text;
+  }
+
+  async function saveInvoiceToSystemAndTelegram(sectionId) {
+      const section = document.getElementById(sectionId);
+      const inputs = section ? Array.from(section.querySelectorAll('input.amt-input')) : [];
+      const formatAmount = el => {
+          let value = String(el?.value || '').trim() || '0';
+          const id = String(el?.id || '').toLowerCase();
+          if (id.includes('mmk')) value += ' MMK';
+          else if (id.includes('thb')) value += ' THB';
+          else if (id.includes('vnd')) value += ' VND';
+          return value;
+      };
+      const inInput = inputs.find(el => !String(el.id || '').toLowerCase().includes('out'));
+      const outInput = inputs.find(el => String(el.id || '').toLowerCase().includes('out'));
+      const methodMeta = getCurrentPaymentMethodForSystemSave();
+      const customerId = document.getElementById('mainCustomerSelect')?.value || '';
+      const customer = customerId && FIREBASE_CUSTOMERS ? FIREBASE_CUSTOMERS[customerId] : null;
+      const customerName = customer ? customer.name + (customer.social ? ` (${customer.social})` : '') : '—';
+      const now = new Date();
+      const datePart = now.getFullYear().toString().slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
+      const invId = `INV${datePart}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const record = {
+          id: invId,
+          type: sectionId === 'box-thb2mmk' ? 'THB ➔ MMK' : sectionId === 'box-mmk2thb' ? 'MMK ➔ THB' : sectionId === 'box-vnd2mmk' ? 'VND ➔ MMK' : 'MMK ➔ VND',
+          rate: formatSectionRate(sectionId),
+          inAmt: formatAmount(inInput),
+          outAmt: formatAmount(outInput),
+          method: methodMeta.method,
+          methodType: methodMeta.methodType || null,
+          methodKey: methodMeta.methodKey || null,
+          profit: 0,
+          status: 'Pending',
+          timestamp: now.toISOString(),
+          tz: ADMIN_TIMEZONE,
+          deviceId: CURRENT_DEVICE_ID || 'Unknown',
+          customerName,
+          saveMode: 'internal'
+      };
+      await firestoreWithTimeout(firebase.firestore().collection('exchange_history').doc(invId).set(record), 15000);
+      if (!allLoadedHistory.some(item => item.id === invId)) allLoadedHistory.unshift(record);
+      logActivity('Invoice Saved Internally', `ID: ${invId} ကို ပုံမထုတ်ဘဲ System ထဲသီးသန့် သိမ်းခဲ့သည်။`);
+
+      const messageText = buildSystemSaveTelegramText(record);
+      const telegramSent = await sendTelegramAlert(messageText, TELEGRAM_TOPIC_ID);
+      if (!telegramSent && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+          queueRetryOperation({ type: 'telegram-alert', payload: { messageText, topicId: TELEGRAM_TOPIC_ID }, meta: { kind: 'receipt-alert', invId } });
+      }
+      if (typeof renderStaffWorkQueue === 'function') renderStaffWorkQueue();
+      if (typeof window.showToast === 'function') {
+          const note = telegramSent ? ' Telegram ပို့ပြီးပါပြီ။' : (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID ? ' Telegram ပို့ရန် Retry Queue ထဲ ထည့်ထားပါသည်။' : ' Telegram setting မပြည့်စုံသေးပါ။');
+          window.showToast(`Invoice ${invId} ကို System ထဲသိမ်းပြီးပါပြီ။${note}`, telegramSent ? '📨' : '⚠️');
+      }
+      return record;
+  }
+
   async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
     let origText = '';
     if (btnElement) {
@@ -8530,6 +8904,17 @@ async function loadHistory() {
     }
 
     try {
+        if (action === 'internal') {
+            const saveCheck = validateReceiptBeforeSave(sectionId);
+            if (!saveCheck.ok) {
+                alert('System Save မလုပ်နိုင်ပါ။\n\n' + saveCheck.errors.join('\n'));
+                return;
+            }
+            if (saveCheck.warnings.length && !confirm('⚠️ Smart Validation သတိပေးချက်\n\n' + saveCheck.warnings.join('\n') + '\n\nဆက်လက် System Save လုပ်မလား?')) return;
+            recalc(); recalcVND();
+            await saveInvoiceToSystemAndTelegram(sectionId);
+            return;
+        }
         const saveCheck = validateReceiptBeforeSave(sectionId);
         if (!saveCheck.ok) {
             alert('Save မလုပ်နိုင်ပါ။\n\n' + saveCheck.errors.join('\n'));
