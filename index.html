@@ -3427,6 +3427,33 @@ window.autoCancelOldPendingLots = async function(dataArray) {
   function getSelectedCustomerAllowedAccounts() {
     return Array.from(document.querySelectorAll('#cusAllowedAccounts input[type="checkbox"]:checked')).map(el => el.value);
   }
+  function updatePayoutSelectorAvailability(allowedIds) {
+    const bank = document.getElementById('bankSelect');
+    const qr = document.getElementById('qrSelect');
+    const bankRadio = document.querySelector('input[name="saveMode"][value="bank"]');
+    const qrRadio = document.querySelector('input[name="saveMode"][value="qr"]');
+    const hasRestrictions = allowedIds instanceof Set;
+    const hasBank = !hasRestrictions || Array.from(allowedIds).some(id => String(id).startsWith('BANK:'));
+    const hasQr = !hasRestrictions || Array.from(allowedIds).some(id => String(id).startsWith('QR:'));
+    const applyState = (el, enabled, label) => {
+      if (!el) return;
+      el.disabled = !enabled;
+      el.title = enabled ? '' : `ဤ Customer အတွက် ${label} Account မရှိပါ`;
+      el.style.opacity = enabled ? '1' : '0.42';
+      el.style.filter = enabled ? 'none' : 'grayscale(1)';
+      el.style.cursor = enabled ? 'pointer' : 'not-allowed';
+      if (!enabled) { el.value = ''; el.dispatchEvent(new Event('change', { bubbles: true })); }
+    };
+    applyState(bank, hasBank, 'Bank');
+    applyState(qr, hasQr, 'QR');
+    if (bankRadio) { bankRadio.disabled = !hasBank; bankRadio.closest('label')?.style.setProperty('opacity', hasBank ? '1' : '.42'); }
+    if (qrRadio) { qrRadio.disabled = !hasQr; qrRadio.closest('label')?.style.setProperty('opacity', hasQr ? '1' : '.42'); }
+    const activeMode = document.querySelector('input[name="saveMode"]:checked');
+    if ((activeMode?.value === 'bank' && !hasBank) || (activeMode?.value === 'qr' && !hasQr)) {
+      const none = document.querySelector('input[name="saveMode"][value="none"]');
+      if (none) none.checked = true;
+    }
+  }
   function initDropdowns() {
     const currentLang = localStorage.getItem('sys_lang_pref') || 'my';
     const dict = (typeof SYS_DICT !== 'undefined') ? (SYS_DICT[currentLang] || SYS_DICT['my']) : {};
@@ -3519,6 +3546,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         qrSelect.appendChild(o);
       });
     }
+    updatePayoutSelectorAvailability(allowedPayoutIds);
     
     populateCustomerDropdown();
     let selectedAllowedForForm = [];
