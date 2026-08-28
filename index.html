@@ -458,6 +458,16 @@
     html.dark .cus-option:hover { background-color: #334155 !important; }
     html.dark .cus-option .text-purple-800 { color: #c084fc !important; } 
     html.dark .cus-option .text-gray-700 { color: #e2e8f0 !important; }
+  /* Customer/account permission UI: keep form and customer list visible */
+  #tab-customers { overflow: auto !important; }
+  #tab-customers > div { height: auto !important; min-height: 0 !important; }
+  #tab-customers #cusAllowedAccounts { min-height: 58px; max-height: 150px; overflow-y: auto; }
+  #tab-customers #adminCustomerList { min-height: 180px; max-height: 360px; overflow-y: auto; }
+  #customCusSelectBtn { min-height: 42px; display: flex !important; visibility: visible !important; }
+  @media (max-width: 640px) {
+    #tab-customers #cusAllowedAccounts { max-height: 130px; grid-template-columns: 1fr !important; }
+    #tab-customers #adminCustomerList { max-height: 300px; }
+  }
   </style>
 </head>
 
@@ -1586,8 +1596,8 @@
     </div>
 
     <div id="tab-customers" class="tab-pane">
-      <div class="flex flex-col h-full w-full min-h-[500px]">
-          <div class="bg-purple-50 border border-purple-200 p-4 rounded-xl mb-4 shrink-0">
+      <div class="flex flex-col w-full min-h-0">
+          <div class="bg-purple-50 border border-purple-200 p-3 rounded-xl mb-3 shrink-0">
             <h3 class="font-bold text-purple-800 mb-3 text-sm">👥 Customer အသစ် ထည့်ရန် / ပြင်ရန်</h3>
             <input type="hidden" id="cusId">
             <div class="flex flex-col lg:flex-row gap-2 mb-3">
@@ -1596,6 +1606,10 @@
               <input id="cusSocial" class="admin-input-box text-sm flex-1" placeholder="Social Media">
               <input id="cusBankName" class="admin-input-box text-sm flex-1" placeholder="ဘဏ်အမည်">
               <input id="cusBankNo" class="admin-input-box text-sm flex-1" placeholder="ဘဏ်နံပါတ်">
+            </div>
+            <div class="mb-3">
+              <label class="text-xs font-black text-purple-800">💳 ငွေလွှဲခွင့်ရှိသော Account များ (မရွေးထားလျှင် Account အားလုံးခွင့်ပြု)</label>
+              <div id="cusAllowedAccounts" class="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 min-h-[58px] max-h-[150px] overflow-y-auto border border-purple-200 rounded-lg p-2 bg-white"></div>
             </div>
             
             <div class="flex gap-2">
@@ -1607,7 +1621,7 @@
               <h3 class="font-bold text-sm text-gray-600">📋 Customer စာရင်းများ</h3>
               <input type="text" id="searchCus" class="border rounded px-2 py-1 text-xs w-40" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." oninput="renderCustomerAdminList()">
           </div>
-          <div id="adminCustomerList" class="overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 content-start"></div>
+          <div id="adminCustomerList" class="overflow-y-auto border rounded-xl p-2 bg-gray-50 min-h-[180px] max-h-[360px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 content-start"></div>
       </div>
     </div>
 
@@ -1640,9 +1654,12 @@
              </div>
           </div>
 
-          <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl">
+             <div class="bg-indigo-50 border border-indigo-200 p-4 rounded-xl">
              <h4 class="font-bold text-indigo-800 mb-2 text-sm">🔄 ဘဏ်အချင်းချင်း ငွေရွှေ့ရန် (Internal Transfer)</h4>
              <div class="flex gap-2 mb-2">
+                 <select id="transferCurrency" class="admin-input-box text-sm w-24 !mb-0" onchange="syncAllLedgerDropdowns()">
+                   <option value="">Currency</option><option value="MMK">🟨 MMK</option><option value="THB">🟦 THB</option><option value="VND">🟥 VND</option>
+                 </select>
                  <select id="transferFromAcc" class="admin-input-box text-sm flex-1 !mb-0"><option value="">မှ (From)</option></select>
                  <select id="transferToAcc" class="admin-input-box text-sm flex-1 !mb-0"><option value="">သို့ (To)</option></select>
              </div>
@@ -3379,6 +3396,37 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     }, delay);
   }
 
+  // Customer တစ်ယောက်ချင်းစီ၏ payout account permission ကိုစစ်ရန် shared helpers
+  function getCustomerAllowedPayoutIds(customerId) {
+    const customer = customerId && FIREBASE_CUSTOMERS ? FIREBASE_CUSTOMERS[customerId] : null;
+    const raw = customer && (customer.allowedPayoutAccountIds || customer.allowedAccounts);
+    return Array.isArray(raw) && raw.length ? new Set(raw) : null; // မရွေးထားလျှင် unrestricted
+  }
+  function getPayoutAccountPermissionId(kind, value) { return `${kind}:${value}`; }
+  function getPayoutAccountChoices() {
+    const choices = [];
+    FIREBASE_BANK_ORDER.forEach(id => {
+      const b = FIREBASE_BANKS[id];
+      if (b) choices.push({ id: getPayoutAccountPermissionId('BANK', id), label: `🏦 ${b.name || id}`, currency: String(b.currency || 'MMK').toUpperCase() });
+    });
+    FIREBASE_QRS.forEach((q, index) => {
+      if (q) { const value = typeof q === 'string' ? q : (q.file || `QR_${index}`); choices.push({ id: getPayoutAccountPermissionId('QR', value), label: `🔲 ${typeof q === 'string' ? value : (q.name || value)}`, currency: String((q && q.currency) || 'MMK').toUpperCase() }); }
+    });
+    return choices;
+  }
+  function renderCustomerAllowedAccounts(selectedIds = []) {
+    const box = document.getElementById('cusAllowedAccounts');
+    if (!box) return;
+    const selected = new Set(Array.isArray(selectedIds) ? selectedIds : []);
+    const choices = getPayoutAccountChoices();
+    box.innerHTML = choices.length ? choices.map(a => {
+      const color = a.currency === 'THB' ? 'bg-blue-50 border-blue-200 text-blue-700' : a.currency === 'VND' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-yellow-50 border-yellow-200 text-yellow-700';
+      return `<label class="flex items-center gap-1.5 p-1.5 rounded border ${color} text-[11px] font-bold cursor-pointer"><input type="checkbox" value="${a.id.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" ${selected.has(a.id) ? 'checked' : ''}>${a.label} <span>(${a.currency})</span></label>`;
+    }).join('') : '<span class="text-xs text-gray-400">Bank/QR မရှိသေးပါ</span>';
+  }
+  function getSelectedCustomerAllowedAccounts() {
+    return Array.from(document.querySelectorAll('#cusAllowedAccounts input[type="checkbox"]:checked')).map(el => el.value);
+  }
   function initDropdowns() {
     const currentLang = localStorage.getItem('sys_lang_pref') || 'my';
     const dict = (typeof SYS_DICT !== 'undefined') ? (SYS_DICT[currentLang] || SYS_DICT['my']) : {};
@@ -3388,6 +3436,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     ACTIVE_BANK_INFO = useFirebaseBanks ? FIREBASE_BANKS : DEFAULT_BANK_INFO;
     const finalBankOrder = useFirebaseBanks ? FIREBASE_BANK_ORDER : DEFAULT_BANK_ORDER;
     const finalQRs = useFirebaseQRs ? FIREBASE_QRS : DEFAULT_QR_FILES.map(f => ({ file: f, name: f.replace(/\.[^.]+$/, '') }));
+    const allowedPayoutIds = getCustomerAllowedPayoutIds(document.getElementById('mainCustomerSelect')?.value);
     
     // 🌟 အကောင့်နာမည်ကို အတိုကောက် ပြောင်းပေးမည့် Function အသစ် 🌟
     const getInitials = (nameStr) => {
@@ -3431,7 +3480,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     if(bankSelect) {
       bankSelect.innerHTML = `<option value="" data-i18n="ph_bank_sel">${dict.ph_bank_sel || '— ဘဏ်ရွေးပါ —'}</option>`;
       finalBankOrder.forEach(key => {
-        if(ACTIVE_BANK_INFO[key] && ACTIVE_BANK_INFO[key].active !== false) {
+        if(ACTIVE_BANK_INFO[key] && ACTIVE_BANK_INFO[key].active !== false && (!allowedPayoutIds || allowedPayoutIds.has(getPayoutAccountPermissionId('BANK', key)))) {
           const info = ACTIVE_BANK_INFO[key];
           const o = document.createElement('option'); 
           o.value = key; 
@@ -3452,6 +3501,8 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       qrSelect.innerHTML = `<option value="" data-i18n="ph_qr_sel">${dict.ph_qr_sel || '— QR ရွေးပါ —'}</option>`;
       finalQRs.forEach(qr => {
         if (typeof qr === 'object' && qr.active === false) return; // 🌟 Inactive QR ကို Main Page Select တွင် မပြပါ
+        const qrValue = typeof qr === 'string' ? qr : qr.file;
+        if (allowedPayoutIds && !allowedPayoutIds.has(getPayoutAccountPermissionId('QR', qrValue))) return;
         const val = typeof qr === 'string' ? qr : qr.file;
         const text = typeof qr === 'string' ? qr.replace(/\.[^.]+$/, '') : (qr.name || val.replace(/\.[^.]+$/, ''));
         
@@ -3470,6 +3521,9 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     }
     
     populateCustomerDropdown();
+    let selectedAllowedForForm = [];
+    try { selectedAllowedForForm = JSON.parse(document.getElementById('cusAllowedAccounts')?.dataset.selected || '[]'); } catch (e) {}
+    renderCustomerAllowedAccounts(selectedAllowedForForm);
     updateSelectorBalanceStatuses();
     refreshBankInfo();
     refreshQrPreview();
@@ -4793,6 +4847,7 @@ function openAdmin() {
       const social = document.getElementById('cusSocial').value.trim();
       const bankName = document.getElementById('cusBankName').value.trim();
       const bankNo = document.getElementById('cusBankNo').value.trim();
+      const allowedPayoutAccountIds = getSelectedCustomerAllowedAccounts();
 
       if(!name) return alert("Customer အမည် ထည့်ပေးပါ။");
 
@@ -4810,11 +4865,13 @@ function openAdmin() {
           oldFullName = (oldC.name + (oldC.social ? ` (${oldC.social})` : '')).trim();
       }
 
-      const newCustomerData = { id: cusId, name, phone, social, bankName, bankNo };
+      const newCustomerData = { id: cusId, name, phone, social, bankName, bankNo, allowedPayoutAccountIds };
       let newFullName = (name + (social ? ` (${social})` : '')).trim();
 
-      FIREBASE_CUSTOMERS[cusId] = newCustomerData;
-      if(isNew) { FIREBASE_CUSTOMER_ORDER.push(cusId); }
+          FIREBASE_CUSTOMERS[cusId] = newCustomerData;
+          const allowedBoxAfterSave = document.getElementById('cusAllowedAccounts');
+          if (allowedBoxAfterSave) allowedBoxAfterSave.dataset.selected = JSON.stringify(allowedPayoutAccountIds);
+          if(isNew) { FIREBASE_CUSTOMER_ORDER.push(cusId); }
 
       try {
           if (isNew) {
@@ -4877,6 +4934,8 @@ function openAdmin() {
       document.getElementById('cusSocial').value = '';
       document.getElementById('cusBankName').value = '';
       document.getElementById('cusBankNo').value = '';
+      const allowedBox = document.getElementById('cusAllowedAccounts');
+      if (allowedBox) { allowedBox.dataset.selected = ''; allowedBox.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; }); }
       
       // 🌟 Button ကို 'အသစ်သိမ်းမည်' အခြေအနေသို့ ပြန်ပြောင်းမည်
       const btn = document.getElementById('btnCusSave');
@@ -4894,6 +4953,8 @@ function openAdmin() {
       document.getElementById('cusSocial').value = c.social || '';
       document.getElementById('cusBankName').value = c.bankName || '';
       document.getElementById('cusBankNo').value = c.bankNo || '';
+      const allowedBox = document.getElementById('cusAllowedAccounts');
+      if (allowedBox) { allowedBox.dataset.selected = JSON.stringify(c.allowedPayoutAccountIds || c.allowedAccounts || []); renderCustomerAllowedAccounts(c.allowedPayoutAccountIds || c.allowedAccounts || []); }
       
       // 🌟 Button ကို 'Update ပြင်မည်' အခြေအနေသို့ အရောင်နှင့်စာသား ပြောင်းမည်
       const btn = document.getElementById('btnCusSave');
@@ -4982,7 +5043,9 @@ function openAdmin() {
       document.getElementById('customCusSelectLabel').textContent = label;
       document.getElementById('customCusDropdown').classList.add('hidden');
       document.getElementById('cusSearchInput').value = '';
-      filterCusDropdown(); 
+      filterCusDropdown();
+      // Customer ပြောင်းလျှင် payout Bank/QR ကို permission အတိုင်း ချက်ချင်းပြန်စစ်ထုတ်မည်။
+      initDropdowns(); 
   }
 
   document.addEventListener('click', function(event) {
@@ -5005,7 +5068,7 @@ function openAdmin() {
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
       const cusId = "CUS-" + Date.now();
-      const newCustomerData = { id: cusId, name, phone, social, bankName: '', bankNo: '' };
+      const newCustomerData = { id: cusId, name, phone, social, bankName: '', bankNo: '', allowedPayoutAccountIds: [] };
       
       FIREBASE_CUSTOMERS[cusId] = newCustomerData;
       FIREBASE_CUSTOMER_ORDER.push(cusId);
@@ -5484,6 +5547,7 @@ function openAdmin() {
   async function processInternalTransfer() {
       const fromId = document.getElementById('transferFromAcc').value;
       const toId = document.getElementById('transferToAcc').value;
+      const selectedCurrency = (document.getElementById('transferCurrency')?.value || '').toUpperCase();
       const amtStr = document.getElementById('transferAmt').value;
       const amt = parseFloat(amtStr);
 
@@ -5502,6 +5566,9 @@ function openAdmin() {
 
       if (fromAcc && toAcc && fromCurrency !== toCurrency) {
           return alert("ငွေကြေးအမျိုးအစား (Currency) တူညီသော အကောင့်များသာ ရွှေ့ပြောင်းနိုင်ပါသည်။");
+      }
+      if (selectedCurrency && ((fromAcc && String(fromCurrency).toUpperCase() !== selectedCurrency) || (toAcc && String(toCurrency).toUpperCase() !== selectedCurrency))) {
+          return alert(`ရွေးထားသော ${selectedCurrency} နှင့် ကိုက်ညီသော Account များကိုသာ ရွေးပါ။`);
       }
 
       try {
@@ -6072,31 +6139,31 @@ function openAdmin() {
   // --- Admin History & Status Update Logic ---
   // 🌟 (အသစ်) Ledger (ငွေသေတ္တာ) များကို Dropdown သို့ ထည့်ပေးခြင်း 🌟
   function syncAllLedgerDropdowns() {
+      const currencyMeta = (currency) => {
+          const c = String(currency || 'MMK').toUpperCase();
+          return c === 'THB' ? { flag: '🟦', cls: 'opt-thb' } : c === 'VND' ? { flag: '🟥', cls: 'opt-vnd' } : { flag: '🟨', cls: 'opt-mmk' };
+      };
+      const option = (value, label, currency) => {
+          const meta = currencyMeta(currency);
+          return `<option value="${value}" class="${meta.cls}" data-currency="${String(currency || 'MMK').toUpperCase()}">${meta.flag} ${label} (${String(currency || 'MMK').toUpperCase()})</option>`;
+      };
+      const transferCurrency = (document.getElementById('transferCurrency')?.value || '').toUpperCase();
       const optionsHtml = '<option value="">⏳ နောက်မှရွေးမည် (Select Later)</option>';
-      let masterHtml = '';
-      FIREBASE_TREASURY_ORDER.forEach(key => {
-          const acc = FIREBASE_TREASURY[key];
-          if (acc) masterHtml += `<option value="${key}">💼 ${acc.name} (${acc.currency})</option>`;
-      });
-      let bankHtml = '';
-      FIREBASE_BANK_ORDER.forEach(id => {
-          const b = FIREBASE_BANKS[id];
-          if (b && !b.ledger) bankHtml += `<option value="BANK_${id}">🏦 ${b.name}${b.currency ? ` (${b.currency})` : ''} (Standalone)</option>`;
-      });
-      let qrHtml = '';
-      FIREBASE_QRS.forEach((q, index) => {
-          if (!q.ledger) qrHtml += `<option value="QR_${index}">🔲 ${q.name || q.file.replace(/\.[^.]+$/, '')}${q.currency ? ` (${q.currency})` : ''} (Standalone)</option>`;
-      });
-
-      const finalHtml = optionsHtml + masterHtml + bankHtml + qrHtml;
-      
-      // expLedger ကို နောက်ဆုံးတွင် ထည့်သွင်းထားသည်
+      const buildLedgerHtml = (currencyFilter = '') => {
+          let html = optionsHtml;
+          FIREBASE_TREASURY_ORDER.forEach(key => { const acc = FIREBASE_TREASURY[key]; if (acc && (!currencyFilter || String(acc.currency || '').toUpperCase() === currencyFilter)) html += option(key, `💼 ${acc.name}`, acc.currency); });
+          FIREBASE_BANK_ORDER.forEach(id => { const b = FIREBASE_BANKS[id]; if (b && !b.ledger && (!currencyFilter || String(b.currency || '').toUpperCase() === currencyFilter)) html += option(`BANK_${id}`, `🏦 ${b.name} (Standalone)`, b.currency); });
+          FIREBASE_QRS.forEach((q, index) => { if (q && !q.ledger && (!currencyFilter || String(q.currency || '').toUpperCase() === currencyFilter)) html += option(`QR_${index}`, `🔲 ${q.name || q.file.replace(/\.[^.]+$/, '')} (Standalone)`, q.currency); });
+          return html;
+      };
+      const finalHtml = buildLedgerHtml('');
+      const transferHtml = buildLedgerHtml(transferCurrency);
       const dropdownIds = ['newBankLedger', 'newQrLedger', 'successInLedger', 'successOutLedger', 'successOutLedger2', 'transferFromAcc', 'transferToAcc', 'manualLotFromAcc', 'manualLotToAcc', 'expLedger'];
       dropdownIds.forEach(id => {
           const el = document.getElementById(id);
           if (el) {
-              if (el.tomselect) el.tomselect.destroy(); // 🌟 Search Dropdown အဟောင်းရှိရင် ဖြုတ်မည်
-              el.innerHTML = finalHtml;
+              if (el.tomselect) el.tomselect.destroy();
+              el.innerHTML = (id === 'transferFromAcc' || id === 'transferToAcc') ? transferHtml : finalHtml;
           }
       });
   }
@@ -6186,19 +6253,22 @@ function openAdmin() {
           FIREBASE_TREASURY_ORDER.forEach(key => {
               const acc = FIREBASE_TREASURY[key];
               if (acc && (!targetCurr || acc.currency === targetCurr)) {
-                  html += `<option value="${key}">💼 ${acc.name} (${acc.currency})</option>`;
+                  const m = String(acc.currency || 'MMK').toUpperCase(); const cls = m === 'THB' ? 'opt-thb' : m === 'VND' ? 'opt-vnd' : 'opt-mmk';
+                  html += `<option value="${key}" class="${cls}">💼 ${acc.name} (${acc.currency})</option>`;
               }
           });
           FIREBASE_BANK_ORDER.forEach(id => {
               const b = FIREBASE_BANKS[id];
               if (b && !b.ledger && (!targetCurr || b.currency === targetCurr)) {
-                  html += `<option value="BANK_${id}">🏦 ${b.name} ${b.currency ? `(${b.currency})` : ''} (Standalone)</option>`;
+                  const m = String(b.currency || 'MMK').toUpperCase(); const cls = m === 'THB' ? 'opt-thb' : m === 'VND' ? 'opt-vnd' : 'opt-mmk';
+                  html += `<option value="BANK_${id}" class="${cls}">🏦 ${b.name} ${b.currency ? `(${b.currency})` : ''} (Standalone)</option>`;
               }
           });
           FIREBASE_QRS.forEach((q, index) => {
               if (!q.ledger && (!targetCurr || q.currency === targetCurr)) {
                   let name = q.name || q.file.replace(/\.[^.]+$/, '');
-                  html += `<option value="QR_${index}">🔲 ${name} ${q.currency ? `(${q.currency})` : ''} (Standalone)</option>`;
+                  const m = String(q.currency || 'MMK').toUpperCase(); const cls = m === 'THB' ? 'opt-thb' : m === 'VND' ? 'opt-vnd' : 'opt-mmk';
+                  html += `<option value="QR_${index}" class="${cls}">🔲 ${name} ${q.currency ? `(${q.currency})` : ''} (Standalone)</option>`;
               }
           });
           return html;
@@ -8729,6 +8799,13 @@ async function loadHistory() {
           const rateInfo = getSectionRateInfo(sectionId);
           const rate = rateInfo.kind === 'vnd' ? smartParseAmount(rateInfo.vnd) : smartParseAmount(rateInfo.per100k);
           if (!(rate > 0)) errors.push('ငွေလဲနှုန်း မရှိသေးပါ။ Rate ကို အရင်သိမ်းပါ။');
+          const customerId = document.getElementById('mainCustomerSelect')?.value || '';
+          const methodMeta = getCurrentPaymentMethodForSystemSave();
+          const allowedPayoutIds = getCustomerAllowedPayoutIds(customerId);
+          if (allowedPayoutIds && methodMeta.methodType && methodMeta.methodKey) {
+              const permissionId = getPayoutAccountPermissionId(methodMeta.methodType === 'bank' ? 'BANK' : 'QR', methodMeta.methodKey);
+              if (!allowedPayoutIds.has(permissionId)) errors.push('ဤ Customer အတွက် ခွင့်ပြုထားသော Bank/QR မဟုတ်ပါ။ Customer Settings တွင် သတ်မှတ်ထားသော Account ကိုသာ ရွေးပါ။');
+          }
           const recType = sectionId === 'box-thb2mmk' ? 'THB ➔ MMK' : sectionId === 'box-mmk2thb' ? 'MMK ➔ THB' : sectionId === 'box-vnd2mmk' ? 'VND ➔ MMK' : 'MMK ➔ VND';
           const now = Date.now();
           const duplicate = (Array.isArray(allLoadedHistory) ? allLoadedHistory : []).find(tx => {
