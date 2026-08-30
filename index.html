@@ -795,6 +795,25 @@
       </div>
     </div>
 
+    <div class="mb-3 card p-3 border-purple-200 bg-purple-50">
+      <p class="font-black mb-1 pb-1 text-xs text-purple-700" data-i18n="lbl_cus">👥 Customer (မရွေးပါက ပြေစာတွင်မပါပါ)</p>
+      <div class="flex gap-2">
+        <div class="relative flex-1">
+          <input type="hidden" id="mainCustomerSelect" value="">
+          <div id="customCusSelectBtn" class="compact border rounded-lg w-full text-sm font-bold bg-white text-purple-800 border-purple-200 cursor-pointer flex justify-between items-center" style="padding: .6rem .75rem; min-height:42px;" onclick="toggleCusDropdown()">
+            <span id="customCusSelectLabel" class="truncate">— မထည့်ပါ —</span><span class="text-xs">▼</span>
+          </div>
+          <div id="customCusDropdown" class="absolute z-[60] w-full min-w-[280px] mt-1 bg-white border border-purple-300 rounded-xl shadow-2xl hidden">
+            <div class="p-3 border-b border-purple-200 bg-purple-50 rounded-t-xl">
+              <input type="text" id="cusSearchInput" class="w-full border border-purple-300 rounded-lg p-2.5 text-base font-bold outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-600" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." oninput="filterCusDropdown()" onclick="event.stopPropagation()">
+            </div>
+            <div id="customCusOptions" class="overflow-y-auto max-h-[50vh] pb-1 rounded-b-xl"></div>
+          </div>
+        </div>
+        <button onclick="document.getElementById('quickCusModal').style.display='flex'" class="btn bg-purple-600 hover:bg-purple-700 !py-1 !px-3 text-xs whitespace-nowrap" data-i18n="btn_quick_add">➕ အမြန်ထည့်မည်</button>
+      </div>
+    </div>
+
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start mt-3">
       <div class="card p-3">
         <div class="grid grid-cols-1 gap-3 mb-2">
@@ -822,26 +841,7 @@
             <label class="save-mode-option"><input type="radio" name="saveMode" value="bank"><span>BANK</span></label>
         </div>
 
-        <div class="mt-4 border-t pt-3 border-gray-200">
-            <p class="font-black mb-1 pb-1 text-xs text-purple-700" data-i18n="lbl_cus">👥 Customer (မရွေးပါက ပြေစာတွင်မပါပါ)</p>
-            <div class="flex gap-2">
-                <div class="relative flex-1">
-                    <input type="hidden" id="mainCustomerSelect" value="">
-                    <div id="customCusSelectBtn" class="compact border rounded-lg w-full text-sm font-bold bg-purple-50 text-purple-800 border-purple-200 cursor-pointer flex justify-between items-center h-full" style="padding: .6rem .75rem;" onclick="toggleCusDropdown()">
-                        <span id="customCusSelectLabel" class="truncate">— မထည့်ပါ —</span>
-                        <span class="text-xs">▼</span>
-                    </div>
-                    <div id="customCusDropdown" class="absolute z-[60] w-full min-w-[280px] mt-1 bg-white border border-purple-300 rounded-xl shadow-2xl hidden">
-                        <div class="p-3 border-b border-purple-200 bg-purple-50 rounded-t-xl">
-                            <input type="text" id="cusSearchInput" class="w-full border border-purple-300 rounded-lg p-2.5 text-base font-bold outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-600" placeholder="အမည်, Social, ဖုန်း ရှာရန်..." oninput="filterCusDropdown()" onclick="event.stopPropagation()">
-                        </div>
-                        <div id="customCusOptions" class="overflow-y-auto max-h-[50vh] pb-1 rounded-b-xl">
-                            </div>
-                    </div>
-                </div>
-                <button onclick="document.getElementById('quickCusModal').style.display='flex'" class="btn bg-purple-600 hover:bg-purple-700 !py-1 !px-3 text-xs whitespace-nowrap" data-i18n="btn_quick_add">➕ အမြန်ထည့်မည်</button>
-            </div>
-        </div>
+
       </div>
 
       <div class="card p-3">
