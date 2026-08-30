@@ -9467,23 +9467,14 @@ ID: <code>${invId}</code>
   });
 
   // --- AI Slip Reader (Gemini API) ---
-  // 🌟 Quality-First Cascade: OCR အတိကျမှု "အကောင်းဆုံး" Model ကနေ အစဉ်လိုက် စမ်းသည်
-  // (RPD Quota ပမာဏ အလိုက် မဟုတ်ဘဲ Model Version/Tier အလိုက် စီထားသည်)
-  // Model တစ်ခုမှာ Error/404/Quota ကုန်ခြင်း ဖြစ်ပါက callSlipOcrModel() က catch ဖမ်းပြီး
-  // for-loop ကို ဆက်လက်လည်ပတ်စေသဖြင့် နောက် Model ဆီ အလိုအလျောက် ပြောင်းသွားပါသည်။
-  // Flash (Non-Lite) tier က Lite ထက် OCR quality ပိုကောင်းလို့ အရင်ထားသည်၊
-  // Version အသစ်ဆုံးကို ဦးစားပေးသည် (3.7 > 3.6 > 3.5 > 3 > 2.5)
-  // Lite models (RPD 500) နှင့် Pro (Billing လိုသည်) ကို နောက်ဆုံး Safety-net အဖြစ်သာ ထားသည်
+  // API response တွင် အလုပ်လုပ်ကြောင်းတွေ့ရသော model များကိုသာ သုံးပါမည်။
+  // gemini-3-flash, gemini-2.5-flash နှင့် အခြား preview/pro model များသည်
+  // လက်ရှိ project endpoint တွင် 404/403 ပြန်နေသောကြောင့် fallback စာရင်းမှ ဖယ်ထားပါသည်။
+  // အစဉ်: အသစ်ဆုံး/အရည်အသွေးကောင်းသော Flash → နောက် Flash fallback
   const SLIP_OCR_MODELS = [
-      "gemini-3.7-flash",              // 1. အသစ်ဆုံး Flash (Quality အကောင်းဆုံး ယူဆ)
-      "gemini-3.6-flash",              // 2. လက်ရှိ အသုံးများနေသော Model
-      "gemini-3.5-flash",              // 3.
-      "gemini-3-flash",                // 4.
-      "gemini-2.5-flash",              // 5. အောက်ဆုံး Flash tier
-      "gemini-3.5-flash-lite",         // 6. Lite (RPD 500) — Flash tier ကုန်မှသာ သုံး
-      "gemini-3.1-flash-lite-preview", // 7. Lite (RPD 500) — Backup ထပ်
-      "gemini-2.5-flash-lite",         // 8. Lite (RPD 20) — နောက်ဆုံး Free-tier Backup
-      "gemini-3.1-pro-preview"         // 9. Paid-only Model — Billing ချိတ်မှသာ အလုပ်လုပ်မည်
+      "gemini-3.7-flash",
+      "gemini-3.6-flash",
+      "gemini-3.5-flash"
   ];
 
   // 🌟 Bug Fix: AI က တခါတလေ | နဲ့ ဖြတ်ရမယ့် format ကို လိုက်မနာဘဲ အလယ်မှာ ရပ်သွားတာမျိုး၊
@@ -9622,7 +9613,8 @@ Return ONLY JSON.`;
               if (result) return result;
           } catch (error) {
               const msg = String(error.message || error);
-              console.error(`Slip OCR failed with ${model}:`, msg);
+              // Fallback အတွက်မျှော်လင့်ထားသော error ဖြစ်သောကြောင့် Console ကို red error မဖြစ်စေရန် warn သုံးမည်။
+              console.warn(`Slip OCR fallback skipped ${model}:`, msg);
               lastError = error;
               // 🌟 Quota ကုန်ခြင်း (429/quota) ဖြစ်မှသာ ဒီနေ့အတွက် Skip List ထဲ ထည့်မည်
               // (503 High-demand လိုမျိုး ယာယီ Error တွေကိုတော့ Skip List ထဲ မထည့်ပါ — ခဏနေရင် ပြန်ကောင်းနိုင်လို့)
