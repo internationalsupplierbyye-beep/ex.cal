@@ -6353,35 +6353,37 @@ function openAdmin() {
       }
   };
 
-  // 🌟 Method (QR/Bank) အမည်ပေါ်မူတည်၍ ဝင်ငွေအကောင့်ကို အလိုအလျောက် ခန့်မှန်းပေးမည့် Function 🌟
-  window.getAutoInboundLedger = function(tx, inCurr) {
-      let autoInboundLedger = '';
-      if (tx.method && tx.method.includes('QR')) {
-          const foundQrIndex = FIREBASE_QRS.findIndex(q => {
-              let rawName = (q.name || q.file || "").replace(/\.[^.]+$/, '').toLowerCase();
-              return tx.method.toLowerCase().includes(rawName);
-          });
-          if (foundQrIndex > -1) {
-              const q = FIREBASE_QRS[foundQrIndex];
-              if (!q.currency || q.currency === inCurr) {
-                  autoInboundLedger = q.ledger ? q.ledger : `QR_${foundQrIndex}`;
-              }
-          }
-      } else if (tx.method) {
-          // 🌟 Bank မှလွှဲသည့် Method များအတွက်လည်း QR နှင့်အလားတူ auto-detect ပြုလုပ်ပေးမည် 🌟
-          const foundBankId = Object.keys(FIREBASE_BANKS).find(id => {
-              const b = FIREBASE_BANKS[id];
-              let rawName = (b.name || "").toLowerCase();
-              return rawName && tx.method.toLowerCase().includes(rawName);
-          });
-          if (foundBankId) {
-              const b = FIREBASE_BANKS[foundBankId];
-              if (!b.currency || b.currency === inCurr) {
-                  autoInboundLedger = b.ledger ? b.ledger : `BANK_${foundBankId}`;
-              }
-          }
+  // Stored methodKey ရှိသော record များကို display text ဖြင့် မခန့်မှန်းဘဲ exact ID ဖြင့် resolve လုပ်မည်။
+  function resolveHistoricalPaymentMethod(tx) {
+      const type = String(tx?.methodType || '').toLowerCase();
+      const key = String(tx?.methodKey || '');
+      if (type === 'bank' && key && FIREBASE_BANKS[key]) return { type: 'bank', key, record: FIREBASE_BANKS[key] };
+      if (type === 'qr' && key) {
+          const index = FIREBASE_QRS.findIndex(q => (typeof q === 'string' ? q : q.file) === key);
+          if (index > -1) return { type: 'qr', key, index, record: FIREBASE_QRS[index] };
       }
-      return autoInboundLedger;
+      // Old records တွင် methodKey မရှိသေးသောကြောင့်သာ display text fallback သုံးမည်။
+      const text = String(tx?.method || '').toLowerCase();
+      if (text.includes('qr')) {
+          const index = FIREBASE_QRS.findIndex(q => {
+              const name = String(typeof q === 'string' ? q : (q.name || q.file || '')).replace(/\.[^.]+$/, '').toLowerCase();
+              return name && text.includes(name);
+          });
+          if (index > -1) return { type: 'qr', key: typeof FIREBASE_QRS[index] === 'string' ? FIREBASE_QRS[index] : FIREBASE_QRS[index].file, index, record: FIREBASE_QRS[index] };
+      }
+      const bankKey = Object.keys(FIREBASE_BANKS).find(id => {
+          const name = String(FIREBASE_BANKS[id]?.name || '').toLowerCase();
+          return name && text.includes(name);
+      });
+      return bankKey ? { type: 'bank', key: bankKey, record: FIREBASE_BANKS[bankKey] } : { type: '', key: '', record: null };
+  }
+
+  // 🌟 Exact methodKey ကိုအသုံးပြုပြီး ဝင်ငွေအကောင့်ကို auto-select ပြုလုပ်မည် 🌟
+  window.getAutoInboundLedger = function(tx, inCurr) {
+      const resolved = resolveHistoricalPaymentMethod(tx);
+      const rec = resolved.record;
+      if (!rec || (rec.currency && rec.currency !== inCurr)) return '';
+      return rec.ledger ? rec.ledger : (resolved.type === 'qr' ? `QR_${resolved.index}` : `BANK_${resolved.key}`);
   };
 
   // 🌟 ငွေထုတ်ပေးမှုကို အကောင့် ၂ ခု ခွဲပို့ရန် Toggle/Sync Functions 🌟
@@ -7413,17 +7415,15 @@ function openAdmin() {
           clone.style.background = '#fff';
 
           if (tx.method && tx.method !== 'မပါ (None)' && tx.method !== '-' && tx.method !== 'None') {
-              let isQR = tx.method.includes('QR');
-              let isBank = tx.method.includes('Bank');
+              const resolvedMethod = resolveHistoricalPaymentMethod(tx);
+              let isQR = resolvedMethod.type === 'qr';
+              let isBank = resolvedMethod.type === 'bank';
               
               if (isQR) {
-                  const foundQr = FIREBASE_QRS.find(q => {
-                      const name = typeof q === 'string' ? q.replace(/\.[^.]+$/, '') : (q.name || q.file);
-                      return tx.method.includes(name);
-                  });
+                  const foundQr = resolvedMethod.record;
                   
                   if (foundQr) {
-                      const file = typeof foundQr === 'string' ? foundQr : foundQr.file;
+                          const file = typeof foundQr === 'string' ? foundQr : (foundQr.file || foundQr.url || foundQr.image || '');
                       
                       // 🌟 PromptPay / TrueMoney များကို Reprint တွင် အလုပ်လုပ်စေရန် ပြင်ဆင်ချက်
                       let amtStr = tx.outAmt.includes('THB') ? tx.outAmt : (tx.inAmt.includes('THB') ? tx.inAmt : '0');
@@ -7436,9 +7436,9 @@ function openAdmin() {
                       } else if (file.startsWith('TM:')) {
                           let tmLink = (amt > 0) ? window.generateTrueMoneyLink(amt) : "https://tmn.app.link/fcRfbMKlS3b";
                           finalImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tmLink)}`;
-                      } else {
-                          finalImgUrl = file.includes('http') ? file : 'assets/qr/' + file; 
-                      }
+                          } else {
+                              finalImgUrl = resolveQrImageSource(file);
+                          }
 
                       const baseName = file.replace(/\.[^.]+$/,'');
                       const owner = (typeof foundQr === 'object' && foundQr.owner) ? foundQr.owner : getOwnerFromKey(baseName);
@@ -7487,8 +7487,8 @@ function openAdmin() {
                       const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
                   }
               } else if (isBank) {
-                  const foundBankKey = Object.keys(FIREBASE_BANKS).find(k => tx.method.includes(FIREBASE_BANKS[k].name));
-                  if (foundBankKey) {
+                  const foundBankKey = resolvedMethod.key;
+                  if (foundBankKey && FIREBASE_BANKS[foundBankKey]) {
                       const info = FIREBASE_BANKS[foundBankKey];
                       const wrap = document.createElement('div'); wrap.className = 'export-block';
                       const title = document.createElement('p'); title.className = 'text-slate-800 font-black'; title.style.paddingBottom = '4px'; title.textContent = (T && T.bankTitle) ? T.bankTitle : 'ငွေလွှဲရန်အတွက် အောက်ပါအချက်အလက်မှ ဘဏ်သို့ လွှဲပါ။';
@@ -7749,14 +7749,31 @@ function openAdmin() {
       return ['main admin', 'admin', 'staff'].includes(String(CURRENT_ROLE || '').toLowerCase());
   }
 
+  function getOwnerShortLabel(name) {
+      const value = String(name || '').trim();
+      if (!value) return '';
+      if (/[a-zA-Z]/.test(value) && !/[\u1000-\u109F]/.test(value)) {
+          const initials = value.split(/[\s_\-.]+/).filter(Boolean).map(word => word[0].toUpperCase()).join('');
+          return initials ? ` [${initials}]` : '';
+      }
+      return '';
+  }
+  function resolveQrImageSource(qrOrFile) {
+      const file = typeof qrOrFile === 'object' ? (qrOrFile.file || qrOrFile.url || qrOrFile.image || '') : String(qrOrFile || '');
+      if (!file) return '';
+      if (/^(https?:|data:|blob:)/i.test(file)) return file;
+      if (file.includes('/')) return file;
+      return 'assets/qr/' + file;
+  }
   function getMethodLinkLabel(type, key) {
       if (type === 'bank') {
           const info = ACTIVE_BANK_INFO && ACTIVE_BANK_INFO[key];
-          return info ? `Bank (${info.name || key})` : 'Bank';
+          return info ? `Bank (${info.name || key})${getOwnerShortLabel(info.accName)}` : 'Bank';
       }
       const qr = FIREBASE_QRS.find(item => (typeof item === 'string' ? item : item.file) === key);
       const name = typeof qr === 'object' ? (qr.name || qr.file) : (qr || key);
-      return `QR (${name || key})`;
+      const owner = typeof qr === 'object' ? qr.owner : '';
+      return `QR (${name || key})${getOwnerShortLabel(owner)}`;
   }
 
   function populateMethodLinkOptions(selectedMethodKey = '') {
@@ -7777,7 +7794,7 @@ function openAdmin() {
           if (!info) return;
           const option = document.createElement('option');
           option.value = `bank|${key}`;
-          option.textContent = `${info.name || key}${info.currency ? ` (${info.currency})` : ''}`;
+          option.textContent = `${info.name || key}${getOwnerShortLabel(info.accName)}${info.currency ? ` (${info.currency})` : ''}`;
           bankGroup.appendChild(option);
       });
       if (bankGroup.children.length) select.appendChild(bankGroup);
@@ -7790,7 +7807,8 @@ function openAdmin() {
           if (!key) return;
           const option = document.createElement('option');
           option.value = `qr|${key}`;
-          option.textContent = typeof item === 'object' ? (item.name || key) : key;
+          const qrOwner = typeof item === 'object' ? item.owner : '';
+          option.textContent = `${typeof item === 'object' ? (item.name || key) : key}${getOwnerShortLabel(qrOwner)}${typeof item === 'object' && item.currency ? ` (${item.currency})` : ''}`;
           qrGroup.appendChild(option);
       });
       if (qrGroup.children.length) select.appendChild(qrGroup);
