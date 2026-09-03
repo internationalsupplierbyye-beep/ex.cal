@@ -3448,8 +3448,8 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     applyState(qr, hasQr, 'QR');
     if (bankRadio) { bankRadio.disabled = !hasBank; bankRadio.closest('label')?.style.setProperty('opacity', hasBank ? '1' : '.42'); }
     if (qrRadio) { qrRadio.disabled = !hasQr; qrRadio.closest('label')?.style.setProperty('opacity', hasQr ? '1' : '.42'); }
-    const activeMode = document.querySelector('input[name="saveMode"]:checked');
-    if ((activeMode?.value === 'bank' && !hasBank) || (activeMode?.value === 'qr' && !hasQr)) {
+      const activeMode = document.querySelector('input[name="saveMode"]:checked');
+      if ((activeMode?.value === 'bank' && !hasBank) || (activeMode?.value === 'qr' && !hasQr)) {
       const none = document.querySelector('input[name="saveMode"][value="none"]');
       if (none) none.checked = true;
     }
@@ -6274,31 +6274,26 @@ function openAdmin() {
       updateSelectorBalanceStatuses();
   };
   // 🌟 Currency အလိုက် သီးသန့်စစ်ထုတ်ပေးမည့် Function 🌟
-  window.filterAndInitSuccessDropdowns = function(inCurr, outCurr) {
-      const buildOptions = (targetCurr) => {
-          let html = '<option value="">⏳ နောက်မှရွေးမည် (Select Later)</option>';
-          
+  window.filterAndInitSuccessDropdowns = function(inCurr, outCurr, preferredInId = '') {
+      const buildOptions = (targetCurr, preferredId = '') => {
+          const options = [];
+          const currencyOk = (record, id) => !targetCurr || String(record?.currency || '').toUpperCase() === String(targetCurr || '').toUpperCase() || id === preferredId;
+          const add = (id, text, currency, isPreferred = false) => {
+              const m = String(currency || 'MMK').toUpperCase();
+              const cls = m === 'THB' ? 'opt-thb' : m === 'VND' ? 'opt-vnd' : 'opt-mmk';
+              options.push({ preferred: isPreferred, html: `<option value="${id}" class="${cls}">${text} (${currency || 'MMK'})</option>` });
+          };
+          // Success confirmation တွင် Master Wallet accounts များသာ ပြမည်။
           FIREBASE_TREASURY_ORDER.forEach(key => {
               const acc = FIREBASE_TREASURY[key];
-              if (acc && (!targetCurr || acc.currency === targetCurr)) {
-                  const m = String(acc.currency || 'MMK').toUpperCase(); const cls = m === 'THB' ? 'opt-thb' : m === 'VND' ? 'opt-vnd' : 'opt-mmk';
-                  html += `<option value="${key}" class="${cls}">💼 ${acc.name} (${acc.currency})</option>`;
-              }
+              if (acc && currencyOk(acc, key)) add(key, `💼 ${acc.name || key}${key === preferredId ? ' ⭐ မူရင်း' : ''}`, acc.currency, key === preferredId);
           });
-          FIREBASE_BANK_ORDER.forEach(id => {
-              const b = FIREBASE_BANKS[id];
-              if (b && !b.ledger && (!targetCurr || b.currency === targetCurr)) {
-                  const m = String(b.currency || 'MMK').toUpperCase(); const cls = m === 'THB' ? 'opt-thb' : m === 'VND' ? 'opt-vnd' : 'opt-mmk';
-                  html += `<option value="BANK_${id}" class="${cls}">🏦 ${b.name} ${b.currency ? `(${b.currency})` : ''} (Standalone)</option>`;
-              }
-          });
-          FIREBASE_QRS.forEach((q, index) => {
-              if (!q.ledger && (!targetCurr || q.currency === targetCurr)) {
-                  let name = q.name || q.file.replace(/\.[^.]+$/, '');
-                  const m = String(q.currency || 'MMK').toUpperCase(); const cls = m === 'THB' ? 'opt-thb' : m === 'VND' ? 'opt-vnd' : 'opt-mmk';
-                  html += `<option value="QR_${index}" class="${cls}">🔲 ${name} ${q.currency ? `(${q.currency})` : ''} (Standalone)</option>`;
-              }
-          });
+          let html = '<option value="">⏳ နောက်မှရွေးမည် (Select Later)</option>';
+          const preferred = options.filter(x => x.preferred).map(x => x.html);
+          const normal = options.filter(x => !x.preferred).map(x => x.html);
+          // Main Account များကို ခေါင်းစဉ်မပါဘဲ ပုံမှန် option စာရင်းအဖြစ် ပြမည်။
+          html += preferred.join('');
+          html += normal.join('');
           return html;
       };
 
@@ -6307,7 +6302,7 @@ function openAdmin() {
       const outSelect2 = document.getElementById('successOutLedger2');
 
       if(inSelect) { 
-          inSelect.innerHTML = buildOptions(inCurr); 
+          inSelect.innerHTML = buildOptions(inCurr, preferredInId); 
           if(inSelect.previousElementSibling && inSelect.previousElementSibling.tagName === 'INPUT') {
               inSelect.previousElementSibling.value = '';
           }
@@ -6365,25 +6360,32 @@ function openAdmin() {
       // Old records တွင် methodKey မရှိသေးသောကြောင့်သာ display text fallback သုံးမည်။
       const text = String(tx?.method || '').toLowerCase();
       if (text.includes('qr')) {
-          const index = FIREBASE_QRS.findIndex(q => {
-              const name = String(typeof q === 'string' ? q : (q.name || q.file || '')).replace(/\.[^.]+$/, '').toLowerCase();
-              return name && text.includes(name);
-          });
-          if (index > -1) return { type: 'qr', key: typeof FIREBASE_QRS[index] === 'string' ? FIREBASE_QRS[index] : FIREBASE_QRS[index].file, index, record: FIREBASE_QRS[index] };
+          const qrCandidates = FIREBASE_QRS.map((q, index) => ({ q, index, key: typeof q === 'string' ? q : q.file, name: String(typeof q === 'string' ? q : (q.name || q.file || '')).replace(/\.[^.]+$/, '').toLowerCase() }))
+              .filter(item => item.name && text.includes(item.name));
+          if (qrCandidates.length === 1) {
+              const item = qrCandidates[0];
+              return { type: 'qr', key: item.key, index: item.index, record: item.q };
+          }
+          // Old QR record တွေ ambiguous ဖြစ်လျှင် မှားယွင်းတဲ့ QR ကို မရွေးဘဲ manual ရွေးခိုင်းမည်။
+          if (qrCandidates.length > 1) return { type: '', key: '', record: null, ambiguous: true };
       }
-      const bankKey = Object.keys(FIREBASE_BANKS).find(id => {
+      const bankCandidates = Object.keys(FIREBASE_BANKS).filter(id => {
           const name = String(FIREBASE_BANKS[id]?.name || '').toLowerCase();
           return name && text.includes(name);
       });
-      return bankKey ? { type: 'bank', key: bankKey, record: FIREBASE_BANKS[bankKey] } : { type: '', key: '', record: null };
+      if (bankCandidates.length === 1) return { type: 'bank', key: bankCandidates[0], record: FIREBASE_BANKS[bankCandidates[0]] };
+      // Name တူသော HSA_KMA/YLH_KMA ကဲ့သို့ old record တွေကို first-match မလုပ်တော့ပါ။
+      if (bankCandidates.length > 1) return { type: '', key: '', record: null, ambiguous: true };
+      return { type: '', key: '', record: null };
   }
 
   // 🌟 Exact methodKey ကိုအသုံးပြုပြီး ဝင်ငွေအကောင့်ကို auto-select ပြုလုပ်မည် 🌟
   window.getAutoInboundLedger = function(tx, inCurr) {
       const resolved = resolveHistoricalPaymentMethod(tx);
       const rec = resolved.record;
-      if (!rec || (rec.currency && rec.currency !== inCurr)) return '';
-      return rec.ledger ? rec.ledger : (resolved.type === 'qr' ? `QR_${resolved.index}` : `BANK_${resolved.key}`);
+      if (!rec) return '';
+      // Bank/QR ၏ linked Master Wallet ရှိမှသာ auto-select လုပ်မည်။ Standalone ကို မခန့်မှန်းပါ။
+      return rec.ledger && FIREBASE_TREASURY[rec.ledger] ? rec.ledger : '';
   };
 
   // 🌟 ငွေထုတ်ပေးမှုကို အကောင့် ၂ ခု ခွဲပို့ရန် Toggle/Sync Functions 🌟
@@ -6492,6 +6494,14 @@ function openAdmin() {
 
       const outTotalNumeric = parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0;
       const inTotalNumeric = parseFloat(String(tx.inAmt).replace(/[^\d.]/g, '')) || 0;
+
+      // Exact methodKey ရှိလျှင် မူရင်း receipt တွင်ရွေးထားသော account နှင့် မကိုက်ပါက မသိမ်းနိုင်အောင် guard လုပ်မည်။
+      const expectedInbound = (mode === 'Success' || mode === 'Success_FromOwing') ? window.getAutoInboundLedger(tx, String((tx.type || '').split(' ➔ ')[0] || '').trim()) : '';
+      if (expectedInbound && newLedgerIn !== expectedInbound) {
+          alert(`မူရင်း receipt account (${expectedInbound}) နှင့် လက်ရှိရွေးထားသော account (${newLedgerIn}) မကိုက်ညီပါ။ မှန်ကန်သော account ကို ရွေးပါ။`);
+          if (inSelect) inSelect.value = expectedInbound;
+          return;
+      }
 
       const isSplit = !!(document.getElementById('successSplitOutCheck') && document.getElementById('successSplitOutCheck').checked);
       let newLedgerOutSplit = null;
@@ -6630,6 +6640,8 @@ function openAdmin() {
           if (btn) { btn.innerHTML = origText; btn.disabled = false; }
           window.isEditingWallet = false;
           window.pendingTargetStatus = null;
+          const resetInbound = document.getElementById('successInLedger');
+          if (resetInbound) { resetInbound.disabled = false; resetInbound.title = ''; resetInbound.style.opacity = ''; resetInbound.style.borderColor = ''; }
           pendingSuccessTxId = null;
           setSuccessModalMode('full');
       }
@@ -6687,13 +6699,23 @@ function openAdmin() {
           document.getElementById('successTxModal').style.display = 'flex';
           if(selectEl) selectEl.value = tx.status;
 
-          filterAndInitSuccessDropdowns(inCurr, outCurr);
+          const preferredInboundLedger = window.getAutoInboundLedger(tx, inCurr);
+          filterAndInitSuccessDropdowns(inCurr, outCurr, preferredInboundLedger);
 
           const inSelect = document.getElementById('successInLedger');
           const outSelect = document.getElementById('successOutLedger');
-          const autoInboundLedger = getAutoInboundLedger(tx, inCurr);
+              const autoInboundLedger = getAutoInboundLedger(tx, inCurr);
+              if (inSelect) {
+                  inSelect.disabled = false;
+                  inSelect.title = autoInboundLedger ? 'မူရင်း receipt account ကို အလိုအလျောက်ရွေးပေးထားသည်။ လိုအပ်လျှင် ပြန်ပြင်ရွေးနိုင်သည်။' : '';
+                  if (autoInboundLedger) {
+                      inSelect.value = autoInboundLedger;
+                      inSelect.style.opacity = '1';
+                      inSelect.style.borderColor = '#16a34a';
+                  }
+              }
 
-          if (tx.status === 'Owing') {
+              if (tx.status === 'Owing') {
               // 🌟 ငွေထုတ်ပေးမှုကို အရင်ကတည်းက မှတ်ပြီးသားမို့ ဝင်ငွေအကောင့်ကိုသာ ရွေးခိုင်းမည်
               window.pendingTargetStatus = 'Success_FromOwing';
               if(inSelect) inSelect.value = autoInboundLedger;
@@ -9095,7 +9117,8 @@ async function loadHistory() {
         
         clone.style.boxShadow='none'; clone.style.border='1px solid #e5e7eb'; clone.style.background='#fff';
         const mode = document.querySelector('input[name="saveMode"]:checked')?.value || 'none';
-        let paymentMethodName = "မပါ (None)";
+        const methodMeta = getCurrentPaymentMethodForSystemSave();
+        let paymentMethodName = methodMeta.method || "မပါ (None)";
         
         if(mode==='qr' && CURRENT_QR && CURRENT_QR.normal){
           const selectedQrEl = document.getElementById('qrSelect');
@@ -9368,7 +9391,8 @@ async function loadHistory() {
           const currentDeviceId = CURRENT_DEVICE_ID || "Unknown";
           const historyRecord = { 
               id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
-              method: paymentMethodName, profit: 0, status: 'Pending', timestamp: new Date().toISOString(), 
+              method: paymentMethodName, methodType: methodMeta.methodType || null, methodKey: methodMeta.methodKey || null,
+              profit: 0, status: 'Pending', timestamp: new Date().toISOString(), 
               tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: savedCustomerName 
           };
           
