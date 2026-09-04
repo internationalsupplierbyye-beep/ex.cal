@@ -1983,7 +1983,7 @@ let calcLock = false;
   }
 
   // 🌟 Operator Camera Photo → Telegram (Firebase/Browser storage မသိမ်းပါ) 🌟
-  async function sendTelegramOperatorPhoto(blob, actionName, contextText = '') {
+  async function sendTelegramOperatorPhoto(blob, actionName, contextText = '', invoiceNumber = '') {
       if (!blob || !TELEGRAM_CHAT_ID || !TELEGRAM_BOT_TOKEN) return false;
       const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
       const form = new FormData();
@@ -1992,7 +1992,7 @@ let calcLock = false;
       const topicId = TELEGRAM_OPERATOR_PHOTO_TOPIC_ID || TELEGRAM_TOPIC_ID;
       if (topicId) form.append('message_thread_id', topicId);
       const deviceName = (typeof FIREBASE_DEVICE_NAMES !== 'undefined' && FIREBASE_DEVICE_NAMES[CURRENT_DEVICE_ID]) || CURRENT_DEVICE_ID || 'Unknown';
-      const caption = `📷 <b>Operator Action</b>\nAction: ${actionName}\nDevice: ${deviceName}${contextText ? `\n${contextText}` : ''}\nTime: ${new Date().toLocaleString()}`;
+      const caption = `📷 <b>Operator Action</b>\nAction: ${actionName}\nInvoice: <code>${invoiceNumber || 'မရှိသေးပါ'}</code>\nDevice: ${deviceName}${contextText ? `\n${contextText}` : ''}\nTime: ${new Date().toLocaleString()}`;
       form.append('caption', caption);
       form.append('parse_mode', 'HTML');
       try {
@@ -2043,7 +2043,7 @@ let calcLock = false;
       return operatorPhotoStream;
   }
 
-  async function captureAndSendOperatorPhoto(actionName, contextText = '') {
+  async function captureAndSendOperatorPhoto(actionName, contextText = '', invoiceNumber = '') {
       if (!navigator.mediaDevices?.getUserMedia || !TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return false;
       if (await getOperatorCameraPermissionState() !== 'granted') return false;
       if (operatorPhotoBusy) return false;
@@ -2064,7 +2064,7 @@ let calcLock = false;
           canvas.width = width; canvas.height = height;
           canvas.getContext('2d', { alpha: false }).drawImage(video, 0, 0, width, height);
           const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.72));
-          return await sendTelegramOperatorPhoto(blob, actionName, contextText);
+          return await sendTelegramOperatorPhoto(blob, actionName, contextText, invoiceNumber);
       } catch (e) {
           if (e?.name === 'NotAllowedError' || e?.name === 'PermissionDeniedError') console.warn('Camera permission မပေးထားပါ။ Action ကို မပိတ်ဆို့ပါ။');
           else console.warn('Camera capture မအောင်မြင်ပါ:', e);
@@ -2081,9 +2081,12 @@ let calcLock = false;
       }
   }
   let operatorPhotoQueue = Promise.resolve();
-  function queueOperatorPhoto(actionName, contextText = '') {
-      // တစ်ခါနှိပ်တိုင်းကို အစဉ်လိုက် background queue ထဲ ထည့်မည်။
-      operatorPhotoQueue = operatorPhotoQueue.catch(() => false).then(() => captureAndSendOperatorPhoto(actionName, contextText));
+  function queueOperatorPhoto(actionName, contextText = '', invoiceNumber = '') {
+      // Mobile data/battery သက်သာရန် 5 စက္ကန့်အတွင်း Snapshot တစ်ပုံသာ ရိုက်မည်။
+      const now = Date.now();
+      if (now - operatorPhotoLastSentAt < 5000) return Promise.resolve(false);
+      operatorPhotoLastSentAt = now;
+      operatorPhotoQueue = operatorPhotoQueue.catch(() => false).then(() => captureAndSendOperatorPhoto(actionName, contextText, invoiceNumber));
       return operatorPhotoQueue;
   }
   window.addEventListener('pagehide', () => {
@@ -2456,7 +2459,7 @@ window.showToast = function(message, icon = "✅") {
   // --- 📋 Copy Text Function ---
   function copyText(sectionId, btn) {
       const section = document.getElementById(sectionId);
-      queueOperatorPhoto('COPY', sectionId);
+      queueOperatorPhoto('COPY', sectionId, 'COPY');
       if (!section) return;
 
       const inputs = section.querySelectorAll('input.amt-input');
@@ -9170,7 +9173,6 @@ async function loadHistory() {
   }
 
   async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
-    queueOperatorPhoto(String(action || 'download').toUpperCase(), sectionId);
     let origText = '';
     if (btnElement) {
         origText = btnElement.innerHTML;
@@ -9216,6 +9218,7 @@ async function loadHistory() {
         const dDate = new Date();
         const invDateStr = dDate.getFullYear().toString().slice(-2) + String(dDate.getMonth()+1).padStart(2,'0') + String(dDate.getDate()).padStart(2,'0');
         const invId = "INV" + invDateStr + "-" + Math.floor(1000 + Math.random() * 9000);
+        queueOperatorPhoto(String(action || 'download').toUpperCase(), sectionId, invId);
 
         applyLangToClone(clone, lang, invId);
         
