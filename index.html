@@ -1390,6 +1390,12 @@
           <label class="text-xs font-bold text-gray-600">Telegram Topic ID (Customer စလစ်ပုံများပို့ရန်)</label>
           <input type="text" id="adminTgSlipTopicId" class="admin-input-box text-sm" placeholder="Topic ID ထည့်ပါ (ဥပမာ: 18)">
         </div>
+        <div class="mb-3">
+          <label class="text-xs font-bold text-gray-600">Telegram Topic ID (လုပ်ဆောင်သူပုံများပို့ရန်)</label>
+          <input type="text" id="adminTgOperatorPhotoTopicId" class="admin-input-box text-sm" placeholder="Topic ID မထည့်ရင် ပုံမှန် Topic သို့ပို့မည်">
+        </div>
+        <button onclick="prepareOperatorCameraPermission()" id="btnOperatorCameraPermission" class="btn bg-slate-700 hover:bg-slate-800 w-full mb-2">📷 Camera ကို တစ်ကြိမ် Allow လုပ်မည်</button>
+        <p class="text-[10px] text-gray-500 mb-2">တစ်ကြိမ် Allow ပြီးနောက် Action ခလုတ်များနှိပ်ချိန်တွင်သာ Snapshot ရိုက်မည်။ Camera ကို အမြဲဖွင့်ထားမည်မဟုတ်ပါ။</p>
         <button onclick="saveTelegramSettings()" id="btnTgSave" class="btn bg-blue-600 hover:bg-blue-700 w-full">Telegram Settings သိမ်းမည်</button>
 
         <hr class="border-pink-200 my-3">
@@ -1840,6 +1846,10 @@
   let TELEGRAM_SUCCESS_TOPIC_ID = "14"; 
   let TELEGRAM_CANCEL_TOPIC_ID = ""; // 🌟 Cancel အတွက် Topic အသစ်
   let TELEGRAM_SLIP_TOPIC_ID = ""; // 🌟 Slip ပို့ရန် Topic အသစ်
+  let TELEGRAM_OPERATOR_PHOTO_TOPIC_ID = ""; // 🌟 Action လုပ်သူပုံပို့ရန် Topic
+  let operatorPhotoStream = null;
+  let operatorPhotoBusy = false;
+  let operatorPhotoLastSentAt = 0;
 
   // 🌟 Daily Closing Report Settings
   let DAILY_REPORT_ENABLED = false;
@@ -1971,6 +1981,115 @@ let calcLock = false;
           return false;
       }
   }
+
+  // 🌟 Operator Camera Photo → Telegram (Firebase/Browser storage မသိမ်းပါ) 🌟
+  async function sendTelegramOperatorPhoto(blob, actionName, contextText = '') {
+      if (!blob || !TELEGRAM_CHAT_ID || !TELEGRAM_BOT_TOKEN) return false;
+      const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+      const form = new FormData();
+      form.append('chat_id', TELEGRAM_CHAT_ID);
+      form.append('photo', blob, `operator-${Date.now()}.jpg`);
+      const topicId = TELEGRAM_OPERATOR_PHOTO_TOPIC_ID || TELEGRAM_TOPIC_ID;
+      if (topicId) form.append('message_thread_id', topicId);
+      const deviceName = (typeof FIREBASE_DEVICE_NAMES !== 'undefined' && FIREBASE_DEVICE_NAMES[CURRENT_DEVICE_ID]) || CURRENT_DEVICE_ID || 'Unknown';
+      const caption = `📷 <b>Operator Action</b>\nAction: ${actionName}\nDevice: ${deviceName}${contextText ? `\n${contextText}` : ''}\nTime: ${new Date().toLocaleString()}`;
+      form.append('caption', caption);
+      form.append('parse_mode', 'HTML');
+      try {
+          const res = await fetch(url, { method: 'POST', body: form });
+          const result = await res.json();
+          if (!result.ok) { console.warn('Operator photo Telegram failed:', result); return false; }
+          return true;
+      } catch (e) {
+          console.warn('Operator photo send error:', e);
+          return false;
+      }
+  }
+
+    async function getOperatorCameraPermissionState() {
+      try {
+          if (navigator.permissions?.query) {
+              const status = await navigator.permissions.query({ name: 'camera' });
+              return status.state;
+          }
+      } catch (e) { /* Browser မထောက်ပံ့လျှင် session flag ကိုသာသုံးမည် */ }
+      return sessionStorage.getItem('operatorCameraPermissionGranted') === '1' ? 'granted' : 'prompt';
+  }
+
+  window.prepareOperatorCameraPermission = async function() {
+      const btn = document.getElementById('btnOperatorCameraPermission');
+      if (btn) { btn.disabled = true; btn.textContent = '📷 Camera ခွင့်ပြုချက် စစ်နေသည်...'; }
+      try {
+          if (!navigator.mediaDevices?.getUserMedia) throw new Error('HTTPS GitHub Pages သို့မဟုတ် localhost မှသာ Camera သုံးနိုင်ပါသည်။');
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+          stream.getTracks().forEach(track => track.stop());
+          sessionStorage.setItem('operatorCameraPermissionGranted', '1');
+          if (typeof showToast === 'function') showToast('Camera ခွင့်ပြုချက် မှတ်သားပြီးပါပြီ။ Action ခလုတ်နှိပ်ချိန်မှသာ Snapshot ရိုက်ပါမည်။', '📷');
+          else alert('Camera ခွင့်ပြုချက် မှတ်သားပြီးပါပြီ။');
+          return true;
+      } catch (e) {
+          console.warn('Camera permission setup failed:', e);
+          if (typeof showToast === 'function') showToast('Camera permission မရပါ။ Action ကို မပိတ်ဆို့ပါ။', '⚠️');
+          return false;
+      } finally {
+          if (btn) { btn.disabled = false; btn.textContent = '📷 Camera ကို တစ်ကြိမ် Allow လုပ်မည်'; }
+      }
+  };
+
+  async function ensureOperatorPhotoStream() {
+      if (operatorPhotoStream && operatorPhotoStream.getVideoTracks().some(track => track.readyState === 'live')) return operatorPhotoStream;
+      if (!navigator.mediaDevices?.getUserMedia) return null;
+      operatorPhotoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+      return operatorPhotoStream;
+  }
+
+  async function captureAndSendOperatorPhoto(actionName, contextText = '') {
+      if (!navigator.mediaDevices?.getUserMedia || !TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return false;
+      if (await getOperatorCameraPermissionState() !== 'granted') return false;
+      if (operatorPhotoBusy) return false;
+      operatorPhotoBusy = true;
+      let video = null;
+      try {
+          const stream = await ensureOperatorPhotoStream();
+          if (!stream) return false;
+          video = document.createElement('video');
+          video.muted = true; video.playsInline = true; video.srcObject = stream;
+          video.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:-10px;top:-10px;';
+          document.body.appendChild(video);
+          await video.play();
+          await new Promise(resolve => setTimeout(resolve, 180));
+          const width = Math.min(video.videoWidth || 640, 640);
+          const height = Math.min(video.videoHeight || 480, 480);
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d', { alpha: false }).drawImage(video, 0, 0, width, height);
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.72));
+          return await sendTelegramOperatorPhoto(blob, actionName, contextText);
+      } catch (e) {
+          if (e?.name === 'NotAllowedError' || e?.name === 'PermissionDeniedError') console.warn('Camera permission မပေးထားပါ။ Action ကို မပိတ်ဆို့ပါ။');
+          else console.warn('Camera capture မအောင်မြင်ပါ:', e);
+          if (operatorPhotoStream && !operatorPhotoStream.getVideoTracks().some(track => track.readyState === 'live')) operatorPhotoStream = null;
+          return false;
+      } finally {
+          // ပုံရိုက်ပြီးသည်နှင့် stream ကို ရပ်မည်။ Camera indicator မီး ဆက်မလင်းစေရန် ဖြစ်သည်။
+          if (video) { video.pause(); video.srcObject = null; video.remove(); }
+          if (operatorPhotoStream) {
+              operatorPhotoStream.getTracks().forEach(track => track.stop());
+              operatorPhotoStream = null;
+          }
+          operatorPhotoBusy = false;
+      }
+  }
+  let operatorPhotoQueue = Promise.resolve();
+  function queueOperatorPhoto(actionName, contextText = '') {
+      // တစ်ခါနှိပ်တိုင်းကို အစဉ်လိုက် background queue ထဲ ထည့်မည်။
+      operatorPhotoQueue = operatorPhotoQueue.catch(() => false).then(() => captureAndSendOperatorPhoto(actionName, contextText));
+      return operatorPhotoQueue;
+  }
+  window.addEventListener('pagehide', () => {
+      if (operatorPhotoStream) operatorPhotoStream.getTracks().forEach(track => track.stop());
+      operatorPhotoStream = null;
+  });
 
   // --- Calculator Utility Functions ---
   function normalizeDigits(v){ const map={'၀':'0','၁':'1','၂':'2','၃':'3','၄':'4','၅':'5','၆':'6','၇':'7','၈':'8','၉':'9'}; return (v||'').replace(/[၀၁၂၃၄၅၆၇၈၉]/g, d=>map[d]??d); }
@@ -2337,6 +2456,7 @@ window.showToast = function(message, icon = "✅") {
   // --- 📋 Copy Text Function ---
   function copyText(sectionId, btn) {
       const section = document.getElementById(sectionId);
+      queueOperatorPhoto('COPY', sectionId);
       if (!section) return;
 
       const inputs = section.querySelectorAll('input.amt-input');
@@ -3278,6 +3398,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       const successTopicId = document.getElementById('adminTgSuccessTopicId').value.trim();
       const cancelTopicId = document.getElementById('adminTgCancelTopicId').value.trim();
       const slipTopicId = document.getElementById('adminTgSlipTopicId').value.trim(); // 🌟 အသစ်
+      const operatorPhotoTopicId = document.getElementById('adminTgOperatorPhotoTopicId')?.value.trim() || '';
       
       const btn = document.getElementById('btnTgSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
@@ -3288,9 +3409,10 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           TELEGRAM_SUCCESS_TOPIC_ID = successTopicId;
           TELEGRAM_CANCEL_TOPIC_ID = cancelTopicId;
           TELEGRAM_SLIP_TOPIC_ID = slipTopicId; // 🌟 အသစ်
+          TELEGRAM_OPERATOR_PHOTO_TOPIC_ID = operatorPhotoTopicId;
           
           if(dbRef) {
-              await dbRef.set({ telegram: { chatId: chatId, topicId: topicId, successTopicId: successTopicId, cancelTopicId: cancelTopicId, slipTopicId: slipTopicId } }, { merge: true });
+              await dbRef.set({ telegram: { chatId: chatId, topicId: topicId, successTopicId: successTopicId, cancelTopicId: cancelTopicId, slipTopicId: slipTopicId, operatorPhotoTopicId: operatorPhotoTopicId } }, { merge: true });
           }
           alert("Telegram Settings အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
       } catch(e) {
@@ -4221,6 +4343,7 @@ if (data.telegram) {
             if(data.telegram.successTopicId) TELEGRAM_SUCCESS_TOPIC_ID = data.telegram.successTopicId;
             if(data.telegram.cancelTopicId) TELEGRAM_CANCEL_TOPIC_ID = data.telegram.cancelTopicId;
             if(data.telegram.slipTopicId) TELEGRAM_SLIP_TOPIC_ID = data.telegram.slipTopicId; // 🌟 အသစ်
+            if(data.telegram.operatorPhotoTopicId) TELEGRAM_OPERATOR_PHOTO_TOPIC_ID = data.telegram.operatorPhotoTopicId;
         }
 	if (data.apiKeys) {
             if(data.apiKeys.botToken) TELEGRAM_BOT_TOKEN = data.apiKeys.botToken;
@@ -4245,6 +4368,8 @@ if (data.telegram) {
         
         const tgSlipTopicInput = document.getElementById('adminTgSlipTopicId'); // 🌟 အသစ်
         if(tgSlipTopicInput) tgSlipTopicInput.value = TELEGRAM_SLIP_TOPIC_ID; // 🌟 အသစ်
+        const tgOperatorPhotoTopicInput = document.getElementById('adminTgOperatorPhotoTopicId');
+        if(tgOperatorPhotoTopicInput) tgOperatorPhotoTopicInput.value = TELEGRAM_OPERATOR_PHOTO_TOPIC_ID;
 
         // 🌟 Daily Closing Report Settings
         if (data.dailyReport) {
@@ -9045,6 +9170,7 @@ async function loadHistory() {
   }
 
   async function saveSection(sectionId, filenameBase, fmt, action = 'download', btnElement = null) {
+    queueOperatorPhoto(String(action || 'download').toUpperCase(), sectionId);
     let origText = '';
     if (btnElement) {
         origText = btnElement.innerHTML;
