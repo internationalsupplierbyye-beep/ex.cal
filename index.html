@@ -1394,6 +1394,15 @@
           <label class="text-xs font-bold text-gray-600">Telegram Topic ID (လုပ်ဆောင်သူပုံများပို့ရန်)</label>
           <input type="text" id="adminTgOperatorPhotoTopicId" class="admin-input-box text-sm" placeholder="Topic ID မထည့်ရင် ပုံမှန် Topic သို့ပို့မည်">
         </div>
+        <div class="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-2">
+          <label class="text-xs font-black text-amber-800">📷 Camera ပုံပို့ခြင်း ပိတ်မည့်ရက် (Main Admin သာ)</label>
+          <div class="grid grid-cols-2 gap-2 mt-1">
+            <input type="date" id="adminOperatorPhotoPauseFrom" class="admin-input-box text-xs" title="စတင်ပိတ်မည့်ရက်">
+            <input type="date" id="adminOperatorPhotoPauseUntil" class="admin-input-box text-xs" title="ပြန်ဖွင့်မည့်နောက်ဆုံးရက်">
+          </div>
+          <p class="text-[10px] text-amber-700 mt-1">ရက်အပိုင်းအခြားထဲတွင် Camera snapshot/Telegram ပို့ခြင်းကိုသာ ပိတ်မည်။ မူရင်း action များ ဆက်အလုပ်လုပ်မည်။</p>
+          <button type="button" onclick="saveOperatorPhotoSchedule()" id="btnOperatorPhotoScheduleSave" class="btn bg-amber-600 hover:bg-amber-700 w-full mt-2 !py-1.5">📅 Camera ပိတ်ရက် သိမ်းမည် (Main Admin)</button>
+        </div>
         <button onclick="prepareOperatorCameraPermission()" id="btnOperatorCameraPermission" class="btn bg-slate-700 hover:bg-slate-800 w-full mb-2">📷 Camera ကို တစ်ကြိမ် Allow လုပ်မည်</button>
         <p class="text-[10px] text-gray-500 mb-2">တစ်ကြိမ် Allow ပြီးနောက် Action ခလုတ်များနှိပ်ချိန်တွင်သာ Snapshot ရိုက်မည်။ Camera ကို အမြဲဖွင့်ထားမည်မဟုတ်ပါ။</p>
         <button onclick="saveTelegramSettings()" id="btnTgSave" class="btn bg-blue-600 hover:bg-blue-700 w-full">Telegram Settings သိမ်းမည်</button>
@@ -1614,8 +1623,10 @@
               <input id="cusBankNo" class="admin-input-box text-sm flex-1" placeholder="ဘဏ်နံပါတ်">
             </div>
             <div class="mb-3">
-              <label class="text-xs font-black text-purple-800">💳 ငွေလွှဲခွင့်ရှိသော Account များ (မရွေးထားလျှင် Account အားလုံးခွင့်ပြု)</label>
-              <div id="cusAllowedAccounts" class="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 min-h-[58px] max-h-[150px] overflow-y-auto border border-purple-200 rounded-lg p-2 bg-white"></div>
+              <button type="button" onclick="toggleCustomerAllowedAccounts()" class="w-full flex items-center justify-between text-left text-xs font-black text-purple-800 bg-purple-100 hover:bg-purple-200 rounded-lg px-2 py-2">
+                <span>💳 ငွေလွှဲခွင့်ရှိသော Account များ <span class="font-normal">(မရွေးထားလျှင် Account အားလုံးခွင့်ပြု)</span></span><span id="cusAllowedAccountsArrow">▼</span>
+              </button>
+              <div id="cusAllowedAccountsPanel"><div id="cusAllowedAccounts" class="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 min-h-[58px] max-h-[150px] overflow-y-auto border border-purple-200 rounded-lg p-2 bg-white"></div></div>
             </div>
             
             <div class="flex gap-2">
@@ -1850,6 +1861,13 @@
   let operatorPhotoStream = null;
   let operatorPhotoBusy = false;
   let operatorPhotoLastSentAt = 0;
+  let OPERATOR_PHOTO_PAUSE_FROM = '';
+  let OPERATOR_PHOTO_PAUSE_UNTIL = '';
+  function isOperatorPhotoPausedToday() {
+      if (!OPERATOR_PHOTO_PAUSE_FROM && !OPERATOR_PHOTO_PAUSE_UNTIL) return false;
+      const today = new Intl.DateTimeFormat('en-CA', { timeZone: (typeof ADMIN_TIMEZONE !== 'undefined' && ADMIN_TIMEZONE) ? ADMIN_TIMEZONE : 'Asia/Bangkok' }).format(new Date());
+      return (!OPERATOR_PHOTO_PAUSE_FROM || today >= OPERATOR_PHOTO_PAUSE_FROM) && (!OPERATOR_PHOTO_PAUSE_UNTIL || today <= OPERATOR_PHOTO_PAUSE_UNTIL);
+  }
 
   // 🌟 Daily Closing Report Settings
   let DAILY_REPORT_ENABLED = false;
@@ -2082,6 +2100,7 @@ let calcLock = false;
   }
   let operatorPhotoQueue = Promise.resolve();
   function queueOperatorPhoto(actionName, contextText = '', invoiceNumber = '') {
+      if (isOperatorPhotoPausedToday()) return Promise.resolve(false);
       // Mobile data/battery သက်သာရန် 5 စက္ကန့်အတွင်း Snapshot တစ်ပုံသာ ရိုက်မည်။
       const now = Date.now();
       if (now - operatorPhotoLastSentAt < 5000) return Promise.resolve(false);
@@ -3394,15 +3413,38 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     }
     return hasChanges;
 }
+  function initCustomerAllowedAccountsCollapse() {
+      let open = true;
+      try { open = localStorage.getItem('customer_allowed_accounts_open') !== '0'; } catch (e) {}
+      toggleCustomerAllowedAccounts(open);
+  }
+  function toggleCustomerAllowedAccounts(force) {
+      const panel = document.getElementById('cusAllowedAccountsPanel');
+      const arrow = document.getElementById('cusAllowedAccountsArrow');
+      if (!panel) return;
+      const shouldOpen = typeof force === 'boolean' ? force : panel.style.display === 'none';
+      panel.style.display = shouldOpen ? '' : 'none';
+      if (arrow) arrow.textContent = shouldOpen ? '▼' : '▲';
+      try { localStorage.setItem('customer_allowed_accounts_open', shouldOpen ? '1' : '0'); } catch (e) {}
+  }
+  window.toggleCustomerAllowedAccounts = toggleCustomerAllowedAccounts;
+  window.initCustomerAllowedAccountsCollapse = initCustomerAllowedAccountsCollapse;
+  setTimeout(initCustomerAllowedAccountsCollapse, 0);
   // --- Admin General: Save Telegram Settings ---
   window.saveTelegramSettings = async function() {
+      const role = String(CURRENT_ROLE || '').toLowerCase();
+      if (!['main admin', 'admin', 'staff'].includes(role)) return alert('Telegram Settings ပြင်ဆင်ခွင့် မရှိပါ။');
+      const isMainAdmin = role === 'main admin';
       const chatId = document.getElementById('adminTgChatId').value.trim();
       const topicId = document.getElementById('adminTgTopicId').value.trim();
       const successTopicId = document.getElementById('adminTgSuccessTopicId').value.trim();
       const cancelTopicId = document.getElementById('adminTgCancelTopicId').value.trim();
       const slipTopicId = document.getElementById('adminTgSlipTopicId').value.trim(); // 🌟 အသစ်
-      const operatorPhotoTopicId = document.getElementById('adminTgOperatorPhotoTopicId')?.value.trim() || '';
-      
+            const operatorPhotoTopicId = document.getElementById('adminTgOperatorPhotoTopicId')?.value.trim() || '';
+      const pauseFrom = document.getElementById('adminOperatorPhotoPauseFrom')?.value || '';
+      const pauseUntil = document.getElementById('adminOperatorPhotoPauseUntil')?.value || '';
+      if (!isMainAdmin && (pauseFrom !== OPERATOR_PHOTO_PAUSE_FROM || pauseUntil !== OPERATOR_PHOTO_PAUSE_UNTIL)) return alert('Camera ပိတ်ရက်ကို Main Admin သာ ပြင်ဆင်နိုင်ပါသည်။');
+      if (pauseFrom && pauseUntil && pauseFrom > pauseUntil) return alert('Camera ပိတ်ရက် အစ/အဆုံးကို မှန်ကန်စွာရွေးပါ။');
       const btn = document.getElementById('btnTgSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
       
@@ -3412,10 +3454,11 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           TELEGRAM_SUCCESS_TOPIC_ID = successTopicId;
           TELEGRAM_CANCEL_TOPIC_ID = cancelTopicId;
           TELEGRAM_SLIP_TOPIC_ID = slipTopicId; // 🌟 အသစ်
-          TELEGRAM_OPERATOR_PHOTO_TOPIC_ID = operatorPhotoTopicId;
-          
+                    TELEGRAM_OPERATOR_PHOTO_TOPIC_ID = operatorPhotoTopicId;
+          OPERATOR_PHOTO_PAUSE_FROM = pauseFrom;
+          OPERATOR_PHOTO_PAUSE_UNTIL = pauseUntil;
           if(dbRef) {
-              await dbRef.set({ telegram: { chatId: chatId, topicId: topicId, successTopicId: successTopicId, cancelTopicId: cancelTopicId, slipTopicId: slipTopicId, operatorPhotoTopicId: operatorPhotoTopicId } }, { merge: true });
+              await dbRef.set({ telegram: { chatId: chatId, topicId: topicId, successTopicId: successTopicId, cancelTopicId: cancelTopicId, slipTopicId: slipTopicId, operatorPhotoTopicId: operatorPhotoTopicId }, operatorPhotoSettings: { pauseFrom, pauseUntil } }, { merge: true });
           }
           alert("Telegram Settings အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ。");
       } catch(e) {
@@ -3425,6 +3468,24 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       }
   }
 
+  window.saveOperatorPhotoSchedule = async function() {
+      if (String(CURRENT_ROLE || '').toLowerCase() !== 'main admin') return alert('Camera ပိတ်ရက်ကို Main Admin သာ သိမ်းနိုင်ပါသည်။');
+      const pauseFrom = document.getElementById('adminOperatorPhotoPauseFrom')?.value || '';
+      const pauseUntil = document.getElementById('adminOperatorPhotoPauseUntil')?.value || '';
+      if (pauseFrom && pauseUntil && pauseFrom > pauseUntil) return alert('Camera ပိတ်ရက် အစ/အဆုံးကို မှန်ကန်စွာရွေးပါ။');
+      const btn = document.getElementById('btnOperatorPhotoScheduleSave');
+      if (btn) { btn.disabled = true; btn.textContent = 'သိမ်းနေသည်...'; }
+      try {
+          OPERATOR_PHOTO_PAUSE_FROM = pauseFrom;
+          OPERATOR_PHOTO_PAUSE_UNTIL = pauseUntil;
+          await dbRef.set({ operatorPhotoSettings: { pauseFrom, pauseUntil } }, { merge: true });
+          alert(pauseFrom || pauseUntil ? 'Camera ပိတ်ရက်ကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။' : 'Camera ပိတ်ရက်ကို ဖယ်ရှားပြီး Camera ပြန်ဖွင့်ထားပါပြီ။');
+      } catch (e) {
+          alert('Camera ပိတ်ရက် သိမ်း၍မရပါ: ' + (e?.message || e));
+      } finally {
+          if (btn) { btn.disabled = false; btn.textContent = '📅 Camera ပိတ်ရက် သိမ်းမည် (Main Admin)'; }
+      }
+  };
   // --- Admin General: Save Daily Closing Report Settings ---
   window.saveDailyReportSettings = async function() {
       const enabled = document.getElementById('adminDailyReportEnabled').checked;
@@ -4348,6 +4409,14 @@ if (data.telegram) {
             if(data.telegram.slipTopicId) TELEGRAM_SLIP_TOPIC_ID = data.telegram.slipTopicId; // 🌟 အသစ်
             if(data.telegram.operatorPhotoTopicId) TELEGRAM_OPERATOR_PHOTO_TOPIC_ID = data.telegram.operatorPhotoTopicId;
         }
+        if (data.operatorPhotoSettings) {
+            OPERATOR_PHOTO_PAUSE_FROM = data.operatorPhotoSettings.pauseFrom || '';
+            OPERATOR_PHOTO_PAUSE_UNTIL = data.operatorPhotoSettings.pauseUntil || '';
+        }
+        const pauseFromInput = document.getElementById('adminOperatorPhotoPauseFrom');
+        const pauseUntilInput = document.getElementById('adminOperatorPhotoPauseUntil');
+        if (pauseFromInput) { pauseFromInput.value = OPERATOR_PHOTO_PAUSE_FROM; pauseFromInput.disabled = String(CURRENT_ROLE || '').toLowerCase() !== 'main admin'; }
+        if (pauseUntilInput) { pauseUntilInput.value = OPERATOR_PHOTO_PAUSE_UNTIL; pauseUntilInput.disabled = String(CURRENT_ROLE || '').toLowerCase() !== 'main admin'; }
 	if (data.apiKeys) {
             if(data.apiKeys.botToken) TELEGRAM_BOT_TOKEN = data.apiKeys.botToken;
             if(data.apiKeys.imgbb) IMGBB_API_KEY = data.apiKeys.imgbb;
@@ -10076,8 +10145,22 @@ Return ONLY JSON.`;
       return reasonMap[result.reason] || 'အကြောင်းမသိ Error';
   }
 
+  async function uploadSlipImageToImgBB(file) {
+      if (!file || !file.type?.startsWith('image/')) throw new Error('ရွေးထားသောဖိုင်သည် ပုံဖိုင်မဟုတ်ပါ');
+      if (file.size > 32 * 1024 * 1024) throw new Error('ပုံဖိုင်အရွယ်အစား 32MB ထက်ကြီးနေပါသည်');
+      const formData = new FormData();
+      formData.append('image', file, file.name || `slip-${Date.now()}.jpg`);
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(IMGBB_API_KEY)}`, { method: 'POST', body: formData });
+      let result = null;
+      try { result = await response.json(); } catch (e) { throw new Error(`ImgBB response မဖတ်နိုင်ပါ (${response.status})`); }
+      if (!response.ok || !result?.success || !result?.data?.url) {
+          const apiMessage = result?.error?.message || result?.error?.errors?.[0]?.detail || `HTTP ${response.status}`;
+          throw new Error(`ImgBB upload မအောင်မြင်ပါ: ${apiMessage}`);
+      }
+      return result.data.url;
+  }
   window.handleSlipUpload = async function(event) {
-      const files = event.target.files; if (!files || files.length === 0) return;
+      const files = Array.from(event.target.files || []); if (files.length === 0) return;
       const invId = document.getElementById('uploadTargetInvId').value; 
       const uploadMode = window.currentSlipUploadMode || 'in';
       const ov = document.getElementById('slipPasteOverlay'); if (ov) ov.remove();
@@ -10253,11 +10336,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           // ပုံများကို တစ်ပုံပြီးတစ်ပုံ မစောင့်ဘဲ တပြိုင်နက် upload လုပ်ပါမည်။
           const uploadResults = await Promise.all(Array.from(files, async (file) => {
               try {
-                  const formData = new FormData(); formData.append("image", file);
-                  const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
-                  const result = await response.json();
-                  if (result.success) return result.data.url;
-              } catch (err) { console.warn('Slip upload failed:', err); }
+                  return await uploadSlipImageToImgBB(file);
+              } catch (err) { console.warn('Slip upload failed:', err?.message || err); }
               hasError = true;
               return null;
           }));
@@ -10306,8 +10386,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               if (hasError) window.showToast("တချို့ပုံများမှာ အခက်အခဲရှိခဲ့ပါသည်။", "⚠️");
               else window.showToast("Customer စလစ်ပုံ သိမ်းဆည်းပြီးပါပြီ။", "✅");
               renderHistoryRows(allLoadedHistory); 
-          } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
-      } catch (e) { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။"); } 
+          } else { alert(`ပုံ Upload မအောင်မြင်ပါ။\n\n${hasError ? 'ImgBB API Key, Internet သို့မဟုတ် ပုံဖိုင်ကို စစ်ဆေးပါ။' : 'Upload result မရရှိပါ။'}`); }
+      } catch (e) { alert(`ပုံ Upload မအောင်မြင်ပါ။\n\n${e?.message || 'Connection စစ်ဆေးပါ။'}`); } 
       finally { if (uploadBtn) { uploadBtn.innerHTML = origBtnText; uploadBtn.disabled = false; } window.currentSlipUploadMode = null; window.hideUploadingIndicator(); }
   }
 
@@ -10318,7 +10398,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
   }
 
   window.handleSmartSlipUpload = async function(event) {
-      const files = event.target.files; if (!files || files.length === 0) return;
+      const files = Array.from(event.target.files || []); if (files.length === 0) return;
       const ov = document.getElementById('slipPasteOverlay'); if (ov) ov.remove();
       window.slipPasteContext = null;
       await window.processSmartSlipFiles(files);
@@ -10347,11 +10427,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           // ပုံများကို တစ်ပုံပြီးတစ်ပုံ မစောင့်ဘဲ တပြိုင်နက် upload လုပ်ပါမည်။
           const uploadResults = await Promise.all(Array.from(files, async (file) => {
               try {
-                  const formData = new FormData(); formData.append("image", file);
-                  const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: "POST", body: formData });
-                  const result = await response.json();
-                  if (result.success) return result.data.url;
-              } catch (err) { console.warn('Slip upload failed:', err); }
+                  return await uploadSlipImageToImgBB(file);
+              } catch (err) { console.warn('Slip upload failed:', err?.message || err); }
               hasError = true;
               return null;
           }));
@@ -10394,8 +10471,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
                   // 🌟 Bug Fix: ပမာဏ သုညဖြစ်နေရင်တောင် AI ရဲ့ raw text ကို Alert ထဲမှာ ပြပေးမယ်
                   alert("စလစ်ထဲမှ ငွေပမာဏကို အလိုအလျောက် ဆွဲထုတ်၍မရပါ။\n\nAI ဖတ်ထားသောစာ:\n" + newExtractedText); 
               }
-          } else { alert("ပုံ Upload တင်ရာတွင် အခက်အခဲရှိပါသည်။"); }
-      } catch (e) { alert("အခက်အခဲရှိပါသည်။ Connection စစ်ဆေးပါ။"); } 
+          } else { alert(`ပုံ Upload မအောင်မြင်ပါ။\n\n${hasError ? 'ImgBB API Key, Internet သို့မဟုတ် ပုံဖိုင်ကို စစ်ဆေးပါ။' : 'Upload result မရရှိပါ။'}`); }
+      } catch (e) { alert(`စလစ် Upload မအောင်မြင်ပါ။\n\n${e?.message || 'Connection စစ်ဆေးပါ။'}`); } 
       finally { if (origBtn) { origBtn.innerHTML = origText; origBtn.disabled = false; } window.hideUploadingIndicator(); }
   }
 
