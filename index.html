@@ -1458,6 +1458,11 @@
             <label class="text-xs font-bold text-gray-300">Slip2Go API Key (စလစ် အတု/အစစ် စစ်ရန်)</label>
             <input type="password" id="adminSlip2GoKey" class="admin-input-box text-sm bg-gray-900 text-white border-gray-600 focus:border-blue-500" placeholder="Slip2Go Key ထည့်ပါ">
           </div>
+          <div class="mb-3 border-t border-gray-600 pt-3">
+            <label class="text-xs font-bold text-gray-300">Fallback Slip Verify Token (xNearby)</label>
+            <input type="password" id="adminXNearbySlipToken" class="admin-input-box text-sm bg-gray-900 text-white border-gray-600 focus:border-blue-500" placeholder="xNearby Access Token ထည့်ပါ">
+            <p class="text-[11px] text-gray-400 mt-1">SLIP2go မရသောအခါ စလစ်အစစ်/အတု အလိုအလျောက်စစ်ရန် သုံးမည်။</p>
+          </div>
           <button onclick="saveApiKeys()" id="btnApiSave" class="btn bg-gray-600 hover:bg-gray-500 w-full text-white border border-gray-500">API Keys သိမ်းမည်</button>
         </div>
 
@@ -1852,6 +1857,8 @@
   let IMGBB_API_KEY = "";
   let GEMINI_API_KEY = "";
   let SLIP2GO_API_KEY = ""; // 🌟 အသစ်
+  let XNEARBY_SLIP_TOKEN = ""; // Fallback: xNearby slipVerify/v2
+  const XNEARBY_SLIP_VERIFY_URL = "https://api.nearbyshop.xyz/slipVerify/v2";
   let TELEGRAM_CHAT_ID = "-1003987703326";
   let TELEGRAM_TOPIC_ID = "2";
   let TELEGRAM_SUCCESS_TOPIC_ID = "14"; 
@@ -3536,6 +3543,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       const imgbb = document.getElementById('adminImgbbKey').value.trim();
       const geminiKey = document.getElementById('adminGeminiKey').value.trim();
       const slip2go = document.getElementById('adminSlip2GoKey').value.trim(); // 🌟 အသစ်
+      const xnearbySlipToken = document.getElementById('adminXNearbySlipToken')?.value.trim() || '';
       
       const btn = document.getElementById('btnApiSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
@@ -3545,9 +3553,10 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           if (imgbb) IMGBB_API_KEY = imgbb;
           if (geminiKey) GEMINI_API_KEY = geminiKey;
           if (slip2go) SLIP2GO_API_KEY = slip2go; // 🌟 အသစ်
+          if (xnearbySlipToken) XNEARBY_SLIP_TOKEN = xnearbySlipToken;
           
           if(dbRef) {
-              await dbRef.set({ apiKeys: { botToken, imgbb, geminiKey, slip2go } }, { merge: true });
+              await dbRef.set({ apiKeys: { botToken, imgbb, geminiKey, slip2go, xnearbySlipToken: xnearbySlipToken || XNEARBY_SLIP_TOKEN } }, { merge: true });
           }
           alert("API Keys များကို အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ။");
       } catch(e) {
@@ -4422,12 +4431,14 @@ if (data.telegram) {
             if(data.apiKeys.imgbb) IMGBB_API_KEY = data.apiKeys.imgbb;
             if(data.apiKeys.geminiKey) GEMINI_API_KEY = data.apiKeys.geminiKey;
             if(data.apiKeys.slip2go) SLIP2GO_API_KEY = data.apiKeys.slip2go; // 🌟 အသစ်
+            if(data.apiKeys.xnearbySlipToken) XNEARBY_SLIP_TOKEN = data.apiKeys.xnearbySlipToken;
         }
         
         if(document.getElementById('adminBotToken')) document.getElementById('adminBotToken').value = TELEGRAM_BOT_TOKEN;
         if(document.getElementById('adminImgbbKey')) document.getElementById('adminImgbbKey').value = IMGBB_API_KEY;
         if(document.getElementById('adminGeminiKey')) document.getElementById('adminGeminiKey').value = GEMINI_API_KEY; 
-        if(document.getElementById('adminSlip2GoKey')) document.getElementById('adminSlip2GoKey').value = SLIP2GO_API_KEY; // 🌟 အသစ်        
+        if(document.getElementById('adminSlip2GoKey')) document.getElementById('adminSlip2GoKey').value = SLIP2GO_API_KEY; // 🌟 အသစ်
+        if(document.getElementById('adminXNearbySlipToken')) document.getElementById('adminXNearbySlipToken').value = XNEARBY_SLIP_TOKEN;
 
         const tgChatInput = document.getElementById('adminTgChatId');
         if(tgChatInput) tgChatInput.value = TELEGRAM_CHAT_ID;
@@ -10106,7 +10117,6 @@ Return ONLY JSON.`;
           const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(targetUrl);
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 15000);
-
           const response = await fetch(proxyUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SLIP2GO_API_KEY}` },
@@ -10114,29 +10124,88 @@ Return ONLY JSON.`;
               signal: controller.signal
           });
           clearTimeout(timeoutId);
-
           if (!response.ok) {
-              if (response.status === 401 || response.status === 403) {
-                  return { checked: false, reason: 'auth_error', status: response.status };
-              }
+              if (response.status === 401 || response.status === 403) return { checked: false, reason: 'auth_error', status: response.status };
+              if (response.status === 429) return { checked: false, reason: 'rate_limit', status: response.status };
               return { checked: false, reason: 'http_error', status: response.status };
           }
           const result = await response.json();
-          if (result.code === "200000" || result.success === true || result.data?.valid === true || result.valid === true) {
-              return { checked: true, isValid: true, data: result.data };
-          } else {
-              return { checked: true, isValid: false, message: result.message || "အတုဖြစ်နိုင်ပါသည်" };
-          }
+          if (result.code === "200000" || result.success === true || result.data?.valid === true || result.valid === true) return { checked: true, isValid: true, data: result.data, provider: 'SLIP2go' };
+          return { checked: true, isValid: false, message: result.message || "အတုဖြစ်နိုင်ပါသည်", provider: 'SLIP2go' };
       } catch (error) {
           if (error.name === 'AbortError') return { checked: false, reason: 'timeout' };
           return { checked: false, reason: 'network_error' };
       }
   }
 
+  // xNearby fallback API: ပုံဖိုင်ကို multipart/form-data ဖြင့် စစ်မည်
+  async function verifyWithXNearby(imageUrl) {
+      if (!XNEARBY_SLIP_TOKEN || XNEARBY_SLIP_TOKEN === 'YOUR_ACCESS_TOKEN') return { checked: false, reason: 'no_fallback_key', provider: 'xNearby' };
+      let timeoutId;
+      try {
+          const imageResponse = await fetch(imageUrl);
+          if (!imageResponse.ok) return { checked: false, reason: 'image_download_error', provider: 'xNearby' };
+          const formData = new FormData();
+          formData.append('slip', await imageResponse.blob(), 'slip.jpg');
+          const controller = new AbortController();
+          timeoutId = setTimeout(() => controller.abort(), 20000);
+          const response = await fetch(XNEARBY_SLIP_VERIFY_URL, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${XNEARBY_SLIP_TOKEN}` },
+              body: formData,
+              signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          let result;
+          try { result = await response.json(); } catch (e) { return { checked: false, reason: 'invalid_response', status: response.status, provider: 'xNearby' }; }
+          if (!response.ok) {
+              const apiMessage = result?.message || result?.error || result?.code || '';
+              if (response.status === 401 || response.status === 403) return { checked: false, reason: 'auth_error', status: response.status, detail: apiMessage, provider: 'xNearby' };
+              if (response.status === 429) return { checked: false, reason: 'rate_limit', status: response.status, detail: apiMessage, provider: 'xNearby' };
+              return { checked: false, reason: 'http_error', status: response.status, detail: apiMessage, provider: 'xNearby' };
+          }
+          if (result?.status === 'success' && result?.data) return { checked: true, isValid: true, data: result.data, extractedAmount: result.extracted_amount, provider: 'xNearby' };
+          return { checked: true, isValid: false, message: result?.message || result?.error || 'စလစ်အတု ဖြစ်နိုင်ပါသည်', data: result?.data, provider: 'xNearby' };
+      } catch (error) {
+          if (timeoutId) clearTimeout(timeoutId);
+          if (error.name === 'AbortError') return { checked: false, reason: 'timeout', provider: 'xNearby' };
+          return { checked: false, reason: 'network_error', provider: 'xNearby' };
+      }
+  }
+
+  // SLIP2go မရမှသာ fallback သို့ပြောင်းပြီး API error ကို အတုဟု မသတ်မှတ်ပါ
+  async function verifySlipAuthenticity(imageUrl) {
+      const primary = await verifyWithSlip2Go(imageUrl);
+      if (primary.checked) return primary;
+      const fallback = await verifyWithXNearby(imageUrl);
+      if (fallback.checked) return fallback;
+      return { checked: false, reason: `primary_${primary.reason || 'failed'};fallback_${fallback.reason || 'failed'}`, provider: 'none', primary, fallback };
+  }
+
+  function slipVerifyDisplay(result) {
+      const provider = result.provider ? ` (${result.provider})` : '';
+      if (result.checked && result.isValid) return `✅ [စလစ်အစစ် Verify အောင်မြင်${provider}] | `;
+      if (result.checked && !result.isValid) return `🛑 [စလစ်အတု ဖြစ်နိုင်${provider} - ${result.message || 'Verification မအောင်မြင်ပါ'}] | `;
+      const detail = result.detail ? ` — ${String(result.detail).slice(0, 120)}` : '';
+      return `⚠️ [စလစ်အစစ်/အတု စစ်၍မရပါ - ${slip2goFailText(result)}${detail}] | `;
+  }
+
   // 🌟 Slip2Go မရှင်းလင်းချက်ကြောင့် စစ်ဆေးမရသည့်အခါ ရှင်းလင်းစွာပြသရန်
   function slip2goFailText(result) {
+      const rawReason = String(result?.reason || '');
+      if (rawReason.includes('fallback_auth_error')) return `xNearby Token မှားနေခြင်း/သက်တမ်းကုန်ခြင်း (${result?.fallback?.status || ''})`;
+      if (rawReason.includes('fallback_rate_limit')) return 'xNearby API အသုံးပြုခွင့်နှုန်းကန့်သတ်ချက် ပြည့်နေပါသည်';
+      if (rawReason.includes('fallback_http_error')) return `xNearby Server Error (${result?.fallback?.status || ''})`;
+      if (rawReason.includes('fallback_no_fallback_key')) return 'Fallback xNearby Token မထည့်ရသေးပါ';
+      if (rawReason.includes('fallback_network_error')) return 'xNearby သို့ ချိတ်ဆက်၍မရပါ';
+      if (rawReason.includes('fallback_timeout')) return 'xNearby API အချိန်ကျော်လွန်သွားသည် (Timeout)';
+      if (rawReason.includes('primary_') && result?.fallback?.detail) return `xNearby API Error: ${result.fallback.detail}`;
       const reasonMap = {
-          'no_key': 'API Key မထည့်ရသေးပါ',
+          'no_key': 'SLIP2go API Key မထည့်ရသေးပါ',
+          'no_fallback_key': 'Fallback xNearby Token မထည့်ရသေးပါ',
+          'rate_limit': 'API အသုံးပြုခွင့်နှုန်းကန့်သတ်ချက် ပြည့်နေပါသည်',
+          'image_download_error': 'စလစ်ပုံကို API သို့ပို့၍မရပါ',
+          'invalid_response': 'API တုံ့ပြန်ချက် မမှန်ကန်ပါ',
           'auth_error': `API Key သက်တမ်းကုန်နေခြင်း (သို့) မှားယွင်းနေနိုင်ပါသည် (${result.status})`,
           'http_error': `Server Error (${result.status})`,
           'timeout': 'အချိန်ကျော်လွန်သွားသည် (Timeout)',
@@ -10353,10 +10422,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
                   if (!currentImgUrl) return null;
                   let data = flagLowConfidenceOcr(await extractSlipDataWithGemini(await fileToBase64(file)));
                   if (uploadMode === 'in' && /THB|บาท|baht|ဘတ်/i.test(data)) {
-                      const r = await verifyWithSlip2Go(currentImgUrl);
-                      if (r.checked && !r.isValid) data = `🛑 [SLIP2GO သတိပေးချက်: စလစ်အတု ဖြစ်နိုင်ပါသည်! - ${r.message}] | ` + data;
-                      else if (r.checked && r.isValid) data = `✅ [SLIP2GO Verified] | ` + data;
-                      else if (!r.checked) data = `⚠️ [SLIP2GO စစ်ဆေး၍မရပါ - ${slip2goFailText(r)}] | ` + data;
+                      const r = await verifySlipAuthenticity(currentImgUrl);
+                      if (r.checked || r.provider === 'none') data = slipVerifyDisplay(r) + data;
                   }
                   const dupCheck = checkDuplicateTransaction(data, invId);
                   if (dupCheck.isDuplicate) data = `⚠️ [စလစ်အထပ်/အတု - Ref: ${dupCheck.refNo} ကို (${dupCheck.duplicateId}) တွင် သုံးပြီးဖြစ်သည်] | ` + data;
@@ -10443,10 +10510,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
                   if (!currentImgUrl) return null;
                   let data = flagLowConfidenceOcr(await extractSlipDataWithGemini(await fileToBase64(file)));
                   if (smartSlipMode === 'in' && /THB|บาท|baht|ဘတ်/i.test(data)) {
-                      const r = await verifyWithSlip2Go(currentImgUrl);
-                      if (r.checked && !r.isValid) data = `🛑 [SLIP2GO သတိပေးချက်: စလစ်အတု ဖြစ်နိုင်ပါသည်! - ${r.message}] | ` + data;
-                      else if (r.checked && r.isValid) data = `✅ [SLIP2GO Verified] | ` + data;
-                      else if (!r.checked) data = `⚠️ [SLIP2GO စစ်ဆေး၍မရပါ - ${slip2goFailText(r)}] | ` + data;
+                      const r = await verifySlipAuthenticity(currentImgUrl);
+                      if (r.checked || r.provider === 'none') data = slipVerifyDisplay(r) + data;
                   }
                   const dupCheck = checkDuplicateTransaction(data, null);
                   if (dupCheck.isDuplicate) data = `⚠️ [စလစ်အထပ်/အတု - Ref: ${dupCheck.refNo} ကို (${dupCheck.duplicateId}) တွင် သုံးပြီးဖြစ်သည်] | ` + data;
@@ -10715,7 +10780,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               botToken: TELEGRAM_BOT_TOKEN, 
               imgbb: IMGBB_API_KEY, 
               geminiKey: GEMINI_API_KEY,
-              slip2go: SLIP2GO_API_KEY
+              slip2go: SLIP2GO_API_KEY,
+              xnearbySlipToken: XNEARBY_SLIP_TOKEN
           },
           telegram: { 
               chatId: TELEGRAM_CHAT_ID, 
