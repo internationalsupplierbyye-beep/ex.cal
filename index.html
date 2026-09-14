@@ -337,6 +337,122 @@
     #adminHistoryList .history-time {
       margin-top: .08rem;
     }
+    #adminHistoryList td.history-method-cell {
+      width:220px;
+      min-width:220px;
+      max-width:220px;
+      overflow:hidden;
+      vertical-align:top;
+    }
+    #adminHistoryList .history-method-content {
+      width:208px;
+      max-width:208px;
+      min-width:0;
+      overflow:hidden;
+    }
+    #adminHistoryList .history-method-content .slip-total-summary,
+    #adminHistoryList .history-method-content .method-link-wrap,
+    #adminHistoryList .history-method-content .mt-1 {
+      max-width:208px;
+      overflow:hidden;
+    }
+    #adminHistoryList .history-method-content .slip-total-summary {
+      text-overflow:ellipsis;
+    }
+    /* Final History layout correction: preserve horizontal swipe and prevent slip rows from widening. */
+    .history-table-scroll { overflow-x:auto !important; overflow-y:auto !important; }
+    .history-table-scroll > table { min-width:1280px; width:max-content; table-layout:auto; }
+    #adminHistoryList td.history-method-cell { width:240px; min-width:240px; max-width:240px; height:58px; }
+    #adminHistoryList .history-method-content { width:224px; max-width:224px; height:48px; overflow:hidden; }
+    #adminHistoryList .history-method-content .method-link-wrap { width:224px; max-width:224px; height:26px; overflow:hidden; }
+    #adminHistoryList .history-method-content .history-method-name { min-width:0; max-width:190px; overflow:hidden; white-space:nowrap !important; text-overflow:ellipsis; display:block; }
+    #adminHistoryList .history-method-content .slip-total-summary { width:224px; max-width:224px; height:14px; margin:1px 0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    #adminHistoryList .history-method-content .mt-1 { max-width:224px; height:20px; max-height:20px !important; overflow:visible !important; margin-top:1px !important; }
+    #adminHistoryList .history-method-content .mt-1 > button { flex:0 0 16px; width:16px; height:16px; min-width:16px; min-height:16px; visibility:visible !important; opacity:1 !important; }
+    #adminHistoryList .history-method-content .mt-1 > div { max-width:202px; overflow:hidden; }
+    #adminHistoryList .history-method-content .mt-1 { height:auto !important; max-height:none !important; overflow:visible !important; }
+    #adminHistoryList .history-method-content .mt-1 > div { max-height:none; }
+    #adminHistoryList .history-method-content .slip-total-summary { height:20px !important; max-height:20px !important; overflow:visible !important; display:flex !important; }
+    #adminHistoryList .history-method-content .slip-total-summary .slip-total-toggle { visibility:visible !important; opacity:1 !important; }
+    .history-horizontal-scrollbar {
+      display:block;
+      width:100%;
+      height:14px;
+      margin-top:4px;
+      overflow-x:scroll;
+      overflow-y:hidden;
+      background:#e2e8f0;
+      border:1px solid #cbd5e1;
+      border-radius:6px;
+      scrollbar-width:auto;
+      scrollbar-color:#64748b #e2e8f0;
+      -webkit-overflow-scrolling:touch;
+    }
+    .history-horizontal-scrollbar > div { height:1px; min-width:100%; }
+    .history-horizontal-scrollbar::-webkit-scrollbar { height:12px; }
+    .history-horizontal-scrollbar::-webkit-scrollbar-track { background:#e2e8f0; border-radius:6px; }
+    .history-horizontal-scrollbar::-webkit-scrollbar-thumb { background:#64748b; border-radius:6px; border:2px solid #e2e8f0; }
+    .history-table-scroll { scrollbar-width:auto; scrollbar-color:#94a3b8 #e2e8f0; }
+    .history-table-scroll::-webkit-scrollbar { height:10px; width:10px; }
+    .history-table-scroll::-webkit-scrollbar-track { background:#e2e8f0; border-radius:6px; }
+    .history-table-scroll::-webkit-scrollbar-thumb { background:#94a3b8; border-radius:6px; border:2px solid #e2e8f0; }
+    .slip-total-summary {
+      display:flex;
+      align-items:center;
+      gap:3px;
+      width:100%;
+      margin:2px 0 3px;
+      color:#334155;
+      font-size:10px;
+      font-weight:800;
+      line-height:1.25;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .slip-total-toggle { flex:0 0 16px; width:16px; height:16px; min-width:16px; padding:0; border:1px solid #cbd5e1; border-radius:3px; background:#fff; color:#64748b; font-size:10px; line-height:12px; cursor:pointer; }
+    .slip-total-chip { font-size:10px; }
+    .slip-total-in { color:#047857; }
+    .slip-total-out { color:#b45309; }
+    .slip-total-separator { color:#94a3b8; margin:0 4px; }
+    #adminHistoryList .history-amount-main {
+      display:block;
+      font-size:.9rem;
+      line-height:1.35;
+      font-weight:900;
+      color:#047857;
+      white-space:nowrap;
+    }
+    #adminHistoryList .history-amount-actions {
+      display:flex;
+      align-items:center;
+      gap:4px;
+      margin-top:5px;
+    }
+    #adminHistoryList .history-fee-badge {
+      display:inline-block;
+      margin:0 0 0 3px;
+      padding:0;
+      font-size:.62rem;
+      line-height:1.1;
+      font-weight:800;
+      color:#047857;
+      white-space:nowrap;
+    }
+    #adminHistoryList .history-amount-actions button {
+      width:27px;
+      height:19px;
+      min-width:27px;
+      padding:0;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:1px solid #cbd5e1;
+      border-radius:4px;
+      font-size:10px;
+      line-height:1;
+      box-shadow:none;
+    }
 
 
 
@@ -1190,6 +1306,7 @@
               <span class="font-bold text-green-800">စုစုပေါင်း အမြတ်ငွေ (Total Profit)</span>
               <div class="text-right">
                  <div class="font-black text-green-700 text-xl" id="dash_total_profit">0 MMK</div>
+                 <div id="dash_fee_summary" class="text-[11px] text-slate-500 font-bold mt-1">Fees: -0 MMK ≈ -0 THB</div>
               </div>
           </div>
       </div>
@@ -1279,9 +1396,16 @@
             </button>
         </div>
       </div>
+      <div id="historyHorizontalScrollbar" class="history-horizontal-scrollbar" aria-label="History ကို ဘယ်ညာရွှေ့ရန်"><div id="historyHorizontalScrollbarInner"></div></div>
     </div>
 
     <div id="tab-general" class="tab-pane">
+  <div id="generalFeeTypesBlock" class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl mb-4">
+    <h3 class="font-bold text-emerald-800 mb-2 text-sm">💳 Transaction Fee အမျိုးအစားများ</h3>
+    <p class="text-xs text-emerald-700 mb-2">History မှာ Fee ထည့်ရာတွင် ရွေးချယ်ရန် အမျိုးအစားများကို ဒီနေရာမှ စီမံနိုင်ပါသည်။</p>
+    <div class="flex gap-2 mb-2"><input id="generalNewFeeType" class="admin-input-box text-sm flex-1 !mb-0" placeholder="ဥပမာ - PromptPay Fee"><button onclick="window.addFeeType('generalNewFeeType')" class="btn bg-emerald-600 hover:bg-emerald-700 text-sm whitespace-nowrap">ထည့်မည်</button></div>
+    <div id="generalFeeTypeList" class="flex flex-wrap gap-1"></div>
+  </div>
   <div id="timeSettingsBlock" style="display: none;" class="bg-red-50 border border-red-200 p-4 rounded-xl mb-4">
     <h3 class="font-bold text-red-800 mb-3 text-sm">⏱ အချိန်သတ်မှတ်ချက်များ (Main Admin သီးသန့်)</h3>
     <div class="mb-2">
@@ -1726,6 +1850,20 @@
       </div>
     </div>
     <!-- 💸 Expense Tab UI ပြီးဆုံးပါပြီ -->
+<!-- Transaction Fee Modal -->
+<div id="txFeeModal" style="display:none" class="fixed inset-0 bg-black/70 z-[95] items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl">
+    <div class="flex justify-between items-center mb-3 border-b pb-2"><h3 class="font-black text-emerald-800">💳 Transaction Fee ထည့်/ပြင်မည်</h3><button onclick="window.closeTxFeeModal()" class="text-gray-400 hover:text-red-500 text-xl">✕</button></div>
+    <div class="bg-slate-50 border border-slate-200 rounded-lg p-2 mb-3 text-xs"><div>Invoice ID: <span id="txFeeInvId" class="font-black text-blue-700"></span></div><div>Customer: <span id="txFeeCustomer" class="font-black text-slate-700"></span></div><div>အဝင်: <span id="txFeeInAmount" class="font-black text-emerald-700"></span> &nbsp; အထွက်: <span id="txFeeOutAmount" class="font-black text-emerald-700"></span></div></div>
+    <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs font-bold text-gray-600">Fee ပမာဏ</label><input id="txFeeAmount" type="number" min="0" step="any" class="admin-input-box text-sm" placeholder="0"></div><div><label class="text-xs font-bold text-gray-600">Fee Currency</label><select id="txFeeCurrency" onchange="window.refreshFeeLedgerOptions()" class="admin-input-box text-sm"><option value="THB">THB</option><option value="MMK">MMK</option><option value="VND">VND</option></select></div></div>
+    <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs font-bold text-gray-600">Fee Mode</label><select id="txFeeMode" class="admin-input-box text-sm"><option value="deduct">Amount ထဲမှဖြတ်</option><option value="add_on_top">Customer ထံမှ အပိုကောက်</option><option value="business_paid">ကိုယ်တိုင်ခံ (အမြတ်ထဲမှပေး)</option></select></div><div><label class="text-xs font-bold text-gray-600">Fee Side</label><select id="txFeeSide" class="admin-input-box text-sm"><option value="in">ပေးငွေဘက် / အဝင်</option><option value="out">ရငွေဘက် / အထွက်</option></select></div></div>
+    <div class="mb-2"><label class="text-xs font-bold text-gray-600">Fee အမျိုးအစား</label><input id="txFeeType" class="admin-input-box text-sm" placeholder="ဥပမာ - QR Fee / Bank Transfer Fee"><div id="txFeeTypeSuggestions" class="flex flex-wrap gap-1 mt-1"></div></div>
+    <div class="mb-3"><label class="text-xs font-bold text-gray-600">Fee ဖြတ်မည့် Wallet / Bank</label><select id="txFeeLedger" class="admin-input-box text-sm"><option value="">မရွေးထားပါ</option></select></div>
+    <p class="text-[11px] text-slate-500 bg-slate-50 border rounded-lg p-2 mb-3">မူရင်း in/out amount ကို မပြောင်းပါ။ Fee ကို သီးခြား Expense အဖြစ် သိမ်းပြီး Net Profit မှ တစ်ကြိမ်သာ နုတ်ပါမည်။</p>
+    <div class="flex gap-2"><button onclick="window.closeTxFeeModal()" class="btn2 w-1/3">မလုပ်တော့ပါ</button><button onclick="window.removeTxFee()" class="btn bg-red-600 hover:bg-red-700 w-1/3">Fee ဖျက်မည်</button><button onclick="window.saveTxFee()" class="btn bg-emerald-600 hover:bg-emerald-700 w-1/3">သိမ်းမည်</button></div>
+  </div>
+</div>
+
 
     <div id="tab-logs" class="tab-pane">
       <div class="flex justify-between items-center mb-3">
@@ -1845,7 +1983,8 @@
   
   // 🌟 Expense အတွက် State အသစ်
   let FIREBASE_EXPENSES = {};
-  let FIREBASE_EXPENSE_ORDER = []; 
+  let FIREBASE_EXPENSE_ORDER = [];
+  let FIREBASE_FEE_TYPES = ['Bank Transfer Fee', 'QR Fee', 'Service Fee', 'Other']; 
   
   // 🌟 API Keys Globals 🌟
   let TELEGRAM_BOT_TOKEN = ""; // Admin Setting မှ ရောက်လာပါလိမ့်မည်
@@ -2673,7 +2812,8 @@ window.showToast = function(message, icon = "✅") {
       let thbLongs = [], thbShorts = [];
       let vndLongs = [], vndShorts = [];
       let periodProfitThb = 0, periodProfitVnd = 0;
-      let periodProfitThbInBaht = 0; 
+      let periodProfitThbInBaht = 0;
+      let periodFeeMmk = 0; 
 
       let sortedTxs = [...dataArray].sort((a, b) => {
           let tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
@@ -2717,6 +2857,10 @@ window.showToast = function(message, icon = "✅") {
               else if (txType === 'MMK ➔ VND') { mmkIn += inNum; vndOut += outNum; }
           }
 
+          if (includeThisRecord && tx.fee && Number(tx.fee.amount) > 0) {
+              const feeMmk = feeRateToMmk(tx, tx.fee.currency);
+              periodFeeMmk += tx.fee.mode === 'add_on_top' ? 0 : feeMmk;
+          }
           let currency = txType.includes('THB') ? 'THB' : (txType.includes('VND') ? 'VND' : '');
           if(!currency) return;
 
@@ -2816,9 +2960,13 @@ window.showToast = function(message, icon = "✅") {
           document.getElementById('est_profit_vnd').textContent = (periodProfitVnd >= 0 ? "+ " : "") + formatMmk(periodProfitVnd) + " MMK";
           document.getElementById('est_profit_vnd').className = periodProfitVnd >= 0 ? "text-lg text-green-600 font-black" : "text-lg text-red-600 font-black";
 
-          let totalProfit = periodProfitThb + periodProfitVnd;
-          document.getElementById('dash_total_profit').textContent = (totalProfit >= 0 ? "+ " : "") + formatMmk(totalProfit) + " MMK";
-          document.getElementById('dash_total_profit').className = totalProfit >= 0 ? "font-black text-green-700 text-xl" : "font-black text-red-700 text-xl";
+          let grossProfit = periodProfitThb + periodProfitVnd;
+          let totalProfit = grossProfit - periodFeeMmk;
+          const totalProfitEl = document.getElementById('dash_total_profit');
+          totalProfitEl.innerHTML = `${totalProfit >= 0 ? '+ ' : ''}${formatMmk(totalProfit)} MMK <span class="block text-sm text-blue-600">≈ ${feeMmkToThb(totalProfit).toLocaleString('en-US',{maximumFractionDigits:2})} THB</span><span class="block text-[10px] text-slate-500">Gross ${formatMmk(grossProfit)} MMK · Fees -${formatMmk(periodFeeMmk)} MMK</span>`;
+          totalProfitEl.className = totalProfit >= 0 ? "font-black text-green-700 text-xl" : "font-black text-red-700 text-xl";
+          const feeNote = document.getElementById('dash_fee_summary');
+          if (feeNote) feeNote.textContent = `Fees: -${formatMmk(periodFeeMmk)} MMK ≈ -${feeMmkToThb(periodFeeMmk).toLocaleString('en-US',{maximumFractionDigits:2})} THB`;
 
           const formatCustomRate = (rate, curr) => {
               if (!rate || rate === 0) return '0';
@@ -2918,6 +3066,7 @@ window.showToast = function(message, icon = "✅") {
       let vndLongs = [], vndShorts = [];
       let periodProfitThb = 0, periodProfitVnd = 0;
       let periodProfitThbInBaht = 0;
+      let periodFeeMmk = 0;
 
       const sortedTxs = (Array.isArray(dataArray) ? dataArray : []).slice().sort((a, b) => {
           const tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
@@ -2940,6 +3089,10 @@ window.showToast = function(message, icon = "✅") {
 
           const recDateStr = toYYYYMMDD(recDateObj);
           const includeThisRecord = recDateStr === todayTzStr;
+          if (includeThisRecord && tx.fee && Number(tx.fee.amount) > 0) {
+              const feeMmk = feeRateToMmk(tx, tx.fee.currency);
+              periodFeeMmk += tx.fee.mode === 'add_on_top' ? 0 : feeMmk;
+          }
           const inNum = getCleanNum(tx.inAmt);
           const outNum = getCleanNum(tx.outAmt);
           const currency = txType.includes('THB') ? 'THB' : (txType.includes('VND') ? 'VND' : '');
@@ -3006,7 +3159,8 @@ window.showToast = function(message, icon = "✅") {
           periodProfitThb,
           periodProfitVnd,
           periodProfitThbInBaht,
-          totalProfit: periodProfitThb + periodProfitVnd,
+          periodFeeMmk,
+          totalProfit: periodProfitThb + periodProfitVnd - periodFeeMmk,
           estimatedThbRate
       };
   }
@@ -4355,6 +4509,7 @@ if (data.expenseOrder) {
 } else {
     FIREBASE_EXPENSE_ORDER = Object.keys(FIREBASE_EXPENSES || {});
 }
+if (Array.isArray(data.feeTypes) && data.feeTypes.length) FIREBASE_FEE_TYPES = data.feeTypes;
 
         // (Role/Auto-Login ကို device_roles listener က သီးသန့် ကိုင်တွယ်ပြီးပါပြီ)
         
@@ -4513,7 +4668,8 @@ if (data.telegram) {
         else if (type === 'devices') payload = { deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES };
         else if (type === 'receipts') payload = { receiptTexts: FIREBASE_RECEIPT_TEXTS };
         else if (type === 'treasury') payload = { treasuryAccounts: FIREBASE_TREASURY, treasuryOrder: FIREBASE_TREASURY_ORDER }; // 🌟 Treasury ကို သိမ်းရန်
-else payload = { banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES, customers: FIREBASE_CUSTOMERS, customerOrder: FIREBASE_CUSTOMER_ORDER, treasuryAccounts: FIREBASE_TREASURY, treasuryOrder: FIREBASE_TREASURY_ORDER };
+        else if (type === 'feeTypes') payload = { feeTypes: FIREBASE_FEE_TYPES };
+else payload = { banks: FIREBASE_BANKS, bankOrder: FIREBASE_BANK_ORDER, qrs: FIREBASE_QRS, receiptTexts: FIREBASE_RECEIPT_TEXTS, adminTimezone: ADMIN_TIMEZONE, deviceNames: FIREBASE_DEVICE_NAMES, hiddenDevices: FIREBASE_HIDDEN_DEVICES, customers: FIREBASE_CUSTOMERS, customerOrder: FIREBASE_CUSTOMER_ORDER, treasuryAccounts: FIREBASE_TREASURY, treasuryOrder: FIREBASE_TREASURY_ORDER, feeTypes: FIREBASE_FEE_TYPES };
         
         await dbRef.set(payload, { merge: true }); 
 
@@ -4710,6 +4866,7 @@ function openAdmin() {
     });
 
     const timeSettingsBlock = findDirectById('timeSettingsBlock');
+    const generalFeeTypesBlock = findDirectById('generalFeeTypesBlock');
     const receiptCard = findDirect((node) => node.classList.contains('bg-pink-50'));
     const apiCard = findDirect((node) => node.classList.contains('bg-gray-800'));
     const deviceCard = findDirect((node) => node.classList.contains('bg-indigo-50'));
@@ -4733,6 +4890,7 @@ function openAdmin() {
     };
     const appendCard = (panel, card) => appendNodes(panel, card ? [card] : [], true);
 
+    appendCard(panelById.system, generalFeeTypesBlock);
     appendCard(panelById.system, timeSettingsBlock);
     appendCard(panelById.system, timezoneCard);
     appendCard(panelById.receipt, receiptCard);
@@ -4805,12 +4963,93 @@ function openAdmin() {
         }
     }
     if (tabId === 'tab-work-queue') renderStaffWorkQueue();
-    if (tabId === 'tab-general') { initGeneralSettingsSubTabs(); loadAdminDevices(); loadUserRoles(); }
+    if (tabId === 'tab-general') { initGeneralSettingsSubTabs(); loadAdminDevices(); loadUserRoles(); if (typeof renderFeeTypeOptions === 'function') renderFeeTypeOptions(); }
     if (tabId === 'tab-customers') renderCustomerAdminList();
     if (tabId === 'tab-logs') loadActivityLogs(); 
     if (tabId === 'tab-treasury') loadTreasuryData(); // 🌟 Treasury Tab သို့သွားလျှင် Data ဆွဲတင်မည်
-    if (tabId === 'tab-expenses') renderExpenseList(); // 🌟 Expense Tab သို့သွားလျှင် Data ဆွဲတင်မည်
+    if (tabId === 'tab-expenses') { renderExpenseList(); renderFeeTypeOptions(); } // 🌟 Expense Tab သို့သွားလျှင် Data ဆွဲတင်မည်
   }
+
+  // ==========================================
+  // 💳 Transaction Fee Functions
+  // ==========================================
+  function feeRateToMmk(tx, currency) {
+      const n = Number(tx && tx.fee && tx.fee.amount) || 0;
+      if (!n || currency === 'MMK') return n;
+      const type = tx.type || '';
+      const a = parseFloat(String(tx.inAmt || '').replace(/[^\d.]/g, '')) || 0;
+      const b = parseFloat(String(tx.outAmt || '').replace(/[^\d.]/g, '')) || 0;
+      if (currency === 'THB' && type.includes('THB') && a > 0 && b > 0) return n * (type === 'THB ➔ MMK' ? b / a : a / b);
+      if (currency === 'VND' && type.includes('VND') && a > 0 && b > 0) return n * (type === 'VND ➔ MMK' ? b / a : a / b);
+      return currency === 'THB' ? n * (Number(window.GLOBAL_EST_RATE_THB) || 35) : n;
+  }
+  function feeMmkToThb(mmk) { const r = Number(window.GLOBAL_EST_RATE_THB) || 35; return r > 0 ? mmk / r : 0; }
+  function getFeeLedgerOptions(selected) {
+      const sel = document.getElementById('txFeeLedger'); if (!sel) return;
+      const wanted = document.getElementById('txFeeCurrency')?.value || '';
+      const accounts = typeof FIREBASE_TREASURY !== 'undefined' ? FIREBASE_TREASURY : {};
+      sel.innerHTML = '<option value="">မရွေးထားပါ</option>' + Object.keys(accounts).filter(id => !wanted || !accounts[id].currency || accounts[id].currency === wanted).map(id => `<option value="${id}" ${id === (selected || '') ? 'selected' : ''}>${smartEscapeHtml(accounts[id].name || id)} (${accounts[id].currency || ''})</option>`).join('');
+  }
+  window.refreshFeeLedgerOptions = function(){ getFeeLedgerOptions(document.getElementById('txFeeLedger')?.value || ''); };
+  function renderFeeTypeOptions(selected) {
+      const orderedTypes=[...FIREBASE_FEE_TYPES.filter(x=>x !== 'Other'), 'Other'];
+      const suggestions=document.getElementById('txFeeTypeSuggestions');
+      if(suggestions) suggestions.innerHTML=orderedTypes.map(x=>`<button type="button" onclick="window.selectFeeTypeSuggestion(this.dataset.value)" data-value="${smartEscapeHtml(x)}" class="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100">${smartEscapeHtml(x)}</button>`).join('');
+      const html=orderedTypes.map(x=>`<span class="px-2 py-1 rounded-full bg-white border border-emerald-200 text-xs font-bold text-emerald-700">${smartEscapeHtml(x)} ${x !== 'Other' && !['Bank Transfer Fee','QR Fee','Service Fee'].includes(x)?`<button onclick="window.removeFeeTypeByName(this.dataset.value)" data-value="${smartEscapeHtml(x)}" class="text-red-500 ml-1">✕</button>`:''}</span>`).join('');
+      const list=document.getElementById('generalFeeTypeList'); if(list) list.innerHTML=html;
+  }
+  window.removeFeeTypeByName = async function(value){ const i=FIREBASE_FEE_TYPES.indexOf(value); if(i<0 || value==='Other') return; FIREBASE_FEE_TYPES.splice(i,1); renderFeeTypeOptions(); await updateFirebase('feeTypes'); };
+  window.selectFeeTypeSuggestion = function(value){ const input=document.getElementById('txFeeType'); if(input){ input.value=value; input.focus(); } };
+  window.addFeeType = async function(inputId){ const el=document.getElementById(inputId || 'newFeeType'); const v=(el?.value||'').trim(); if(!v||FIREBASE_FEE_TYPES.includes(v)) return; FIREBASE_FEE_TYPES.push(v); el.value=''; renderFeeTypeOptions(); await updateFirebase('feeTypes'); };
+  window.removeFeeType = async function(i){ if(i<4) return; FIREBASE_FEE_TYPES.splice(i,1); renderFeeTypeOptions(); await updateFirebase('feeTypes'); };
+  window.closeTxFeeModal = function() { const el=document.getElementById('txFeeModal'); if (el) el.style.display='none'; };
+  window.openTxFeeModal = function(id) {
+      const tx=allLoadedHistory.find(x=>x.id===id); if(!tx) return; const f=tx.fee||{};
+      document.getElementById('txFeeInvId').textContent=id; document.getElementById('txFeeCustomer').textContent=tx.customerName||'—'; document.getElementById('txFeeInAmount').textContent=tx.inAmt||'-'; document.getElementById('txFeeOutAmount').textContent=tx.outAmt||'-'; document.getElementById('txFeeAmount').value=f.amount||'';
+      document.getElementById('txFeeCurrency').value=f.currency||(tx.type&&tx.type.includes('THB')?'THB':tx.type&&tx.type.includes('VND')?'VND':'MMK');
+      document.getElementById('txFeeMode').value=f.mode||'deduct'; document.getElementById('txFeeSide').value=f.side||'in'; document.getElementById('txFeeType').value=f.type||''; renderFeeTypeOptions(); getFeeLedgerOptions(f.ledger||'');
+      document.getElementById('txFeeModal').style.display='flex';
+  };
+  window.removeTxFee = async function(fromExpense=false, linkedId='') {
+      const id = linkedId || document.getElementById('txFeeInvId')?.textContent || '';
+      const idx = allLoadedHistory.findIndex(x => x.id === id);
+      let tx = idx >= 0 ? allLoadedHistory[idx] : null;
+      let old = tx?.fee || null;
+      if (!old && id) {
+          const snap = await firebase.firestore().collection('exchange_history').doc(id).get();
+          if (snap.exists) { tx = snap.data(); old = tx.fee || null; }
+      }
+      if (!id || !old || !Number(old.amount)) { if (!fromExpense) window.closeTxFeeModal(); return; }
+      if (!fromExpense && !confirm('ဤ Transaction ၏ Fee ကို ဖျက်မည်မှာ သေချာပါသလား?')) return;
+      try {
+          const eid='FEE_'+id;
+          const updates = { fee: firebase.firestore.FieldValue.delete() };
+          await firebase.firestore().collection('exchange_history').doc(id).update(updates);
+          if (old.ledger && typeof window.updateBalancesSafely === 'function') await window.updateBalancesSafely([{id:old.ledger, change:Number(old.amount)}]);
+          delete FIREBASE_EXPENSES[eid]; FIREBASE_EXPENSE_ORDER=FIREBASE_EXPENSE_ORDER.filter(x=>x!==eid);
+          await dbRef.update({['expenses.'+eid]:firebase.firestore.FieldValue.delete(), expenseOrder:firebase.firestore.FieldValue.arrayRemove(eid)});
+          if (idx >= 0) allLoadedHistory[idx].fee = undefined;
+          if (!fromExpense) window.closeTxFeeModal();
+          renderHistoryRows(allLoadedHistory); renderExpenseList();
+          if(typeof refreshFifoDashboard==='function') await refreshFifoDashboard(true);
+          if(typeof loadTreasuryData==='function') loadTreasuryData();
+          if(typeof window.showToast==='function') window.showToast('Transaction Fee၊ အသုံးစရိတ်နှင့် Dashboard မှ ဖျက်ပြီးပါပြီ။','🗑️');
+      } catch(e) { alert('Fee ဖျက်ရာတွင် အခက်အခဲရှိပါသည်: '+e.message); }
+  };
+  window.saveTxFee = async function() {
+      const id=document.getElementById('txFeeInvId').textContent, idx=allLoadedHistory.findIndex(x=>x.id===id); if(idx<0) return; const tx=allLoadedHistory[idx], old=tx.fee||{};
+      const amount=Number(document.getElementById('txFeeAmount').value)||0;
+      const feeType=(document.getElementById('txFeeType').value||'').trim() || 'Other';
+      const fee=amount>0?{amount,currency:document.getElementById('txFeeCurrency').value,mode:document.getElementById('txFeeMode').value,side:document.getElementById('txFeeSide').value,type:feeType,ledger:document.getElementById('txFeeLedger').value}:null;
+      try {
+          await firebase.firestore().collection('exchange_history').doc(id).update({fee:fee||firebase.firestore.FieldValue.delete()});
+          const eid='FEE_'+id;
+          if(old.amount && old.ledger && typeof window.updateBalancesSafely==='function') await window.updateBalancesSafely([{id:old.ledger,change:Number(old.amount)}]);
+          if(old.amount){delete FIREBASE_EXPENSES[eid]; FIREBASE_EXPENSE_ORDER=FIREBASE_EXPENSE_ORDER.filter(x=>x!==eid); await dbRef.update({['expenses.'+eid]:firebase.firestore.FieldValue.delete(),expenseOrder:firebase.firestore.FieldValue.arrayRemove(eid)});}
+          if(fee){const mmk=feeRateToMmk({...tx,fee},fee.currency); FIREBASE_EXPENSES[eid]={id:eid,desc:`${fee.type} - ${id}`,amount:fee.amount,currency:fee.currency,ledger:fee.ledger||'',date:(tx.timestamp||new Date().toISOString()).slice(0,10),linkedTransactionId:id,feeMmk:mmk,feeThb:feeMmkToThb(mmk),isTransactionFee:true}; if(!FIREBASE_EXPENSE_ORDER.includes(eid))FIREBASE_EXPENSE_ORDER.push(eid); await dbRef.update({['expenses.'+eid]:FIREBASE_EXPENSES[eid],expenseOrder:firebase.firestore.FieldValue.arrayUnion(eid)}); if(fee.ledger&&typeof window.updateBalancesSafely==='function') await window.updateBalancesSafely([{id:fee.ledger,change:-fee.amount}]);}
+          allLoadedHistory[idx].fee=fee||undefined; window.closeTxFeeModal(); renderHistoryRows(allLoadedHistory); renderExpenseList(); if(typeof refreshFifoDashboard==='function')refreshFifoDashboard(true); if(typeof window.showToast==='function')window.showToast('Transaction Fee သိမ်းပြီးပါပြီ။','💳');
+      } catch(e) { alert('Fee သိမ်းရာတွင် အခက်အခဲရှိပါသည်: '+e.message); }
+  };
 
   // ==========================================
   // 💸 Expense Functions (အသုံးစရိတ် စီမံရန်)
@@ -4895,8 +5134,8 @@ function openAdmin() {
                   <div class="text-[10px] text-gray-500 font-bold mt-1">📅 ${exp.date} &nbsp;|&nbsp; 💼 Wallet: ${ledgerName}</div>
               </div>
               <div class="flex items-center gap-3">
-                  <div class="font-black ${colorClass}">${exp.amount.toLocaleString()} ${exp.currency}</div>
-                  <button onclick="deleteExpense('${id}')" class="text-red-500 hover:bg-red-200 bg-red-100 px-2 py-1 rounded text-xs font-bold transition-colors">✕</button>
+                  <div class="text-right"><div class="font-black ${colorClass}">${exp.amount.toLocaleString()} ${exp.currency}</div>${exp.feeMmk ? `<div class="text-[10px] text-slate-500 font-bold">≈ ${Number(exp.feeMmk).toLocaleString(undefined,{maximumFractionDigits:2})} MMK / ${Number(exp.feeThb||0).toLocaleString(undefined,{maximumFractionDigits:2})} THB</div>` : ''}</div>
+                  <button onclick="deleteExpense('${id}')" class="text-red-500 hover:bg-red-200 bg-red-100 px-2 py-1 rounded text-xs font-bold transition-colors" title="${exp.isTransactionFee ? 'Transaction Fee၊ History နှင့် Dashboard မှပါ ဖျက်မည်' : 'အသုံးစရိတ်ဖျက်မည်'}">${exp.isTransactionFee ? 'Fee ဖျက်' : '✕'}</button>
               </div>
           </div>
           `;
@@ -4907,6 +5146,14 @@ function openAdmin() {
   window.deleteExpense = async function(id) {
       if(!confirm("ဤ အသုံးစရိတ်မှတ်တမ်းကို ဖျက်ရန် သေချာပါသလား?\n(မှတ်ချက်: ငွေသေတ္တာမှ နှုတ်ထားပြီးပါက အလိုအလျောက် ပြန်ပေါင်းပေးမည်မဟုတ်ပါ။ လက်ကျန်ငွေကို ကိုယ်တိုင် သွားရောက်ချိန်ညှိပါ။)")) return;
       
+      const linkedTxId = FIREBASE_EXPENSES[id]?.linkedTransactionId;
+      if (linkedTxId) {
+          const feeIdx = allLoadedHistory.findIndex(x => x.id === linkedTxId);
+          if (feeIdx >= 0) {
+              document.getElementById('txFeeInvId').textContent = linkedTxId;
+              return window.removeTxFee(true, linkedTxId);
+          }
+      }
       delete FIREBASE_EXPENSES[id];
       FIREBASE_EXPENSE_ORDER = FIREBASE_EXPENSE_ORDER.filter(x => x !== id);
       
@@ -8177,19 +8424,21 @@ function openAdmin() {
         const methodImage = d.paymentMethodImage || d.methodImage || '';
         const methodImageHtml = methodImage ? `<img src="${smartEscapeHtml(methodImage)}" class="method-link-preview" alt="နည်းလမ်းပုံ" title="နည်းလမ်းပုံ">` : '';
         const methodLinkButton = canLinkMethod ? `<button onclick="window.openMethodLinkModal('${smartEscapeHtml(d.id)}')" class="method-link-btn" title="Bank / QR နည်းလမ်းကို ပြန်ချိတ်ရန်" aria-label="Bank / QR နည်းလမ်းကို ပြန်ချိတ်ရန်">🔗</button>` : '';
-        const methodHtml = `<div class="method-link-wrap">${methodImageHtml}<div class="font-bold text-gray-800 break-words" style="white-space:normal;">${smartEscapeHtml(method)}</div>${methodLinkButton}</div>`;
+        const methodHtml = `<div class="method-link-wrap">${methodImageHtml}<div class="history-method-name font-bold text-gray-800" title="${smartEscapeHtml(method)}">${smartEscapeHtml(method)}</div>${methodLinkButton}</div>`;
         
         // 🌟 AI ဖတ်ထားသော Data ရှိခဲ့လျှင် review အခြေအနေအလိုက် အရောင်ခွဲပြမည် 🌟
         let aiExtractedHtml = "";
         if (d.extractedInfo) {
-            let formattedInfo = formatSlipFieldsForDisplay(d.extractedInfo);
+            let slipTotalsHtml = buildSlipAmountTotalsHtml(d.extractedInfo);
+            let formattedInfo = formatSlipFieldsForDisplay(d.extractedInfo, false);
             let reviewWarning = hasReviewWarning(d);
             let reviewDone = d.reviewCompleted === true || d.reviewStatus === 'completed';
             let colorClass = reviewWarning && !reviewDone ? "text-amber-600 border-amber-200" : "text-green-700 border-green-200";
             let reviewStateLabel = reviewWarning && reviewDone ? '<span class="ml-1 text-emerald-600">✅ စစ်ပြီးပါပြီ</span>' : '';
             let infoId = "info-" + d.id;
+            if (slipTotalsHtml) slipTotalsHtml = slipTotalsHtml.replace('<div class="slip-total-summary">', `<div class="slip-total-summary"><button onclick="const el=document.getElementById('${infoId}'); const wrap=this.closest('.history-method-content'); const open=el.style.maxHeight==='14px'; if(open){el.style.maxHeight='500px'; if(wrap){wrap.style.height='auto';wrap.style.maxHeight='500px';} this.innerHTML='▲';}else{el.style.maxHeight='14px'; if(wrap){wrap.style.height='48px';wrap.style.maxHeight='48px';} this.innerHTML='▼';}" class="slip-total-toggle" title="စလစ်အချက်အလက် ဖွင့်/ပိတ်ရန်">▼</button>`);
             
-            aiExtractedHtml = `
+            aiExtractedHtml = `${slipTotalsHtml}
             <div class="mt-1 border-t pt-1 ${colorClass} w-[260px] flex items-start gap-1.5">
                 <button onclick="const el = document.getElementById('${infoId}'); if(el.style.maxHeight === '14px') { el.style.maxHeight = '500px'; this.innerHTML = '▲'; } else { el.style.maxHeight = '14px'; this.innerHTML = '▼'; }" class="text-[9px] text-gray-500 hover:text-blue-500 bg-gray-50 hover:bg-blue-50 rounded border border-gray-200 transition-colors cursor-pointer flex-shrink-0 flex items-center justify-center w-4 h-4 mt-0.5" title="အကျယ်ကြည့်ရန်">
                     ▼
@@ -8238,7 +8487,8 @@ function openAdmin() {
                           
         let typeHtml = `<span class="font-bold text-blue-700 text-xs">${d.type}</span>`;
         let statusHtml = `<span class="border rounded px-2 py-1 text-xs font-bold bg-white ${statusColor}">${status}</span>`;
-        let amountHtml = `<span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>`;
+        let feeBadgeHtml = d.fee && Number(d.fee.amount) > 0 ? `<span class="history-fee-badge">💳 ${Number(d.fee.amount).toLocaleString()} ${smartEscapeHtml(d.fee.currency || '')} · ${smartEscapeHtml(d.fee.mode === 'add_on_top' ? 'အပို' : d.fee.mode === 'business_paid' ? 'ကိုယ်တိုင်ခံ' : 'အတွင်းဖြတ်')}</span>` : '';
+        let amountHtml = `<div><span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>${feeBadgeHtml}</div>`;
         
         let slipArr = d.slipUrls || [];
         if (d.slipUrl && slipArr.length === 0) slipArr = [d.slipUrl]; 
@@ -8264,10 +8514,13 @@ function openAdmin() {
           let editBtn = (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') ? `<button onclick="window.editTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-green-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏ ပြင်မည်">✏️</button>` : '';
 
           amountHtml = `
-            <div class="flex items-center gap-2">
-                <span class="text-xs text-green-700 font-bold">${d.inAmt} ➔ ${d.outAmt}</span>
-                ${editBtn}
-                <button onclick="window.swapTxAmounts('${d.id}')" class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]" title="ပမာဏရှေ့နောက်လှည့်မည်">⇄</button>
+            <div>
+                <span class="history-amount-main">${d.inAmt} ➔ ${d.outAmt}</span>
+                <div class="history-amount-actions">
+                    ${editBtn.replace('class="border border-gray-300 bg-gray-100 hover:bg-gray-200 text-green-700 px-1 py-0.5 rounded text-[10px] shadow-sm active:translate-y-[1px]"','class="history-amount-edit"')}
+                    <button onclick="window.swapTxAmounts('${d.id}')" class="history-amount-swap" title="ပမာဏရှေ့နောက်လှည့်မည်">⇄</button>
+                    ${feeBadgeHtml}
+                </div>
             </div>
           `;
           
@@ -8300,6 +8553,7 @@ function openAdmin() {
                 ${walletBtnHtml}
             </div>
             ${slipBtnHtml}
+            ${CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin' || CURRENT_ROLE === 'staff' ? `<button onclick="window.openTxFeeModal('${d.id}')" class="bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 rounded px-2 text-xs font-bold whitespace-nowrap h-[46px]" title="Fee ထည့်/ပြင်မည်">+Fee</button>` : ''}
             ${deleteBtnHtml}
         </div>
         `;
@@ -8307,7 +8561,7 @@ function openAdmin() {
         let rowClass = isOverdue ? "border-b bg-red-50 hover:bg-red-100 transition-colors" : "border-b hover:bg-gray-50";
 
         return `<tr class="${rowClass}" id="history-row-${d.id}">
-          <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${d.id}</td>
+          <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${smartEscapeHtml(d.id)}</td>
           <td class="p-3 text-xs history-date-cell">${dateTimeHtml}</td>
           <td class="p-3">${cusHtml}</td>
           <td class="p-3 font-bold text-indigo-700 text-xs">${mappedDeviceName}</td>
@@ -8316,9 +8570,26 @@ function openAdmin() {
           <td class="p-3">${amountHtml}</td>
           <td class="p-3 text-center" style="max-width:150px;">${statusHtml}</td>
           <td class="p-3 text-center">${actionHtml}</td>
-          <td class="p-3 text-xs" style="white-space:normal;"><div class="max-w-[260px]">${methodHtml}${aiExtractedHtml}</div></td>
+          <td class="p-3 text-xs history-method-cell" style="white-space:normal;"><div class="history-method-content">${methodHtml}${aiExtractedHtml}</div></td>
         </tr>`;
   }
+
+  function syncHistoryHorizontalScrollbar() {
+      const tableScroll = document.getElementById('historyTableScroll');
+      const bar = document.getElementById('historyHorizontalScrollbar');
+      const inner = document.getElementById('historyHorizontalScrollbarInner');
+      if (!tableScroll || !bar || !inner) return;
+      const table = tableScroll.querySelector('table');
+      const width = Math.max(tableScroll.clientWidth, table ? table.scrollWidth : 0);
+      inner.style.width = `${width}px`;
+      if (!bar.dataset.bound) {
+          bar.dataset.bound = '1';
+          bar.addEventListener('scroll', () => { tableScroll.scrollLeft = bar.scrollLeft; });
+          tableScroll.addEventListener('scroll', () => { if (Math.abs(bar.scrollLeft - tableScroll.scrollLeft) > 1) bar.scrollLeft = tableScroll.scrollLeft; });
+      }
+      bar.style.display = width > tableScroll.clientWidth + 2 ? 'block' : 'block';
+  }
+  window.addEventListener('resize', () => setTimeout(syncHistoryHorizontalScrollbar, 50));
 
   function renderHistoryRows(dataArray) {
       const list = document.getElementById('adminHistoryList');
@@ -8327,6 +8598,7 @@ function openAdmin() {
       if(dataArray.length === 0) { 
           list.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-red-500">ရှာဖွေထားသော မှတ်တမ်း မတွေ့ပါ</td></tr>'; 
           if(loadMoreBtn) loadMoreBtn.classList.add('hidden');
+          setTimeout(syncHistoryHorizontalScrollbar, 0);
           return; 
       }
       
@@ -8344,6 +8616,7 @@ function openAdmin() {
 }
       
       list.innerHTML = html;
+      setTimeout(syncHistoryHorizontalScrollbar, 0);
       
       if (lastVisibleDoc) {
           if(loadMoreBtn) loadMoreBtn.classList.remove('hidden');
@@ -10208,8 +10481,32 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
   // သုံးခဲ့တာမို့ ပုံတစ်ခုချင်းစီရဲ့ Field တွေ အချင်းချင်း ရောနှောသွားခဲ့ပါတယ် (ဥပမာ - ပုံ ၁ ရဲ့ Sender ကို
   // ပုံ ၂ ရဲ့ Receiver အဖြစ် မှားယွင်းပြခဲ့ခြင်း)။ ယခု getExtractedInfoBlocks() ဖြင့် ပုံတစ်ခုချင်းစီအလိုက်
   // အရင်ခွဲထုတ်ပြီးမှသာ Field parsing ကို ပုံတစ်ခုချင်းစီအတွက် သီးခြားလုပ်ပေးပါသည်။
-  function formatSlipFieldsForDisplay(text) {
+  function buildSlipAmountTotalsHtml(text) {
       if (!text) return '';
+      const blocks = getExtractedInfoBlocks(text);
+      const totals = { 'ဝင်စလစ်': {}, 'ထွက်စလစ်': {} };
+      blocks.forEach(block => {
+          const labelMatch = String(block).match(/^\s*\[(ဝင်စလစ်|ထွက်စလစ်)\]/);
+          if (!labelMatch) return;
+          const label = labelMatch[1];
+          const parts = String(block).replace(/^\s*\[(ဝင်စလစ်|ထွက်စလစ်)\]\s*/, '').split('|').map(x => x.trim()).filter(Boolean);
+          const amountText = parts[parts.length - 1] || '';
+          const match = amountText.match(/([\d,]+(?:\.\d+)?)\s*(THB|MMK|VND|บาท|ဘတ်|ကျပ်|Ks)/i);
+          if (!match) return;
+          const amount = Number(match[1].replace(/,/g, ''));
+          if (!Number.isFinite(amount)) return;
+          const rawCurrency = match[2].toUpperCase();
+          const currency = ['บาท','ဘတ်'].includes(match[2]) ? 'THB' : (['ကျပ်','KS'].includes(rawCurrency) ? 'MMK' : rawCurrency);
+          totals[label][currency] = (totals[label][currency] || 0) + amount;
+      });
+      const make = (label, color) => Object.entries(totals[label]).map(([currency, amount]) => `<span class="slip-total-chip ${color}">${label}: ${amount.toLocaleString(undefined,{maximumFractionDigits:2})} ${currency}</span>`).join('');
+      const html = [make('ဝင်စလစ်','slip-total-in'), make('ထွက်စလစ်','slip-total-out')].filter(Boolean).join('<span class="slip-total-separator">|</span>');
+      return html ? `<div class="slip-total-summary">${html}</div>` : '';
+  }
+
+  function formatSlipFieldsForDisplay(text, includeSummary = true) {
+      if (!text) return '';
+      const totalsHtml = includeSummary ? buildSlipAmountTotalsHtml(text) : '';
       const rawBlocks = getExtractedInfoBlocks(text);
       const blocksToFormat = rawBlocks.length > 0 ? rawBlocks : [text];
       const multi = blocksToFormat.length > 1;
@@ -10262,7 +10559,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           return `${header}<br>${html}`;
       });
 
-      return formattedBlocks.join('<br><br>');
+      return totalsHtml + formattedBlocks.join('<br><br>');
   }
 
   function parseAiAmountCurrency(data) {
@@ -10711,6 +11008,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           treasuryOrder: FIREBASE_TREASURY_ORDER,
           expenses: FIREBASE_EXPENSES,
           expenseOrder: FIREBASE_EXPENSE_ORDER,
+          feeTypes: FIREBASE_FEE_TYPES,
           apiKeys: { 
               botToken: TELEGRAM_BOT_TOKEN, 
               imgbb: IMGBB_API_KEY, 
