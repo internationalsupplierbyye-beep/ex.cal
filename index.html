@@ -1096,7 +1096,7 @@
                </label>
            </div>
            <input type="text" placeholder="🔍 အကောင့် ရှာရန်..." class="admin-input-box !mb-1 text-xs py-1 bg-red-50" oninput="filterNativeSelect('successOutLedger', this.value)">
-           <select id="successOutLedger" class="admin-input-box !mb-0 text-sm py-1.5"></select>
+           <select id="successOutLedger" onchange="window.syncSuccessFeeWalletFromOut()" class="admin-input-box !mb-0 text-sm py-1.5"></select>
            <input type="number" id="successOutAmt1" oninput="syncOutSplit('amt1')" placeholder="ပမာဏ (Account 1)" class="admin-input-box !mb-0 mt-1 text-sm py-1.5 hidden">
 
            <div id="successOutSplitBlock" class="hidden mt-2 pt-2 border-t border-dashed border-gray-300">
@@ -1106,6 +1106,16 @@
                <input type="number" id="successOutAmt2" oninput="syncOutSplit('amt2')" placeholder="ပမာဏ (Account 2)" class="admin-input-box !mb-0 mt-1 text-sm py-1.5">
                <p id="successOutSplitTotal" class="text-[10px] text-gray-500 mt-1"></p>
            </div>
+       </div>
+       <div class="mt-3 border border-emerald-200 bg-emerald-50 rounded-lg p-2">
+          <label class="flex items-center gap-2 text-xs font-black text-emerald-800 cursor-pointer"><input type="checkbox" id="successFeeEnabled" onchange="window.toggleSuccessFeeFields()"> ဒီအတည်ပြုချက်နှင့်အတူ +Fee ထည့်မည်</label>
+          <div id="successFeeFields" class="hidden mt-2 space-y-1.5">
+             <div class="grid grid-cols-2 gap-1.5"><input id="successFeeAmount" type="number" min="0" step="any" class="admin-input-box !mb-0 text-xs" placeholder="Fee ပမာဏ"><select id="successFeeCurrency" onchange="window.populateSuccessFeeLedgers(); window.syncSuccessFeeWalletFromOut()" class="admin-input-box !mb-0 text-xs"><option value="THB">THB</option><option value="MMK">MMK</option><option value="VND">VND</option></select></div>
+             <div class="grid grid-cols-2 gap-1.5"><select id="successFeeMode" onchange="window.toggleSuccessFeeSide()" class="admin-input-box !mb-0 text-xs"><option value="deduct">Amount ထဲမှဖြတ်</option><option value="add_on_top">အပိုကောက်</option><option value="business_paid" selected>ကိုယ်တိုင်ခံ</option></select><div id="successFeeSideWrap"><select id="successFeeSide" class="admin-input-box !mb-0 text-xs"><option value="in">အဝင်ဘက်</option><option value="out">အထွက်ဘက်</option></select></div></div>
+             <input id="successFeeType" class="admin-input-box !mb-0 text-xs" placeholder="Fee အမျိုးအစား (QR Fee / Bank Fee)">
+             <div id="successFeeTypeSuggestions" class="flex flex-wrap gap-1"></div>
+             <select id="successFeeLedger" class="admin-input-box !mb-0 text-xs"><option value="">Fee ဖြတ်မည့် Wallet / Bank</option></select>
+          </div>
        </div>
        <div class="flex gap-2 mt-5">
            <button onclick="document.getElementById('successTxModal').style.display='none'; window.pendingTargetStatus=null; window.isEditingWallet=false;" class="btn2 w-1/2 text-sm">ပိတ်မည်</button>
@@ -1856,7 +1866,7 @@
     <div class="flex justify-between items-center mb-3 border-b pb-2"><h3 class="font-black text-emerald-800">💳 Transaction Fee ထည့်/ပြင်မည်</h3><button onclick="window.closeTxFeeModal()" class="text-gray-400 hover:text-red-500 text-xl">✕</button></div>
     <div class="bg-slate-50 border border-slate-200 rounded-lg p-2 mb-3 text-xs"><div>Invoice ID: <span id="txFeeInvId" class="font-black text-blue-700"></span></div><div>Customer: <span id="txFeeCustomer" class="font-black text-slate-700"></span></div><div>အဝင်: <span id="txFeeInAmount" class="font-black text-emerald-700"></span> &nbsp; အထွက်: <span id="txFeeOutAmount" class="font-black text-emerald-700"></span></div></div>
     <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs font-bold text-gray-600">Fee ပမာဏ</label><input id="txFeeAmount" type="number" min="0" step="any" class="admin-input-box text-sm" placeholder="0"></div><div><label class="text-xs font-bold text-gray-600">Fee Currency</label><select id="txFeeCurrency" onchange="window.refreshFeeLedgerOptions()" class="admin-input-box text-sm"><option value="THB">THB</option><option value="MMK">MMK</option><option value="VND">VND</option></select></div></div>
-    <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs font-bold text-gray-600">Fee Mode</label><select id="txFeeMode" class="admin-input-box text-sm"><option value="deduct">Amount ထဲမှဖြတ်</option><option value="add_on_top">Customer ထံမှ အပိုကောက်</option><option value="business_paid">ကိုယ်တိုင်ခံ (အမြတ်ထဲမှပေး)</option></select></div><div><label class="text-xs font-bold text-gray-600">Fee Side</label><select id="txFeeSide" class="admin-input-box text-sm"><option value="in">ပေးငွေဘက် / အဝင်</option><option value="out">ရငွေဘက် / အထွက်</option></select></div></div>
+    <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs font-bold text-gray-600">Fee Mode</label><select id="txFeeMode" onchange="window.toggleTxFeeSide()" class="admin-input-box text-sm"><option value="deduct">Amount ထဲမှဖြတ်</option><option value="add_on_top">Customer ထံမှ အပိုကောက်</option><option value="business_paid" selected>ကိုယ်တိုင်ခံ (အမြတ်ထဲမှပေး)</option></select></div><div id="txFeeSideWrap"><label class="text-xs font-bold text-gray-600">Fee Side</label><select id="txFeeSide" onchange="window.toggleTxFeeSide()" class="admin-input-box text-sm"><option value="in">ပေးငွေဘက် / အဝင်</option><option value="out">ရငွေဘက် / အထွက်</option></select></div></div>
     <div class="mb-2"><label class="text-xs font-bold text-gray-600">Fee အမျိုးအစား</label><input id="txFeeType" class="admin-input-box text-sm" placeholder="ဥပမာ - QR Fee / Bank Transfer Fee"><div id="txFeeTypeSuggestions" class="flex flex-wrap gap-1 mt-1"></div></div>
     <div class="mb-3"><label class="text-xs font-bold text-gray-600">Fee ဖြတ်မည့် Wallet / Bank</label><select id="txFeeLedger" class="admin-input-box text-sm"><option value="">မရွေးထားပါ</option></select></div>
     <p class="text-[11px] text-slate-500 bg-slate-50 border rounded-lg p-2 mb-3">မူရင်း in/out amount ကို မပြောင်းပါ။ Fee ကို သီးခြား Expense အဖြစ် သိမ်းပြီး Net Profit မှ တစ်ကြိမ်သာ နုတ်ပါမည်။</p>
@@ -5002,12 +5012,74 @@ function openAdmin() {
   window.selectFeeTypeSuggestion = function(value){ const input=document.getElementById('txFeeType'); if(input){ input.value=value; input.focus(); } };
   window.addFeeType = async function(inputId){ const el=document.getElementById(inputId || 'newFeeType'); const v=(el?.value||'').trim(); if(!v||FIREBASE_FEE_TYPES.includes(v)) return; FIREBASE_FEE_TYPES.push(v); el.value=''; renderFeeTypeOptions(); await updateFirebase('feeTypes'); };
   window.removeFeeType = async function(i){ if(i<4) return; FIREBASE_FEE_TYPES.splice(i,1); renderFeeTypeOptions(); await updateFirebase('feeTypes'); };
+  window.toggleTxFeeSide = function() {
+      const mode = document.getElementById('txFeeMode')?.value || '';
+      const wrap = document.getElementById('txFeeSideWrap');
+      if (wrap) wrap.style.display = mode === 'business_paid' ? 'none' : '';
+      if (mode === 'business_paid' && document.getElementById('txFeeSide')) document.getElementById('txFeeSide').value = '';
+  };
+  window.toggleSuccessFeeSide = function() {
+      const mode = document.getElementById('successFeeMode')?.value || '';
+      const side = document.getElementById('successFeeSide');
+      const wrap = document.getElementById('successFeeSideWrap');
+      if (wrap) wrap.style.display = mode === 'business_paid' ? 'none' : '';
+      else if (side) side.style.display = mode === 'business_paid' ? 'none' : '';
+      if (mode === 'business_paid' && side) side.value = '';
+  };
+  window.toggleSuccessFeeFields = function() {
+      const on = !!document.getElementById('successFeeEnabled')?.checked;
+      const box = document.getElementById('successFeeFields');
+      if (box) box.classList.toggle('hidden', !on);
+      if (on) { window.populateSuccessFeeLedgers(); window.syncSuccessFeeWalletFromOut(); window.renderSuccessFeeTypeSuggestions(); window.toggleSuccessFeeSide(); }
+  };
+  window.renderSuccessFeeTypeSuggestions = function() {
+      const box = document.getElementById('successFeeTypeSuggestions'); if (!box) return;
+      const types = [...FIREBASE_FEE_TYPES.filter(x => x !== 'Other'), 'Other'];
+      box.innerHTML = types.map(x => `<button type="button" onclick="document.getElementById('successFeeType').value=this.dataset.value" data-value="${smartEscapeHtml(x)}" class="px-1.5 py-0.5 rounded-full bg-white border border-emerald-200 text-[10px] font-bold text-emerald-700">${smartEscapeHtml(x)}</button>`).join('');
+  };
+  window.populateSuccessFeeLedgers = function(selected='') {
+      const sel = document.getElementById('successFeeLedger'); if (!sel) return;
+      const curr = document.getElementById('successFeeCurrency')?.value || '';
+      sel.innerHTML = '<option value="">Fee ဖြတ်မည့် Wallet / Bank</option>' + Object.keys(FIREBASE_TREASURY || {}).filter(id => !curr || !FIREBASE_TREASURY[id].currency || FIREBASE_TREASURY[id].currency === curr).map(id => `<option value="${smartEscapeHtml(id)}" ${id === selected ? 'selected' : ''}>${smartEscapeHtml(FIREBASE_TREASURY[id].name || id)} (${smartEscapeHtml(FIREBASE_TREASURY[id].currency || '')})</option>`).join('');
+  };
+  // Success/Owing မှာ ရွေးထားတဲ့ Out Wallet ကို Fee Wallet အဖြစ် auto-select လုပ်ပေးမည်။ User က Fee Wallet ကို manual ပြန်ရွေးနိုင်သည်။
+  window.syncSuccessFeeWalletFromOut = function() {
+      const outId = document.getElementById('successOutLedger')?.value || '';
+      const feeSel = document.getElementById('successFeeLedger');
+      if (!feeSel || !outId || !FIREBASE_TREASURY?.[outId]) return;
+      window.populateSuccessFeeLedgers(outId);
+      feeSel.value = outId;
+  };
+  window.prepareSuccessFeeFields = function(tx) {
+      const enabled = document.getElementById('successFeeEnabled');
+      if (!enabled) return;
+      enabled.checked = false;
+      document.getElementById('successFeeAmount').value = '';
+      document.getElementById('successFeeCurrency').value = tx?.type?.includes('THB') ? 'THB' : tx?.type?.includes('VND') ? 'VND' : 'MMK';
+      document.getElementById('successFeeMode').value = 'business_paid'; document.getElementById('successFeeSide').value = ''; document.getElementById('successFeeType').value = '';
+      document.getElementById('successFeeFields').classList.add('hidden'); window.populateSuccessFeeLedgers(tx?.ledgerOut || ''); window.toggleSuccessFeeSide();
+  };
+  window.applySuccessFeeFromConfirm = async function() {
+      if (!document.getElementById('successFeeEnabled')?.checked) return;
+      const amount = Number(document.getElementById('successFeeAmount')?.value) || 0;
+      if (amount <= 0) throw new Error('Fee ပမာဏ ထည့်ပါ');
+      document.getElementById('txFeeInvId').textContent = pendingSuccessTxId;
+      document.getElementById('txFeeAmount').value = amount;
+      document.getElementById('txFeeCurrency').value = document.getElementById('successFeeCurrency').value;
+      document.getElementById('txFeeMode').value = document.getElementById('successFeeMode').value;
+      document.getElementById('txFeeSide').value = document.getElementById('successFeeSide').value;
+      document.getElementById('txFeeType').value = document.getElementById('successFeeType').value;
+      getFeeLedgerOptions(document.getElementById('successFeeLedger').value);
+      document.getElementById('txFeeLedger').value = document.getElementById('successFeeLedger').value;
+      await window.saveTxFee(true);
+  };
+
   window.closeTxFeeModal = function() { const el=document.getElementById('txFeeModal'); if (el) el.style.display='none'; };
   window.openTxFeeModal = function(id) {
       const tx=allLoadedHistory.find(x=>x.id===id); if(!tx) return; const f=tx.fee||{};
       document.getElementById('txFeeInvId').textContent=id; document.getElementById('txFeeCustomer').textContent=tx.customerName||'—'; document.getElementById('txFeeInAmount').textContent=tx.inAmt||'-'; document.getElementById('txFeeOutAmount').textContent=tx.outAmt||'-'; document.getElementById('txFeeAmount').value=f.amount||'';
       document.getElementById('txFeeCurrency').value=f.currency||(tx.type&&tx.type.includes('THB')?'THB':tx.type&&tx.type.includes('VND')?'VND':'MMK');
-      document.getElementById('txFeeMode').value=f.mode||'deduct'; document.getElementById('txFeeSide').value=f.side||'in'; document.getElementById('txFeeType').value=f.type||''; renderFeeTypeOptions(); getFeeLedgerOptions(f.ledger||'');
+      document.getElementById('txFeeMode').value=f.mode||'business_paid'; document.getElementById('txFeeSide').value=f.side||''; window.toggleTxFeeSide(); document.getElementById('txFeeType').value=f.type||''; renderFeeTypeOptions(); getFeeLedgerOptions(f.ledger||'');
       document.getElementById('txFeeModal').style.display='flex';
   };
   window.removeTxFee = async function(fromExpense=false, linkedId='') {
@@ -5036,18 +5108,18 @@ function openAdmin() {
           if(typeof window.showToast==='function') window.showToast('Transaction Fee၊ အသုံးစရိတ်နှင့် Dashboard မှ ဖျက်ပြီးပါပြီ။','🗑️');
       } catch(e) { alert('Fee ဖျက်ရာတွင် အခက်အခဲရှိပါသည်: '+e.message); }
   };
-  window.saveTxFee = async function() {
+  window.saveTxFee = async function(fromConfirm=false) {
       const id=document.getElementById('txFeeInvId').textContent, idx=allLoadedHistory.findIndex(x=>x.id===id); if(idx<0) return; const tx=allLoadedHistory[idx], old=tx.fee||{};
       const amount=Number(document.getElementById('txFeeAmount').value)||0;
       const feeType=(document.getElementById('txFeeType').value||'').trim() || 'Other';
-      const fee=amount>0?{amount,currency:document.getElementById('txFeeCurrency').value,mode:document.getElementById('txFeeMode').value,side:document.getElementById('txFeeSide').value,type:feeType,ledger:document.getElementById('txFeeLedger').value}:null;
+      const fee=amount>0?{amount,currency:document.getElementById('txFeeCurrency').value,mode:document.getElementById('txFeeMode').value,side:document.getElementById('txFeeMode').value === 'business_paid' ? '' : document.getElementById('txFeeSide').value,type:feeType,ledger:document.getElementById('txFeeLedger').value}:null;
       try {
           await firebase.firestore().collection('exchange_history').doc(id).update({fee:fee||firebase.firestore.FieldValue.delete()});
           const eid='FEE_'+id;
           if(old.amount && old.ledger && typeof window.updateBalancesSafely==='function') await window.updateBalancesSafely([{id:old.ledger,change:Number(old.amount)}]);
           if(old.amount){delete FIREBASE_EXPENSES[eid]; FIREBASE_EXPENSE_ORDER=FIREBASE_EXPENSE_ORDER.filter(x=>x!==eid); await dbRef.update({['expenses.'+eid]:firebase.firestore.FieldValue.delete(),expenseOrder:firebase.firestore.FieldValue.arrayRemove(eid)});}
           if(fee){const mmk=feeRateToMmk({...tx,fee},fee.currency); FIREBASE_EXPENSES[eid]={id:eid,desc:`${fee.type} - ${id}`,amount:fee.amount,currency:fee.currency,ledger:fee.ledger||'',date:(tx.timestamp||new Date().toISOString()).slice(0,10),linkedTransactionId:id,feeMmk:mmk,feeThb:feeMmkToThb(mmk),isTransactionFee:true}; if(!FIREBASE_EXPENSE_ORDER.includes(eid))FIREBASE_EXPENSE_ORDER.push(eid); await dbRef.update({['expenses.'+eid]:FIREBASE_EXPENSES[eid],expenseOrder:firebase.firestore.FieldValue.arrayUnion(eid)}); if(fee.ledger&&typeof window.updateBalancesSafely==='function') await window.updateBalancesSafely([{id:fee.ledger,change:-fee.amount}]);}
-          allLoadedHistory[idx].fee=fee||undefined; window.closeTxFeeModal(); renderHistoryRows(allLoadedHistory); renderExpenseList(); if(typeof refreshFifoDashboard==='function')refreshFifoDashboard(true); if(typeof window.showToast==='function')window.showToast('Transaction Fee သိမ်းပြီးပါပြီ။','💳');
+          allLoadedHistory[idx].fee=fee||undefined; if(!fromConfirm) window.closeTxFeeModal(); renderHistoryRows(allLoadedHistory); renderExpenseList(); if(typeof refreshFifoDashboard==='function')refreshFifoDashboard(true); if(typeof window.showToast==='function')window.showToast('Transaction Fee သိမ်းပြီးပါပြီ။','💳');
       } catch(e) { alert('Fee သိမ်းရာတွင် အခက်အခဲရှိပါသည်: '+e.message); }
   };
 
@@ -6918,6 +6990,7 @@ function openAdmin() {
           syncOutSplit('amt1');
       } else {
           if(outSelect) outSelect.value = tx.ledgerOut || '';
+          window.syncSuccessFeeWalletFromOut();
           toggleOutSplit(false);
       }
   };
@@ -6930,6 +7003,7 @@ function openAdmin() {
       if (index === -1) return;
       const tx = allLoadedHistory[index];
       const mode = window.isEditingWallet ? 'edit' : (window.pendingTargetStatus || 'Success');
+      if (document.getElementById('successFeeEnabled')?.checked && !(Number(document.getElementById('successFeeAmount')?.value) > 0)) { alert('Fee ပမာဏ မှန်ကန်စွာ ထည့်ပါ။'); return; }
 
       const inSelect = document.getElementById('successInLedger');
       const outSelect = document.getElementById('successOutLedger');
@@ -7076,6 +7150,7 @@ function openAdmin() {
               document.getElementById('successTxModal').style.display = 'none';
               await finalizeTxStatus(pendingSuccessTxId, 'Success', "");
           }
+          await window.applySuccessFeeFromConfirm();
 
       } catch(e) {
           console.error("Confirm Success Error:", e);
@@ -7121,6 +7196,7 @@ function openAdmin() {
 
           document.getElementById('successModalInvId').textContent = invId;
           document.getElementById('successTxModal').style.display = 'flex';
+          window.prepareSuccessFeeFields(tx);
           if(selectEl) selectEl.value = tx.status;
 
           filterAndInitSuccessDropdowns(inCurr, outCurr);
@@ -7141,6 +7217,7 @@ function openAdmin() {
 
           document.getElementById('successModalInvId').textContent = invId;
           document.getElementById('successTxModal').style.display = 'flex';
+          window.prepareSuccessFeeFields(tx);
           if(selectEl) selectEl.value = tx.status;
 
           const preferredInboundLedger = window.getAutoInboundLedger(tx, inCurr);
