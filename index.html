@@ -210,6 +210,15 @@
     .bal-edit-btns { display:flex; gap:10px; margin-top: 18px; }
 
     .tab-btn { padding: 10px 16px; font-weight: bold; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    /* 🔔 Work Queue Notification Badge */
+    .tab-badge { display:inline-block; min-width:20px; margin-left:6px; padding:1px 6px; border-radius:999px;
+      background:#ef4444; color:#fff; font-size:11px; font-weight:900; line-height:1.55; text-align:center;
+      vertical-align:middle; box-shadow:0 0 0 2px #fff; }
+    @keyframes tabBadgePulse { 0%,100%{ transform:scale(1); opacity:1; } 50%{ transform:scale(1.18); opacity:.85; } }
+    .tab-badge.pulse { animation: tabBadgePulse 1.6s ease-in-out infinite; }
+    .tab-btn.has-work { color:#b91c1c; }
+    .admin-btn.has-work::after { content:''; position:absolute; top:-4px; right:-4px; width:10px; height:10px;
+      border-radius:50%; background:#ef4444; box-shadow:0 0 0 2px #fff; animation: tabBadgePulse 1.6s ease-in-out infinite; }
     .tab-btn:hover { color: #111827; background: #f1f5f9; }
     .tab-btn.active { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
 
@@ -569,11 +578,60 @@
     }
     html.dark .bg-indigo-100, html.dark .bg-blue-100, html.dark .bg-orange-100, html.dark .bg-green-100, html.dark .bg-red-100 { background-color: #334155 !important; border-color: #475569 !important; }
     html.dark .text-indigo-800, html.dark .text-blue-900, html.dark .text-blue-800 { color: #93c5fd !important; }
+    html.dark .text-purple-800, html.dark .text-purple-700 { color: #d8b4fe !important; }
+    html.dark .text-indigo-800, html.dark .text-indigo-700 { color: #a5b4fc !important; }
+    html.dark .text-green-800, html.dark .text-green-700 { color: #86efac !important; }
+    html.dark .text-emerald-800, html.dark .text-emerald-700 { color: #6ee7b7 !important; }
+    html.dark .text-rose-800, html.dark .text-rose-700 { color: #fda4af !important; }
+    html.dark .text-yellow-800, html.dark .text-amber-800, html.dark .text-amber-700 { color: #fcd34d !important; }
+    html.dark .text-slate-400, html.dark .text-slate-300 { color: #94a3b8 !important; }
+    html.dark .admin-content .bg-blue-50, html.dark .admin-content .bg-green-50,
+    html.dark .admin-content .bg-purple-50, html.dark .admin-content .bg-rose-50,
+    html.dark .admin-content .bg-orange-50, html.dark .admin-content .bg-amber-50 { color: #e2e8f0; }
     html.dark #cusSearchInput { background-color: #0f172a !important; color: #f1f5f9 !important; border-color: #334155 !important; }
     html.dark .cus-option { border-color: #334155 !important; background-color: #1e293b !important; }
     html.dark .cus-option:hover { background-color: #334155 !important; }
     html.dark .cus-option .text-purple-800 { color: #c084fc !important; } 
     html.dark .cus-option .text-gray-700 { color: #e2e8f0 !important; }
+    html.dark .admin-list-scroll-hint { color: #94a3b8 !important; }
+    html.dark .admin-resource-list { background: #0f172a !important; border-color: #334155 !important; }
+    .admin-resource-list { overflow-x: hidden !important; overflow-y: auto; scrollbar-width: auto; scrollbar-color: #64748b #e2e8f0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; gap:8px; }
+    .admin-resource-list .list-item { min-width:0; width:100%; box-sizing:border-box; margin:0; }
+    .admin-resource-list .list-item > div:first-child { min-width:0; }
+    .admin-resource-list .list-item .truncate { min-width:0; }
+    .admin-resource-list .list-item > div:first-child > div { overflow:visible; white-space:normal; text-overflow:clip; flex-wrap:wrap; line-height:1.35; }
+    .admin-resource-list .list-item > div:last-child { flex:0 0 auto; }
+    .admin-resource-list::-webkit-scrollbar { width: 10px; height: 10px; }
+    .admin-resource-list::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 6px; }
+    .admin-resource-list::-webkit-scrollbar-thumb { background: #64748b; border-radius: 6px; border: 2px solid #e2e8f0; }
+    html.dark .admin-resource-list { scrollbar-color: #64748b #0f172a; }
+    html.dark .admin-resource-list::-webkit-scrollbar-track { background: #0f172a; }
+    html.dark .admin-resource-list::-webkit-scrollbar-thumb { background: #64748b; border-color: #0f172a; }
+    /* Bank / QR: (၁) Tab တစ်ခုလုံး scroll, (၂) အောက်က list သီးခြား scroll */
+    #tab-banks.active, #tab-qrs.active {
+      display: block !important;
+      height: calc(100vh - 210px) !important;
+      max-height: calc(100vh - 210px) !important;
+      min-height: 0 !important;
+      overflow-y: scroll !important;
+      overflow-x: hidden !important;
+      scrollbar-gutter: stable;
+    }
+    #tab-banks.active > div, #tab-qrs.active > div {
+      height: auto !important;
+      min-height: 720px !important;
+    }
+    #tab-banks #adminBankList, #tab-qrs #adminQRList {
+      flex: 0 0 320px !important;
+      height: 320px !important;
+      min-height: 320px !important;
+      max-height: 320px !important;
+      overflow-y: scroll !important;
+      overflow-x: hidden !important;
+    }
+    @media (max-width: 560px) {
+      .admin-resource-list { grid-template-columns:1fr; }
+    }
   /* Customer/account permission UI: keep form and customer list visible */
   #tab-customers { overflow: auto !important; }
   #tab-customers > div { height: auto !important; min-height: 0 !important; }
@@ -1207,18 +1265,16 @@
     </div>
     
     <div class="flex border-b mb-4 overflow-x-auto shrink-0 pb-1" id="adminTabsHeader">
-      <button class="tab-btn" onclick="switchTab('tab-work-queue', this)" id="btnTabWorkQueue">📋 Work Queue</button>
+      <!-- 🔢 Tab အစဉ်လိုက် — Work Queue ➜ Dashboard ➜ History ➜ လက်ကျန်ငွေ ➜ Customers ➜ အထွေထွေ ➜ အသုံးစရိတ် ➜ QR ➜ ဘဏ် ➜ Logs -->
+      <button class="tab-btn" onclick="switchTab('tab-work-queue', this)" id="btnTabWorkQueue">📋 Work Queue<span id="workQueueTabBadge" class="tab-badge" style="display:none;">0</span></button>
       <button class="tab-btn active" onclick="switchTab('tab-dashboard', this)" id="btnTabDashboard">📊 Dashboard</button>
       <button class="tab-btn" onclick="switchTab('tab-history', this)" id="btnTabHistory">📜 မှတ်တမ်းများ</button>
-      <button class="tab-btn" onclick="switchTab('tab-general', this)" id="btnTabGeneral">အထွေထွေ</button>
-      <button class="tab-btn" onclick="switchTab('tab-banks', this)" id="btnTabBanks">ဘဏ်များ</button>
-      <button class="tab-btn" onclick="switchTab('tab-qrs', this)" id="btnTabQrs">QR များ</button>
-      <button class="tab-btn" onclick="switchTab('tab-customers', this)" id="btnTabCustomers">👥 Customers</button>
       <button class="tab-btn" onclick="switchTab('tab-treasury', this)" id="btnTabTreasury">💰 လက်ကျန်ငွေ</button>
-      
-      <!-- Expense Tab အသစ် ထည့်သွင်းရန် -->
+      <button class="tab-btn" onclick="switchTab('tab-customers', this)" id="btnTabCustomers">👥 Customers</button>
+      <button class="tab-btn" onclick="switchTab('tab-general', this)" id="btnTabGeneral">အထွေထွေ</button>
       <button class="tab-btn" onclick="switchTab('tab-expenses', this)" id="btnTabExpenses">💸 အသုံးစရိတ်</button>
-      
+      <button class="tab-btn" onclick="switchTab('tab-qrs', this)" id="btnTabQrs">QR များ</button>
+      <button class="tab-btn" onclick="switchTab('tab-banks', this)" id="btnTabBanks">ဘဏ်များ</button>
       <button class="tab-btn" onclick="switchTab('tab-logs', this)" id="btnTabLogs">📝 Logs</button>
     </div>
 
@@ -1374,6 +1430,7 @@
               <option value="Auto Cancel">❌ Auto Cancel</option>
           </select>
           <button onclick="searchHistoryLocally(true)" class="btn bg-blue-600 !py-1 !px-3 !text-sm" title="ရှာရန်">🔍</button>
+          <button onclick="clearHistoryFilters()" class="btn2 !py-1 !px-3 !text-sm whitespace-nowrap" title="ID/Name/Phone/Ref၊ ရက်စွဲနှင့် Status Filter အားလုံးကို ရှင်းမည်">✖ Clear Filter</button>
           <button onclick="loadHistory()" class="btn2 !py-1 !px-3 !text-sm" title="Refresh">🔄</button>
           <button id="btnExportCSV" onclick="exportHistoryCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="Excel ဖိုင်ထုတ်ရန်">📥 Export</button>
           <button id="btnClearHistory" onclick="clearAllHistory()" class="btn bg-red-600 hover:bg-red-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="မှတ်တမ်းအားလုံးကို ဖျက်မည်">🗑 Clear All</button>
@@ -1715,7 +1772,7 @@
           </div>
           <h3 class="font-bold text-sm text-gray-600 mb-2 shrink-0">📋 ထည့်သွင်းထားသော ဘဏ်များ (ဆွဲရွှေ့ပါ)</h3>
           <p class="admin-list-scroll-hint">▲ ▼ ခလုတ်ဖြင့်လည်း အပေါ်/အောက် ရွှေ့နိုင်ပါသည်။</p>
-          <div id="adminBankList" class="overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1"></div>
+          <div id="adminBankList" class="admin-resource-list overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1"></div>
       </div>
     </div>
 
@@ -1740,7 +1797,7 @@
           </div>
           <h3 class="font-bold text-sm text-gray-600 mb-2 shrink-0">📋 ထည့်သွင်းထားသော QR များ (ဆွဲရွှေ့ပါ)</h3>
           <p class="admin-list-scroll-hint">▲ ▼ ခလုတ်ဖြင့်လည်း အပေါ်/အောက် ရွှေ့နိုင်ပါသည်။</p>
-          <div id="adminQRList" class="overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1"></div>
+          <div id="adminQRList" class="admin-resource-list overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1"></div>
       </div>
     </div>
 
@@ -1890,6 +1947,26 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- 🕒 Invoice Timeline Modal — ဒီ Invoice ကို ဘယ်သူတွေ အစဉ်လိုက် ဘာလုပ်သွားလဲ -->
+<div id="invoiceTimelineModal" style="display:none;" class="fixed inset-0 bg-black/70 z-[95] items-center justify-center p-4">
+  <div class="bg-white rounded-xl max-w-xl w-full p-4 shadow-2xl max-h-[85vh] flex flex-col">
+    <div class="flex justify-between items-start mb-3 border-b pb-2 gap-3">
+      <div class="min-w-0">
+        <h3 class="text-base font-black text-blue-700">🕒 Invoice လုပ်ဆောင်ချက် အစဉ်လိုက်</h3>
+        <p id="invoiceTimelineSubtitle" class="text-xs text-gray-500 font-bold truncate">—</p>
+      </div>
+      <button onclick="closeInvoiceTimeline()" class="text-gray-500 hover:text-red-500 font-bold text-2xl leading-none shrink-0">✕</button>
+    </div>
+    <div id="invoiceTimelineBody" class="overflow-y-auto flex-1 pr-1">
+      <p class="text-center text-sm text-blue-500 p-4">ရှာဖွေနေပါသည်...</p>
+    </div>
+    <div class="mt-3 pt-2 border-t flex justify-between items-center gap-2">
+      <button id="invoiceTimelineOpenBtn" onclick="openInvoiceTimelineRecord()" class="btn2 !py-1.5 !px-3 !text-sm">📜 History မှာ ဖွင့်မည်</button>
+      <button onclick="closeInvoiceTimeline()" class="btn bg-slate-600 hover:bg-slate-700 !py-1.5 !px-4 !text-sm">ပိတ်မည်</button>
+    </div>
   </div>
 </div>
 
@@ -3432,9 +3509,41 @@ window.showToast = function(message, icon = "✅") {
           btn.disabled = false; btn.textContent = originalText;
       }
   }
+    // --- 🔔 Work Queue Notification Badge ---
+  function updateWorkQueueBadge(count) {
+      const n = Math.max(0, Number(count) || 0);
+      const badge = document.getElementById('workQueueTabBadge');
+      const tabBtn = document.getElementById('btnTabWorkQueue');
+      const adminBtn = document.querySelector('.admin-btn');
+      if (badge) {
+          if (n > 0) {
+              badge.textContent = n > 99 ? '99+' : String(n);
+              badge.style.display = 'inline-block';
+              badge.classList.add('pulse');
+          } else {
+              badge.style.display = 'none';
+              badge.classList.remove('pulse');
+          }
+      }
+      if (tabBtn) tabBtn.classList.toggle('has-work', n > 0);
+      if (adminBtn) adminBtn.classList.toggle('has-work', n > 0);
+  }
+  window.updateWorkQueueBadge = updateWorkQueueBadge;
+
     // --- 📝 Activity Log Functions ---
 
-  async function logActivity(actionTitle, details) {
+  // Log details ထဲမှ Invoice ID ကို ဆွဲထုတ်ရန် (INV250101-1234 / MAN-250101-1234 / "ID: xxx")
+  const INV_ID_PATTERN = /\b((?:INV|MAN-)\d{6,8}-\d{3,6})\b/;
+  function extractInvIdFromText(text) {
+      const str = String(text || '');
+      const direct = str.match(INV_ID_PATTERN);
+      if (direct) return direct[1];
+      const labelled = str.match(/ID\s*[:\uFF1A]\s*([A-Za-z0-9_\-]{4,40})/);
+      return labelled ? labelled[1] : '';
+  }
+  window.extractInvIdFromText = extractInvIdFromText;
+
+  async function logActivity(actionTitle, details, invIdArg) {
       const currentDeviceId = CURRENT_DEVICE_ID || "Unknown";
       const mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
       
@@ -3443,6 +3552,9 @@ window.showToast = function(message, icon = "✅") {
           details: details,
           userRole: CURRENT_ROLE.toUpperCase(),
           deviceName: mappedDeviceName,
+          // 🕒 Invoice အလိုက် အစဉ်လိုက်ပြန်ကြည့်နိုင်ရန် invId ကိုပါ သိမ်းထားမည်
+          invId: invIdArg || extractInvIdFromText(details) || '',
+          actorEmail: (function(){ try { return (firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.email) || ''; } catch (e) { return ''; } })(),
           timestamp: new Date().toISOString()
       };
       
@@ -3478,18 +3590,25 @@ window.showToast = function(message, icon = "✅") {
               if (data.action.includes("Edit") || data.action.includes("Swap")) actionColor = "text-orange-600 bg-orange-50 border-orange-200";
               if (data.action.includes("Status")) actionColor = "text-green-600 bg-green-50 border-green-200";
 
+              // 🕒 ဒီ Log က Invoice တစ်ခုနှင့် ဆိုင်ပါက အစဉ်လိုက် ကြည့်ရန် ခလုတ် ပြမည်
+              const logInvId = data.invId || extractInvIdFromText(data.details);
+              const timelineBtn = logInvId
+                  ? `<button onclick="openInvoiceTimeline('${smartEscapeHtml(logInvId)}')" title="ဤ Invoice ကို ဘယ်သူတွေ အစဉ်လိုက် လုပ်သွားလဲ ကြည့်ရန်" class="text-[10px] border border-slate-300 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 text-slate-700 px-1.5 py-0.5 rounded font-black whitespace-nowrap">🕒 ${smartEscapeHtml(logInvId)}</button>`
+                  : '';
+
               html += `
               <div class="bg-white border rounded-lg p-3 shadow-sm flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-                  <div>
-                      <div class="flex items-center gap-2 mb-1">
-                          <span class="text-[10px] border px-1.5 py-0.5 rounded font-black ${actionColor}">${data.action}</span>
+                  <div class="min-w-0">
+                      <div class="flex items-center gap-2 mb-1 flex-wrap">
+                          <span class="text-[10px] border px-1.5 py-0.5 rounded font-black ${actionColor}">${smartEscapeHtml(data.action)}</span>
+                          ${timelineBtn}
                           <span class="text-xs font-bold text-gray-500">${dateStr}</span>
                       </div>
-                      <p class="text-sm font-bold text-gray-800">${data.details}</p>
+                      <p class="text-sm font-bold text-gray-800">${smartEscapeHtml(data.details)}</p>
                   </div>
                   <div class="text-right shrink-0 mt-2 sm:mt-0">
-                      <div class="text-xs font-black text-purple-700">${data.userRole}</div>
-                      <div class="text-[10px] text-gray-500">${data.deviceName}</div>
+                      <div class="text-xs font-black text-purple-700">${smartEscapeHtml(data.userRole || '')}</div>
+                      <div class="text-[10px] text-gray-500">${smartEscapeHtml(data.deviceName || '')}</div>
                   </div>
               </div>`;
           });
@@ -8637,8 +8756,10 @@ function openAdmin() {
         
         let rowClass = isOverdue ? "border-b bg-red-50 hover:bg-red-100 transition-colors" : "border-b hover:bg-gray-50";
 
+        const timelineButtonHtml = `<button type="button" onclick="window.openInvoiceTimeline('${smartEscapeHtml(d.id)}')" class="inline-flex items-center justify-center ml-1 w-6 h-6 rounded-md border border-slate-300 bg-white hover:bg-blue-50 hover:border-blue-300 text-slate-600 hover:text-blue-700 text-xs shadow-sm align-middle" title="ဤ Invoice ၏ လုပ်ဆောင်ချက်များကို အစောဆုံးမှ နောက်ဆုံးအထိ ကြည့်ရန်" aria-label="${smartEscapeHtml(d.id)} Invoice timeline">🕒</button>`;
+
         return `<tr class="${rowClass}" id="history-row-${d.id}">
-          <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30">${smartEscapeHtml(d.id)}</td>
+          <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30"><span class="inline-flex items-center justify-center whitespace-nowrap">${smartEscapeHtml(d.id)}${timelineButtonHtml}</span></td>
           <td class="p-3 text-xs history-date-cell">${dateTimeHtml}</td>
           <td class="p-3">${cusHtml}</td>
           <td class="p-3 font-bold text-indigo-700 text-xs">${mappedDeviceName}</td>
@@ -8818,6 +8939,18 @@ async function loadHistory() {
           isFetchingMore = false;
       }
   }
+
+  // Filter တွေကိုသာ ရှင်းမည် — Firebase ထဲက Transaction/Invoice record များကို မဖျက်ပါ။
+  window.clearHistoryFilters = function() {
+      const search = document.getElementById('searchInvId');
+      const date = document.getElementById('searchDate');
+      const status = document.getElementById('searchStatus');
+      if (search) search.value = '';
+      if (date) date.value = '';
+      if (status) status.value = '';
+      historyReviewOnly = false;
+      searchHistoryLocally(true);
+  };
 
   async function searchHistoryLocally(fromUserInput = false) {
       if (fromUserInput) historyReviewOnly = false;
@@ -9330,6 +9463,134 @@ async function loadHistory() {
       }
   };
 
+  // ==========================================
+  // 🕒 Invoice Timeline (ဘယ်သူ ဘာကို အစဉ်လိုက် လုပ်သွားလဲ)
+  // ==========================================
+  let INVOICE_TIMELINE_CACHE = { logs: null, fetchedAt: 0 };
+  let CURRENT_TIMELINE_INV_ID = '';
+
+  function timelineActionColor(action) {
+      const a = String(action || '');
+      if (a.includes('Delete')) return 'text-red-700 bg-red-50 border-red-200';
+      if (a.includes('Edit') || a.includes('Swap')) return 'text-orange-700 bg-orange-50 border-orange-200';
+      if (a.includes('Status')) return 'text-green-700 bg-green-50 border-green-200';
+      if (a.includes('Receipt') || a.includes('Saved')) return 'text-indigo-700 bg-indigo-50 border-indigo-200';
+      return 'text-blue-700 bg-blue-50 border-blue-200';
+  }
+
+  async function fetchLegacyLogScan() {
+      // အရင်က invId field မပါခဲ့သော Log အဟောင်းများအတွက် — ၅ မိနစ် cache ထားပြီး ပြန်သုံးမည်
+      if (INVOICE_TIMELINE_CACHE.logs && (Date.now() - INVOICE_TIMELINE_CACHE.fetchedAt) < 300000) {
+          return INVOICE_TIMELINE_CACHE.logs;
+      }
+      const snap = await firebase.firestore().collection('activity_logs')
+          .orderBy('timestamp', 'desc').limit(400).get();
+      const rows = [];
+      snap.forEach(doc => rows.push({ _id: doc.id, ...doc.data() }));
+      INVOICE_TIMELINE_CACHE = { logs: rows, fetchedAt: Date.now() };
+      return rows;
+  }
+
+  window.closeInvoiceTimeline = function() {
+      const modal = document.getElementById('invoiceTimelineModal');
+      if (modal) modal.style.display = 'none';
+      CURRENT_TIMELINE_INV_ID = '';
+  };
+
+  window.openInvoiceTimelineRecord = function() {
+      if (!CURRENT_TIMELINE_INV_ID) return;
+      const id = CURRENT_TIMELINE_INV_ID;
+      window.closeInvoiceTimeline();
+      if (typeof window.openWorkQueueItem === 'function') window.openWorkQueueItem(id);
+  };
+
+  window.openInvoiceTimeline = async function(invId) {
+      const id = String(invId || '').trim();
+      if (!id) return;
+      CURRENT_TIMELINE_INV_ID = id;
+      const modal = document.getElementById('invoiceTimelineModal');
+      const body = document.getElementById('invoiceTimelineBody');
+      const subtitle = document.getElementById('invoiceTimelineSubtitle');
+      if (!modal || !body) return;
+      modal.style.display = 'flex';
+      body.innerHTML = '<p class="text-center text-sm text-blue-500 p-4">မှတ်တမ်းများ ရှာဖွေနေပါသည်...</p>';
+
+      // ခေါင်းစဉ်တွင် Invoice အကျဉ်းချုပ် ပြမည်
+      const tx = (Array.isArray(allLoadedHistory) ? allLoadedHistory : []).find(item => item.id === id);
+      if (subtitle) {
+          subtitle.textContent = tx
+              ? `${id} · ${tx.customerName || 'Customer မရှိ'} · ${tx.status || '-'} · ${tx.inAmt || ''} ➜ ${tx.outAmt || ''}`
+              : id;
+      }
+
+      try {
+          const merged = new Map();
+          // (၁) invId field ပါသော log အသစ်များ
+          try {
+              const tagged = await firebase.firestore().collection('activity_logs')
+                  .where('invId', '==', id).limit(200).get();
+              tagged.forEach(doc => merged.set(doc.id, { _id: doc.id, ...doc.data() }));
+          } catch (e) { console.warn('tagged log query failed', e); }
+
+          // (၂) invId မပါသေးသော log အဟောင်းများကို details ထဲမှ ရှာမည်
+          try {
+              const legacy = await fetchLegacyLogScan();
+              legacy.forEach(row => {
+                  if (merged.has(row._id)) return;
+                  const rowInv = row.invId || extractInvIdFromText(row.details);
+                  if (rowInv === id) merged.set(row._id, row);
+              });
+          } catch (e) { console.warn('legacy log scan failed', e); }
+
+          const rows = Array.from(merged.values()).sort((a, b) => {
+              const at = new Date(a.timestamp || 0).getTime() || 0;
+              const bt = new Date(b.timestamp || 0).getTime() || 0;
+              return at - bt; // အစောဆုံး ➜ နောက်ဆုံး
+          });
+
+          if (!rows.length) {
+              body.innerHTML = `<div class="p-6 text-center">
+                  <p class="text-sm font-bold text-gray-500">ဤ Invoice အတွက် လုပ်ဆောင်ချက် မှတ်တမ်း မတွေ့ပါ။</p>
+                  <p class="text-[11px] text-gray-400 mt-1">(Log အဟောင်းများကို နောက်ဆုံး ၄၀၀ ခုအတွင်းသာ ရှာပါသည်)</p>
+              </div>`;
+              return;
+          }
+
+          const firstMs = new Date(rows[0].timestamp || 0).getTime() || 0;
+          body.innerHTML = `<div class="relative pl-5">
+            <div class="absolute left-[7px] top-2 bottom-2 w-[2px] bg-slate-200"></div>
+            ${rows.map((row, idx) => {
+                const ms = new Date(row.timestamp || 0).getTime() || 0;
+                const dateStr = ms ? new Date(ms).toLocaleString('en-GB', { timeZone: ADMIN_TIMEZONE || 'Asia/Bangkok', hour12: true }) : '—';
+                const gapMin = (ms && firstMs) ? Math.round((ms - firstMs) / 60000) : 0;
+                const gapText = idx === 0 ? 'စတင်' : (gapMin >= 60 ? `+${(gapMin / 60).toFixed(1)} နာရီ` : `+${gapMin} မိနစ်`);
+                const who = row.actorEmail || row.deviceName || 'Unknown';
+                return `<div class="relative mb-3">
+                  <div class="absolute -left-5 top-1.5 w-3.5 h-3.5 rounded-full bg-white border-2 border-blue-500"></div>
+                  <div class="bg-white border rounded-lg p-2.5 shadow-sm">
+                    <div class="flex items-center gap-2 flex-wrap mb-1">
+                      <span class="text-[10px] font-black text-slate-400">#${idx + 1}</span>
+                      <span class="text-[10px] border px-1.5 py-0.5 rounded font-black ${timelineActionColor(row.action)}">${smartEscapeHtml(row.action || '-')}</span>
+                      <span class="text-[11px] font-bold text-gray-500">${dateStr}</span>
+                      <span class="text-[10px] text-slate-400 font-bold">${gapText}</span>
+                    </div>
+                    <p class="text-[13px] font-bold text-gray-800 leading-relaxed">${smartEscapeHtml(row.details || '')}</p>
+                    <div class="mt-1.5 pt-1.5 border-t flex items-center gap-2 flex-wrap">
+                      <span class="text-[10px] font-black text-purple-700">${smartEscapeHtml(row.userRole || '-')}</span>
+                      <span class="text-[10px] text-gray-500">👤 ${smartEscapeHtml(who)}</span>
+                      ${row.deviceName && row.actorEmail ? `<span class="text-[10px] text-gray-400">📱 ${smartEscapeHtml(row.deviceName)}</span>` : ''}
+                    </div>
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
+          <p class="text-[11px] text-center text-slate-400 font-bold mt-1">စုစုပေါင်း ${rows.length} ခု</p>`;
+      } catch (e) {
+          console.error(e);
+          body.innerHTML = '<p class="text-center text-sm text-red-500 p-4">မှတ်တမ်းများ ဆွဲယူရာတွင် အမှားဖြစ်နေပါသည်။</p>';
+      }
+  };
+
   function renderStaffWorkQueue() {
       const list = document.getElementById('staffQueueList');
       if (!list) return;
@@ -9347,6 +9608,8 @@ async function loadHistory() {
       setCount('queueOwingCount', owing.length);
       setCount('queueReviewCount', review.length);
       setCount('queueRetryCount', RETRY_OPERATION_QUEUE.length);
+      // 🔔 Work Queue Tab ပေါ်တွင် လုပ်စရာအရေအတွက်ကို Noti အဖြစ် ပြမည်
+      updateWorkQueueBadge(pending.length + owing.length + review.length + RETRY_OPERATION_QUEUE.length);
       renderRetryQueue();
       if (!items.length) {
           list.innerHTML = `<p class="p-6 text-center text-sm text-emerald-700 font-bold">✅ လုပ်ရန်ကျန်သော History အလုပ် မရှိပါ။</p>`;
