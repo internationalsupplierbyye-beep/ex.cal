@@ -1139,6 +1139,11 @@
     <h3 id="successModalTitle" class="text-lg font-black mb-4 text-green-700">✅ ငွေလွှဲအောင်မြင်ကြောင်း အတည်ပြုရန်</h3>
     <div class="space-y-3">
        <p class="text-sm text-gray-600">ပြေစာ ID: <span id="successModalInvId" class="font-bold text-black"></span></p>
+       <div id="successModalSummary" class="grid grid-cols-3 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-[10px] leading-tight">
+          <div class="min-w-0"><div class="font-bold text-slate-500">Customer</div><div id="successModalCustomer" class="font-black text-slate-800 truncate" title="Customer">—</div></div>
+          <div class="min-w-0"><div class="font-bold text-emerald-700">အဝင် (+)</div><div id="successModalInAmount" class="font-black text-slate-800 truncate">—</div></div>
+          <div class="min-w-0"><div class="font-bold text-red-700">အထွက် (-)</div><div id="successModalOutAmount" class="font-black text-slate-800 truncate">—</div></div>
+       </div>
        <p id="successModalHint" class="hidden text-xs bg-blue-50 border border-blue-200 text-blue-700 rounded-lg p-2 font-bold"></p>
        <div id="successInBlock">
            <label class="text-xs font-bold text-gray-600 mb-1 block text-green-600">ငွေဝင်မည့် ပိုက်ဆံအိတ် (+)</label>
@@ -6983,6 +6988,18 @@ function openAdmin() {
       }
   };
 
+  // 🌟 Status CHANGE Success/Owing modal တွင် Customer နှင့် အဝင်/အထွက် Amount သုံးမျိုးသာ ပြမည် 🌟
+  window.populateSuccessModalSummary = function(tx) {
+      const customerName = String(tx?.customerName || '—').trim() || '—';
+      const setText = (id, value) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = value;
+      };
+      setText('successModalCustomer', customerName);
+      setText('successModalInAmount', String(tx?.inAmt || '—'));
+      setText('successModalOutAmount', String(tx?.outAmt || '—'));
+  };
+
   // Stored methodKey ရှိသော record များကို display text ဖြင့် မခန့်မှန်းဘဲ exact ID ဖြင့် resolve လုပ်မည်။
   function resolveHistoricalPaymentMethod(tx) {
       const type = String(tx?.methodType || '').toLowerCase();
@@ -7305,6 +7322,9 @@ function openAdmin() {
               outCurr = parts[1].trim();
           }
       } catch(e) {}
+
+      // Status CHANGE modal ကို ဖွင့်ချိန်မှာ Customer နဲ့ အဝင်/အထွက် Amount ကို တစ်ခါတည်း ပြမည်။
+      window.populateSuccessModalSummary(tx);
 
       // 🌟 Pending/Success → "ကြိုလွဲပြီး (Owing)" ➜ ငွေထုတ်ပေးလိုက်သော ပိုက်ဆံအိတ်ကိုသာ မှတ်ပြီး Treasury မှ ချက်ချင်းနှုတ်ပေးမည်
       if (newStatus === 'Owing') {
