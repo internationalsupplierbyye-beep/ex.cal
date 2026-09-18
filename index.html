@@ -2444,7 +2444,9 @@ let calcLock = false;
 
   // --- Direction-aware Calc Logic ---
   function getAgentRateMarkup(direction = 'in') {
-    if (String(CURRENT_ROLE || '').toLowerCase() !== 'agent') return {};
+    // Non-Agent users need numeric zero markups; an empty object makes
+    // baseRate + markup become NaN and stops opposite-side auto-calculation.
+    if (String(CURRENT_ROLE || '').toLowerCase() !== 'agent') return { thb: 0, vnd: 0 };
     const m = CURRENT_ACCESS_CONFIG?.rateMarkup || {};
     return { thb: Number(m[direction === 'out' ? 'thbOut' : 'thbIn'] || 0), vnd: Number(m[direction === 'out' ? 'vndOut' : 'vndIn'] || 0) };
   }
@@ -5277,7 +5279,7 @@ function openAdmin() {
       try {
           const eid='FEE_'+id;
           const updates = { fee: firebase.firestore.FieldValue.delete() };
-          await firebase.firestore().collection('exchange_history').doc(id).update(updates);
+          await getHistoryDocRef(tx || { id }).update(updates);
           if (old.ledger && typeof window.updateBalancesSafely === 'function') await window.updateBalancesSafely([{id:old.ledger, change:Number(old.amount)}]);
           delete FIREBASE_EXPENSES[eid]; FIREBASE_EXPENSE_ORDER=FIREBASE_EXPENSE_ORDER.filter(x=>x!==eid);
           await dbRef.update({['expenses.'+eid]:firebase.firestore.FieldValue.delete(), expenseOrder:firebase.firestore.FieldValue.arrayRemove(eid)});
@@ -5295,7 +5297,7 @@ function openAdmin() {
       const feeType=(document.getElementById('txFeeType').value||'').trim() || 'Other';
       const fee=amount>0?{amount,currency:document.getElementById('txFeeCurrency').value,mode:document.getElementById('txFeeMode').value,side:document.getElementById('txFeeMode').value === 'business_paid' ? '' : document.getElementById('txFeeSide').value,type:feeType,ledger:document.getElementById('txFeeLedger').value}:null;
       try {
-          await firebase.firestore().collection('exchange_history').doc(id).update({fee:fee||firebase.firestore.FieldValue.delete()});
+          await getHistoryDocRef(tx).update({fee:fee||firebase.firestore.FieldValue.delete()});
           const eid='FEE_'+id;
           if(old.amount && old.ledger && typeof window.updateBalancesSafely==='function') await window.updateBalancesSafely([{id:old.ledger,change:Number(old.amount)}]);
           if(old.amount){delete FIREBASE_EXPENSES[eid]; FIREBASE_EXPENSE_ORDER=FIREBASE_EXPENSE_ORDER.filter(x=>x!==eid); await dbRef.update({['expenses.'+eid]:firebase.firestore.FieldValue.delete(),expenseOrder:firebase.firestore.FieldValue.arrayRemove(eid)});}
@@ -7564,6 +7566,14 @@ function openAdmin() {
       if(index === -1) return;
       const tx = allLoadedHistory[index];
       if(tx.status === newStatus) return;
+
+      // Success already debited the outbound wallet. Sending it through the
+      // Pending -> Owing flow would debit that wallet a second time.
+      if (tx.status === 'Success' && newStatus === 'Owing') {
+          alert('Success မှတ်တမ်းကို Owing သို့ တိုက်ရိုက်မပြောင်းနိုင်ပါ။ လိုအပ်ပါက Cancel/Pending သို့ ပြောင်းပြီး ပြန်လုပ်ပါ။');
+          if (selectEl) selectEl.value = tx.status;
+          return;
+      }
 
       if (CURRENT_ROLE === 'staff' && newStatus === 'Cancelled') {
           alert("Report Admin");
