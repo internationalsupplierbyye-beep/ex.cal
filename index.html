@@ -234,6 +234,8 @@
     .general-settings-subtab-btn:hover { color:#3730a3; background:#eef2ff; }
     .general-settings-subtab-btn.active { color:#fff; background:#4f46e5; box-shadow:0 5px 12px rgba(79,70,229,.20); }
     .general-settings-subtab-btn { flex:0 0 auto; touch-action:manipulation; }
+    .customer-scope-btn { min-height:30px; padding:5px 12px; border:1px solid #c4b5fd; border-radius:8px; background:#fff; color:#6d28d9; cursor:pointer; font-size:.72rem; font-weight:900; }
+    .customer-scope-btn.active { color:#fff; background:#7c3aed; border-color:#7c3aed; }
     .general-settings-tab-nav { -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; }
     .general-settings-subtab-panel { display:none; padding:14px 2px 2px; }
     .general-settings-subtab-panel.active { display:block; }
@@ -1687,6 +1689,7 @@
         </div>
         <div class="flex gap-1 mb-3">
           <select id="newAccountRole" class="border rounded-lg px-2 py-1 text-xs font-bold bg-slate-50 text-purple-800 border-purple-200">
+             <option value="agent">Agent (Own Customers)</option>
              <option value="staff">Staff (History)</option>
              <option value="admin">Admin (Full)</option>
              <option value="main admin">Main Admin</option>
@@ -1696,6 +1699,7 @@
         <div class="flex gap-1 mb-3">
           <input type="text" id="newUserRoleEmail" class="admin-input-box !mb-0 !py-1 text-sm flex-1" placeholder="Email ရှိပြီးသားအား Role ပေးရန်...">
           <select id="newUserRoleValue" class="border rounded-lg px-2 py-1 text-xs font-bold bg-slate-50 text-purple-800 border-purple-200">
+             <option value="agent">Agent (Own Customers)</option>
              <option value="staff">Staff (History)</option>
              <option value="admin">Admin (Full)</option>
              <option value="main admin">Main Admin</option>
@@ -1808,6 +1812,10 @@
 
     <div id="tab-customers" class="tab-pane">
       <div class="flex flex-col w-full min-h-0">
+          <div class="flex gap-2 mb-3 border-b border-purple-200 pb-2">
+            <button type="button" class="customer-scope-btn active" data-customer-scope="main" onclick="switchCustomerAdminSubTab('main')">MAIN</button>
+            <button type="button" class="customer-scope-btn" data-customer-scope="agent" onclick="switchCustomerAdminSubTab('agent')">AGENT CUSTOMER</button>
+          </div>
           <div class="bg-purple-50 border border-purple-200 p-3 rounded-xl mb-3 shrink-0">
             <h3 class="font-bold text-purple-800 mb-3 text-sm">👥 Customer အသစ် ထည့်ရန် / ပြင်ရန်</h3>
             <input type="hidden" id="cusId">
@@ -3938,6 +3946,9 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     const finalBankOrder = useFirebaseBanks ? FIREBASE_BANK_ORDER : DEFAULT_BANK_ORDER;
     const finalQRs = useFirebaseQRs ? FIREBASE_QRS : DEFAULT_QR_FILES.map(f => ({ file: f, name: f.replace(/\.[^.]+$/, '') }));
     const allowedPayoutIds = getCustomerAllowedPayoutIds(document.getElementById('mainCustomerSelect')?.value);
+    const isAgentSession = String(CURRENT_ROLE || '').toLowerCase() === 'agent';
+    const assignedAgentMethodIds = new Set(Array.isArray(CURRENT_ACCESS_CONFIG?.assignedPaymentMethodIds) ? CURRENT_ACCESS_CONFIG.assignedPaymentMethodIds : []);
+    const agentMethodAllowed = (permissionId) => !isAgentSession ? true : assignedAgentMethodIds.has(permissionId);
     
     // 🌟 အကောင့်နာမည်ကို အတိုကောက် ပြောင်းပေးမည့် Function အသစ် 🌟
     const getInitials = (nameStr) => {
@@ -3981,7 +3992,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     if(bankSelect) {
       bankSelect.innerHTML = `<option value="" data-i18n="ph_bank_sel">${dict.ph_bank_sel || '— ဘဏ်ရွေးပါ —'}</option>`;
       finalBankOrder.forEach(key => {
-        if(ACTIVE_BANK_INFO[key] && ACTIVE_BANK_INFO[key].active !== false && (!allowedPayoutIds || allowedPayoutIds.has(getPayoutAccountPermissionId('BANK', key)))) {
+        if(ACTIVE_BANK_INFO[key] && ACTIVE_BANK_INFO[key].active !== false && agentMethodAllowed(getPayoutAccountPermissionId('BANK', key)) && (!allowedPayoutIds || allowedPayoutIds.has(getPayoutAccountPermissionId('BANK', key)))) {
           const info = ACTIVE_BANK_INFO[key];
           const o = document.createElement('option'); 
           o.value = key; 
@@ -4003,6 +4014,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       finalQRs.forEach(qr => {
         if (typeof qr === 'object' && qr.active === false) return; // 🌟 Inactive QR ကို Main Page Select တွင် မပြပါ
         const qrValue = typeof qr === 'string' ? qr : qr.file;
+        if (!agentMethodAllowed(getPayoutAccountPermissionId('QR', qrValue))) return;
         if (allowedPayoutIds && !allowedPayoutIds.has(getPayoutAccountPermissionId('QR', qrValue))) return;
         const val = typeof qr === 'string' ? qr : qr.file;
         const text = typeof qr === 'string' ? qr.replace(/\.[^.]+$/, '') : (qr.name || val.replace(/\.[^.]+$/, ''));
@@ -4968,6 +4980,7 @@ function openAdmin() {
     const nav = shell.querySelector('.general-settings-tab-nav');
     const panels = shell.querySelector('.general-settings-panels');
     const subTabs = [
+      { id: 'agents', icon: '🧑‍💼', label: 'Agent', title: '🧑‍💼 Agent Account စီမံရန်', note: 'Agent Account အသစ်ဖွင့်ခြင်းနှင့် စာရင်းကြည့်ခြင်း' },
       { id: 'system', icon: '⚙️', label: 'System', title: '⚙️ System Settings', note: 'စနစ်နှင့် လက်ကျန်အရောင်သတ်မှတ်ချက်များ' },
       { id: 'receipt', icon: '🧾', label: 'Receipt', title: '🧾 Receipt Settings', note: 'ပြေစာဒီဇိုင်းနှင့် စာသားများ' },
       { id: 'integrations', icon: '🔗', label: 'Integrations', title: '🔗 Integrations', note: 'Telegram နှင့် Developer API များ' },
@@ -5024,6 +5037,19 @@ function openAdmin() {
     };
     const appendCard = (panel, card) => appendNodes(panel, card ? [card] : [], true);
 
+    panelById.agents.innerHTML += `
+      <div class="bg-indigo-50 border border-indigo-200 p-3 rounded-xl mb-3">
+        <h3 class="font-bold text-indigo-800 mb-2 text-sm">🆕 Agent Account အသစ်ဖွင့်ရန်</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+          <input id="agentAccountName" class="admin-input-box !mb-0 text-sm" placeholder="Agent အမည်">
+          <input id="agentAccountEmail" type="email" class="admin-input-box !mb-0 text-sm" placeholder="Email">
+          <input id="agentAccountPassword" type="password" class="admin-input-box !mb-0 text-sm" placeholder="Password (အနည်းဆုံး ၆ လုံး)">
+        </div>
+        <button type="button" onclick="createAgentAccount(event)" class="btn bg-indigo-600 hover:bg-indigo-700 w-full !py-1.5 text-sm">Agent Account ဖန်တီးမည်</button>
+      </div>
+      <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-sm text-gray-700">📋 Agent Account များ</h3><button type="button" onclick="loadAgentAccounts()" class="btn2 !py-1 !px-3 !text-xs">🔄 Refresh</button></div>
+      <div id="agentAccountList" class="space-y-2 border rounded-xl bg-gray-50 p-2"><p class="text-center text-sm text-gray-500 p-3">Agent စာရင်းကို ဖတ်နေပါသည်...</p></div>`;
+
     appendCard(panelById.system, generalFeeTypesBlock);
     appendCard(panelById.system, timeSettingsBlock);
     appendCard(panelById.system, timezoneCard);
@@ -5065,6 +5091,7 @@ function openAdmin() {
       panel.classList.toggle('active', active);
       panel.setAttribute('aria-hidden', active ? 'false' : 'true');
     });
+    if (subTabId === 'agents') loadAgentAccounts();
   }
 
   function switchTab(tabId, btnElement) {
@@ -5508,6 +5535,19 @@ function openAdmin() {
   // ==========================================
   // 👥 Customer စီမံရန် Functions များ
   // ==========================================
+  function currentAgentOwnerEmail() {
+      return String(firebase.auth?.().currentUser?.email || CURRENT_DEVICE_ID || '').toLowerCase();
+  }
+  function isAgentCustomer(c) {
+      return String(c?.ownerType || '').toUpperCase() === 'AGENT' || !!c?.ownerAgentId;
+  }
+  window.switchCustomerAdminSubTab = function(scope) {
+      document.querySelectorAll('[data-customer-scope]').forEach(btn => btn.classList.toggle('active', btn.dataset.customerScope === scope));
+      const list = document.getElementById('adminCustomerList');
+      if (list) list.dataset.scope = scope;
+      renderCustomerAdminList();
+  };
+
   async function saveCustomerData() {
       const idInput = document.getElementById('cusId').value;
       const name = document.getElementById('cusName').value.trim();
@@ -5533,7 +5573,14 @@ function openAdmin() {
           oldFullName = (oldC.name + (oldC.social ? ` (${oldC.social})` : '')).trim();
       }
 
-      const newCustomerData = { id: cusId, name, phone, social, bankName, bankNo, allowedPayoutAccountIds };
+      const existingOwner = !isNew ? FIREBASE_CUSTOMERS[cusId] : null;
+      const agentOwner = String(CURRENT_ROLE || '').toLowerCase() === 'agent';
+      const newCustomerData = {
+          id: cusId, name, phone, social, bankName, bankNo, allowedPayoutAccountIds,
+          ownerType: agentOwner ? 'AGENT' : (existingOwner?.ownerType || 'MAIN'),
+          ownerAgentId: agentOwner ? currentAgentOwnerEmail() : (existingOwner?.ownerAgentId || null),
+          ownerAgentName: agentOwner ? (CURRENT_ACCESS_CONFIG?.name || currentAgentOwnerEmail()) : (existingOwner?.ownerAgentName || '')
+      };
       let newFullName = (name + (social ? ` (${social})` : '')).trim();
 
           FIREBASE_CUSTOMERS[cusId] = newCustomerData;
@@ -5642,9 +5689,11 @@ function openAdmin() {
 
       let html = `<div class="cus-option p-4 hover:bg-purple-100 cursor-pointer text-base text-gray-700 font-bold border-b border-gray-200" data-search="" onclick="selectCustomCustomer('', '${defaultText}')">${defaultText}</div>`;
 
+      const isCurrentAgent = String(CURRENT_ROLE || '').toLowerCase() === 'agent';
+      const agentOwnerId = currentAgentOwnerEmail();
       FIREBASE_CUSTOMER_ORDER.forEach(id => {
           const c = FIREBASE_CUSTOMERS[id];
-          if(c) {
+          if(c && (!isCurrentAgent || (isAgentCustomer(c) && String(c.ownerAgentId || '').toLowerCase() === agentOwnerId))) {
               let text = c.name;
               if(c.social) text += ` (${c.social})`;
               let searchString = (c.name + " " + (c.social||"") + " " + (c.phone||"")).toLowerCase();
@@ -5736,7 +5785,13 @@ function openAdmin() {
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
       const cusId = "CUS-" + Date.now();
-      const newCustomerData = { id: cusId, name, phone, social, bankName: '', bankNo: '', allowedPayoutAccountIds: [] };
+      const agentOwner = String(CURRENT_ROLE || '').toLowerCase() === 'agent';
+      const newCustomerData = {
+          id: cusId, name, phone, social, bankName: '', bankNo: '', allowedPayoutAccountIds: [],
+          ownerType: agentOwner ? 'AGENT' : 'MAIN',
+          ownerAgentId: agentOwner ? currentAgentOwnerEmail() : null,
+          ownerAgentName: agentOwner ? (CURRENT_ACCESS_CONFIG?.name || currentAgentOwnerEmail()) : ''
+      };
       
       FIREBASE_CUSTOMERS[cusId] = newCustomerData;
       FIREBASE_CUSTOMER_ORDER.push(cusId);
@@ -5764,6 +5819,20 @@ function openAdmin() {
       }
   }
 
+  window.moveCustomerToMain = async function(id) {
+      if (!['main admin', 'admin'].includes(String(CURRENT_ROLE || '').toLowerCase())) return alert('Admin / Main Admin သာ ခွင့်ပြုပါသည်။');
+      const c = FIREBASE_CUSTOMERS[id];
+      if (!c || !isAgentCustomer(c)) return;
+      if (!confirm(`${c.name} ကို Agent Customer မှ MAIN Customer သို့ ပြောင်းမည်။ ဆက်လုပ်မလား?`)) return;
+      const updated = { ...c, ownerType: 'MAIN', ownerAgentId: null, ownerAgentName: '' };
+      try {
+          await dbRef.update({ [`customers.${id}`]: updated });
+          FIREBASE_CUSTOMERS[id] = updated;
+          renderCustomerAdminList();
+          scheduleDropdownRefresh();
+      } catch (e) { alert('Customer ပြောင်းမရပါ: ' + e.message); }
+  };
+
   async function deleteCustomer(id) {
       if(!confirm("ဤ Customer ကို ဖျက်ရန် သေချာပါသလား?")) return;
       delete FIREBASE_CUSTOMERS[id];
@@ -5786,6 +5855,7 @@ function openAdmin() {
   function renderCustomerAdminList() {
       const listDiv = document.getElementById('adminCustomerList'); listDiv.innerHTML = '';
       const search = (document.getElementById('searchCus')?.value || '').toLowerCase();
+      const scope = listDiv.dataset.scope || 'main';
       
       // 🌟 Grid မှာ မရှိဘူးဆိုရင် တစ်ကြောင်းလုံးစာ ယူရန် (col-span-full ထည့်ထားပါသည်)
       if(FIREBASE_CUSTOMER_ORDER.length === 0) { listDiv.innerHTML = '<p class="text-xs text-gray-400 p-2 text-center col-span-full w-full">Customer မရှိသေးပါ</p>'; return; }
@@ -5813,6 +5883,9 @@ function openAdmin() {
       FIREBASE_CUSTOMER_ORDER.forEach((id, index) => {
           const c = FIREBASE_CUSTOMERS[id];
           if(!c) return;
+          const agentCustomer = isAgentCustomer(c);
+          if (scope === 'main' && agentCustomer) return;
+          if (scope === 'agent' && !agentCustomer) return;
           if(search && !c.name.toLowerCase().includes(search) && !(c.phone||'').includes(search)) return;
           
           let infoHtml = `<div class="text-[10px] text-gray-500 mt-0.5">`;
@@ -5845,16 +5918,19 @@ function openAdmin() {
           }
 
           // 🌟 Grid ပုံစံ ညီစေရန် mb-1.5 အစား !mb-0 h-full ကို အသုံးပြုထားပါသည် 🌟
+          const ownerBadge = agentCustomer ? `<span class="text-[9px] bg-indigo-50 text-indigo-700 border border-indigo-200 rounded px-1 py-0.5 font-black">🧑‍💼 ${c.ownerAgentName || c.ownerAgentId || 'Agent'}</span>` : `<span class="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200 rounded px-1 py-0.5 font-black">MAIN</span>`;
+          const moveMainBtn = agentCustomer ? `<button onclick="moveCustomerToMain('${id}')" title="MAIN Customer သို့ပြောင်းမည်" class="!text-[10px] !py-0.5 !px-1.5" style="color:#7c3aed; border-color:#c4b5fd; background:#f5f3ff;">↗ MAIN</button>` : '';
           listDiv.innerHTML += `<div class="list-item bg-white flex justify-between items-center p-2 !mb-0 border rounded h-full" draggable="true" data-index="${index}" data-type="customer" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
               <div class="flex items-center mr-2 w-full" style="min-width: 0;">
                   <span class="drag-handle flex-shrink-0" title="ဖိ၍ဆွဲရွှေ့ပါ">☰</span>
                   <div class="truncate w-full">
-                      <div class="font-bold text-xs text-purple-800">${c.name} ${c.social ? ` <span class="text-[10px] font-normal text-blue-500">(${c.social})</span>` : ''}</div>
+                      <div class="font-bold text-xs text-purple-800">${c.name} ${c.social ? ` <span class="text-[10px] font-normal text-blue-500">(${c.social})</span>` : ''} ${ownerBadge}</div>
                       ${infoHtml}
                       ${txHtml}
                   </div>
               </div>
               <div class="action-btns flex-shrink-0 ml-1">
+                  ${moveMainBtn}
                   <button onclick="generateCustomerStatement('${id}')" title="စာရင်းချုပ် PDF ထုတ်မည်" class="!text-[10px] !py-0.5 !px-1.5" style="color:#1d4ed8; border-color:#bfdbfe; background:#eff6ff;">🧾</button>
                   <button onclick="editCustomer('${id}')" title="ပြင်မည်" class="!text-[10px] !py-0.5 !px-1.5" style="color:#047857; border-color:#a7f3d0; background:#ecfdf5;">✏️</button>
                   <button onclick="deleteCustomer('${id}')" title="ဖျက်မည်" class="btn-delete !text-[10px] !py-0.5 !px-1.5">✕</button>
@@ -6686,6 +6762,7 @@ function openAdmin() {
                   <input type="text" id="userrolename_${btoa(email)}" value="${currentName}" placeholder="Name (Dev ID) ထည့်ပါ..." class="admin-input-box !mb-0 !py-1 !mt-1 text-xs w-full" ${disableSelect}>
                 </div>
                 <select id="userrole_${btoa(email)}" class="border rounded-lg px-2 py-1 text-xs font-bold bg-slate-50 text-purple-800 border-purple-200" ${disableSelect}>
+                   <option value="agent" ${role === 'agent' ? 'selected' : ''}>Agent (Own Customers)</option>
                    <option value="staff" ${role === 'staff' ? 'selected' : ''}>Staff (History)</option>
                    <option value="admin" ${role === 'admin' ? 'selected' : ''}>Admin (Full)</option>
                    <option value="main admin" ${role === 'main admin' ? 'selected' : ''}>Main Admin</option>
@@ -6699,6 +6776,62 @@ function openAdmin() {
           });
           list.innerHTML = html;
       } catch(e) { list.innerHTML = '<p class="text-center text-sm text-red-500 p-2">Error loading accounts.</p>'; }
+  }
+
+  async function loadAgentAccounts() {
+      const list = document.getElementById('agentAccountList');
+      if (!list) return;
+      list.innerHTML = '<p class="text-center text-sm text-blue-500 p-2">Agent စာရင်းကို ရှာဖွေနေပါသည်...</p>';
+      try {
+          const snap = await firebase.firestore().collection('user_roles').get();
+          const agents = [];
+          snap.forEach(doc => { const d = doc.data() || {}; if (String(d.role || '').toLowerCase() === 'agent') agents.push({ email: doc.id, ...d }); });
+          if (!agents.length) { list.innerHTML = '<p class="text-center text-sm text-gray-500 p-3">Agent Account မရှိသေးပါ။</p>'; return; }
+          list.innerHTML = agents.map(agent => {
+              const count = FIREBASE_CUSTOMER_ORDER.filter(id => String(FIREBASE_CUSTOMERS[id]?.ownerAgentId || '').toLowerCase() === agent.email.toLowerCase()).length;
+              const status = agent.suspended ? 'Suspended' : 'Active';
+              const assigned = new Set(Array.isArray(agent.assignedPaymentMethodIds) ? agent.assignedPaymentMethodIds : []);
+              const methodChoices = getPayoutAccountChoices().map(choice => `<label class="flex items-center gap-1 text-[10px] font-bold text-slate-600"><input type="checkbox" class="agent-method-choice" data-agent-email="${agent.email}" value="${choice.id}" ${assigned.has(choice.id) ? 'checked' : ''}>${choice.label}</label>`).join('');
+              return `<div class="bg-white border rounded-lg p-2 gap-2"><div class="flex items-center justify-between"><div class="min-w-0"><div class="font-bold text-sm text-indigo-800 truncate">${agent.name || agent.email}</div><div class="text-[11px] text-slate-500 truncate">${agent.email} · Customer ${count} ယောက်</div></div><span class="text-[10px] font-black ${agent.suspended ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'} border rounded px-1.5 py-0.5">${status}</span></div><div class="mt-2 pt-2 border-t border-indigo-100"><div class="text-[10px] font-black text-indigo-700 mb-1">အသုံးပြုခွင့်ရှိသော Bank / QR</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-28 overflow-y-auto">${methodChoices || '<span class="text-[10px] text-slate-400">Bank / QR မရှိသေးပါ</span>'}</div><button type="button" onclick="saveAgentPaymentMethods('${agent.email}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-[10px] mt-2">သတ်မှတ်ချက် သိမ်းမည်</button></div></div>`;
+          }).join('');
+      } catch (e) { list.innerHTML = '<p class="text-center text-sm text-red-500 p-2">Agent စာရင်းဖတ်မရပါ။</p>'; }
+  }
+
+  async function saveAgentPaymentMethods(email) {
+      if (CURRENT_ROLE !== 'main admin') return alert('Main Admin သာ Bank / QR သတ်မှတ်ခွင့်ရှိပါသည်။');
+      const assignedPaymentMethodIds = Array.from(document.querySelectorAll('.agent-method-choice')).filter(el => el.dataset.agentEmail === email && el.checked).map(el => el.value);
+      try {
+          await firebase.firestore().collection('user_roles').doc(email).set({ assignedPaymentMethodIds }, { merge: true });
+          if (String(firebase.auth?.().currentUser?.email || '').toLowerCase() === email.toLowerCase()) {
+              CURRENT_ACCESS_CONFIG.assignedPaymentMethodIds = assignedPaymentMethodIds;
+              initDropdowns();
+          }
+          window.showToast?.('Agent အတွက် Bank / QR သတ်မှတ်ပြီးပါပြီ။', '✅');
+      } catch (e) { alert('Bank / QR သတ်မှတ်ချက် သိမ်းမရပါ: ' + e.message); }
+  }
+
+  async function createAgentAccount(event) {
+      if (CURRENT_ROLE !== 'main admin') return alert('Main Admin သာ Agent Account ဖွင့်ခွင့်ရှိပါသည်။');
+      const name = document.getElementById('agentAccountName')?.value.trim();
+      const email = document.getElementById('agentAccountEmail')?.value.trim().toLowerCase();
+      const pass = document.getElementById('agentAccountPassword')?.value || '';
+      if (!name || !email || !email.includes('@')) return alert('Agent အမည်နှင့် Email မှန်ကန်စွာ ထည့်ပါ။');
+      if (pass.length < 6) return alert('Password အနည်းဆုံး ၆ လုံး ရှိရပါမည်။');
+      const btn = event?.currentTarget;
+      if (btn) { btn.disabled = true; btn.textContent = 'ဖန်တီးနေသည်...'; }
+      let secondaryApp = null;
+      try {
+          secondaryApp = firebase.apps.find(a => a.name === 'AgentAccountCreator') || firebase.initializeApp(FIREBASE_CONFIG_REF, 'AgentAccountCreator');
+          await secondaryApp.auth().createUserWithEmailAndPassword(email, pass);
+          await secondaryApp.auth().signOut();
+          await firebase.firestore().collection('user_roles').doc(email).set({ role: 'agent', name, ownerAgentId: email, assignedPaymentMethodIds: [], suspended: false }, { merge: true });
+          document.getElementById('agentAccountName').value = '';
+          document.getElementById('agentAccountEmail').value = '';
+          document.getElementById('agentAccountPassword').value = '';
+          await loadAgentAccounts();
+          alert('Agent Account ဖန်တီးပြီးပါပြီ။');
+      } catch (e) { alert('Agent Account ဖန်တီးမရပါ: ' + (e.code === 'auth/email-already-in-use' ? 'ဒီ Email ရှိပြီးသားပါ။' : e.message)); }
+      finally { if (btn) { btn.disabled = false; btn.textContent = 'Agent Account ဖန်တီးမည်'; } }
   }
 
   // 🌟 Admin Settings ထဲကနေ Email/Password Account အသစ် ဖန်တီးခြင်း
@@ -11808,6 +11941,13 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               const el = document.getElementById(id);
               if (el) el.style.display = (role === 'main admin') ? 'inline-block' : 'none';
           });
+      } else if (role === 'agent') {
+          adminBtn.innerHTML = "🧑‍💼 Agent";
+          modalTitle.innerHTML = "🧑‍💼 Agent Workspace";
+          if (adminBtn) adminBtn.style.display = 'none';
+          if (btnExport) btnExport.style.display = 'none';
+          if (btnClear) btnClear.style.display = 'none';
+          if (workQueueBtn) workQueueBtn.style.display = 'none';
       } else if (role === 'staff') {
           adminBtn.innerHTML = "📜 Staff";
           modalTitle.innerHTML = "📜 ငွေလွှဲမှတ်တမ်းများ (Staff View)";
