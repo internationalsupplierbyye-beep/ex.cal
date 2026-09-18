@@ -10174,14 +10174,17 @@ async function loadHistory() {
       logActivity('Invoice Saved Internally', `ID: ${invId} ကို ပုံမထုတ်ဘဲ System ထဲသီးသန့် သိမ်းခဲ့သည်။`);
 
       const messageText = buildSystemSaveTelegramText(record);
-      const telegramSent = await sendTelegramAlert(messageText, TELEGRAM_TOPIC_ID);
-      if (!telegramSent && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-          queueRetryOperation({ type: 'telegram-alert', payload: { messageText, topicId: TELEGRAM_TOPIC_ID }, meta: { kind: 'receipt-alert', invId } });
-      }
+      // Firebase save ကိုအရင်အတည်ပြုပြီး ချက်ချင်းပြန်ပေးမည်။ Telegram က နောက်ကွယ်တွင်ပို့မည်။
+      void (async () => {
+          const telegramSent = await sendTelegramAlert(messageText, TELEGRAM_TOPIC_ID);
+          if (!telegramSent && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+              queueRetryOperation({ type: 'telegram-alert', payload: { messageText, topicId: TELEGRAM_TOPIC_ID }, meta: { kind: 'receipt-alert', invId } });
+          }
+          if (typeof renderStaffWorkQueue === 'function') renderStaffWorkQueue();
+      })().catch(e => console.error('Background Telegram alert failed:', e));
       if (typeof renderStaffWorkQueue === 'function') renderStaffWorkQueue();
       if (typeof window.showToast === 'function') {
-          const note = telegramSent ? ' Telegram ပို့ပြီးပါပြီ။' : (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID ? ' Telegram ပို့ရန် Retry Queue ထဲ ထည့်ထားပါသည်။' : ' Telegram setting မပြည့်စုံသေးပါ။');
-          window.showToast(`Invoice ${invId} ကို System ထဲသိမ်းပြီးပါပြီ။${note}`, telegramSent ? '📨' : '⚠️');
+          window.showToast(`Invoice ${invId} ကို System ထဲသိမ်းပြီးပါပြီ။ Telegram ကို နောက်ကွယ်မှ ပို့နေပါသည်။`, '✅');
       }
       return record;
   }
@@ -10580,11 +10583,14 @@ ID: <code>${invId}</code>
 `;
               let mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
               alertMsg += `Device: <b>${mappedDeviceName}</b>`;
-              // 🌟 Delaying the Telegram alert queue push until we are sure it failed
-              const telegramSent = await sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID);
-              if (!telegramSent && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-                  queueRetryOperation({ type: 'telegram-alert', payload: { messageText: alertMsg, topicId: TELEGRAM_TOPIC_ID }, meta: { kind: 'receipt-alert', invId } });
-              }
+              // Firebase save ပြီးတာနဲ့ image download/share flow ကို မစောင့်စေဘဲ Telegram ကို background မှ ပို့မည်။
+              void (async () => {
+                  const telegramSent = await sendTelegramAlert(alertMsg, TELEGRAM_TOPIC_ID);
+                  if (!telegramSent && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+                      queueRetryOperation({ type: 'telegram-alert', payload: { messageText: alertMsg, topicId: TELEGRAM_TOPIC_ID }, meta: { kind: 'receipt-alert', invId } });
+                  }
+                  renderStaffWorkQueue();
+              })().catch(e => console.error('Background Telegram alert failed:', e));
               renderStaffWorkQueue();
           } catch(e) {
               if (isRetryableSmartError(e)) {
