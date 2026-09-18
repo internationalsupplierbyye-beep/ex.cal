@@ -1826,7 +1826,7 @@
               <input id="cusBankName" class="admin-input-box text-sm flex-1" placeholder="ဘဏ်အမည်">
               <input id="cusBankNo" class="admin-input-box text-sm flex-1" placeholder="ဘဏ်နံပါတ်">
             </div>
-            <div class="mb-3">
+            <div id="customerAllowedAccountsSection" class="mb-3">
               <button type="button" onclick="toggleCustomerAllowedAccounts()" class="w-full flex items-center justify-between text-left text-xs font-black text-purple-800 bg-purple-100 hover:bg-purple-200 rounded-lg px-2 py-2">
                 <span>💳 ငွေလွှဲခွင့်ရှိသော Account များ <span class="font-normal">(မရွေးထားလျှင် Account အားလုံးခွင့်ပြု)</span></span><span id="cusAllowedAccountsArrow">▼</span>
               </button>
@@ -2443,19 +2443,26 @@ let calcLock = false;
   }
 
   // --- Direction-aware Calc Logic ---
+  function getAgentRateMarkup(direction = 'in') {
+    if (String(CURRENT_ROLE || '').toLowerCase() !== 'agent') return {};
+    const m = CURRENT_ACCESS_CONFIG?.rateMarkup || {};
+    return { thb: Number(m[direction === 'out' ? 'thbOut' : 'thbIn'] || 0), vnd: Number(m[direction === 'out' ? 'vndOut' : 'vndIn'] || 0) };
+  }
+
   function getThbRate(direction = 'in') {
     const suffix = direction === 'out' ? 'Out' : 'In';
     const a = parseNum(document.getElementById(`rate100k${suffix}`)?.value);
     const b = parseNum(document.getElementById(`ratePerThb${suffix}`)?.value);
-    if (Number.isFinite(a) && a > 0) return { per100k: a, perThb: 100000 / a };
-    if (Number.isFinite(b) && b > 0) return { per100k: 100000 / b, perThb: b };
+    if (Number.isFinite(a) && a > 0) { const adjusted = a + getAgentRateMarkup(direction).thb; return { per100k: adjusted, perThb: adjusted > 0 ? 100000 / adjusted : NaN }; }
+    if (Number.isFinite(b) && b > 0) { const adjusted = (100000 / b) + getAgentRateMarkup(direction).thb; return { per100k: adjusted, perThb: adjusted > 0 ? 100000 / adjusted : NaN }; }
     return { per100k: NaN, perThb: NaN };
   }
   function getRate(direction = 'in') { return getThbRate(direction).per100k; }
   function getVndRate(direction = 'in') {
     const suffix = direction === 'out' ? 'Out' : 'In';
     const v = parseNum(document.getElementById(`rateVnd${suffix}`)?.value);
-    return (Number.isFinite(v) && v > 0) ? v : NaN;
+    if (Number.isFinite(v) && v > 0) return v + getAgentRateMarkup(direction).vnd;
+    return NaN;
   }
 
   function refreshRateNote() {
@@ -3478,7 +3485,8 @@ window.showToast = function(message, icon = "✅") {
         id: invId, type: type, rate: savedRate, inAmt: inAmtStr, outAmt: outAmtStr,
         method: "Manual Lot", profit: 0, status: 'Success', timestamp: new Date().toISOString(), tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: "—",
         ledgerIn: toAcc,
-        ledgerOut: fromAcc
+        ledgerOut: fromAcc,
+        userRole: String(CURRENT_ROLE || '').toUpperCase()
       };
 
       try {
@@ -4478,6 +4486,7 @@ if (file.startsWith('PP:')) {
       if (stillElevated && CURRENT_ROLE === 'agent') {
         loadPublicDataOnce();
         loadAgentCustomers();
+        loadAgentTelegramConfig();
       } else if (stillElevated) {
         loadAdminDataOnce();
         SESSION_START_AT = Date.now();
@@ -4514,7 +4523,7 @@ if (file.startsWith('PP:')) {
                     }
                 }
                 setupUIForRole(CURRENT_ROLE);
-                if (newRole === 'agent') { loadPublicDataOnce(); loadAgentCustomers(); }
+                if (newRole === 'agent') { loadPublicDataOnce(); loadAgentCustomers(); loadAgentTelegramConfig(); }
                 const fLogout = roleData.forceLogoutAt;
                 if (fLogout && typeof fLogout.toMillis === 'function' && SESSION_START_AT && fLogout.toMillis() > SESSION_START_AT) {
                     alert("Admin မှ သင့် Session ကို Force Logout ထုတ်လိုက်ပါသည်။");
@@ -4583,7 +4592,7 @@ if (file.startsWith('PP:')) {
           }
 
           // Role ရရှိမှသာ admin_data (customers/treasury/apiKeys) ကို ဆွဲယူခွင့်ရှိပါမည် (Firestore Rules အရ)
-          if (stillElevated && CURRENT_ROLE === 'agent') { loadPublicDataOnce(); loadAgentCustomers(); }
+          if (stillElevated && CURRENT_ROLE === 'agent') { loadPublicDataOnce(); loadAgentCustomers(); initDropdowns(); scheduleDropdownRefresh(); }
           else if (stillElevated) loadAdminDataOnce();
         }, (err) => console.warn("device_roles listen error:", err.code));
     });
@@ -4793,6 +4802,8 @@ if (data.telegram) {
         loadReceiptTextsToInputs();
         updateReceiptUI();
         scheduleDropdownRefresh();
+        loadAllAgentCustomersForAdmins();
+        syncAgentTelegramConfigs();
 
         // 🌟 admin_data အောင်မြင်စွာ ဆွဲယူတိုင်း Guest public_data ကိုပါ (Banks/QR/Rate) လက်ရှိအတိုင်း Sync ပြန်ချပေးမည်
         // (public_data document ကို ပထမဆုံးအကြိမ် အလိုအလျောက် ဖန်တီးပေးရာလည်း ကျပါသည်)
@@ -4914,6 +4925,11 @@ function openAdmin() {
             // ၃။ Database ထဲရှိ role ("staff", "admin", "main admin") ကို CURRENT_ROLE သို့ ထည့်ပေးခြင်း
             CURRENT_ACCESS_CONFIG = roleData || {};
             CURRENT_ROLE = roleData.role || 'guest';
+            if (String(CURRENT_ROLE || '').toLowerCase() === 'agent') {
+                CURRENT_ACCESS_CONFIG.assignedPaymentMethodIds = Array.isArray(roleData.assignedPaymentMethodIds) ? roleData.assignedPaymentMethodIds : [];
+                CURRENT_ACCESS_CONFIG.rateMarkup = roleData.rateMarkup || {};
+                setTimeout(() => { initDropdowns(); scheduleDropdownRefresh(); }, 0);
+            }
             
             setupUIForRole(CURRENT_ROLE);
             if (typeof loadAdminDataOnce === 'function') loadAdminDataOnce(); // admin_data (customers/treasury/apiKeys) ကို ယခုမှ ဆွဲယူခွင့်ရမည်
@@ -5130,7 +5146,16 @@ function openAdmin() {
     }
     if (tabId === 'tab-work-queue') renderStaffWorkQueue();
     if (tabId === 'tab-general') { initGeneralSettingsSubTabs(); loadAdminDevices(); loadUserRoles(); if (typeof renderFeeTypeOptions === 'function') renderFeeTypeOptions(); }
-    if (tabId === 'tab-customers') renderCustomerAdminList();
+    if (tabId === 'tab-customers') {
+        if (String(CURRENT_ROLE || '').toLowerCase() === 'agent') {
+            document.querySelectorAll('[data-customer-scope="main"]').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('[data-customer-scope="agent"]').forEach(el => el.style.display = 'inline-block');
+            switchCustomerAdminSubTab('agent');
+        } else {
+            document.querySelectorAll('[data-customer-scope]').forEach(el => el.style.display = 'inline-block');
+        }
+        renderCustomerAdminList();
+    }
     if (tabId === 'tab-logs') loadActivityLogs(); 
     if (tabId === 'tab-treasury') loadTreasuryData(); // 🌟 Treasury Tab သို့သွားလျှင် Data ဆွဲတင်မည်
     if (tabId === 'tab-expenses') { renderExpenseList(); renderFeeTypeOptions(); } // 🌟 Expense Tab သို့သွားလျှင် Data ဆွဲတင်မည်
@@ -5556,10 +5581,66 @@ function openAdmin() {
           renderCustomerAdminList();
       } catch (e) { console.error('Agent customer load error:', e); }
   }
+  async function loadAgentTelegramConfig() {
+      if (String(CURRENT_ROLE || '').toLowerCase() !== 'agent') return;
+      const email = currentAgentOwnerEmail();
+      if (!email) return;
+      try {
+          const snap = await firebase.firestore().collection('agent_telegram_config').doc(email).get();
+          if (!snap.exists) return;
+          const cfg = snap.data() || {};
+          if (cfg.botToken) TELEGRAM_BOT_TOKEN = cfg.botToken;
+          if (cfg.chatId) TELEGRAM_CHAT_ID = cfg.chatId;
+          if (cfg.topicId) TELEGRAM_TOPIC_ID = cfg.topicId;
+          if (cfg.successTopicId) TELEGRAM_SUCCESS_TOPIC_ID = cfg.successTopicId;
+          if (cfg.cancelTopicId) TELEGRAM_CANCEL_TOPIC_ID = cfg.cancelTopicId;
+          if (cfg.slipTopicId) TELEGRAM_SLIP_TOPIC_ID = cfg.slipTopicId;
+      } catch (e) { console.warn('Agent Telegram config load error:', e); }
+  }
+  async function syncAgentTelegramConfigs() {
+      if (String(CURRENT_ROLE || '').toLowerCase() !== 'main admin') return;
+      try {
+          const roles = await firebase.firestore().collection('user_roles').get();
+          const cfg = {
+              botToken: TELEGRAM_BOT_TOKEN || '', chatId: TELEGRAM_CHAT_ID || '', topicId: TELEGRAM_TOPIC_ID || '',
+              successTopicId: TELEGRAM_SUCCESS_TOPIC_ID || '', cancelTopicId: TELEGRAM_CANCEL_TOPIC_ID || '', slipTopicId: TELEGRAM_SLIP_TOPIC_ID || ''
+          };
+          await Promise.all(roles.docs.filter(doc => String(doc.data()?.role || '').toLowerCase() === 'agent').map(doc =>
+              firebase.firestore().collection('agent_telegram_config').doc(doc.id).set(cfg, { merge: true })
+          ));
+      } catch (e) { console.warn('Agent Telegram config sync error:', e); }
+  }
+  async function loadAllAgentHistoryForAdmins() {
+      if (!['staff', 'admin', 'main admin'].includes(String(CURRENT_ROLE || '').toLowerCase())) return [];
+      try {
+          const roles = await firebase.firestore().collection('user_roles').get();
+          const agentEmails = [];
+          roles.forEach(doc => { if (String(doc.data()?.role || '').toLowerCase() === 'agent') agentEmails.push(doc.id); });
+          const snapshots = await Promise.all(agentEmails.map(email => firebase.firestore().collection('agent_history').doc(email).collection('transactions').orderBy('timestamp', 'desc').limit(300).get()));
+          return snapshots.flatMap(snap => snap.docs.map(doc => doc.data()));
+      } catch (e) { console.warn('Agent history load error:', e); return []; }
+  }
+  async function loadAllAgentCustomersForAdmins() {
+      if (!['staff', 'admin', 'main admin'].includes(String(CURRENT_ROLE || '').toLowerCase())) return;
+      try {
+          const roles = await firebase.firestore().collection('user_roles').get();
+          const agentEmails = [];
+          roles.forEach(doc => { if (String(doc.data()?.role || '').toLowerCase() === 'agent') agentEmails.push(doc.id); });
+          const snapshots = await Promise.all(agentEmails.map(email => firebase.firestore().collection('agent_customers').doc(email).collection('customers').get()));
+          snapshots.forEach((snap, index) => snap.forEach(doc => {
+              const email = agentEmails[index];
+              const c = { id: doc.id, ...(doc.data() || {}), ownerType: 'AGENT', ownerAgentId: email };
+              if (!FIREBASE_CUSTOMERS[doc.id]) FIREBASE_CUSTOMER_ORDER.push(doc.id);
+              FIREBASE_CUSTOMERS[doc.id] = c;
+          }));
+          renderCustomerAdminList();
+      } catch (e) { console.warn('Agent customer load error for admin:', e); }
+  }
   function isAgentCustomer(c) {
       return String(c?.ownerType || '').toUpperCase() === 'AGENT' || !!c?.ownerAgentId;
   }
   window.switchCustomerAdminSubTab = function(scope) {
+      if (String(CURRENT_ROLE || '').toLowerCase() === 'agent') scope = 'agent';
       document.querySelectorAll('[data-customer-scope]').forEach(btn => btn.classList.toggle('active', btn.dataset.customerScope === scope));
       const list = document.getElementById('adminCustomerList');
       if (list) list.dataset.scope = scope;
@@ -5882,7 +5963,7 @@ function openAdmin() {
   function renderCustomerAdminList() {
       const listDiv = document.getElementById('adminCustomerList'); listDiv.innerHTML = '';
       const search = (document.getElementById('searchCus')?.value || '').toLowerCase();
-      const scope = listDiv.dataset.scope || 'main';
+      const scope = String(CURRENT_ROLE || '').toLowerCase() === 'agent' ? 'agent' : (listDiv.dataset.scope || 'main');
       
       // 🌟 Grid မှာ မရှိဘူးဆိုရင် တစ်ကြောင်းလုံးစာ ယူရန် (col-span-full ထည့်ထားပါသည်)
       if(FIREBASE_CUSTOMER_ORDER.length === 0) { listDiv.innerHTML = '<p class="text-xs text-gray-400 p-2 text-center col-span-full w-full">Customer မရှိသေးပါ</p>'; return; }
@@ -6818,8 +6899,10 @@ function openAdmin() {
               const count = FIREBASE_CUSTOMER_ORDER.filter(id => String(FIREBASE_CUSTOMERS[id]?.ownerAgentId || '').toLowerCase() === agent.email.toLowerCase()).length;
               const status = agent.suspended ? 'Suspended' : 'Active';
               const assigned = new Set(Array.isArray(agent.assignedPaymentMethodIds) ? agent.assignedPaymentMethodIds : []);
+              const markup = agent.rateMarkup || {};
+              const rateKey = btoa(agent.email);
               const methodChoices = getPayoutAccountChoices().map(choice => `<label class="flex items-center gap-1 text-[10px] font-bold text-slate-600"><input type="checkbox" class="agent-method-choice" data-agent-email="${agent.email}" value="${choice.id}" ${assigned.has(choice.id) ? 'checked' : ''}>${choice.label}</label>`).join('');
-              return `<details class="bg-white border rounded-lg p-2 group"><summary class="list-none cursor-pointer flex items-center justify-between gap-2"><div class="min-w-0"><div class="font-bold text-sm text-indigo-800 truncate">${agent.name || agent.email} <span class="text-indigo-500 text-xs transition-transform inline-block group-open:rotate-180">⌄</span></div><div class="text-[11px] text-slate-500 truncate">${agent.email} · Customer ${count} ယောက်</div></div><span class="text-[10px] font-black ${agent.suspended ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'} border rounded px-1.5 py-0.5">${status}</span></summary><div class="mt-2 pt-2 border-t border-indigo-100"><div class="text-[10px] font-black text-indigo-700 mb-1">အသုံးပြုခွင့်ရှိသော Bank / QR</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-28 overflow-y-auto">${methodChoices || '<span class="text-[10px] text-slate-400">Bank / QR မရှိသေးပါ</span>'}</div><button type="button" onclick="saveAgentPaymentMethods('${agent.email}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-[10px] mt-2">သတ်မှတ်ချက် သိမ်းမည်</button></div></details>`;
+              return `<details class="bg-white border rounded-lg p-2 group"><summary class="list-none cursor-pointer flex items-center justify-between gap-2"><div class="min-w-0"><div class="font-bold text-sm text-indigo-800 truncate">${agent.name || agent.email} <span class="text-indigo-500 text-xs transition-transform inline-block group-open:rotate-180">⌄</span></div><div class="text-[11px] text-slate-500 truncate">${agent.email} · Customer ${count} ယောက်</div></div><span class="text-[10px] font-black ${agent.suspended ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'} border rounded px-1.5 py-0.5">${status}</span></summary><div class="mt-2 pt-2 border-t border-indigo-100"><div class="text-[10px] font-black text-indigo-700 mb-1">Agent Customer Rate Markup</div><div class="grid grid-cols-2 sm:grid-cols-4 gap-1 mb-2"><input id="agent-thb-in-${rateKey}" type="number" step="0.01" value="${Number(markup.thbIn || 0)}" placeholder="THB In/100K" class="border rounded px-1 py-1 text-xs"><input id="agent-thb-out-${rateKey}" type="number" step="0.01" value="${Number(markup.thbOut || 0)}" placeholder="THB Out/100K" class="border rounded px-1 py-1 text-xs"><input id="agent-vnd-in-${rateKey}" type="number" step="0.000001" value="${Number(markup.vndIn || 0)}" placeholder="VND In/1MMK" class="border rounded px-1 py-1 text-xs"><input id="agent-vnd-out-${rateKey}" type="number" step="0.000001" value="${Number(markup.vndOut || 0)}" placeholder="VND Out/1MMK" class="border rounded px-1 py-1 text-xs"></div><div class="text-[9px] text-slate-400 mb-2">+ = ထပ်ပေါင်း၊ − = လျှော့</div><div class="text-[10px] font-black text-indigo-700 mb-1">အသုံးပြုခွင့်ရှိသော Bank / QR</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-28 overflow-y-auto">${methodChoices || '<span class="text-[10px] text-slate-400">Bank / QR မရှိသေးပါ</span>'}</div><button type="button" onclick="saveAgentSettings('${agent.email}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-[10px] mt-2">သတ်မှတ်ချက် သိမ်းမည်</button></div></details>`;
           }).join('');
       } catch (e) { list.innerHTML = '<p class="text-center text-sm text-red-500 p-2">Agent စာရင်းဖတ်မရပါ။</p>'; }
   }
@@ -6837,6 +6920,16 @@ function openAdmin() {
       } catch (e) { alert('Bank / QR သတ်မှတ်ချက် သိမ်းမရပါ: ' + e.message); }
   }
 
+  async function saveAgentSettings(email) {
+      if (CURRENT_ROLE !== 'main admin') return alert('Main Admin သာ Agent Rate သတ်မှတ်ခွင့်ရှိပါသည်။');
+      const key = btoa(email);
+      const num = id => Number(document.getElementById(id)?.value || 0) || 0;
+      const assignedPaymentMethodIds = Array.from(document.querySelectorAll('.agent-method-choice')).filter(el => el.dataset.agentEmail === email && el.checked).map(el => el.value);
+      const rateMarkup = { thbIn: num(`agent-thb-in-${key}`), thbOut: num(`agent-thb-out-${key}`), vndIn: num(`agent-vnd-in-${key}`), vndOut: num(`agent-vnd-out-${key}`) };
+      try { await firebase.firestore().collection('user_roles').doc(email).set({ assignedPaymentMethodIds, rateMarkup }, { merge: true }); window.showToast?.('Agent Rate / Bank / QR သိမ်းပြီးပါပြီ။', '✅'); }
+      catch (e) { alert('Agent Setting သိမ်းမရပါ: ' + e.message); }
+  }
+
   async function createAgentAccount(event) {
       if (CURRENT_ROLE !== 'main admin') return alert('Main Admin သာ Agent Account ဖွင့်ခွင့်ရှိပါသည်။');
       const name = document.getElementById('agentAccountName')?.value.trim();
@@ -6852,6 +6945,10 @@ function openAdmin() {
           await secondaryApp.auth().createUserWithEmailAndPassword(email, pass);
           await secondaryApp.auth().signOut();
           await firebase.firestore().collection('user_roles').doc(email).set({ role: 'agent', name, ownerAgentId: email, assignedPaymentMethodIds: [], suspended: false }, { merge: true });
+          await firebase.firestore().collection('agent_telegram_config').doc(email).set({
+              botToken: TELEGRAM_BOT_TOKEN || '', chatId: TELEGRAM_CHAT_ID || '', topicId: TELEGRAM_TOPIC_ID || '',
+              successTopicId: TELEGRAM_SUCCESS_TOPIC_ID || '', cancelTopicId: TELEGRAM_CANCEL_TOPIC_ID || '', slipTopicId: TELEGRAM_SLIP_TOPIC_ID || ''
+          }, { merge: true });
           document.getElementById('agentAccountName').value = '';
           document.getElementById('agentAccountEmail').value = '';
           document.getElementById('agentAccountPassword').value = '';
@@ -7357,7 +7454,7 @@ function openAdmin() {
               const updatePayload = { ledgerOut: newLedgerOut };
               updatePayload.ledgerOutSplit = isSplit ? newLedgerOutSplit : firebase.firestore.FieldValue.delete();
 
-              await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update(updatePayload);
+              await getHistoryDocRef(tx).update(updatePayload);
               tx.ledgerOut = newLedgerOut;
               tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
 
@@ -7373,7 +7470,7 @@ function openAdmin() {
           else if (mode === 'Success_FromOwing') {
               if (newLedgerIn) balanceChanges.push({ id: newLedgerIn, change: +inTotalNumeric });
 
-              await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update({ ledgerIn: newLedgerIn });
+              await getHistoryDocRef(tx).update({ ledgerIn: newLedgerIn });
               tx.ledgerIn = newLedgerIn;
 
               if (balanceChanges.length > 0) {
@@ -7407,7 +7504,7 @@ function openAdmin() {
               const updatePayload = { ledgerIn: newLedgerIn, ledgerOut: newLedgerOut };
               updatePayload.ledgerOutSplit = isSplit ? newLedgerOutSplit : firebase.firestore.FieldValue.delete();
 
-              await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update(updatePayload);
+              await getHistoryDocRef(tx).update(updatePayload);
               tx.ledgerIn = newLedgerIn;
               tx.ledgerOut = newLedgerOut;
               tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
@@ -7433,7 +7530,7 @@ function openAdmin() {
               const updatePayload = { ledgerIn: newLedgerIn, ledgerOut: newLedgerOut };
               updatePayload.ledgerOutSplit = isSplit ? newLedgerOutSplit : firebase.firestore.FieldValue.delete();
 
-              await firebase.firestore().collection("exchange_history").doc(pendingSuccessTxId).update(updatePayload);
+              await getHistoryDocRef(tx).update(updatePayload);
               tx.ledgerIn = newLedgerIn;
               tx.ledgerOut = newLedgerOut;
               tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
@@ -7554,6 +7651,12 @@ function openAdmin() {
       await finalizeTxStatus(invId, newStatus, "");
   }
 
+  function getHistoryDocRef(tx) {
+      const email = String(tx?.agentEmail || '').toLowerCase();
+      if (email) return firebase.firestore().collection('agent_history').doc(email).collection('transactions').doc(tx.id);
+      return firebase.firestore().collection('exchange_history').doc(tx.id);
+  }
+
   // 🌟 နောက်ကွယ်တွင် Status ကို အပြီးသတ် သိမ်းဆည်းသည့် Function 🌟
   async function finalizeTxStatus(invId, newStatus, ledgerLogNotes) {
       const index = allLoadedHistory.findIndex(x => x.id === invId);
@@ -7614,7 +7717,7 @@ function openAdmin() {
 
      try {
           // ✅ 2. ထို့နောက်မှ Firebase ကို နောက်ကွယ်မှ လှမ်းပို့ပါမည်
-          await firebase.firestore().collection("exchange_history").doc(invId).update({ status: newStatus });
+          await getHistoryDocRef(tx).update({ status: newStatus });
           
           // 🌟 Log မှတ်မည် 
           logActivity("Status Change", `ID: ${invId} ၏ Status ကို '${newStatus}' သို့ ပြောင်းလဲခဲ့သည်။`);
@@ -8115,7 +8218,7 @@ function openAdmin() {
               }
           }
 
-          await firebase.firestore().collection("exchange_history").doc(invId).delete();
+          await getHistoryDocRef(tx || { id: invId }).delete();
           
           logActivity("Delete Record", `ID: ${invId} မှတ်တမ်းအား ဖျက်ပစ်ခဲ့သည်။`);
           const index = allLoadedHistory.findIndex(x => x.id === invId);
@@ -8779,6 +8882,8 @@ function openAdmin() {
   function generateHistoryRowHTML(d, totalOverdueRef) {
         let dateTimeHtml = formatHistoryDateTime(d.timestamp, d.tz || 'Asia/Bangkok');
         let mappedDeviceName = FIREBASE_DEVICE_NAMES[d.deviceId] || d.deviceId || "Unknown";
+        let deviceRole = String(d.userRole || (d.agentEmail ? 'AGENT' : '')).trim();
+        let deviceHtml = `<div class="font-bold text-indigo-700 text-xs">${smartEscapeHtml(mappedDeviceName)}</div>${deviceRole ? `<div class="text-[9px] text-slate-400 font-bold uppercase tracking-wide">${smartEscapeHtml(deviceRole)}</div>` : ''}`;
         let displayRate = d.rate || "-";
         if (displayRate.includes('100K =')) {
             const m = displayRate.match(/100K\s*=\s*([\d,.]+)/);
@@ -8942,7 +9047,7 @@ function openAdmin() {
           <td class="p-3 font-mono text-xs text-blue-700 font-bold text-center bg-blue-50/30"><span class="inline-flex items-center justify-center whitespace-nowrap">${smartEscapeHtml(d.id)}${timelineButtonHtml}</span></td>
           <td class="p-3 text-xs history-date-cell">${dateTimeHtml}</td>
           <td class="p-3">${cusHtml}</td>
-          <td class="p-3 font-bold text-indigo-700 text-xs">${mappedDeviceName}</td>
+          <td class="p-3">${deviceHtml}</td>
           <td class="p-3 text-xs font-bold text-purple-600">${displayRate}</td>
           <td class="p-3">${typeHtml}</td>
           <td class="p-3">${amountHtml}</td>
@@ -9052,7 +9157,10 @@ async function loadHistory() {
     if (requestSeq !== historyRequestSeq) return;
 
     allLoadedHistory = snap.docs.map(doc => doc.data());
-    if (String(CURRENT_ROLE || '').toLowerCase() === 'agent') {
+    if (['staff', 'admin', 'main admin'].includes(String(CURRENT_ROLE || '').toLowerCase())) {
+      const agentHistory = await loadAllAgentHistoryForAdmins();
+      allLoadedHistory = allLoadedHistory.concat(agentHistory).sort((a, b) => smartTimestampMs(b.timestamp) - smartTimestampMs(a.timestamp));
+    } else if (String(CURRENT_ROLE || '').toLowerCase() === 'agent') {
       const email = currentAgentOwnerEmail();
       allLoadedHistory = allLoadedHistory.filter(tx => String(tx.agentEmail || tx.actorEmail || '').toLowerCase() === email);
     }
@@ -9435,7 +9543,7 @@ async function loadHistory() {
 
   function canSaveTransactions() {
       const role = String(CURRENT_ROLE || 'guest').toLowerCase();
-      if (role === 'main admin' || role === 'admin') return true;
+      if (role === 'main admin' || role === 'admin' || role === 'agent') return true;
       return role === 'staff' && getCurrentAccessConfig().canSave === true;
   }
 
@@ -10025,7 +10133,8 @@ async function loadHistory() {
           deviceId: CURRENT_DEVICE_ID || 'Unknown',
           customerName,
           agentEmail: String(CURRENT_ROLE || '').toLowerCase() === 'agent' ? currentAgentOwnerEmail() : '',
-          saveMode: 'internal'
+          saveMode: 'internal',
+          userRole: String(CURRENT_ROLE || '').toUpperCase()
       };
       const historyRef = String(CURRENT_ROLE || '').toLowerCase() === 'agent'
           ? firebase.firestore().collection('agent_history').doc(currentAgentOwnerEmail()).collection('transactions').doc(invId)
@@ -10398,7 +10507,8 @@ async function loadHistory() {
               method: paymentMethodName, methodType: methodMeta.methodType || null, methodKey: methodMeta.methodKey || null,
               profit: 0, status: 'Pending', timestamp: new Date().toISOString(), 
               tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: savedCustomerName,
-              agentEmail: String(CURRENT_ROLE || '').toLowerCase() === 'agent' ? currentAgentOwnerEmail() : ''
+              agentEmail: String(CURRENT_ROLE || '').toLowerCase() === 'agent' ? currentAgentOwnerEmail() : '',
+              userRole: String(CURRENT_ROLE || '').toUpperCase()
           };
           
           try {
@@ -11962,6 +12072,12 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       const btnClear = document.getElementById('btnClearHistory');
       const smartSlipBox = document.getElementById('smartSlipContainer');
       const workQueueBtn = document.getElementById('btnTabWorkQueue');
+      const customerAllowedAccountsSection = document.getElementById('customerAllowedAccountsSection');
+
+      // Privacy: AGENT must not see which Bank/QR accounts are allowed for a Customer.
+      if (customerAllowedAccountsSection) {
+          customerAllowedAccountsSection.style.display = String(role || '').toLowerCase() === 'agent' ? 'none' : '';
+      }
 
       // 🌟 Smart Slip (ဝင်စလစ်/ထွက်စလစ် Auto စစ်ဆေးမည့်) Button တွေကို Admin/Staff အတွက်သာ ပြသမည်
       if (smartSlipBox) {
