@@ -4474,8 +4474,11 @@ if (file.startsWith('PP:')) {
         CURRENT_ROLE = 'guest';
       }
       setupUIForRole(CURRENT_ROLE);
-      const stillElevated = ['main admin', 'admin', 'staff'].includes(CURRENT_ROLE);
-      if (stillElevated) {
+      const stillElevated = ['main admin', 'admin', 'staff', 'agent'].includes(CURRENT_ROLE);
+      if (stillElevated && CURRENT_ROLE === 'agent') {
+        loadPublicDataOnce();
+        loadAgentCustomers();
+      } else if (stillElevated) {
         loadAdminDataOnce();
         SESSION_START_AT = Date.now();
         IS_EMAIL_SESSION = true;
@@ -4490,7 +4493,7 @@ if (file.startsWith('PP:')) {
         if (typeof userRoleUnsub === 'function') userRoleUnsub();
         userRoleUnsub = firebase.firestore().collection("user_roles").doc(email)
             .onSnapshot((snap) => {
-                const stillElevated = ['main admin', 'admin', 'staff'];
+                const stillElevated = ['main admin', 'admin', 'staff', 'agent'];
                 if (!snap.exists) {
                     alert("သင့် Account ၏ Access ကို ပြန်လည်ရုပ်သိမ်းလိုက်ပါသည်။");
                     firebase.auth().signOut();
@@ -4511,6 +4514,7 @@ if (file.startsWith('PP:')) {
                     }
                 }
                 setupUIForRole(CURRENT_ROLE);
+                if (newRole === 'agent') { loadPublicDataOnce(); loadAgentCustomers(); }
                 const fLogout = roleData.forceLogoutAt;
                 if (fLogout && typeof fLogout.toMillis === 'function' && SESSION_START_AT && fLogout.toMillis() > SESSION_START_AT) {
                     alert("Admin မှ သင့် Session ကို Force Logout ထုတ်လိုက်ပါသည်။");
@@ -4569,8 +4573,8 @@ if (file.startsWith('PP:')) {
           }
           setupUIForRole(CURRENT_ROLE);
 
-          const stillElevated = ['main admin', 'admin', 'staff'].includes(CURRENT_ROLE);
-          const wasElevated = ['main admin', 'admin', 'staff'].includes(previousRole);
+          const stillElevated = ['main admin', 'admin', 'staff', 'agent'].includes(CURRENT_ROLE);
+          const wasElevated = ['main admin', 'admin', 'staff', 'agent'].includes(previousRole);
           if (wasElevated && previousRole !== CURRENT_ROLE && !stillElevated) {
               const modal = document.getElementById('adminModal');
               if (modal) modal.style.display = 'none';
@@ -4579,7 +4583,8 @@ if (file.startsWith('PP:')) {
           }
 
           // Role ရရှိမှသာ admin_data (customers/treasury/apiKeys) ကို ဆွဲယူခွင့်ရှိပါမည် (Firestore Rules အရ)
-          if (stillElevated) loadAdminDataOnce();
+          if (stillElevated && CURRENT_ROLE === 'agent') { loadPublicDataOnce(); loadAgentCustomers(); }
+          else if (stillElevated) loadAdminDataOnce();
         }, (err) => console.warn("device_roles listen error:", err.code));
     });
 
@@ -5538,6 +5543,19 @@ function openAdmin() {
   function currentAgentOwnerEmail() {
       return String(firebase.auth?.().currentUser?.email || CURRENT_DEVICE_ID || '').toLowerCase();
   }
+  async function loadAgentCustomers() {
+      if (String(CURRENT_ROLE || '').toLowerCase() !== 'agent') return;
+      const email = currentAgentOwnerEmail();
+      if (!email || !firebase?.firestore) return;
+      try {
+          const snap = await firebase.firestore().collection('agent_customers').doc(email).collection('customers').get();
+          FIREBASE_CUSTOMERS = {};
+          FIREBASE_CUSTOMER_ORDER = [];
+          snap.forEach(doc => { const c = { id: doc.id, ...(doc.data() || {}), ownerType: 'AGENT', ownerAgentId: email }; FIREBASE_CUSTOMERS[doc.id] = c; FIREBASE_CUSTOMER_ORDER.push(doc.id); });
+          scheduleDropdownRefresh();
+          renderCustomerAdminList();
+      } catch (e) { console.error('Agent customer load error:', e); }
+  }
   function isAgentCustomer(c) {
       return String(c?.ownerType || '').toUpperCase() === 'AGENT' || !!c?.ownerAgentId;
   }
@@ -5589,7 +5607,9 @@ function openAdmin() {
           if(isNew) { FIREBASE_CUSTOMER_ORDER.push(cusId); }
 
       try {
-          if (isNew) {
+          if (agentOwner) {
+              await firebase.firestore().collection('agent_customers').doc(currentAgentOwnerEmail()).collection('customers').doc(cusId).set(newCustomerData, { merge: true });
+          } else if (isNew) {
               await dbRef.update({
                   [`customers.${cusId}`]: newCustomerData,
                   customerOrder: firebase.firestore.FieldValue.arrayUnion(cusId)
@@ -5807,11 +5827,15 @@ function openAdmin() {
       document.getElementById('qCusPhone').value = '';
 
       try {
-          // 🔥 သီးသန့်ကွက်သိမ်းမည်
-          await dbRef.update({
-              [`customers.${cusId}`]: newCustomerData,
-              customerOrder: firebase.firestore.FieldValue.arrayUnion(cusId)
-          });
+          // Agent Customer ကို Agent သီးသန့် collection ထဲသိမ်းမည်။ Main/Admin Customer က admin_data ထဲတွင် ဆက်သိမ်းမည်။
+          if (agentOwner) {
+              await firebase.firestore().collection('agent_customers').doc(currentAgentOwnerEmail()).collection('customers').doc(cusId).set(newCustomerData, { merge: true });
+          } else {
+              await dbRef.update({
+                  [`customers.${cusId}`]: newCustomerData,
+                  customerOrder: firebase.firestore.FieldValue.arrayUnion(cusId)
+              });
+          }
       } catch(e) { 
           alert("Error: " + e.message); 
       } finally { 
@@ -5838,11 +5862,14 @@ function openAdmin() {
       delete FIREBASE_CUSTOMERS[id];
       FIREBASE_CUSTOMER_ORDER = FIREBASE_CUSTOMER_ORDER.filter(x => x !== id);
       try {
-          // 🔥 သီးသန့် ကွက်ဖျက်မည်
-          await dbRef.update({
-              [`customers.${id}`]: firebase.firestore.FieldValue.delete(),
-              customerOrder: firebase.firestore.FieldValue.arrayRemove(id)
-          });
+          if (String(CURRENT_ROLE || '').toLowerCase() === 'agent') {
+              await firebase.firestore().collection('agent_customers').doc(currentAgentOwnerEmail()).collection('customers').doc(id).delete();
+          } else {
+              await dbRef.update({
+                  [`customers.${id}`]: firebase.firestore.FieldValue.delete(),
+                  customerOrder: firebase.firestore.FieldValue.arrayRemove(id)
+              });
+          }
           renderCustomerAdminList(); scheduleDropdownRefresh();
       } catch(e) { alert("Error deleting."); }
   }
@@ -6792,7 +6819,7 @@ function openAdmin() {
               const status = agent.suspended ? 'Suspended' : 'Active';
               const assigned = new Set(Array.isArray(agent.assignedPaymentMethodIds) ? agent.assignedPaymentMethodIds : []);
               const methodChoices = getPayoutAccountChoices().map(choice => `<label class="flex items-center gap-1 text-[10px] font-bold text-slate-600"><input type="checkbox" class="agent-method-choice" data-agent-email="${agent.email}" value="${choice.id}" ${assigned.has(choice.id) ? 'checked' : ''}>${choice.label}</label>`).join('');
-              return `<div class="bg-white border rounded-lg p-2 gap-2"><div class="flex items-center justify-between"><div class="min-w-0"><div class="font-bold text-sm text-indigo-800 truncate">${agent.name || agent.email}</div><div class="text-[11px] text-slate-500 truncate">${agent.email} · Customer ${count} ယောက်</div></div><span class="text-[10px] font-black ${agent.suspended ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'} border rounded px-1.5 py-0.5">${status}</span></div><div class="mt-2 pt-2 border-t border-indigo-100"><div class="text-[10px] font-black text-indigo-700 mb-1">အသုံးပြုခွင့်ရှိသော Bank / QR</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-28 overflow-y-auto">${methodChoices || '<span class="text-[10px] text-slate-400">Bank / QR မရှိသေးပါ</span>'}</div><button type="button" onclick="saveAgentPaymentMethods('${agent.email}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-[10px] mt-2">သတ်မှတ်ချက် သိမ်းမည်</button></div></div>`;
+              return `<details class="bg-white border rounded-lg p-2 group"><summary class="list-none cursor-pointer flex items-center justify-between gap-2"><div class="min-w-0"><div class="font-bold text-sm text-indigo-800 truncate">${agent.name || agent.email} <span class="text-indigo-500 text-xs transition-transform inline-block group-open:rotate-180">⌄</span></div><div class="text-[11px] text-slate-500 truncate">${agent.email} · Customer ${count} ယောက်</div></div><span class="text-[10px] font-black ${agent.suspended ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'} border rounded px-1.5 py-0.5">${status}</span></summary><div class="mt-2 pt-2 border-t border-indigo-100"><div class="text-[10px] font-black text-indigo-700 mb-1">အသုံးပြုခွင့်ရှိသော Bank / QR</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-28 overflow-y-auto">${methodChoices || '<span class="text-[10px] text-slate-400">Bank / QR မရှိသေးပါ</span>'}</div><button type="button" onclick="saveAgentPaymentMethods('${agent.email}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-[10px] mt-2">သတ်မှတ်ချက် သိမ်းမည်</button></div></details>`;
           }).join('');
       } catch (e) { list.innerHTML = '<p class="text-center text-sm text-red-500 p-2">Agent စာရင်းဖတ်မရပါ။</p>'; }
   }
@@ -9014,8 +9041,10 @@ async function loadHistory() {
   isFetchingMore = false;
 
   try {
-    const query = firebase.firestore()
-      .collection('exchange_history')
+    const historyCollection = String(CURRENT_ROLE || '').toLowerCase() === 'agent'
+      ? firebase.firestore().collection('agent_history').doc(currentAgentOwnerEmail()).collection('transactions')
+      : firebase.firestore().collection('exchange_history');
+    const query = historyCollection
       .orderBy('timestamp', 'desc')
       .limit(HISTORY_PAGE_SIZE);
 
@@ -9023,6 +9052,10 @@ async function loadHistory() {
     if (requestSeq !== historyRequestSeq) return;
 
     allLoadedHistory = snap.docs.map(doc => doc.data());
+    if (String(CURRENT_ROLE || '').toLowerCase() === 'agent') {
+      const email = currentAgentOwnerEmail();
+      allLoadedHistory = allLoadedHistory.filter(tx => String(tx.agentEmail || tx.actorEmail || '').toLowerCase() === email);
+    }
     lastVisibleDoc = snap.docs.length === HISTORY_PAGE_SIZE
       ? snap.docs[snap.docs.length - 1]
       : null;
@@ -9056,7 +9089,10 @@ async function loadHistory() {
       isFetchingMore = true;
 
       try {
-          const query = firebase.firestore().collection("exchange_history")
+          const historyCollection = String(CURRENT_ROLE || '').toLowerCase() === 'agent'
+              ? firebase.firestore().collection('agent_history').doc(currentAgentOwnerEmail()).collection('transactions')
+              : firebase.firestore().collection("exchange_history");
+          const query = historyCollection
               .orderBy("timestamp", "desc")
               .startAfter(lastVisibleDoc)
               .limit(HISTORY_PAGE_SIZE);
@@ -9988,9 +10024,13 @@ async function loadHistory() {
           tz: ADMIN_TIMEZONE,
           deviceId: CURRENT_DEVICE_ID || 'Unknown',
           customerName,
+          agentEmail: String(CURRENT_ROLE || '').toLowerCase() === 'agent' ? currentAgentOwnerEmail() : '',
           saveMode: 'internal'
       };
-      await firestoreWithTimeout(firebase.firestore().collection('exchange_history').doc(invId).set(record), 15000);
+      const historyRef = String(CURRENT_ROLE || '').toLowerCase() === 'agent'
+          ? firebase.firestore().collection('agent_history').doc(currentAgentOwnerEmail()).collection('transactions').doc(invId)
+          : firebase.firestore().collection('exchange_history').doc(invId);
+      await firestoreWithTimeout(historyRef.set(record), 15000);
       if (!allLoadedHistory.some(item => item.id === invId)) allLoadedHistory.unshift(record);
       logActivity('Invoice Saved Internally', `ID: ${invId} ကို ပုံမထုတ်ဘဲ System ထဲသီးသန့် သိမ်းခဲ့သည်။`);
 
@@ -10357,11 +10397,15 @@ async function loadHistory() {
               id: invId, type: recType, rate: savedRate, inAmt: inValueStr, outAmt: outValueStr, 
               method: paymentMethodName, methodType: methodMeta.methodType || null, methodKey: methodMeta.methodKey || null,
               profit: 0, status: 'Pending', timestamp: new Date().toISOString(), 
-              tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: savedCustomerName 
+              tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: savedCustomerName,
+              agentEmail: String(CURRENT_ROLE || '').toLowerCase() === 'agent' ? currentAgentOwnerEmail() : ''
           };
           
           try {
-              await firestoreWithTimeout(firebase.firestore().collection("exchange_history").doc(invId).set(historyRecord), 15000);
+              const historyRef = String(CURRENT_ROLE || '').toLowerCase() === 'agent'
+                  ? firebase.firestore().collection('agent_history').doc(currentAgentOwnerEmail()).collection('transactions').doc(invId)
+                  : firebase.firestore().collection("exchange_history").doc(invId);
+              await firestoreWithTimeout(historyRef.set(historyRecord), 15000);
 
               // 🌟 Web Refresh မလုပ်ဘဲ Smart Slip (Ctrl+V) က ချက်ချင်းရှာတွေ့အောင် memory cache ထဲ တန်းထည့်ပေးမည်
               if (!allLoadedHistory.some(t => t.id === invId)) allLoadedHistory.unshift(historyRecord);
@@ -11944,7 +11988,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       } else if (role === 'agent') {
           adminBtn.innerHTML = "🧑‍💼 Agent";
           modalTitle.innerHTML = "🧑‍💼 Agent Workspace";
-          if (adminBtn) adminBtn.style.display = 'none';
+          if (adminBtn) adminBtn.style.display = 'inline-block';
+          ['btnTabDashboard', 'btnTabHistory', 'btnTabCustomers'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'inline-block'; });
           if (btnExport) btnExport.style.display = 'none';
           if (btnClear) btnClear.style.display = 'none';
           if (workQueueBtn) workQueueBtn.style.display = 'none';
