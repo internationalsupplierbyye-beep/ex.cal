@@ -2193,16 +2193,22 @@ let calcLock = false;
       }
 
       try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
           const res = await fetch(url, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
+              body: JSON.stringify(payload),
+              signal: controller.signal
           });
+          clearTimeout(timeoutId);
           const result = await res.json();
           if (!result.ok) { console.error("Telegram Send Failed:", result); return false; }
           return true;
       } catch (e) {
-          console.error("Telegram Send Error:", e);
+          // Telegram မရသော်လည်း Firebase Save ကို မထိခိုက်စေရန် Retry Queue သို့သာ ထားမည်။
+          const reason = e?.name === 'AbortError' ? 'timeout' : (e?.message || 'network unavailable');
+          console.warn(`Telegram unavailable (${reason}); message remains in Retry Queue.`);
           return false;
       }
   }
@@ -9644,7 +9650,7 @@ async function loadHistory() {
       if (!count) { list.classList.add('hidden'); list.innerHTML = ''; return; }
       list.classList.remove('hidden');
       list.innerHTML = `<div class="font-bold text-orange-800 mb-2">🔁 မအောင်မြင်သေးသောလုပ်ဆောင်ချက်များ (${count})</div>` + RETRY_OPERATION_QUEUE.slice(0, 8).map(op => {
-          const label = op.type === 'firestore-set' ? 'Transaction Save' : (op.type === 'firestore-update' ? 'Review Complete' : (op.type === 'telegram-alert' ? 'Telegram Report/Alert' : 'Telegram Backup'));
+          const label = (op.type === 'firestore-set' || op.type === 'firestore-agent-set') ? 'Transaction Save' : (op.type === 'firestore-update' ? 'Review Complete' : (op.type === 'telegram-alert' ? 'Telegram Report/Alert' : 'Telegram Backup'));
           return `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white border border-orange-100 rounded-lg p-2 mb-1 text-xs">
             <span><b>${smartEscapeHtml(label)}</b> <span class="text-slate-500">${smartEscapeHtml(op.meta?.invId || op.meta?.date || '')}</span><br><span class="text-slate-400">ကြိုးစားမှု: ${op.attempts || 0}</span></span>
             <button onclick="retryFailedOperations()" class="btn bg-orange-500 hover:bg-orange-600 !py-1 !px-2 !text-xs">Retry Now</button>
@@ -9671,6 +9677,9 @@ async function loadHistory() {
                       ok = true;
                   } else if (op.type === 'firestore-update') {
                       await firestoreWithTimeout(firebase.firestore().collection(op.payload.collection).doc(op.payload.docId).update(op.payload.data), 15000);
+                      ok = true;
+                  } else if (op.type === 'firestore-agent-set') {
+                      await firestoreWithTimeout(firebase.firestore().collection('agent_history').doc(op.payload.agentEmail).collection('transactions').doc(op.payload.docId).set(op.payload.data), 15000);
                       ok = true;
                   } else if (op.type === 'telegram-alert') {
                       ok = await sendTelegramAlert(op.payload.messageText, op.payload.topicId);
@@ -10594,7 +10603,14 @@ ID: <code>${invId}</code>
               renderStaffWorkQueue();
           } catch(e) {
               if (isRetryableSmartError(e)) {
-                  queueRetryOperation({ type: 'firestore-set', payload: { collection: 'exchange_history', docId: invId, data: historyRecord }, meta: { kind: 'transaction', invId } });
+                  const isAgentHistory = String(CURRENT_ROLE || '').toLowerCase() === 'agent';
+                  queueRetryOperation({
+                      type: isAgentHistory ? 'firestore-agent-set' : 'firestore-set',
+                      payload: isAgentHistory
+                          ? { agentEmail: historyRecord.agentEmail, docId: invId, data: historyRecord }
+                          : { collection: 'exchange_history', docId: invId, data: historyRecord },
+                      meta: { kind: 'transaction', invId }
+                  });
                   if (typeof window.showToast === 'function') window.showToast('Connection မကောင်းသဖြင့် Save ကို Retry Queue ထဲသိမ်းထားပါသည်။', '⚠️');
               } else {
                   throw e;
