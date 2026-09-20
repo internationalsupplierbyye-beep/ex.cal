@@ -1023,14 +1023,15 @@
         </div>
 
         <hr class="my-3 border-gray-200">
-        <p class="font-black mb-1 pb-1 text-sm" data-i18n="lbl_inc">Export ထဲ ဘာထည့်မလဲ</p>
+        <div class="flex items-center gap-2 mb-1 pb-1">
+          <p class="font-black text-sm" data-i18n="lbl_inc">Export ထဲ ဘာထည့်မလဲ</p>
+          <input type="checkbox" id="includeReceiptNoti" class="h-4 w-4 accent-purple-600" title="Receipt Noti ထည့်/မထည့် ရွေးရန်" aria-label="Receipt Noti ထည့်မည်">
+        </div>
         <div class="save-mode-options" role="radiogroup" aria-label="Export ထဲ ဘာထည့်မလဲ">
             <label class="save-mode-option"><input type="radio" name="saveMode" value="none" checked><span>မပါ(D)</span></label>
             <label class="save-mode-option"><input type="radio" name="saveMode" value="qr"><span>QR</span></label>
             <label class="save-mode-option"><input type="radio" name="saveMode" value="bank"><span>BANK</span></label>
         </div>
-
-
       </div>
 
       <div class="card p-3">
@@ -1577,6 +1578,11 @@
         <div class="mb-3">
           <label class="text-xs font-bold text-gray-600">Copy Text အောက်ခြေစာသား (Copy Bottom)</label>
           <input type="text" id="adminCopyBottom" class="admin-input-box text-sm">
+        </div>
+        <div class="mb-3">
+          <label class="text-xs font-bold text-gray-600">Receipt Noti (Account Name အောက်တွင် ပေါ်မည့်စာ)</label>
+          <input type="text" id="adminReceiptNoti" class="admin-input-box text-sm" placeholder="ဥပမာ - ငွေလွှဲပြီးပါက Screenshot ပို့ပေးပါ။">
+          <p class="text-[10px] text-gray-500 mt-1">Save အကွက်မှ “ပြေစာ Noti ထည့်မည်” ရွေးထားမှသာ ပေါ်ပါမည်။ ဘာသာစကားအလိုက် သီးခြားသိမ်းနိုင်ပါသည်။</p>
         </div>
         <button onclick="saveReceiptTexts()" id="btnReceiptTextSave" class="btn bg-pink-600 hover:bg-pink-700 w-full mb-3">စာသားများ သိမ်းမည်</button>
   </div> <hr class="border-pink-200 my-3">
@@ -4507,12 +4513,13 @@ window.autoCancelOldPendingLots = async function(dataArray) {
   // --- Dynamic Receipt Texts UI Update ---
   function loadReceiptTextsToInputs() {
       const lang = document.getElementById('adminReceiptLang').value;
-      const texts = FIREBASE_RECEIPT_TEXTS[lang] || {warn1:'', warn2:'', warn3:'', thanks:'', copyBottom:''};
+      const texts = FIREBASE_RECEIPT_TEXTS[lang] || {warn1:'', warn2:'', warn3:'', thanks:'', copyBottom:'', noti:''};
       document.getElementById('adminWarn1').value = texts.warn1 || '';
       document.getElementById('adminWarn2').value = texts.warn2 || '';
       document.getElementById('adminWarn3').value = texts.warn3 || '';
       document.getElementById('adminThanks').value = texts.thanks || '';
       document.getElementById('adminCopyBottom').value = texts.copyBottom || '';
+      document.getElementById('adminReceiptNoti').value = texts.noti || '';
   }
 
   function updateReceiptUI() {
@@ -6916,11 +6923,12 @@ function openAdmin() {
       const w3 = document.getElementById('adminWarn3').value.trim();
       const thx = document.getElementById('adminThanks').value.trim();
       const cb = document.getElementById('adminCopyBottom').value.trim();
+      const noti = document.getElementById('adminReceiptNoti').value.trim();
 
       const btn = document.getElementById('btnReceiptTextSave');
       btn.disabled = true; btn.textContent = "သိမ်းနေသည်...";
 
-      FIREBASE_RECEIPT_TEXTS[lang] = { warn1: w1, warn2: w2, warn3: w3, thanks: thx, copyBottom: cb };
+      FIREBASE_RECEIPT_TEXTS[lang] = { warn1: w1, warn2: w2, warn3: w3, thanks: thx, copyBottom: cb, noti };
 
       try {
           await updateFirebase('receipts');
@@ -10535,7 +10543,13 @@ async function loadHistory() {
           
           const owner=document.createElement('p'); owner.className='mt-3 text-slate-700'; owner.style.paddingBottom = '4px'; owner.style.fontSize = '20px'; 
           owner.innerHTML = (T ? `${T.owner}: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>` : `အကောင့်နာမည်: <span style="font-weight:900; font-size: 26px;">${CURRENT_QR.owner}</span>`);
-          wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(owner); clone.appendChild(wrap);
+          wrap.appendChild(title); wrap.appendChild(img); wrap.appendChild(owner);
+          const receiptNotiEnabled = !!document.getElementById('includeReceiptNoti')?.checked;
+          const receiptNotiText = String(FIREBASE_RECEIPT_TEXTS[lang]?.noti || '').trim();
+          if (receiptNotiEnabled && receiptNotiText) {
+              const n = document.createElement('div'); n.style.marginTop='6px'; n.style.color='#475569'; n.style.fontSize='16px'; n.style.fontWeight='800'; n.style.textAlign='center'; n.textContent=`(${receiptNotiText})`; wrap.appendChild(n);
+          }
+          clone.appendChild(wrap);
           
           // 🌟 Local လား External လား စစ်ဆေးပြီး အချိန်ခွဲသတ်မှတ်ခြင်း
           const waitTime = img.src.includes('http') ? 3000 : 500; 
@@ -10563,6 +10577,11 @@ async function loadHistory() {
             h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
             const body=document.createElement('div'); body.style.textAlign='center';
             body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
+            const receiptNotiEnabled = !!document.getElementById('includeReceiptNoti')?.checked;
+            const receiptNotiText = String(FIREBASE_RECEIPT_TEXTS[lang]?.noti || '').trim();
+            if (receiptNotiEnabled && receiptNotiText) {
+                const n = document.createElement('div'); n.style.marginTop='6px'; n.style.color='#475569'; n.style.fontSize='16px'; n.style.fontWeight='800'; n.style.textAlign='center'; n.textContent=`(${receiptNotiText})`; body.appendChild(n);
+            }
             headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
             wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
             
