@@ -1295,6 +1295,7 @@
       <button class="tab-btn" onclick="switchTab('tab-expenses', this)" id="btnTabExpenses">💸 အသုံးစရိတ်</button>
       <button class="tab-btn" onclick="switchTab('tab-qrs', this)" id="btnTabQrs">QR များ</button>
       <button class="tab-btn" onclick="switchTab('tab-banks', this)" id="btnTabBanks">ဘဏ်များ</button>
+      <button class="tab-btn" onclick="switchTab('tab-agent-accounts', this)" id="btnTabAgentAccounts">🏦 Agent Bank / QR</button>
       <button class="tab-btn" onclick="switchTab('tab-logs', this)" id="btnTabLogs">📝 Logs</button>
     </div>
 
@@ -1824,6 +1825,38 @@
           <h3 id="qrAdminListTitle" class="font-bold text-sm text-gray-600 mb-2 shrink-0">📋 QR များ (ဆွဲရွှေ့ပါ)</h3>
           <p class="admin-list-scroll-hint">▲ ▼ ခလုတ်ဖြင့်လည်း အပေါ်/အောက် ရွှေ့နိုင်ပါသည်။</p>
           <div id="adminQRList" class="admin-resource-list overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1"></div>
+      </div>
+    </div>
+
+    <div id="tab-agent-accounts" class="tab-pane">
+      <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-4">
+        <h3 class="font-black text-indigo-800 mb-1">🏦 Agent ကိုယ်ပိုင် Bank / QR Settings</h3>
+        <p class="text-xs text-indigo-700">ဒီမှာထည့်သော Bank / QR များသည် Agent ၏ ကိုယ်ပိုင် Workspace ထဲတွင်သာ သိမ်းမည်။ Main ဘက်တွင် မပေါ်ပါ။</p>
+      </div>
+      <div class="bg-white border border-blue-200 rounded-xl p-4 mb-4">
+        <h4 class="font-bold text-blue-800 mb-2">Bank အသစ် ထည့်ရန်</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+          <input id="agentBankId" class="admin-input-box !mb-0 text-sm" placeholder="Code (KTB)">
+          <input id="agentBankName" class="admin-input-box !mb-0 text-sm" placeholder="Bank Name">
+          <input id="agentBankAccName" class="admin-input-box !mb-0 text-sm" placeholder="Account Name">
+          <input id="agentBankAccNo" class="admin-input-box !mb-0 text-sm" placeholder="Account No">
+          <select id="agentBankCurrency" class="admin-input-box !mb-0 text-sm"><option value="MMK">MMK</option><option value="THB">THB</option><option value="VND">VND</option></select>
+        </div>
+        <button type="button" onclick="saveAgentPrivateBank()" class="btn bg-blue-600 hover:bg-blue-700 !py-1.5 mt-2">Bank သိမ်းမည်</button>
+      </div>
+      <div class="bg-white border border-green-200 rounded-xl p-4 mb-4">
+        <h4 class="font-bold text-green-800 mb-2">QR / PromptPay အသစ် ထည့်ရန်</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          <input id="agentQrName" class="admin-input-box !mb-0 text-sm" placeholder="QR Name">
+          <input id="agentQrFile" class="admin-input-box !mb-0 text-sm" placeholder="QR File / PP:ID">
+          <input id="agentQrOwner" class="admin-input-box !mb-0 text-sm" placeholder="Owner Name">
+          <select id="agentQrCurrency" class="admin-input-box !mb-0 text-sm"><option value="MMK">MMK</option><option value="THB">THB</option><option value="VND">VND</option></select>
+        </div>
+        <button type="button" onclick="saveAgentPrivateQr()" class="btn bg-green-600 hover:bg-green-700 !py-1.5 mt-2">QR သိမ်းမည်</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div><h4 class="font-bold text-slate-700 mb-1">Agent Bank များ</h4><div id="agentPrivateBankList" class="border rounded-xl p-2 bg-slate-50 min-h-16"></div></div>
+        <div><h4 class="font-bold text-slate-700 mb-1">Agent QR များ</h4><div id="agentPrivateQrList" class="border rounded-xl p-2 bg-slate-50 min-h-16"></div></div>
       </div>
     </div>
 
@@ -3094,13 +3127,17 @@ window.showToast = function(message, icon = "✅") {
 
           let grossProfit = periodProfitThb + periodProfitVnd;
           let totalProfit = grossProfit - periodFeeMmk;
+          // Net THB ကို Gross Realized THB ထဲက Fee ၏ THB တန်ဖိုးပါ နုတ်ပြီးမှ ပြမည်။
+          // အရင်က Gross THB ကိုပဲ ပြနေသောကြောင့် MMK Net နှင့် THB တန်ဖိုး မကိုက်ညီခဲ့သည်။
+          const feeThbEquivalent = feeMmkToThb(periodFeeMmk);
+          const netProfitThbInBaht = periodProfitThbInBaht - feeThbEquivalent;
           const totalProfitEl = document.getElementById('dash_total_profit');
           // Total MMK ကို stale/default rate (ဥပမာ 35) နဲ့ မစားတော့ပါ။
           // THB-only ဖြစ်လျှင် FIFO က တကယ်သဘောတူထားသော Realized THB ကိုပဲ ပြမည်။
           // VND ပါလျှင် currencies မရောဘဲ THB/VND component ကို ခွဲပြမည်။
           const thbEquivalentHtml = Math.abs(periodProfitVnd) < 0.000001
-              ? `<span class="block text-sm text-blue-600">≈ ${periodProfitThbInBaht.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2})} THB (Realized)</span>`
-              : `<span class="block text-[10px] text-blue-600">THB Realized: ${periodProfitThbInBaht.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2})} THB · VND: ${formatMmk(periodProfitVnd)} MMK</span>`;
+              ? `<span class="block text-sm text-blue-600">≈ ${netProfitThbInBaht.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2})} THB</span>`
+              : `<span class="block text-[10px] text-blue-600">THB Net: ${netProfitThbInBaht.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2})} THB · VND: ${formatMmk(periodProfitVnd)} MMK</span>`;
           totalProfitEl.innerHTML = `${totalProfit >= 0 ? '+ ' : ''}${formatMmk(totalProfit)} MMK ${thbEquivalentHtml}<span class="block text-[10px] text-slate-500">Gross ${formatMmk(grossProfit)} MMK · Fees -${formatMmk(periodFeeMmk)} MMK</span>`;
           totalProfitEl.className = totalProfit >= 0 ? "font-black text-green-700 text-xl" : "font-black text-red-700 text-xl";
           const feeNote = document.getElementById('dash_fee_summary');
@@ -3918,6 +3955,59 @@ window.autoCancelOldPendingLots = async function(dataArray) {
   }
 
   // Customer တစ်ယောက်ချင်းစီ၏ payout account permission ကိုစစ်ရန် shared helpers
+  let AGENT_PRIVATE_ACCOUNTS = { banks: {}, bankOrder: [], qrs: [] };
+  let AGENT_PRIVATE_ACCOUNTS_LOADED = false;
+  function isAgentRole() { return String(CURRENT_ROLE || '').toLowerCase() === 'agent'; }
+  function agentWorkspaceRef() {
+    const email = String(currentAgentOwnerEmail ? currentAgentOwnerEmail() : firebase.auth?.().currentUser?.email || '').toLowerCase();
+    return firebase.firestore().collection('agent_workspaces').doc(email);
+  }
+  function activeBankMap() { return isAgentRole() && AGENT_PRIVATE_ACCOUNTS_LOADED ? AGENT_PRIVATE_ACCOUNTS.banks : FIREBASE_BANKS; }
+  function activeBankOrder() { return isAgentRole() && AGENT_PRIVATE_ACCOUNTS_LOADED ? AGENT_PRIVATE_ACCOUNTS.bankOrder : FIREBASE_BANK_ORDER; }
+  function activeQrList() { return isAgentRole() && AGENT_PRIVATE_ACCOUNTS_LOADED ? AGENT_PRIVATE_ACCOUNTS.qrs : FIREBASE_QRS; }
+  async function loadAgentPrivateAccounts() {
+    if (!isAgentRole() || AGENT_PRIVATE_ACCOUNTS_LOADED) return;
+    try {
+      const snap = await agentWorkspaceRef().get();
+      const d = snap.exists ? (snap.data() || {}) : {};
+      AGENT_PRIVATE_ACCOUNTS = { banks: d.banks && typeof d.banks === 'object' ? d.banks : {}, bankOrder: Array.isArray(d.bankOrder) ? d.bankOrder : [], qrs: Array.isArray(d.qrs) ? d.qrs : [] };
+      FIREBASE_BANKS = AGENT_PRIVATE_ACCOUNTS.banks; FIREBASE_BANK_ORDER = AGENT_PRIVATE_ACCOUNTS.bankOrder; FIREBASE_QRS = AGENT_PRIVATE_ACCOUNTS.qrs;
+      AGENT_PRIVATE_ACCOUNTS_LOADED = true;
+      renderAgentPrivateAccountLists(); initDropdowns();
+    } catch (e) { console.warn('Agent private account load error:', e); window.showToast?.('Agent Bank / QR ဆွဲမရပါ။', '⚠️'); }
+  }
+  async function saveAgentPrivateWorkspace() {
+    if (!isAgentRole()) throw new Error('Agent account မဟုတ်ပါ။');
+    try {
+      await agentWorkspaceRef().set({ banks: AGENT_PRIVATE_ACCOUNTS.banks, bankOrder: AGENT_PRIVATE_ACCOUNTS.bankOrder, qrs: AGENT_PRIVATE_ACCOUNTS.qrs, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      FIREBASE_BANKS = AGENT_PRIVATE_ACCOUNTS.banks; FIREBASE_BANK_ORDER = AGENT_PRIVATE_ACCOUNTS.bankOrder; FIREBASE_QRS = AGENT_PRIVATE_ACCOUNTS.qrs;
+      renderAgentPrivateAccountLists(); initDropdowns();
+    } catch (e) {
+      const code = String(e?.code || '');
+      if (code.includes('permission-denied')) throw new Error('Firebase Rules က Agent Workspace ကို Write ခွင့်မပေးသေးပါ။ agent_workspaces/{သင့် Email} အတွက် သင့်ကိုယ်ပိုင်စာရွက်ကိုသာ Write ခွင့်ပေးပါ။');
+      throw e;
+    }
+  }
+  function renderAgentPrivateAccountLists() {
+    const b = document.getElementById('agentPrivateBankList'), q = document.getElementById('agentPrivateQrList');
+    if (b) b.innerHTML = AGENT_PRIVATE_ACCOUNTS.bankOrder.length ? AGENT_PRIVATE_ACCOUNTS.bankOrder.map(id => { const x=AGENT_PRIVATE_ACCOUNTS.banks[id]; return x ? `<div class="flex justify-between border-b py-1 text-xs"><span>🏦 ${x.name || id} (${x.currency || 'MMK'})<br><small>${x.accName || ''} ${x.accNo || ''}</small></span><button type="button" onclick="deleteAgentPrivateBank('${id}')" class="text-red-600">✕</button></div>` : ''; }).join('') : '<span class="text-xs text-slate-400">Bank မရှိသေးပါ</span>';
+    if (q) q.innerHTML = AGENT_PRIVATE_ACCOUNTS.qrs.length ? AGENT_PRIVATE_ACCOUNTS.qrs.map((x,i) => { const file=typeof x==='string'?x:(x.file||`QR_${i}`); const name=typeof x==='string'?x:(x.name||file); return `<div class="flex justify-between border-b py-1 text-xs"><span>🔲 ${name} (${typeof x==='object'?(x.currency||'MMK'):'MMK'})<br><small>${file}</small></span><button type="button" onclick="deleteAgentPrivateQr('${encodeURIComponent(file)}')" class="text-red-600">✕</button></div>`; }).join('') : '<span class="text-xs text-slate-400">QR မရှိသေးပါ</span>';
+  }
+  window.saveAgentPrivateBank = async function() {
+    if (!isAgentRole()) return; const id=document.getElementById('agentBankId')?.value.trim(); if(!id) return alert('Bank Code ထည့်ပါ။');
+    const previous = JSON.parse(JSON.stringify(AGENT_PRIVATE_ACCOUNTS));
+    AGENT_PRIVATE_ACCOUNTS.banks[id]={name:document.getElementById('agentBankName')?.value.trim()||id,accName:document.getElementById('agentBankAccName')?.value.trim()||'',accNo:document.getElementById('agentBankAccNo')?.value.trim()||'',currency:document.getElementById('agentBankCurrency')?.value||'MMK',active:true}; if(!AGENT_PRIVATE_ACCOUNTS.bankOrder.includes(id)) AGENT_PRIVATE_ACCOUNTS.bankOrder.push(id);
+    try { await saveAgentPrivateWorkspace(); window.showToast?.('Agent Bank သိမ်းပြီးပါပြီ။','✅'); } catch(e) { AGENT_PRIVATE_ACCOUNTS=previous; alert('Agent Bank သိမ်းမရပါ: ' + e.message); }
+  };
+  window.saveAgentPrivateQr = async function() {
+    if (!isAgentRole()) return; const file=document.getElementById('agentQrFile')?.value.trim(); if(!file) return alert('QR File / PP ID ထည့်ပါ။');
+    const previous = JSON.parse(JSON.stringify(AGENT_PRIVATE_ACCOUNTS));
+    const item={name:document.getElementById('agentQrName')?.value.trim()||file, file, owner:document.getElementById('agentQrOwner')?.value.trim()||'', currency:document.getElementById('agentQrCurrency')?.value||'MMK', active:true}; const idx=AGENT_PRIVATE_ACCOUNTS.qrs.findIndex(x=>(typeof x==='string'?x:x.file)===file); if(idx>=0) AGENT_PRIVATE_ACCOUNTS.qrs[idx]=item; else AGENT_PRIVATE_ACCOUNTS.qrs.push(item);
+    try { await saveAgentPrivateWorkspace(); window.showToast?.('Agent QR သိမ်းပြီးပါပြီ။','✅'); } catch(e) { AGENT_PRIVATE_ACCOUNTS=previous; alert('Agent QR သိမ်းမရပါ: ' + e.message); }
+  };
+  window.deleteAgentPrivateBank = async function(id) { if(!isAgentRole())return; delete AGENT_PRIVATE_ACCOUNTS.banks[id]; AGENT_PRIVATE_ACCOUNTS.bankOrder=AGENT_PRIVATE_ACCOUNTS.bankOrder.filter(x=>x!==id); await saveAgentPrivateWorkspace(); };
+  window.deleteAgentPrivateQr = async function(encoded) { if(!isAgentRole())return; const file=decodeURIComponent(encoded); AGENT_PRIVATE_ACCOUNTS.qrs=AGENT_PRIVATE_ACCOUNTS.qrs.filter(x=>(typeof x==='string'?x:x.file)!==file); await saveAgentPrivateWorkspace(); };
+
   function getCustomerAllowedPayoutIds(customerId) {
     const customer = customerId && FIREBASE_CUSTOMERS ? FIREBASE_CUSTOMERS[customerId] : null;
     const raw = customer && (customer.allowedPayoutAccountIds || customer.allowedAccounts);
@@ -3926,11 +4016,11 @@ window.autoCancelOldPendingLots = async function(dataArray) {
   function getPayoutAccountPermissionId(kind, value) { return `${kind}:${value}`; }
   function getPayoutAccountChoices() {
     const choices = [];
-    FIREBASE_BANK_ORDER.forEach(id => {
-      const b = FIREBASE_BANKS[id];
+    activeBankOrder().forEach(id => {
+      const b = activeBankMap()[id];
       if (b) choices.push({ id: getPayoutAccountPermissionId('BANK', id), label: `🏦 ${b.name || id}`, currency: String(b.currency || 'MMK').toUpperCase() });
     });
-    FIREBASE_QRS.forEach((q, index) => {
+    activeQrList().forEach((q, index) => {
       if (q) { const value = typeof q === 'string' ? q : (q.file || `QR_${index}`); choices.push({ id: getPayoutAccountPermissionId('QR', value), label: `🔲 ${typeof q === 'string' ? value : (q.name || value)}`, currency: String((q && q.currency) || 'MMK').toUpperCase() }); }
     });
     return choices;
@@ -3979,15 +4069,19 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     const currentLang = localStorage.getItem('sys_lang_pref') || 'my';
     const dict = (typeof SYS_DICT !== 'undefined') ? (SYS_DICT[currentLang] || SYS_DICT['my']) : {};
 
-    const useFirebaseBanks = FIREBASE_BANK_ORDER.length > 0;
-    const useFirebaseQRs = FIREBASE_QRS.length > 0;
-    ACTIVE_BANK_INFO = useFirebaseBanks ? FIREBASE_BANKS : DEFAULT_BANK_INFO;
-    const finalBankOrder = useFirebaseBanks ? FIREBASE_BANK_ORDER : DEFAULT_BANK_ORDER;
-    const finalQRs = useFirebaseQRs ? FIREBASE_QRS : DEFAULT_QR_FILES.map(f => ({ file: f, name: f.replace(/\.[^.]+$/, '') }));
-    const allowedPayoutIds = getCustomerAllowedPayoutIds(document.getElementById('mainCustomerSelect')?.value);
     const isAgentSession = String(CURRENT_ROLE || '').toLowerCase() === 'agent';
+    // Agent private workspace မရောက်သေးချိန် Main BANK/QR ကို ခဏတာမပြပါ။
+    const bankSource = isAgentSession ? (AGENT_PRIVATE_ACCOUNTS_LOADED ? AGENT_PRIVATE_ACCOUNTS.banks : {}) : FIREBASE_BANKS;
+    const bankOrderSource = isAgentSession ? (AGENT_PRIVATE_ACCOUNTS_LOADED ? AGENT_PRIVATE_ACCOUNTS.bankOrder : []) : FIREBASE_BANK_ORDER;
+    const qrSource = isAgentSession ? (AGENT_PRIVATE_ACCOUNTS_LOADED ? AGENT_PRIVATE_ACCOUNTS.qrs : []) : FIREBASE_QRS;
+    const useFirebaseBanks = bankOrderSource.length > 0;
+    const useFirebaseQRs = qrSource.length > 0;
+    ACTIVE_BANK_INFO = useFirebaseBanks ? bankSource : (isAgentSession ? {} : DEFAULT_BANK_INFO);
+    const finalBankOrder = useFirebaseBanks ? bankOrderSource : (isAgentSession ? [] : DEFAULT_BANK_ORDER);
+    const finalQRs = useFirebaseQRs ? qrSource : (isAgentSession ? [] : DEFAULT_QR_FILES.map(f => ({ file: f, name: f.replace(/\.[^.]+$/, '') })));
+    const allowedPayoutIds = getCustomerAllowedPayoutIds(document.getElementById('mainCustomerSelect')?.value);
     const assignedAgentMethodIds = new Set(Array.isArray(CURRENT_ACCESS_CONFIG?.assignedPaymentMethodIds) ? CURRENT_ACCESS_CONFIG.assignedPaymentMethodIds : []);
-    const agentMethodAllowed = (permissionId) => !isAgentSession ? true : assignedAgentMethodIds.has(permissionId);
+    const agentMethodAllowed = (permissionId) => !isAgentSession || AGENT_PRIVATE_ACCOUNTS_LOADED ? true : assignedAgentMethodIds.has(permissionId);
     
     // 🌟 အကောင့်နာမည်ကို အတိုကောက် ပြောင်းပေးမည့် Function အသစ် 🌟
     const getInitials = (nameStr) => {
@@ -7605,7 +7699,7 @@ function openAdmin() {
               tx.ledgerOut = newLedgerOut;
               tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
 
-              if (balanceChanges.length > 0) {
+              if (balanceChanges.length > 0 && !isAgentRole()) {
                   await window.updateBalancesSafely(balanceChanges);
                   if (typeof loadTreasuryData === 'function') loadTreasuryData();
               }
@@ -7620,7 +7714,7 @@ function openAdmin() {
               await getHistoryDocRef(tx).update({ ledgerIn: newLedgerIn });
               tx.ledgerIn = newLedgerIn;
 
-              if (balanceChanges.length > 0) {
+              if (balanceChanges.length > 0 && !isAgentRole()) {
                   await window.updateBalancesSafely(balanceChanges);
                   if (typeof loadTreasuryData === 'function') loadTreasuryData();
               }
@@ -7656,7 +7750,7 @@ function openAdmin() {
               tx.ledgerOut = newLedgerOut;
               tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
 
-              if (balanceChanges.length > 0) {
+              if (balanceChanges.length > 0 && !isAgentRole()) {
                   await window.updateBalancesSafely(balanceChanges);
                   if (typeof loadTreasuryData === 'function') loadTreasuryData();
               }
@@ -7682,7 +7776,7 @@ function openAdmin() {
               tx.ledgerOut = newLedgerOut;
               tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
 
-              if (balanceChanges.length > 0) {
+              if (balanceChanges.length > 0 && !isAgentRole()) {
                   await window.updateBalancesSafely(balanceChanges);
                   if (typeof loadTreasuryData === 'function') loadTreasuryData();
               }
@@ -7690,7 +7784,7 @@ function openAdmin() {
               document.getElementById('successTxModal').style.display = 'none';
               await finalizeTxStatus(pendingSuccessTxId, 'Success', "");
           }
-          await window.applySuccessFeeFromConfirm();
+          if (!isAgentRole()) await window.applySuccessFeeFromConfirm();
 
       } catch(e) {
           console.error("Confirm Success Error:", e);
@@ -7807,7 +7901,8 @@ function openAdmin() {
   }
 
   function getHistoryDocRef(tx) {
-      const email = String(tx?.agentEmail || '').toLowerCase();
+      // Agent Session မှာ legacy record တွင် agentEmail မပါလည်း မိမိ Agent History ကိုသာ သုံးမည်။
+      const email = String(tx?.agentEmail || (isAgentRole() ? currentAgentOwnerEmail() : '') || '').toLowerCase();
       if (email) return firebase.firestore().collection('agent_history').doc(email).collection('transactions').doc(tx.id);
       return firebase.firestore().collection('exchange_history').doc(tx.id);
   }
@@ -7827,7 +7922,7 @@ function openAdmin() {
               } else if (tx.ledgerOut) {
                   revertChanges.push({ id: tx.ledgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
               }
-              if (revertChanges.length > 0) {
+              if (revertChanges.length > 0 && !isAgentRole()) {
                   await window.updateBalancesSafely(revertChanges);
                   if (typeof loadTreasuryData === 'function') loadTreasuryData();
               }
@@ -7847,7 +7942,7 @@ function openAdmin() {
                   revertChanges.push({ id: tx.ledgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
               }
 
-              if (revertChanges.length > 0) {
+              if (revertChanges.length > 0 && !isAgentRole()) {
                   await window.updateBalancesSafely(revertChanges);
                   if (typeof loadTreasuryData === 'function') loadTreasuryData();
               }
@@ -12298,7 +12393,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           adminBtn.innerHTML = "🧑‍💼 Agent";
           modalTitle.innerHTML = "🧑‍💼 Agent Workspace";
           if (adminBtn) adminBtn.style.display = 'inline-block';
-          ['btnTabDashboard', 'btnTabHistory', 'btnTabCustomers'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'inline-block'; });
+          ['btnTabDashboard', 'btnTabHistory', 'btnTabCustomers', 'btnTabAgentAccounts'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'inline-block'; });
+          loadAgentPrivateAccounts();
           if (btnExport) btnExport.style.display = 'none';
           if (btnClear) btnClear.style.display = 'none';
           if (workQueueBtn) workQueueBtn.style.display = 'none';
