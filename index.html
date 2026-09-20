@@ -996,14 +996,26 @@
         <div class="grid grid-cols-1 gap-3 mb-2">
             <div>
                 <div class="flex items-center justify-between gap-2 mb-1 pb-1 flex-wrap">
-                    <p class="font-black text-xs" data-i18n="lbl_qr_sel">QR Select</p>
-                    <div id="qrBalanceStatus" class="selector-balance-status hidden" aria-live="polite"></div>
-                </div>
+                    <div class="flex gap-1 items-center">
+                      <button type="button" id="qrSourceTabQr" class="customer-scope-btn active !text-[10px] !py-1 !px-2" onclick="switchQrSourceTab('qr')">QR</button>
+                      <button type="button" id="qrSourceTabPp" class="customer-scope-btn !text-[10px] !py-1 !px-2" onclick="switchQrSourceTab('pp')">PP</button>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <select id="qrCurrencyFilter" class="compact border rounded-lg !py-1 !px-2 !text-[10px] w-auto max-w-[118px]" aria-label="QR Currency Filter">
+                        <option value="ALL">All Currency</option><option value="MMK">🟨 MMK</option><option value="THB">🟦 THB</option><option value="VND">🟥 VND</option>
+                      </select>
+                      <div id="qrBalanceStatus" class="selector-balance-status hidden" aria-live="polite"></div>
+                    </div>
+                  </div>
                 <select id="qrSelect" class="compact border rounded-lg w-full text-sm"></select>
+                <select id="ppSelect" class="compact border rounded-lg w-full text-sm hidden"></select>
             </div>
             <div>
                 <div class="flex items-center justify-between gap-2 mb-1 pb-1 flex-wrap">
                     <p class="font-black text-xs" data-i18n="lbl_bank_sel">Bank Select</p>
+                    <select id="bankCurrencyFilter" class="compact border rounded-lg !py-1 !px-2 !text-[10px] w-auto max-w-[118px]" aria-label="Bank Currency Filter">
+                      <option value="ALL">All Currency</option><option value="MMK">🟨 MMK</option><option value="THB">🟦 THB</option><option value="VND">🟥 VND</option>
+                    </select>
                     <div id="bankBalanceStatus" class="selector-balance-status hidden" aria-live="polite"></div>
                 </div>
                 <select id="bankSelect" class="compact border rounded-lg w-full text-sm"></select>
@@ -1788,11 +1800,15 @@
 
     <div id="tab-qrs" class="tab-pane">
       <div class="flex flex-col h-full w-full min-h-[500px]">
+          <div class="flex gap-2 mb-3 border-b border-green-200 pb-2">
+            <button type="button" class="customer-scope-btn active" data-qr-admin-scope="qr" onclick="switchQrAdminSubTab('qr')">QR</button>
+            <button type="button" class="customer-scope-btn" data-qr-admin-scope="pp" onclick="switchQrAdminSubTab('pp')">PP / PromptPay</button>
+          </div>
           <div class="bg-green-50 border border-green-200 p-4 rounded-xl mb-4 shrink-0">
-            <h3 class="font-bold text-green-800 mb-3">🔲 QR အသစ် ထည့်ရန် / ပြင်ရန်</h3>
+            <h3 id="qrAdminFormTitle" class="font-bold text-green-800 mb-3">🔲 QR အသစ် ထည့်ရန် / ပြင်ရန်</h3>
             <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-3">
               <input id="newQrName" class="admin-input-box text-sm" placeholder="QR အမည်">
-              <input id="newQrFile" class="admin-input-box text-sm" placeholder="QR ပုံနာမည်">
+              <input id="newQrFile" class="admin-input-box text-sm" placeholder="QR ပုံနာမည် (PP:ID ထည့်လျှင် PP စာရင်း)">
               <input id="newQrOwner" class="admin-input-box text-sm" placeholder="ပိုင်ရှင်အမည်">
               <select id="newQrCurrency" class="admin-input-box text-sm"><option value="">Currency</option><option value="THB">THB</option><option value="MMK">MMK</option><option value="VND">VND</option></select>
               <select id="newQrLedger" class="admin-input-box text-sm"><option value="">ငွေသေတ္တာ (Wallet)</option></select>
@@ -1805,7 +1821,7 @@
                 <button onclick="clearQrForm()" class="btn2 px-3 text-sm" title="ရှင်းမည်">🔄</button>
             </div>
           </div>
-          <h3 class="font-bold text-sm text-gray-600 mb-2 shrink-0">📋 ထည့်သွင်းထားသော QR များ (ဆွဲရွှေ့ပါ)</h3>
+          <h3 id="qrAdminListTitle" class="font-bold text-sm text-gray-600 mb-2 shrink-0">📋 QR များ (ဆွဲရွှေ့ပါ)</h3>
           <p class="admin-list-scroll-hint">▲ ▼ ခလုတ်ဖြင့်လည်း အပေါ်/အောက် ရွှေ့နိုင်ပါသည်။</p>
           <div id="adminQRList" class="admin-resource-list overflow-y-auto border rounded-xl p-2 bg-gray-50 flex-1"></div>
       </div>
@@ -4005,6 +4021,43 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         return state === 'green' ? '🟢 ' : (state === 'yellow' ? '🟡 ' : (state === 'red' ? '🔴 ' : ''));
     };
 
+    let QR_SOURCE_TAB = 'qr';
+    function switchQrSourceTab(kind) {
+      QR_SOURCE_TAB = kind === 'pp' ? 'pp' : 'qr';
+      const qr = document.getElementById('qrSelect');
+      const pp = document.getElementById('ppSelect');
+      const qrBtn = document.getElementById('qrSourceTabQr');
+      const ppBtn = document.getElementById('qrSourceTabPp');
+      if (qr) qr.classList.toggle('hidden', QR_SOURCE_TAB !== 'qr');
+      if (pp) pp.classList.toggle('hidden', QR_SOURCE_TAB !== 'pp');
+      if (qr) qr.querySelectorAll('option[data-qr-kind]').forEach(option => { option.hidden = QR_SOURCE_TAB === 'qr' ? option.dataset.qrKind !== 'qr' : option.dataset.qrKind !== 'pp'; });
+      if (qrBtn) qrBtn.classList.toggle('active', QR_SOURCE_TAB === 'qr');
+      if (ppBtn) ppBtn.classList.toggle('active', QR_SOURCE_TAB === 'pp');
+      const active = QR_SOURCE_TAB === 'pp' ? pp : qr;
+      if (active && active.value !== (qr?.value || '')) {
+        if (qr) qr.value = active.value;
+        refreshQrPreview(false);
+      }
+    }
+    window.switchQrSourceTab = switchQrSourceTab;
+    function filterPayoutSelectorCurrency(kind, rawCurrency) {
+      const currency = String(rawCurrency || 'ALL').toUpperCase();
+      const ids = kind === 'bank' ? ['bankSelect'] : ['qrSelect', 'ppSelect'];
+      ids.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.querySelectorAll('option[data-currency]').forEach(option => {
+          option.hidden = currency !== 'ALL' && option.dataset.currency !== currency;
+        });
+        if (select.value && select.selectedOptions[0]?.hidden) {
+          select.value = '';
+          if (id === 'qrSelect') refreshQrPreview(false);
+        }
+      });
+      if (kind === 'bank') refreshBankInfo(false);
+      else refreshQrPreview(false);
+    }
+    window.filterPayoutSelectorCurrency = filterPayoutSelectorCurrency;
     const bankSelect = document.getElementById('bankSelect');
     if(bankSelect) {
       bankSelect.innerHTML = `<option value="" data-i18n="ph_bank_sel">${dict.ph_bank_sel || '— ဘဏ်ရွေးပါ —'}</option>`;
@@ -4013,6 +4066,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           const info = ACTIVE_BANK_INFO[key];
           const o = document.createElement('option'); 
           o.value = key; 
+          o.dataset.currency = String(info.currency || 'MMK').toUpperCase();
           
           let ownerAbbr = getInitials(info.accName); // အတိုကောက် ယူမည်
           let emoji = getEmojiPrefix(info);
@@ -4026,8 +4080,10 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     }
 
     const qrSelect = document.getElementById('qrSelect');
+    const ppSelect = document.getElementById('ppSelect');
     if(qrSelect) {
       qrSelect.innerHTML = `<option value="" data-i18n="ph_qr_sel">${dict.ph_qr_sel || '— QR ရွေးပါ —'}</option>`;
+      if (ppSelect) ppSelect.innerHTML = `<option value="">— PP Account ရွေးပါ —</option>`;
       finalQRs.forEach(qr => {
         if (typeof qr === 'object' && qr.active === false) return; // 🌟 Inactive QR ကို Main Page Select တွင် မပြပါ
         const qrValue = typeof qr === 'string' ? qr : qr.file;
@@ -4044,9 +4100,12 @@ window.autoCancelOldPendingLots = async function(dataArray) {
 
         const o = document.createElement('option'); 
         o.value = val; 
+        o.dataset.currency = String(typeof qr === 'object' ? (qr.currency || 'MMK') : 'MMK').toUpperCase();
         o.textContent = emoji + curMeta.flag + text + ownerAbbr; // နာမည်ဘေးတွင် ကပ်ပြမည်
         o.className = curMeta.cls;
+        o.dataset.qrKind = String(val).startsWith('PP:') ? 'pp' : 'qr';
         qrSelect.appendChild(o);
+        if (ppSelect && String(val).startsWith('PP:')) ppSelect.appendChild(o.cloneNode(true));
       });
     }
     updatePayoutSelectorAvailability(allowedPayoutIds);
@@ -4056,6 +4115,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     try { selectedAllowedForForm = JSON.parse(document.getElementById('cusAllowedAccounts')?.dataset.selected || '[]'); } catch (e) {}
     renderCustomerAllowedAccounts(selectedAllowedForForm);
     updateSelectorBalanceStatuses();
+    switchQrSourceTab('qr');
     refreshBankInfo();
     refreshQrPreview();
 
@@ -4378,6 +4438,12 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     
     const qrEl = document.getElementById('qrSelect');
     if(qrEl) qrEl.addEventListener('change', () => refreshQrPreview(false));
+    const ppEl = document.getElementById('ppSelect');
+    if(ppEl) ppEl.addEventListener('change', () => { const qr = document.getElementById('qrSelect'); if (qr) qr.value = ppEl.value; refreshQrPreview(false); });
+    const qrCurrencyEl = document.getElementById('qrCurrencyFilter');
+    if(qrCurrencyEl) qrCurrencyEl.addEventListener('change', () => window.filterPayoutSelectorCurrency('qr', qrCurrencyEl.value));
+    const bankCurrencyEl = document.getElementById('bankCurrencyFilter');
+    if(bankCurrencyEl) bankCurrencyEl.addEventListener('change', () => window.filterPayoutSelectorCurrency('bank', bankCurrencyEl.value));
 
     const mlFor = document.getElementById('manualLotForeign');
     if(mlFor) {
@@ -5562,6 +5628,20 @@ function openAdmin() {
       document.querySelectorAll('.list-item').forEach(el => el.classList.remove('drag-over')); 
   }
 
+  let QR_ADMIN_SUBTAB = 'qr';
+  function switchQrAdminSubTab(kind) {
+    QR_ADMIN_SUBTAB = kind === 'pp' ? 'pp' : 'qr';
+    document.querySelectorAll('[data-qr-admin-scope]').forEach(btn => btn.classList.toggle('active', btn.dataset.qrAdminScope === QR_ADMIN_SUBTAB));
+    const title = document.getElementById('qrAdminFormTitle');
+    const listTitle = document.getElementById('qrAdminListTitle');
+    const fileInput = document.getElementById('newQrFile');
+    if (title) title.textContent = QR_ADMIN_SUBTAB === 'pp' ? '💳 PP / PromptPay Account ထည့်ရန် / ပြင်ရန်' : '🔲 QR အသစ် ထည့်ရန် / ပြင်ရန်';
+    if (listTitle) listTitle.textContent = QR_ADMIN_SUBTAB === 'pp' ? '📋 PP / PromptPay Accounts (ဆွဲရွှေ့ပါ)' : '📋 QR များ (ဆွဲရွှေ့ပါ)';
+    if (fileInput) fileInput.placeholder = QR_ADMIN_SUBTAB === 'pp' ? 'PP:ဖုန်း/ID (ဥပမာ PP:0812345678)' : 'QR ပုံနာမည် (ဥပမာ my_qr.png)';
+    renderAdminLists();
+  }
+  window.switchQrAdminSubTab = switchQrAdminSubTab;
+
   function renderAdminLists() {
     const bankListDiv = document.getElementById('adminBankList'); bankListDiv.innerHTML = '';
     if(FIREBASE_BANK_ORDER.length === 0) { bankListDiv.innerHTML = '<p class="text-sm text-gray-400 p-2 text-center border rounded bg-white">ထည့်သွင်းထားခြင်း မရှိသေးပါ</p>'; } 
@@ -5586,10 +5666,13 @@ function openAdmin() {
     }
     
     const qrListDiv = document.getElementById('adminQRList'); qrListDiv.innerHTML = '';
-    if(FIREBASE_QRS.length === 0) { qrListDiv.innerHTML = '<p class="text-sm text-gray-400 p-2 text-center border rounded bg-white">ထည့်သွင်းထားခြင်း မရှိသေးပါ</p>'; } 
+    const visibleQrCount = FIREBASE_QRS.filter(q => (String(typeof q === 'string' ? q : q.file || '').startsWith('PP:')) === (QR_ADMIN_SUBTAB === 'pp')).length;
+    if(visibleQrCount === 0) { qrListDiv.innerHTML = '<p class="text-sm text-gray-400 p-2 text-center border rounded bg-white">ဒီအမျိုးအစား မရှိသေးပါ</p>'; } 
     else {
       FIREBASE_QRS.forEach((qr, index) => {
         const file = typeof qr === 'string' ? qr : qr.file;
+        const isPp = String(file || '').startsWith('PP:');
+        if ((QR_ADMIN_SUBTAB === 'pp') !== isPp) return;
         const name = typeof qr === 'string' ? qr.replace(/\.[^.]+$/, '') : (qr.name || file);
         
         // 🌟 Wallet (Ledger) Badge လေး ဖန်တီးမည်
@@ -6619,13 +6702,27 @@ function openAdmin() {
 
   async function saveQrAction(mode) {
       const name = document.getElementById('newQrName').value.trim();
-      const file = document.getElementById('newQrFile').value.trim();
+      let file = document.getElementById('newQrFile').value.trim();
       const owner = document.getElementById('newQrOwner').value.trim();
       const currency = document.getElementById('newQrCurrency').value; // 🌟 အသစ်
       const ledger = document.getElementById('newQrLedger').value.trim();
       const origIndex = parseInt(document.getElementById('editQrOriginalIndex').value);
       
       if(!file || !name) return alert("QR အမည် နှင့် ပုံနာမည် နှစ်ခုလုံး ထည့်ပါ။");
+      const ppPrefixMatch = /^PP:\s*(.*)$/i.exec(file);
+      const isPpRecord = Boolean(ppPrefixMatch);
+      if (QR_ADMIN_SUBTAB === 'pp' && !isPpRecord) return alert("PP Tab တွင် PP: နဲ့စသော Phone/ID ကို ထည့်ပါ။");
+      if (QR_ADMIN_SUBTAB === 'qr' && isPpRecord) return alert("QR Tab တွင် ပုံ QR သာ ထည့်ပါ။ PP Account အတွက် PP Tab ကို သုံးပါ။");
+      if (isPpRecord) {
+          const ppId = ppPrefixMatch[1].replace(/\s+/g, '');
+          if (!/^\d+$/.test(ppId) || ![10, 13, 15].includes(ppId.length)) {
+              return alert("PP Account ID သည် ဂဏန်း ၁၀ လုံး (Phone), ၁၃ လုံး (ID), သို့မဟုတ် ၁၅ လုံး (e-Wallet) ဖြစ်ရပါမည်။ ဥပမာ PP:0812345678");
+          }
+          if (ppId.length === 10 && !ppId.startsWith('0')) {
+              return alert("၁၀ လုံး Phone Number သည် 0 ဖြင့် စရပါမည်။ ဥပမာ PP:0812345678");
+          }
+          file = 'PP:' + ppId;
+      }
 
       const isDuplicateFile = FIREBASE_QRS.some((q, i) => i !== origIndex && (typeof q === 'string' ? q : q.file) === file);
 
