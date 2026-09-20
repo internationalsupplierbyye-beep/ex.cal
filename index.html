@@ -18,6 +18,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
   <script src="lang.js"></script>
 
   <style>
@@ -4221,6 +4222,46 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     if(c==='y') return 'YE LYNN HTUN'; if(c==='h') return 'HEIN SET AUNG'; if(c==='t') return 'THIDAR WIN'; return '—';
   }
 
+  // PromptPay EMVCo QR: 10 digits = phone, 13 digits = national ID, 15 digits = e-Wallet/TrueMoney.
+  function promptPayTlv(tag, value) {
+      const text = String(value ?? '');
+      return String(tag).padStart(2, '0') + String(text.length).padStart(2, '0') + text;
+  }
+  function promptPayCrc16(text) {
+      let crc = 0xFFFF;
+      for (let i = 0; i < text.length; i++) {
+          crc ^= text.charCodeAt(i) << 8;
+          for (let bit = 0; bit < 8; bit++) crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+      }
+      return crc.toString(16).toUpperCase().padStart(4, '0');
+  }
+  function generatePromptPayPayload(identifier, amount = 0) {
+      const digits = String(identifier || '').replace(/\D/g, '');
+      if (!digits) throw new Error('PromptPay ID မရှိပါ။');
+      let target = '';
+      // Keep the exact working format: Thai phone includes the 0 in the input,
+      // but the PromptPay target carries only the final 9 digits after 01130066.
+      if (digits.length >= 15) target = '03' + String(digits.length).padStart(2, '0') + digits;
+      else if (digits.length === 13) target = '0213' + digits;
+      else if (digits.length === 10) target = '01130066' + digits.substring(1);
+      else target = '03' + String(digits.length).padStart(2, '0') + digits;
+
+      // The working sample uses Tag 29 -> 00(AID) + target directly;
+      // do not add an extra inner Tag 01 here.
+      const tag29 = '0016A000000677010111' + target;
+      let payload = '00020101021' + (Number(amount) > 0 ? '2' : '1') +
+          '29' + String(tag29.length).padStart(2, '0') + tag29 + '5802TH5303764';
+      if (Number(amount) > 0) payload += '54' + String(Number(amount).toFixed(2).length).padStart(2, '0') + Number(amount).toFixed(2);
+      payload += '6304';
+      return payload + promptPayCrc16(payload);
+  }
+  function generatePromptPayQrDataUrl(identifier, amount = 0) {
+      const payload = generatePromptPayPayload(identifier, amount);
+      if (typeof QRious !== 'function') throw new Error('QRious library မတင်ရသေးပါ။');
+      return new QRious({ value: payload, size: 420, level: 'H', background: '#ffffff', foreground: '#000000' }).toDataURL('image/png');
+  }
+  window.generatePromptPayPayload = generatePromptPayPayload;
+
   // 🌟 Dynamic PromptPay QR ကို System နဲ့ ချိတ်ဆက်ပေးမည့်အပိုင်း 🌟
   let qrDebounceTimer;
   async function refreshQrPreview(skipRadioUpdate = false) {
@@ -4267,12 +4308,12 @@ window.autoCancelOldPendingLots = async function(dataArray) {
 
         let imgUrl = '';
         // refreshQrPreview function ထဲရှိ imgUrl စစ်ဆေးသည့်နေရာတွင် ဤသို့ထည့်ပါ
-if (file.startsWith('PP:')) {
-    // (PromptPay အတွက် ယခင်အတိုင်းထားပါ)
-    let phone = file.split(':')[1];
+        if (file.startsWith('PP:')) {
+    const promptPayId = file.slice(3).trim();
     let amt = parseFloat(document.getElementById('thbIn')?.value.replace(/,/g,'')) || 0;
     if(amt <= 0) amt = parseFloat(document.getElementById('thbOut')?.value.replace(/,/g,'')) || 0;
-    imgUrl = (amt > 0) ? `https://promptpay.io/${phone}/${amt}.png` : `https://promptpay.io/${phone}.png`;
+    try { imgUrl = generatePromptPayQrDataUrl(promptPayId, amt); }
+    catch (e) { console.warn('PromptPay local QR generation failed:', e); imgUrl = ''; }
 } else if (file.startsWith('TM:')) {
     // ပမာဏကို thbIn သို့မဟုတ် thbOut မှ ဖမ်းယူခြင်း
     let amt = parseFloat(document.getElementById('thbIn')?.value.replace(/,/g,'')) || 0;
@@ -8412,8 +8453,9 @@ function openAdmin() {
                       
                       let finalImgUrl = '';
                       if (file.startsWith('PP:')) {
-                          let phone = file.split(':')[1];
-                          finalImgUrl = (amt > 0) ? `https://promptpay.io/${phone}/${amt}.png` : `https://promptpay.io/${phone}.png`;
+                          const promptPayId = file.slice(3).trim();
+                          try { finalImgUrl = generatePromptPayQrDataUrl(promptPayId, amt); }
+                          catch (e) { console.warn('PromptPay reprint QR generation failed:', e); finalImgUrl = ''; }
                       } else if (file.startsWith('TM:')) {
                           let tmLink = (amt > 0) ? window.generateTrueMoneyLink(amt) : "https://tmn.app.link/fcRfbMKlS3b";
                           finalImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(tmLink)}`;
