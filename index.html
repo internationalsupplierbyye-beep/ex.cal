@@ -2466,12 +2466,10 @@ let calcLock = false;
   }
 
   // --- Direction-aware Calc Logic ---
+  // Agent က Main နဲ့ တူညီတဲ့ base rate ကိုပဲ သုံးမည်။
+  // Agent Customer Rate / Markup ကို မသုံးတော့ပါ။
   function getAgentRateMarkup(direction = 'in') {
-    // Non-Agent users need numeric zero markups; an empty object makes
-    // baseRate + markup become NaN and stops opposite-side auto-calculation.
-    if (String(CURRENT_ROLE || '').toLowerCase() !== 'agent') return { thb: 0, vnd: 0 };
-    const m = CURRENT_ACCESS_CONFIG?.rateMarkup || {};
-    return { thb: Number(m[direction === 'out' ? 'thbOut' : 'thbIn'] || 0), vnd: Number(m[direction === 'out' ? 'vndOut' : 'vndIn'] || 0) };
+    return { thb: 0, vnd: 0 };
   }
 
   function getThbRate(direction = 'in') {
@@ -2861,9 +2859,11 @@ window.showToast = function(message, icon = "✅") {
 
       fifoFetchInFlight = (async () => {
           try {
-              const snap = await firebase.firestore().collection("exchange_history")
-                  .where("status", "==", "Success")
-                  .get();
+              const role = String(CURRENT_ROLE || '').toLowerCase();
+              const successCollection = role === 'agent'
+                  ? firebase.firestore().collection('agent_history').doc(currentAgentOwnerEmail()).collection('transactions')
+                  : firebase.firestore().collection('exchange_history');
+              const snap = await successCollection.where("status", "==", "Success").get();
               let arr = [];
               snap.forEach(doc => arr.push(doc.data()));
               allSuccessHistoryForFifo = arr;
@@ -3095,7 +3095,13 @@ window.showToast = function(message, icon = "✅") {
           let grossProfit = periodProfitThb + periodProfitVnd;
           let totalProfit = grossProfit - periodFeeMmk;
           const totalProfitEl = document.getElementById('dash_total_profit');
-          totalProfitEl.innerHTML = `${totalProfit >= 0 ? '+ ' : ''}${formatMmk(totalProfit)} MMK <span class="block text-sm text-blue-600">≈ ${feeMmkToThb(totalProfit).toLocaleString('en-US',{maximumFractionDigits:2})} THB</span><span class="block text-[10px] text-slate-500">Gross ${formatMmk(grossProfit)} MMK · Fees -${formatMmk(periodFeeMmk)} MMK</span>`;
+          // Total MMK ကို stale/default rate (ဥပမာ 35) နဲ့ မစားတော့ပါ။
+          // THB-only ဖြစ်လျှင် FIFO က တကယ်သဘောတူထားသော Realized THB ကိုပဲ ပြမည်။
+          // VND ပါလျှင် currencies မရောဘဲ THB/VND component ကို ခွဲပြမည်။
+          const thbEquivalentHtml = Math.abs(periodProfitVnd) < 0.000001
+              ? `<span class="block text-sm text-blue-600">≈ ${periodProfitThbInBaht.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2})} THB (Realized)</span>`
+              : `<span class="block text-[10px] text-blue-600">THB Realized: ${periodProfitThbInBaht.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2})} THB · VND: ${formatMmk(periodProfitVnd)} MMK</span>`;
+          totalProfitEl.innerHTML = `${totalProfit >= 0 ? '+ ' : ''}${formatMmk(totalProfit)} MMK ${thbEquivalentHtml}<span class="block text-[10px] text-slate-500">Gross ${formatMmk(grossProfit)} MMK · Fees -${formatMmk(periodFeeMmk)} MMK</span>`;
           totalProfitEl.className = totalProfit >= 0 ? "font-black text-green-700 text-xl" : "font-black text-red-700 text-xl";
           const feeNote = document.getElementById('dash_fee_summary');
           if (feeNote) feeNote.textContent = `Fees: -${formatMmk(periodFeeMmk)} MMK ≈ -${feeMmkToThb(periodFeeMmk).toLocaleString('en-US',{maximumFractionDigits:2})} THB`;
@@ -7045,10 +7051,8 @@ function openAdmin() {
               const count = FIREBASE_CUSTOMER_ORDER.filter(id => String(FIREBASE_CUSTOMERS[id]?.ownerAgentId || '').toLowerCase() === agent.email.toLowerCase()).length;
               const status = agent.suspended ? 'Suspended' : 'Active';
               const assigned = new Set(Array.isArray(agent.assignedPaymentMethodIds) ? agent.assignedPaymentMethodIds : []);
-              const markup = agent.rateMarkup || {};
-              const rateKey = btoa(agent.email);
               const methodChoices = getPayoutAccountChoices().map(choice => `<label class="flex items-center gap-1 text-[10px] font-bold text-slate-600"><input type="checkbox" class="agent-method-choice" data-agent-email="${agent.email}" value="${choice.id}" ${assigned.has(choice.id) ? 'checked' : ''}>${choice.label}</label>`).join('');
-              return `<details class="bg-white border rounded-lg p-2 group"><summary class="list-none cursor-pointer flex items-center justify-between gap-2"><div class="min-w-0"><div class="font-bold text-sm text-indigo-800 truncate">${agent.name || agent.email} <span class="text-indigo-500 text-xs transition-transform inline-block group-open:rotate-180">⌄</span></div><div class="text-[11px] text-slate-500 truncate">${agent.email} · Customer ${count} ယောက်</div></div><span class="text-[10px] font-black ${agent.suspended ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'} border rounded px-1.5 py-0.5">${status}</span></summary><div class="mt-2 pt-2 border-t border-indigo-100"><div class="text-[10px] font-black text-indigo-700 mb-1">Agent Customer Rate Markup</div><div class="grid grid-cols-2 sm:grid-cols-4 gap-1 mb-2"><input id="agent-thb-in-${rateKey}" type="number" step="0.01" value="${Number(markup.thbIn || 0)}" placeholder="THB In/100K" class="border rounded px-1 py-1 text-xs"><input id="agent-thb-out-${rateKey}" type="number" step="0.01" value="${Number(markup.thbOut || 0)}" placeholder="THB Out/100K" class="border rounded px-1 py-1 text-xs"><input id="agent-vnd-in-${rateKey}" type="number" step="0.000001" value="${Number(markup.vndIn || 0)}" placeholder="VND In/1MMK" class="border rounded px-1 py-1 text-xs"><input id="agent-vnd-out-${rateKey}" type="number" step="0.000001" value="${Number(markup.vndOut || 0)}" placeholder="VND Out/1MMK" class="border rounded px-1 py-1 text-xs"></div><div class="text-[9px] text-slate-400 mb-2">+ = ထပ်ပေါင်း၊ − = လျှော့</div><div class="text-[10px] font-black text-indigo-700 mb-1">အသုံးပြုခွင့်ရှိသော Bank / QR</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-28 overflow-y-auto">${methodChoices || '<span class="text-[10px] text-slate-400">Bank / QR မရှိသေးပါ</span>'}</div><button type="button" onclick="saveAgentSettings('${agent.email}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-[10px] mt-2">သတ်မှတ်ချက် သိမ်းမည်</button></div></details>`;
+              return `<details class="bg-white border rounded-lg p-2 group"><summary class="list-none cursor-pointer flex items-center justify-between gap-2"><div class="min-w-0"><div class="font-bold text-sm text-indigo-800 truncate">${agent.name || agent.email} <span class="text-indigo-500 text-xs transition-transform inline-block group-open:rotate-180">⌄</span></div><div class="text-[11px] text-slate-500 truncate">${agent.email} · Customer ${count} ယောက်</div></div><span class="text-[10px] font-black ${agent.suspended ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50'} border rounded px-1.5 py-0.5">${status}</span></summary><div class="mt-2 pt-2 border-t border-indigo-100"><div class="text-[10px] font-black text-indigo-700 mb-1">Agent အသုံးပြုခွင့်ရှိသော Bank / QR</div><div class="text-[9px] text-slate-400 mb-2">Agent သည် Main Rate အတိုင်းသုံးမည်။ Customer Rate / Markup မရှိပါ။</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-1 max-h-28 overflow-y-auto">${methodChoices || '<span class="text-[10px] text-slate-400">Bank / QR မရှိသေးပါ</span>'}</div><button type="button" onclick="saveAgentSettings('${agent.email}')" class="btn bg-indigo-600 hover:bg-indigo-700 !py-1 !px-3 !text-[10px] mt-2">Account ခွင့်ပြုချက် သိမ်းမည်</button></div></details>`;
           }).join('');
       } catch (e) { list.innerHTML = '<p class="text-center text-sm text-red-500 p-2">Agent စာရင်းဖတ်မရပါ။</p>'; }
   }
@@ -7067,13 +7071,10 @@ function openAdmin() {
   }
 
   async function saveAgentSettings(email) {
-      if (CURRENT_ROLE !== 'main admin') return alert('Main Admin သာ Agent Rate သတ်မှတ်ခွင့်ရှိပါသည်။');
-      const key = btoa(email);
-      const num = id => Number(document.getElementById(id)?.value || 0) || 0;
+      if (CURRENT_ROLE !== 'main admin') return alert('Main Admin သာ Agent Account ခွင့်ပြုချက် သတ်မှတ်ခွင့်ရှိပါသည်။');
       const assignedPaymentMethodIds = Array.from(document.querySelectorAll('.agent-method-choice')).filter(el => el.dataset.agentEmail === email && el.checked).map(el => el.value);
-      const rateMarkup = { thbIn: num(`agent-thb-in-${key}`), thbOut: num(`agent-thb-out-${key}`), vndIn: num(`agent-vnd-in-${key}`), vndOut: num(`agent-vnd-out-${key}`) };
-      try { await firebase.firestore().collection('user_roles').doc(email).set({ assignedPaymentMethodIds, rateMarkup }, { merge: true }); window.showToast?.('Agent Rate / Bank / QR သိမ်းပြီးပါပြီ။', '✅'); }
-      catch (e) { alert('Agent Setting သိမ်းမရပါ: ' + e.message); }
+      try { await firebase.firestore().collection('user_roles').doc(email).set({ assignedPaymentMethodIds }, { merge: true }); window.showToast?.('Agent Bank / QR Account ခွင့်ပြုချက် သိမ်းပြီးပါပြီ။', '✅'); }
+      catch (e) { alert('Agent Account Setting သိမ်းမရပါ: ' + e.message); }
   }
 
   async function createAgentAccount(event) {
@@ -9321,6 +9322,7 @@ async function loadHistory() {
   isFetchingMore = false;
 
   try {
+    // Main နှင့် Agent History ကို မပေါင်းပါ။ Role အလိုက် မိမိ Collection ကိုသာဖတ်မည်။
     const historyCollection = String(CURRENT_ROLE || '').toLowerCase() === 'agent'
       ? firebase.firestore().collection('agent_history').doc(currentAgentOwnerEmail()).collection('transactions')
       : firebase.firestore().collection('exchange_history');
@@ -9332,10 +9334,9 @@ async function loadHistory() {
     if (requestSeq !== historyRequestSeq) return;
 
     allLoadedHistory = snap.docs.map(doc => doc.data());
-    if (['staff', 'admin', 'main admin'].includes(String(CURRENT_ROLE || '').toLowerCase())) {
-      const agentHistory = await loadAllAgentHistoryForAdmins();
-      allLoadedHistory = allLoadedHistory.concat(agentHistory).sort((a, b) => smartTimestampMs(b.timestamp) - smartTimestampMs(a.timestamp));
-    } else if (String(CURRENT_ROLE || '').toLowerCase() === 'agent') {
+    // Admin/Staff Main History တွင် Agent မှတ်တမ်းများကို မပေါင်းတော့ပါ။
+    // Agent ကလည်း ၎င်း၏ agent_history ကိုသာ loadHistory() အပေါ်တွင် ဖတ်မည်။
+    if (String(CURRENT_ROLE || '').toLowerCase() === 'agent') {
       const email = currentAgentOwnerEmail();
       allLoadedHistory = allLoadedHistory.filter(tx => String(tx.agentEmail || tx.actorEmail || '').toLowerCase() === email);
     }
