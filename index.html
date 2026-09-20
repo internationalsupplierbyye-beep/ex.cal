@@ -870,94 +870,6 @@
     </div>
   </section>
 
-  <section id="box-thb2mmk" class="box capture-target">
-    <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="thb_to_mmk">ဘတ် → မြန်မာကျပ်</h2>
-    <div class="grid grid-cols-2 gap-3 mt-2">
-      <div>
-        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="lbl_thb">ဘတ်ငွေ</span></label>
-        <input id="thbIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
-        <!-- 🌟 THB Quick Amount Buttons 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 1000)">+1,000</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 2000)">+2,000</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 5000)">+5,000</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 0, true)">C</button>
-        </div>
-      </div>
-      <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
-        <input id="mmkOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
-        <!-- 🌟 MMK Quick Amount Buttons 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 100000)">+၁ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 500000)">+၅ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 1000000)">+၁၀ သိန်း</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 0, true)">C</button>
-        </div>
-      </div>
-    </div>
-    <div class="text-center mt-3">
-      <div class="rate-note" id="rateNote1"></div>
-      <div class="export-only-texts hidden">
-        <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div>
-        <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div>
-        <div class="lang-warn3 text-red-600 font-extrabold mt-2"></div>
-        <div class="lang-thanks thanks"></div>
-    </div>
-    </div>
-    <div class="flex flex-wrap gap-2 mt-3 export-actions">
-      <button class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'download', this)">PNG</button>
-      <button class="btn2" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg', 'download', this)">JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'share', this)">SHARE</button>
-      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-thb2mmk', this)">COPY</button>
-      <button class="btn btn-private-save" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'internal', this)" title="Invoice ကို System ထဲသီးသန့် သိမ်းပြီး Telegram ပို့မည်">SYSTEM</button>
-    </div>
-  </section>
-
-  <section id="box-mmk2thb" class="box capture-target">
-    <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="mmk_to_thb">မြန်မာကျပ် → ဘတ်</h2>
-    <div class="grid grid-cols-2 gap-3 mt-2">
-      <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
-        <input id="mmkIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
-        <!-- 🌟 MMK Quick Amount Buttons 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 100000)">+၁ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 500000)">+၅ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 1000000)">+၁၀ သိန်း</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 0, true)">C</button>
-        </div>
-      </div>
-      <div>
-        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="lbl_thb">ဘတ်ငွေ</span></label>
-        <input id="thbOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
-        <!-- 🌟 THB Quick Amount Buttons 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 1000)">+1,000</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 2000)">+2,000</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 5000)">+5,000</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 0, true)">C</button>
-        </div>
-      </div>
-    </div>
-    <div class="text-center mt-3">
-      <div class="rate-note" id="rateNote2"></div>
-      <div class="export-only-texts hidden">
-          <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div>
-          <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div>
-          <div class="lang-warn3 text-red-600 font-extrabold mt-2"></div>
-          <div class="lang-thanks thanks"></div>
-      </div>
-    </div>
-    <div class="flex flex-wrap gap-2 mt-3 export-actions">
-      <button class="btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'download', this)">PNG</button>
-      <button class="btn2" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg', 'download', this)">JPEG</button>
-      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'share', this)">SHARE</button>
-      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2thb', this)">COPY</button>
-      <button class="btn btn-private-save" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'internal', this)" title="Invoice ကို System ထဲသီးသန့် သိမ်းပြီး Telegram ပို့မည်">SYSTEM</button>
-    </div>
-  </section>
-
   <section class="box compact">
     <div class="flex items-center justify-between gap-3">
       <div>
@@ -1053,6 +965,95 @@
       </div>
     </div>
   </section>
+
+  <section id="box-thb2mmk" class="box capture-target">
+    <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="thb_to_mmk">ဘတ် → မြန်မာကျပ်</h2>
+    <div class="grid grid-cols-2 gap-3 mt-2">
+      <div>
+        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="lbl_thb">ဘတ်ငွေ</span></label>
+        <input id="thbIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
+        <!-- 🌟 THB Quick Amount Buttons 🌟 -->
+        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 1000)">+1,000</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 2000)">+2,000</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 5000)">+5,000</button>
+            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 0, true)">C</button>
+        </div>
+      </div>
+      <div>
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
+        <input id="mmkOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
+        <!-- 🌟 MMK Quick Amount Buttons 🌟 -->
+        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 100000)">+၁ သိန်း</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 500000)">+၅ သိန်း</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 1000000)">+၁၀ သိန်း</button>
+            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 0, true)">C</button>
+        </div>
+      </div>
+    </div>
+    <div class="text-center mt-3">
+      <div class="rate-note" id="rateNote1"></div>
+      <div class="export-only-texts hidden">
+        <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div>
+        <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div>
+        <div class="lang-warn3 text-red-600 font-extrabold mt-2"></div>
+        <div class="lang-thanks thanks"></div>
+    </div>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-3 export-actions">
+      <button class="btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'download', this)">PNG</button>
+      <button class="btn2" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg', 'download', this)">JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'share', this)">SHARE</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-thb2mmk', this)">COPY</button>
+      <button class="btn btn-private-save" onclick="saveSection('box-thb2mmk','thb-to-mmk','png', 'internal', this)" title="Invoice ကို System ထဲသီးသန့် သိမ်းပြီး Telegram ပို့မည်">SYSTEM</button>
+    </div>
+  </section>
+
+  <section id="box-mmk2thb" class="box capture-target">
+    <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="mmk_to_thb">မြန်မာကျပ် → ဘတ်</h2>
+    <div class="grid grid-cols-2 gap-3 mt-2">
+      <div>
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
+        <input id="mmkIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
+        <!-- 🌟 MMK Quick Amount Buttons 🌟 -->
+        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 100000)">+၁ သိန်း</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 500000)">+၅ သိန်း</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 1000000)">+၁၀ သိန်း</button>
+            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 0, true)">C</button>
+        </div>
+      </div>
+      <div>
+        <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="lbl_thb">ဘတ်ငွေ</span></label>
+        <input id="thbOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
+        <!-- 🌟 THB Quick Amount Buttons 🌟 -->
+        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 1000)">+1,000</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 2000)">+2,000</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 5000)">+5,000</button>
+            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 0, true)">C</button>
+        </div>
+      </div>
+    </div>
+    <div class="text-center mt-3">
+      <div class="rate-note" id="rateNote2"></div>
+      <div class="export-only-texts hidden">
+          <div class="lang-warn1 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-warn2 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-warn3 text-red-600 font-extrabold mt-2"></div>
+          <div class="lang-thanks thanks"></div>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-3 export-actions">
+      <button class="btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'download', this)">PNG</button>
+      <button class="btn2" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg', 'download', this)">JPEG</button>
+      <button class="btn bg-purple-600 hover:bg-purple-700" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'share', this)">SHARE</button>
+      <button class="btn bg-gray-600 hover:bg-gray-700" onclick="copyText('box-mmk2thb', this)">COPY</button>
+      <button class="btn btn-private-save" onclick="saveSection('box-mmk2thb','mmk-to-thb','png', 'internal', this)" title="Invoice ကို System ထဲသီးသန့် သိမ်းပြီး Telegram ပို့မည်">SYSTEM</button>
+    </div>
+  </section>
+
 
   <section id="box-vnd2mmk" class="box capture-target">
     <h2 class="text-lg font-black mb-1 text-red-600" data-i18n="vnd_to_mmk">ဗီယက်နမ်ဒေါင် → မြန်မာကျပ်</h2>
