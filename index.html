@@ -113,6 +113,7 @@
     .save-mode-option input[type="radio"] { width:17px; height:17px; margin:0; accent-color:#111827; cursor:pointer; flex:0 0 auto; }
     .save-mode-option span { min-width:0; overflow:hidden; text-overflow:ellipsis; font-weight:900; font-size:.76rem; line-height:1.35; cursor:pointer; }
     .selector-balance-status { display:flex; align-items:center; gap:.35rem; min-height:1.05rem; font-size:.68rem; line-height:1.2; font-weight:800; white-space:nowrap; overflow:hidden; flex:0 0 auto; max-width:60%; }
+    .bank-select-control { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .selector-row { display:flex; align-items:center; gap:.5rem; }
     .selector-row select { flex:1 1 auto; min-width:0; }
     .selector-balance-dot { display:inline-block; width:10px; height:10px; border-radius:999px; border:1px solid rgba(15,23,42,.20); box-shadow:0 0 0 2px rgba(255,255,255,.72); flex:0 0 auto; }
@@ -930,7 +931,7 @@
                     </select>
                     <div id="bankBalanceStatus" class="selector-balance-status hidden" aria-live="polite"></div>
                 </div>
-                <select id="bankSelect" class="compact border rounded-lg w-full text-sm"></select>
+                <select id="bankSelect" class="compact border rounded-lg w-full text-sm bank-select-control"></select>
             </div>
         </div>
 
@@ -4351,7 +4352,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     const mini = document.getElementById('bankPreviewMini');
     
     if(!key || !ACTIVE_BANK_INFO[key]){
-      if(mini) mini.textContent='ဘဏ်မရွေးထားသေးပါ။'; 
+      if(mini) mini.textContent='ဘဏ်မရွေးထားပါ။'; 
       
       if(skipRadioUpdate !== true && !isAutoChanging) {
           const qrSelect = document.getElementById('qrSelect');
@@ -4376,7 +4377,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         isAutoChanging = false;
     }
 
-    const info = ACTIVE_BANK_INFO[key]; 
+    const info = ACTIVE_BANK_INFO[key];
     const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
     
     if(mini) {
@@ -8440,11 +8441,14 @@ function openAdmin() {
   };
   
   window.deleteTxRecord = async function(invId) {
-      if(CURRENT_ROLE !== 'main admin' && CURRENT_ROLE !== 'admin') return;
-      if(!confirm(`Invoice ID: ${invId} ကို ဖျက်ရန် သေချာပါသလား?\n(ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍ မရနိုင်ပါ။)`)) return;
-      
+      const role = String(CURRENT_ROLE || '').toLowerCase();
+      if(role !== 'main admin' && role !== 'admin') return;
       const tx = allLoadedHistory.find(x => x.id === invId);
-
+      const status = String(tx?.status || 'Pending');
+      // Success ကို UI မှာ Confirm အဖြစ်ခေါ်သုံးနိုင်သောကြောင့် နှစ်မျိုးလုံးကို အရေးကြီး Status အဖြစ် သတ်မှတ်သည်။
+      const needsDeleteConfirm = status === 'Success' || status === 'Confirm' || status === 'Owing';
+      if (needsDeleteConfirm && !confirm(`Invoice ID: ${invId} (${status}) ကို ဖျက်ရန် သေချာပါသလား?\n(လက်ကျန်ငွေ ပြန်ပြင်ပြီး ဤလုပ်ဆောင်ချက်ကို ပြန်ပြင်၍ မရနိုင်ပါ။)`)) return;
+      
       try {
           // 🌟 Success ဖြစ်ခဲ့တဲ့ မှတ်တမ်းကို ဖျက်ရင် ပိုက်ဆံအိတ်ထဲက ငွေတွေပါ ပြန်ပြင်ပေးရမယ် (Reverse Balance) 🌟
           if (tx && tx.status === 'Success') {
@@ -8742,6 +8746,13 @@ function openAdmin() {
               } else {
                   const wrap = document.createElement('div'); wrap.className = 'export-block font-black text-slate-800 text-lg'; wrap.textContent = tx.method; clone.appendChild(wrap);
               }
+          }
+
+          if (tx.receiptNotiIncluded === true && String(tx.receiptNotiText || '').trim()) {
+              const n = document.createElement('div');
+              n.style.marginTop = '6px'; n.style.color = '#475569'; n.style.fontSize = '16px'; n.style.fontWeight = '800'; n.style.textAlign = 'center'; n.style.whiteSpace = 'nowrap'; n.style.overflow = 'visible';
+              n.textContent = `(${String(tx.receiptNotiText).trim()})`;
+              clone.appendChild(n);
           }
 
           const dObj = new Date(tx.timestamp);
@@ -10415,6 +10426,8 @@ async function loadHistory() {
           tz: ADMIN_TIMEZONE,
           deviceId: CURRENT_DEVICE_ID || 'Unknown',
           customerName,
+          receiptNotiIncluded: !!document.getElementById('includeReceiptNoti')?.checked,
+          receiptNotiText: String(FIREBASE_RECEIPT_TEXTS[document.getElementById('saveLangSelect')?.value || 'orig']?.noti || '').trim(),
           agentEmail: String(CURRENT_ROLE || '').toLowerCase() === 'agent' ? currentAgentOwnerEmail() : '',
           saveMode: 'internal',
           userRole: String(CURRENT_ROLE || '').toUpperCase()
@@ -10474,6 +10487,8 @@ async function loadHistory() {
         
         const lang = document.getElementById('saveLangSelect').value || 'orig';
         const T = (typeof I18N !== 'undefined') ? I18N[lang] : null; 
+        const receiptNotiIncluded = !!document.getElementById('includeReceiptNoti')?.checked;
+        const receiptNotiTextForHistory = String(FIREBASE_RECEIPT_TEXTS[lang]?.noti || '').trim();
         fmt = (fmt === 'jpg') ? 'jpg' : 'png';
         const original=document.getElementById(sectionId); 
         const clone=original.cloneNode(true);
@@ -10580,11 +10595,12 @@ async function loadHistory() {
             body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
             const receiptNotiEnabled = !!document.getElementById('includeReceiptNoti')?.checked;
             const receiptNotiText = String(FIREBASE_RECEIPT_TEXTS[lang]?.noti || '').trim();
-            if (receiptNotiEnabled && receiptNotiText) {
-                const n = document.createElement('div'); n.style.marginTop='6px'; n.style.color='#475569'; n.style.fontSize='16px'; n.style.fontWeight='800'; n.style.textAlign='center'; n.textContent=`(${receiptNotiText})`; body.appendChild(n);
-            }
             headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
-            wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
+            wrap.appendChild(title); wrap.appendChild(box);
+            if (receiptNotiEnabled && receiptNotiText) {
+                const n = document.createElement('div'); n.style.marginTop='6px'; n.style.color='#475569'; n.style.fontSize='16px'; n.style.fontWeight='800'; n.style.textAlign='center'; n.style.whiteSpace='nowrap'; n.style.overflow='visible'; n.textContent=`(${receiptNotiText})`; wrap.appendChild(n);
+            }
+            clone.appendChild(wrap);
             
             await new Promise(res => { 
                 let timer = setTimeout(res, 500); 
@@ -10805,6 +10821,7 @@ async function loadHistory() {
               method: paymentMethodName, methodType: methodMeta.methodType || null, methodKey: methodMeta.methodKey || null,
               profit: 0, status: 'Pending', timestamp: new Date().toISOString(), 
               tz: ADMIN_TIMEZONE, deviceId: currentDeviceId, customerName: savedCustomerName,
+              receiptNotiIncluded, receiptNotiText: receiptNotiTextForHistory,
               agentEmail: String(CURRENT_ROLE || '').toLowerCase() === 'agent' ? currentAgentOwnerEmail() : '',
               userRole: String(CURRENT_ROLE || '').toUpperCase()
           };
