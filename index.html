@@ -671,6 +671,7 @@
       const key = el.getAttribute('data-i18n-ph');
       if (dict[key]) el.placeholder = dict[key];
     });
+    if (typeof window.translateSettingsText === 'function') window.translateSettingsText(lang);
   }
 
   function applyDarkModeBtnIcon(isDark) {

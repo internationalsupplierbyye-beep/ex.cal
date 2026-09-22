@@ -180,6 +180,121 @@
     }
   };
 
+  // Admin modal contains legacy static labels without data-i18n attributes.
+  // Keep their original text as the stable key and translate only exact static
+  // text nodes, so Firebase data, account names, amounts, and logs are untouched.
+  const settingsText = {
+    '⚙️ Admin Settings': { en:'⚙️ Admin Settings', th:'⚙️ การตั้งค่าแอดมิน', vi:'⚙️ Cài đặt quản trị' },
+    '🔄 Connection စစ်နေသည်...': { en:'🔄 Checking connection...', th:'🔄 กำลังตรวจสอบการเชื่อมต่อ...', vi:'🔄 Đang kiểm tra kết nối...' },
+    '🔁 Retry': { en:'🔁 Retry', th:'🔁 ลองใหม่', vi:'🔁 Thử lại' },
+    '🔄 Device Mode ပြန်ပြောင်း': { en:'🔄 Switch Device Mode', th:'🔄 เปลี่ยนโหมดอุปกรณ์', vi:'🔄 Đổi chế độ thiết bị' },
+    '📋 Work Queue': { en:'📋 Work Queue', th:'📋 คิวงาน', vi:'📋 Hàng đợi công việc' },
+    '📊 Dashboard': { en:'📊 Dashboard', th:'📊 แดชบอร์ด', vi:'📊 Bảng điều khiển' },
+    '📜 မှတ်တမ်းများ': { en:'📜 History', th:'📜 ประวัติ', vi:'📜 Lịch sử' },
+    '💰 လက်ကျန်ငွေ': { en:'💰 Treasury', th:'💰 ยอดคงเหลือ', vi:'💰 Kho bạc' },
+    '👥 Customers': { en:'👥 Customers', th:'👥 ลูกค้า', vi:'👥 Khách hàng' },
+    'အထွေထွေ': { en:'General', th:'ทั่วไป', vi:'Cài đặt chung' },
+    '💸 အသုံးစရိတ်': { en:'💸 Expenses', th:'💸 ค่าใช้จ่าย', vi:'💸 Chi phí' },
+    'QR များ': { en:'QR Accounts', th:'QR', vi:'Tài khoản QR' },
+    'ဘဏ်များ': { en:'Banks', th:'ธนาคาร', vi:'Ngân hàng' },
+    '🏦 Agent Bank / QR': { en:'🏦 Agent Bank / QR', th:'🏦 ธนาคาร / QR ของเอเจนต์', vi:'🏦 Ngân hàng / QR Agent' },
+    '📝 Logs': { en:'📝 Logs', th:'📝 บันทึกระบบ', vi:'📝 Nhật ký' },
+    '📋 ဝန်ထမ်းအလုပ်စာရင်း (Staff Work Queue)': { en:'📋 Staff Work Queue', th:'📋 คิวงานพนักงาน', vi:'📋 Hàng đợi nhân viên' },
+    '🔄 Refresh': { en:'🔄 Refresh', th:'🔄 รีเฟรช', vi:'🔄 Làm mới' },
+    '🔁 Retry Failed': { en:'🔁 Retry Failed', th:'🔁 ลองรายการที่ล้มเหลวใหม่', vi:'🔁 Thử lạiรายการ lỗi' },
+    '⏳ Pending': { en:'⏳ Pending', th:'⏳ รอดำเนินการ', vi:'⏳ Đang chờ' },
+    '💸 Owing': { en:'💸 Owing', th:'💸 ค้างชำระ', vi:'💸 Còn nợ' },
+    '🔎 ပြန်စစ်ရန်': { en:'🔎 Review', th:'🔎 ตรวจสอบ', vi:'🔎 Kiểm tra' },
+    '🔄 Connection စစ်နေသည်...': { en:'🔄 Checking connection...', th:'🔄 กำลังตรวจสอบการเชื่อมต่อ...', vi:'🔄 Đang kiểm tra kết nối...' },
+    '📊 ငွေလွှဲပမာဏ နှင့် အမြတ်ငွေ (Volume & Auto Profit)': { en:'📊 Transfer Volume & Auto Profit', th:'📊 ปริมาณโอนและกำไรอัตโนมัติ', vi:'📊 Khối lượng giao dịch & lợi nhuận tự động' },
+    'ယနေ့ အချက်အလက်များ': { en:"Today's Data", th:'ข้อมูลวันนี้', vi:'Dữ liệu hôm nay' },
+    '➕ Manual Lot ထည့်ရန်': { en:'➕ Add Manual Lot', th:'➕ เพิ่มล็อตด้วยตนเอง', vi:'➕ Thêm lô thủ công' },
+    '📄 PDF စာရင်းချုပ်': { en:'📄 PDF Summary', th:'📄 สรุป PDF', vi:'📄 Tóm tắt PDF' },
+    '📈 FIFO Profit & Active Lots (အမြတ် နှင့် လက်ကျန်)': { en:'📈 FIFO Profit & Active Lots', th:'📈 กำไร FIFO และล็อตคงเหลือ', vi:'📈 Lợi nhuận FIFO & các lô đang hoạt động' },
+    'စုစုပေါင်း အမြတ်ငွေ (Total Profit)': { en:'Total Profit', th:'กำไรรวม', vi:'Tổng lợi nhuận' },
+    '📜 ငွေလွှဲမှတ်တမ်းများ': { en:'📜 Exchange History', th:'📜 ประวัติการแลกเปลี่ยน', vi:'📜 Lịch sử giao dịch' },
+    '💳 Transaction Fee အမျိုးအစားများ': { en:'💳 Transaction Fee Types', th:'💳 ประเภทค่าธรรมเนียมธุรกรรม', vi:'💳 Loại phí giao dịch' },
+    'History မှာ Fee ထည့်ရာတွင် ရွေးချယ်ရန် အမျိုးအစားများကို ဒီနေရာမှ စီမံနိုင်ပါသည်။': { en:'Manage the fee types available when adding a fee to History.', th:'จัดการประเภทค่าธรรมเนียมที่เลือกใช้ในประวัติได้ที่นี่', vi:'Quản lý các loại phí dùng khi thêm phí vào Lịch sử.' },
+    'ထည့်မည်': { en:'Add', th:'เพิ่ม', vi:'Thêm' },
+    '⏱ အချိန်သတ်မှတ်ချက်များ (Main Admin သီးသန့်)': { en:'⏱ Time Settings (Main Admin only)', th:'⏱ ตั้งเวลา (เฉพาะ Main Admin)', vi:'⏱ Cài đặt thời gian (chỉ Main Admin)' },
+    'Pending အနီရောင်ပြရန် စောင့်ရမည့်အချိန် (နာရီ)': { en:'Pending time before showing red (hours)', th:'เวลารอ Pending ก่อนแสดงสีแดง (ชั่วโมง)', vi:'Thời gian Pending trước khi hiển thị màu đỏ (giờ)' },
+    'Auto Cancel ပြုလုပ်မည့် အချိန် (ရက်)': { en:'Auto Cancel after (days)', th:'เวลาสำหรับ Auto Cancel (วัน)', vi:'Thời gian Auto Cancel (ngày)' },
+    '🎨 လက်ကျန်ငွေ အရောင်သတ်မှတ်ချက်များ': { en:'🎨 Balance Color Thresholds', th:'🎨 เกณฑ์สีของยอดคงเหลือ', vi:'🎨 Ngưỡng màu số dư' },
+    'ငွေကြေး': { en:'Currency', th:'สกุลเงิน', vi:'Tiền tệ' },
+    'အနီ (အောက်)': { en:'Red (Low)', th:'แดง (ต่ำ)', vi:'Đỏ (thấp)' },
+    'အစိမ်း (အထက်)': { en:'Green (High)', th:'เขียว (สูง)', vi:'Xanh (cao)' },
+    'ဆက်တင်များအားလုံး သိမ်းမည်': { en:'Save All Settings', th:'บันทึกการตั้งค่าทั้งหมด', vi:'Lưu tất cả cài đặt' },
+    '🎨 ပြေစာ နောက်ခံဒီဇိုင်း (Receipt Theme)': { en:'🎨 Receipt Background Theme', th:'🎨 ธีมพื้นหลังใบเสร็จ', vi:'🎨 Chủ đề nền biên lai' },
+    'သတိပေးချက် ၁ (Warning 1)': { en:'Warning 1', th:'คำเตือน 1', vi:'Cảnh báo 1' },
+    'သတိပေးချက် ၂ (Warning 2)': { en:'Warning 2', th:'คำเตือน 2', vi:'Cảnh báo 2' },
+    'သတိပေးချက် ၃ (Warning 3)': { en:'Warning 3', th:'คำเตือน 3', vi:'Cảnh báo 3' },
+    'ကျေးဇူးတင်လွှာ (Thanks Message)': { en:'Thanks Message', th:'ข้อความขอบคุณ', vi:'Lời cảm ơn' },
+    'Copy Text အောက်ခြေစာသား (Copy Bottom)': { en:'Copy Text Bottom', th:'ข้อความด้านล่างสำหรับคัดลอก', vi:'Nội dung cuối bản sao' },
+    'Receipt Noti (Account Name အောက်တွင် ပေါ်မည့်စာ)': { en:'Receipt Noti (shown below Account Name)', th:'ข้อความใบเสร็จ (แสดงใต้ชื่อบัญชี)', vi:'Thông báo biên lai (hiện dưới tên tài khoản)' },
+    'စာသားများ သိမ်းမည်': { en:'Save Texts', th:'บันทึกข้อความ', vi:'Lưu nội dung' },
+    '🤖 Telegram Bot ချိတ်ဆက်ရန်': { en:'🤖 Connect Telegram Bot', th:'🤖 เชื่อมต่อ Telegram Bot', vi:'🤖 Kết nối Telegram Bot' },
+    'Telegram Chat ID': { en:'Telegram Chat ID', th:'Telegram Chat ID', vi:'Telegram Chat ID' },
+    'Telegram Settings သိမ်းမည်': { en:'Save Telegram Settings', th:'บันทึกการตั้งค่า Telegram', vi:'Lưu cài đặt Telegram' },
+    '📊 Daily Closing Report (နေ့စဉ် အနှစ်ချုပ်)': { en:'📊 Daily Closing Report', th:'📊 รายงานปิดยอดประจำวัน', vi:'📊 Báo cáo chốt ngày' },
+    'Daily Report ကို ဖွင့်မည်': { en:'Enable Daily Report', th:'เปิดรายงานประจำวัน', vi:'Bật báo cáo hằng ngày' },
+    '💾 Auto Scheduled Backup': { en:'💾 Auto Scheduled Backup', th:'💾 สำรองข้อมูลอัตโนมัติ', vi:'💾 Sao lưu tự động theo lịch' },
+    'Auto Backup ကို ဖွင့်မည်': { en:'Enable Auto Backup', th:'เปิดการสำรองข้อมูลอัตโนมัติ', vi:'Bật sao lưu tự động' },
+    '🔑 API Keys (Developer Settings)': { en:'🔑 API Keys (Developer Settings)', th:'🔑 API Keys (การตั้งค่านักพัฒนา)', vi:'🔑 API Keys (Cài đặt nhà phát triển)' },
+    'API Keys သိမ်းမည်': { en:'Save API Keys', th:'บันทึก API Keys', vi:'Lưu API Keys' },
+    '📱 စနစ်ထဲဝင်ရောက်ထားသော Device များ': { en:'📱 Devices in the System', th:'📱 อุปกรณ์ในระบบ', vi:'📱 Thiết bị trong hệ thống' },
+    '🔑 Email / Password ဖြင့် Login ဝင်ခွင့်ရှိသော Account များ': { en:'🔑 Email / Password Login Accounts', th:'🔑 บัญชีเข้าสู่ระบบด้วย Email / Password', vi:'🔑 Tài khoản đăng nhập Email / Password' },
+    '🚀 System Data Management & Backup': { en:'🚀 System Data Management & Backup', th:'🚀 จัดการข้อมูลและสำรองข้อมูลระบบ', vi:'🚀 Quản lý và sao lưu dữ liệu hệ thống' },
+    '💾 ဒေတာများကို Backup ယူမည် (Download JSON)': { en:'💾 Backup Data (Download JSON)', th:'💾 สำรองข้อมูล (ดาวน์โหลด JSON)', vi:'💾 Sao lưu dữ liệu (Tải JSON)' },
+    '📂 Backup ဖိုင်မှ ဒေတာပြန်သွင်းမည် (Restore)': { en:'📂 Restore from Backup File', th:'📂 กู้คืนจากไฟล์สำรอง', vi:'📂 Khôi phục từ tệp sao lưu' },
+    '🏦 ဘဏ်အချက်အလက် ထည့်ရန် / ပြင်ရန်': { en:'🏦 Add / Edit Bank Information', th:'🏦 เพิ่ม / แก้ไขข้อมูลธนาคาร', vi:'🏦 Thêm / sửa thông tin ngân hàng' },
+    '📋 ထည့်သွင်းထားသော ဘဏ်များ (ဆွဲရွှေ့ပါ)': { en:'📋 Banks (drag to reorder)', th:'📋 ธนาคาร (ลากเพื่อเรียงลำดับ)', vi:'📋 Ngân hàng (kéo để sắp xếp)' },
+    '🔲 QR အသစ် ထည့်ရန် / ပြင်ရန်': { en:'🔲 Add / Edit QR', th:'🔲 เพิ่ม / แก้ไข QR', vi:'🔲 Thêm / sửa QR' },
+    '📋 QR များ (ဆွဲရွှေ့ပါ)': { en:'📋 QRs (drag to reorder)', th:'📋 QR (ลากเพื่อเรียงลำดับ)', vi:'📋 QR (kéo để sắp xếp)' },
+    '🏦 Agent ကိုယ်ပိုင် Bank / QR Settings': { en:'🏦 Agent Private Bank / QR Settings', th:'🏦 ตั้งค่าธนาคาร / QR ส่วนตัวของเอเจนต์', vi:'🏦 Cài đặt Ngân hàng / QR riêng của Agent' },
+    'Bank အသစ် ထည့်ရန်': { en:'Add New Bank', th:'เพิ่มธนาคารใหม่', vi:'Thêm ngân hàng mới' },
+    'Bank သိမ်းမည်': { en:'Save Bank', th:'บันทึกธนาคาร', vi:'Lưu ngân hàng' },
+    'QR / PromptPay အသစ် ထည့်ရန်': { en:'Add New QR / PromptPay', th:'เพิ่ม QR / PromptPay ใหม่', vi:'Thêm QR / PromptPay mới' },
+    'QR သိမ်းမည်': { en:'Save QR', th:'บันทึก QR', vi:'Lưu QR' },
+    'Agent Bank များ': { en:'Agent Banks', th:'ธนาคารของเอเจนต์', vi:'Ngân hàng Agent' },
+    'Agent QR များ': { en:'Agent QRs', th:'QR ของเอเจนต์', vi:'QR Agent' },
+    '👥 Customer အသစ် ထည့်ရန် / ပြင်ရန်': { en:'👥 Add / Edit Customer', th:'👥 เพิ่ม / แก้ไขลูกค้า', vi:'👥 Thêm / sửa khách hàng' },
+    'ရှင်းမည်': { en:'Clear', th:'ล้าง', vi:'Xóa' },
+    '📋 Customer စာရင်းများ': { en:'📋 Customer List', th:'📋 รายชื่อลูกค้า', vi:'📋 Danh sách khách hàng' },
+    '💰 Master Account လက်ကျန်ငွေများ': { en:'💰 Master Account Balances', th:'💰 ยอดคงเหลือบัญชีหลัก', vi:'💰 Số dư tài khoản chính' },
+    '📥 Export Transfers': { en:'📥 Export Transfers', th:'📥 โอนออก', vi:'📥 Chuyển tiền xuất' },
+    '➕ Master Account အသစ်ထည့်ရန်': { en:'➕ Add Master Account', th:'➕ เพิ่มบัญชีหลัก', vi:'➕ Thêm tài khoản chính' },
+    '🔄 ဘဏ်အချင်းချင်း ငွေရွှေ့ရန် (Internal Transfer)': { en:'🔄 Internal Transfer', th:'🔄 โอนเงินภายใน', vi:'🔄 Chuyển tiền nội bộ' },
+    'လွှဲမည်': { en:'Transfer', th:'โอน', vi:'Chuyển' },
+    '💸 အထွေထွေ ကုန်ကျစရိတ် မှတ်တမ်း': { en:'💸 General Expense Records', th:'💸 รายการค่าใช้จ่ายทั่วไป', vi:'💸 Ghi chép chi phí chung' },
+    '➕ အသုံးစရိတ် အသစ်ထည့်ရန်': { en:'➕ Add Expense', th:'➕ เพิ่มค่าใช้จ่าย', vi:'➕ Thêm chi phí' },
+    'မှတ်တမ်းတင်မည်': { en:'Record', th:'บันทึก', vi:'Ghi lại' },
+    '💳 Transaction Fee ထည့်/ပြင်မည်': { en:'💳 Add / Edit Transaction Fee', th:'💳 เพิ่ม / แก้ไขค่าธรรมเนียมธุรกรรม', vi:'💳 Thêm / sửa phí giao dịch' },
+    'မလုပ်တော့ပါ': { en:'Cancel', th:'ยกเลิก', vi:'Hủy' },
+    'Fee ဖျက်မည်': { en:'Delete Fee', th:'ลบค่าธรรมเนียม', vi:'Xóa phí' },
+    '📝 စနစ်အတွင်း လုပ်ဆောင်ချက် မှတ်တမ်းများ': { en:'📝 System Activity Logs', th:'📝 บันทึกกิจกรรมระบบ', vi:'📝 Nhật ký hoạt động hệ thống' },
+    '🔄 Refresh': { en:'🔄 Refresh', th:'🔄 รีเฟรช', vi:'🔄 Làm mới' }
+  };
+
+  const originalTextByNode = new WeakMap();
+  function translateSettingsText(lang) {
+    const rootNode = document.getElementById('adminModal');
+    if (!rootNode) return;
+    const walk = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walk.nextNode())) {
+      const raw = originalTextByNode.has(node) ? originalTextByNode.get(node) : node.nodeValue;
+      if (!originalTextByNode.has(node)) originalTextByNode.set(node, raw);
+      const key = String(raw).replace(/\s+/g, ' ').trim();
+      const item = settingsText[key];
+      if (!item) continue;
+      const translated = lang === 'my' ? key : (item[lang] || item.en || key);
+      const leading = String(raw).match(/^\s*/)?.[0] || '';
+      const trailing = String(raw).match(/\s*$/)?.[0] || '';
+      node.nodeValue = leading + translated + trailing;
+    }
+  }
+  root.translateSettingsText = translateSettingsText;
+
   root.SYS_DICT = common;
   root.I18N = receipt;
 
