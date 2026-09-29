@@ -6506,17 +6506,18 @@ function openAdmin() {
           list.innerHTML = '<p class="text-sm text-gray-500 col-span-full mt-4 text-center">Master Account / Bank / QR များ မရှိသေးပါ။</p>';
       }
 
-      // // // 🌟 အကောင့်များ စုစုပေါင်း ပြသခြင်း (MMK အောက်မှာပါ THB Est ပြမည်)
+      // 🌟 Currency အလိုက် Total နှင့် THB ပြောင်းလဲပြီး Total ကို ပြသခြင်း
       const totalDisplay = document.getElementById('treasuryTotals');
       if (totalDisplay) {
-          let estTotalThbHtml = '';
-          let useRate = window.GLOBAL_EST_RATE_THB || (LAST_RATE.inv || 0);
-          
-          if (useRate > 0 && totals.MMK > 0) {
-              let estThb = totals.MMK / useRate;
-              // (Est Rate: ***) ဆိုတဲ့ စာသားကို ဒီနေရာမှာ ဖြုတ်လိုက်ပါပြီ
-              estTotalThbHtml = `<div class="text-[11px] text-green-700 font-bold mt-1 text-right">≈ ${estThb.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB</div>`;
-          }
+          const mmkPerThb = Number(window.GLOBAL_EST_RATE_THB || LAST_RATE.inv || 0);
+          const vndPerMmk = Number(getVndRate('in') || getVndRate('out') || LAST_RATE.vndIn || LAST_RATE.vndOut || 0);
+          const mmkInThb = mmkPerThb > 0 ? Number(totals.MMK || 0) / mmkPerThb : 0;
+          const vndInMmk = vndPerMmk > 0 ? Number(totals.VND || 0) / vndPerMmk : 0;
+          const vndInThb = mmkPerThb > 0 ? vndInMmk / mmkPerThb : 0;
+          const totalThb = Number(totals.THB || 0) + mmkInThb + vndInThb;
+          const totalThbHtml = totalThb > 0
+            ? `<div class="border-2 border-emerald-500 bg-emerald-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm h-fit"><span class="text-[10px] font-black text-emerald-600 uppercase">TOTAL</span><span class="text-base font-black text-emerald-800">≈ ${totalThb.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB</span></div>`
+            : '';
 
           totalDisplay.innerHTML = `
               <div class="flex gap-2 justify-end flex-wrap mt-1">
@@ -6525,7 +6526,7 @@ function openAdmin() {
                           <span class="text-[10px] font-black text-green-600 uppercase">MMK</span>
                           <span class="text-base font-black text-green-800">${(totals.MMK||0).toLocaleString()}</span>
                       </div>
-                      ${estTotalThbHtml}
+                      ${mmkPerThb > 0 && totals.MMK > 0 ? `<div class="text-[10px] text-blue-600 font-bold mt-1 text-right">≈ ${mmkInThb.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB</div>` : ''}
                   </div>
                   
                   <div class="border-2 border-blue-500 bg-blue-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm h-fit">
@@ -6537,6 +6538,7 @@ function openAdmin() {
                       <span class="text-[10px] font-black text-orange-600 uppercase">VND</span>
                       <span class="text-base font-black text-orange-800">${(totals.VND||0).toLocaleString()}</span>
                   </div>
+                  ${totalThbHtml}
                 </div>
             `;
       }
