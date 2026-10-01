@@ -1398,13 +1398,26 @@
                       </div>
               </div>
           </div>
-          <div class="bg-green-50 px-4 py-3 border-t border-green-200 rounded-b-xl flex justify-between items-center">
-              <span class="font-bold text-green-800">စုစုပေါင်း အမြတ်ငွေ (Total Profit)</span>
-              <div class="text-right">
-                 <div class="font-black text-green-700 text-xl" id="dash_total_profit">0 MMK</div>
-                 <div id="dash_fee_summary" class="text-[11px] text-slate-500 font-bold mt-1">Fees: -0 MMK ≈ -0 THB</div>
-              </div>
+      <div class="bg-green-50 px-4 py-3 border-t border-green-200 rounded-b-xl flex justify-between items-center">
+          <span class="font-bold text-green-800">စုစုပေါင်း အမြတ်ငွေ (Total Profit)</span>
+          <div class="text-right">
+             <div class="font-black text-green-700 text-xl" id="dash_total_profit">0 MMK</div>
+             <div id="dash_fee_summary" class="text-[11px] text-slate-500 font-bold mt-1">Fees: -0 MMK ≈ -0 THB</div>
           </div>
+      </div>
+      <div class="px-4 py-3 bg-green-50 border-t border-green-200 text-right">
+          <button type="button" onclick="window.openProfitDetails()" class="btn2 !py-1.5 !px-3 !text-sm border-green-700 text-green-800">📊 Profit Details</button>
+      </div>
+      </div>
+
+      <div id="profitDetailsModal" style="display:none" class="fixed inset-0 bg-black/70 z-[96] items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
+          <div class="flex justify-between items-center px-4 py-3 border-b bg-green-50">
+            <h3 class="font-black text-green-800">📊 Profit Details (FIFO)</h3>
+            <button type="button" onclick="window.closeProfitDetails()" class="text-gray-500 hover:text-red-600 text-xl">✕</button>
+          </div>
+          <div id="profitDetailsContent" class="p-4 overflow-y-auto max-h-[78vh]"></div>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 mt-2">
@@ -2005,6 +2018,16 @@
     <div class="mb-3"><label class="text-xs font-bold text-gray-600">Fee ဖြတ်မည့် Wallet / Bank</label><select id="txFeeLedger" class="admin-input-box text-sm"><option value="">မရွေးထားပါ</option></select></div>
     <p class="text-[11px] text-slate-500 bg-slate-50 border rounded-lg p-2 mb-3">မူရင်း in/out amount ကို မပြောင်းပါ။ Fee ကို သီးခြား Expense အဖြစ် သိမ်းပြီး Net Profit မှ တစ်ကြိမ်သာ နုတ်ပါမည်။</p>
     <div class="flex gap-2"><button onclick="window.closeTxFeeModal()" class="btn2 w-1/3">မလုပ်တော့ပါ</button><button onclick="window.removeTxFee()" class="btn bg-red-600 hover:bg-red-700 w-1/3">Fee ဖျက်မည်</button><button onclick="window.saveTxFee()" class="btn bg-emerald-600 hover:bg-emerald-700 w-1/3">သိမ်းမည်</button></div>
+  </div>
+</div>
+
+<div id="treasuryActivityModal" style="display:none" class="fixed inset-0 bg-black/70 z-[96] items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
+    <div class="flex justify-between items-center px-4 py-3 border-b bg-blue-50">
+      <div><h3 id="treasuryActivityTitle" class="font-black text-blue-800">Account Activity</h3><div id="treasuryActivitySubtitle" class="text-xs text-slate-500"></div></div>
+      <button type="button" onclick="window.closeTreasuryActivity()" class="text-gray-500 hover:text-red-600 text-xl">✕</button>
+    </div>
+    <div id="treasuryActivityContent" class="p-4 overflow-y-auto max-h-[78vh]"></div>
   </div>
 </div>
 
@@ -2939,6 +2962,7 @@ window.showToast = function(message, icon = "✅") {
   let fifoLoadedOnce = false;
   let fifoDataDirty = true; // Success ဖြစ်စေမည့် ပြောင်းလဲမှု (Status/Amount/Type/Delete) ဖြစ်တိုင်း true သို့ ပြန်ပြောင်းမည်
   let fifoFetchInFlight = null;
+  let LAST_PROFIT_DETAILS = [];
 
   function markFifoDataDirty() { fifoDataDirty = true; }
 
@@ -3035,10 +3059,11 @@ window.showToast = function(message, icon = "✅") {
       let periodProfitThb = 0, periodProfitVnd = 0;
       let periodProfitThbInBaht = 0;
       let periodFeeMmk = 0; 
+      const profitDetailMap = new Map();
 
       let sortedTxs = [...dataArray].sort((a, b) => {
-          let tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-          let tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+          let tA = (a.successAt || a.timestamp) ? new Date(a.successAt || a.timestamp).getTime() : 0;
+          let tB = (b.successAt || b.timestamp) ? new Date(b.successAt || b.timestamp).getTime() : 0;
           return tA - tB;
       });
 
@@ -3046,7 +3071,8 @@ window.showToast = function(message, icon = "✅") {
           if (tx.status !== 'Success') return;
 
           let txType = tx.type || '';
-          let txTime = tx.timestamp || new Date().toISOString();
+          // Realized Profit ကို Success ဖြစ်သည့်နေ့အလိုက်ပြမည်။ အဟောင်း Record များတွင် successAt မရှိလျှင် မူရင်း timestamp ကို fallback သုံးမည်။
+          let txTime = tx.successAt || tx.timestamp || new Date().toISOString();
 
           let recDateObj;
           try {
@@ -3067,6 +3093,20 @@ window.showToast = function(message, icon = "✅") {
               const ed = document.getElementById('dashEndDate').value || "9999-99-99";
               includeThisRecord = (recDateStr >= sd && recDateStr <= ed);
           }
+
+          const detailKey = String(tx.id || `${tx.timestamp || ''}|${tx.type || ''}|${tx.inAmt || ''}|${tx.outAmt || ''}`);
+          const detailDate = tx.successAt || tx.timestamp || '';
+          const ensureProfitDetail = () => {
+              if (!includeThisRecord) return null;
+              if (!profitDetailMap.has(detailKey)) {
+                  profitDetailMap.set(detailKey, {
+                      id: detailKey, sourceTx: tx, successAt: detailDate, type: txType,
+                      inAmt: tx.inAmt || '', outAmt: tx.outAmt || '', feeMmk: 0,
+                      grossProfit: 0, lotMatches: []
+                  });
+              }
+              return profitDetailMap.get(detailKey);
+          };
 
           let inNum = getCleanNum(tx.inAmt);
           let outNum = getCleanNum(tx.outAmt);
@@ -3107,6 +3147,8 @@ window.showToast = function(message, icon = "✅") {
                   
                   let profit = (s.rate - rate) * matchQty; 
                   if (includeThisRecord) {
+                      const detail = ensureProfitDetail();
+                      if (detail) { detail.grossProfit += profit; detail.lotMatches.push({ qty: matchQty, rate: s.rate, profit }); }
                       if (currency === 'THB') {
                           periodProfitThb += profit;
                           periodProfitThbInBaht += (profit / rate);
@@ -3128,6 +3170,8 @@ window.showToast = function(message, icon = "✅") {
                   
                   let profit = (rate - l.rate) * matchQty;
                   if (includeThisRecord) {
+                      const detail = ensureProfitDetail();
+                      if (detail) { detail.grossProfit += profit; detail.lotMatches.push({ qty: matchQty, rate: l.rate, profit }); }
                       if (currency === 'THB') {
                           periodProfitThb += profit;
                           periodProfitThbInBaht += (profit / rate); 
@@ -3144,6 +3188,13 @@ window.showToast = function(message, icon = "✅") {
               }
           }
       });
+
+      profitDetailMap.forEach(detail => {
+          const sourceTx = detail.sourceTx || dataArray.find(tx => String(tx.id || '') === detail.id);
+          if (sourceTx?.fee && Number(sourceTx.fee.amount) > 0) detail.feeMmk = feeRateToMmk(sourceTx, sourceTx.fee.currency);
+          detail.netProfit = detail.grossProfit - (sourceTx?.fee?.mode === 'add_on_top' ? 0 : detail.feeMmk);
+      });
+      LAST_PROFIT_DETAILS = Array.from(profitDetailMap.values()).filter(detail => detail.lotMatches.length > 0);
 
       if(document.getElementById('dash_thb_in')) {
           document.getElementById('dash_thb_in').textContent = thbIn.toLocaleString() + " THB";
@@ -3397,6 +3448,40 @@ window.showToast = function(message, icon = "✅") {
   }
 
   // --- 🌟 PDF Generation Function ---
+  function formatProfitDetailDate(value) {
+      if (!value) return '—';
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleString('en-GB', { timeZone: ADMIN_TIMEZONE || 'Asia/Bangkok', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
+  }
+  window.closeProfitDetails = function() {
+      const modal = document.getElementById('profitDetailsModal');
+      if (modal) modal.style.display = 'none';
+  };
+  window.openProfitDetails = function() {
+      const modal = document.getElementById('profitDetailsModal');
+      const content = document.getElementById('profitDetailsContent');
+      if (!modal || !content) return;
+      const rows = Array.isArray(LAST_PROFIT_DETAILS) ? LAST_PROFIT_DETAILS : [];
+      const esc = value => typeof smartEscapeHtml === 'function' ? smartEscapeHtml(String(value ?? '')) : String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const fmt = value => Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const gross = rows.reduce((sum, row) => sum + Number(row.grossProfit || 0), 0);
+      const fees = rows.reduce((sum, row) => sum + Number(row.feeMmk || 0), 0);
+      const net = gross - fees;
+      const cards = rows.length ? rows.map(row => `
+        <div class="border rounded-xl p-3 mb-3 bg-white shadow-sm">
+          <div class="flex flex-wrap justify-between gap-2 border-b pb-2 mb-2">
+            <div><b>${esc(row.id)}</b><div class="text-xs text-slate-500">Success Date: ${esc(formatProfitDetailDate(row.successAt))}</div></div>
+            <div class="text-right text-sm font-bold">${esc(row.type)}<br><span class="text-xs text-slate-500">${esc(row.inAmt)} ➔ ${esc(row.outAmt)}</span></div>
+          </div>
+          <div class="text-xs font-bold text-slate-600 mb-1">FIFO Lot Matches</div>
+          <div class="space-y-1 text-xs">${row.lotMatches.map((lot, index) => `<div class="flex justify-between gap-2"><span>FIFO Lot ${index + 1}: ${fmt(lot.qty)} × ${fmt(lot.rate)}</span><span class="font-bold ${Number(lot.profit) >= 0 ? 'text-green-700' : 'text-red-700'}">${fmt(lot.profit)} MMK</span></div>`).join('')}</div>
+          <div class="grid grid-cols-3 gap-2 border-t mt-2 pt-2 text-xs text-right"><span>Gross<br><b>${fmt(row.grossProfit)} MMK</b></span><span>Fee<br><b class="text-red-600">-${fmt(row.feeMmk)} MMK</b></span><span>Net<br><b class="text-green-700">${fmt(row.netProfit)} MMK</b></span></div>
+        </div>`).join('') : '<div class="text-center text-slate-500 py-8">ဒီကာလအတွင်း FIFO ဖြင့် Realized Profit ဖြစ်သော Success Transaction မရှိပါ။</div>';
+      content.innerHTML = `<div class="grid grid-cols-3 gap-2 mb-4 text-center text-xs"><div class="bg-slate-50 rounded-lg p-2">Included<br><b class="text-base">${rows.length}</b></div><div class="bg-slate-50 rounded-lg p-2">Gross Profit<br><b class="text-base">${fmt(gross)} MMK</b></div><div class="bg-green-50 rounded-lg p-2">Net Profit<br><b class="text-base text-green-700">${fmt(net)} MMK</b><br><span class="text-red-600">Fees -${fmt(fees)} MMK</span></div></div>${cards}`;
+      modal.style.display = 'flex';
+  };
+
   async function generatePDFReport() {
       const thbIn = document.getElementById('dash_thb_in').textContent;
       const thbOut = document.getElementById('dash_thb_out').textContent;
@@ -3970,7 +4055,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       
       try {
           if (botToken) TELEGRAM_BOT_TOKEN = botToken;
-          if (imgbb) IMGBB_API_KEY = imgbb;
+          if (imgbb) IMGBB_API_KEY = String(imgbb).trim();
           if (geminiKey) GEMINI_API_KEY = geminiKey;
           if (slip2go) SLIP2GO_API_KEY = slip2go; // 🌟 အသစ်
           
@@ -5006,7 +5091,7 @@ if (data.telegram) {
         if (pauseUntilInput) { pauseUntilInput.value = OPERATOR_PHOTO_PAUSE_UNTIL; pauseUntilInput.disabled = String(CURRENT_ROLE || '').toLowerCase() !== 'main admin'; }
 	if (data.apiKeys) {
             if(data.apiKeys.botToken) TELEGRAM_BOT_TOKEN = data.apiKeys.botToken;
-            if(data.apiKeys.imgbb) IMGBB_API_KEY = data.apiKeys.imgbb;
+            if(data.apiKeys.imgbb) IMGBB_API_KEY = String(data.apiKeys.imgbb).trim();
             if(data.apiKeys.geminiKey) GEMINI_API_KEY = data.apiKeys.geminiKey;
             if(data.apiKeys.slip2go) SLIP2GO_API_KEY = data.apiKeys.slip2go; // 🌟 အသစ်
         }
@@ -6342,9 +6427,52 @@ function openAdmin() {
           </div>`;
       });
   }
-   // ==========================================
+  // ==========================================
   // 💰 Treasury & Master Accounts Functions
   // ==========================================
+
+  window.closeTreasuryActivity = function() {
+      const modal = document.getElementById('treasuryActivityModal');
+      if (modal) modal.style.display = 'none';
+  };
+  window.openTreasuryActivity = function(accountId, accountName, currency) {
+      const modal = document.getElementById('treasuryActivityModal');
+      const content = document.getElementById('treasuryActivityContent');
+      if (!modal || !content) return;
+      const esc = value => typeof smartEscapeHtml === 'function' ? smartEscapeHtml(String(value ?? '')) : String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const fmt = value => Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const getNum = value => parseFloat(String(value ?? '').replace(/[^\d.,-]/g, '').replace(/,/g, '')) || 0;
+      const matches = id => String(id || '') === String(accountId) || String(id || '').replace(/^BANK_|^QR_/, '') === String(accountId).replace(/^BANK_|^QR_/, '');
+      const dateText = value => {
+          const d = new Date(value || '');
+          return isNaN(d.getTime()) ? '—' : d.toLocaleString('en-GB', { timeZone: ADMIN_TIMEZONE || 'Asia/Bangkok', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true });
+      };
+      const rows = [];
+      (Array.isArray(allLoadedHistory) ? allLoadedHistory : []).forEach(tx => {
+          const active = tx.status === 'Success' || tx.status === 'Owing';
+          if (!active) return;
+          if (tx.status === 'Success' && matches(tx.ledgerIn)) rows.push({ date: tx.successAt || tx.timestamp, id: tx.id, type: tx.type, status: tx.status, direction: 'In', amount: getNum(tx.inAmt), note: tx.customerName || '' });
+          if (Array.isArray(tx.ledgerOutSplit) && tx.ledgerOutSplit.length) {
+              tx.ledgerOutSplit.forEach(split => { if (matches(split.id)) rows.push({ date: tx.timestamp, id: tx.id, type: tx.type, status: tx.status, direction: 'Out', amount: Number(split.amount) || 0, note: tx.customerName || '' }); });
+          } else if (matches(tx.ledgerOut)) {
+              rows.push({ date: tx.timestamp, id: tx.id, type: tx.type, status: tx.status, direction: 'Out', amount: getNum(tx.outAmt), note: tx.customerName || '' });
+          }
+      });
+      (Array.isArray(FIREBASE_EXPENSE_ORDER) ? FIREBASE_EXPENSE_ORDER : []).forEach(id => {
+          const exp = FIREBASE_EXPENSES?.[id];
+          if (exp && matches(exp.ledger)) rows.push({ date: exp.date, id: exp.linkedTransactionId || id, type: `Expense - ${exp.desc || exp.type || ''}`, status: 'Expense', direction: 'Out', amount: Number(exp.amount) || 0, note: exp.currency || '' });
+      });
+      rows.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+      const totalIn = rows.filter(r => r.direction === 'In').reduce((n, r) => n + r.amount, 0);
+      const totalOut = rows.filter(r => r.direction === 'Out').reduce((n, r) => n + r.amount, 0);
+      const acc = FIREBASE_TREASURY?.[accountId] || (String(accountId).startsWith('BANK_') ? FIREBASE_BANKS?.[String(accountId).slice(5)] : null) || (String(accountId).startsWith('QR_') ? FIREBASE_QRS?.[Number(String(accountId).slice(3))] : null);
+      const currentBalance = Number(acc?.balance || 0);
+      document.getElementById('treasuryActivityTitle').textContent = `စာရင်း — ${accountName || accountId}`;
+      document.getElementById('treasuryActivitySubtitle').textContent = `${currency || acc?.currency || ''} · လက်ရှိလက်ကျန် ${fmt(currentBalance)}`;
+      const table = rows.length ? `<div class="overflow-x-auto"><table class="w-full text-xs whitespace-nowrap"><thead><tr class="bg-slate-100"><th class="p-2 text-left">ရက်စွဲ</th><th class="p-2 text-left">Invoice / ID</th><th class="p-2 text-left">အမျိုးအစား</th><th class="p-2 text-center">Status</th><th class="p-2 text-right">အဝင်</th><th class="p-2 text-right">အထွက်</th></tr></thead><tbody>${rows.map(r => `<tr class="border-b"><td class="p-2">${esc(dateText(r.date))}</td><td class="p-2 font-bold">${esc(r.id)}</td><td class="p-2">${esc(r.type)}${r.note ? `<br><span class="text-[10px] text-slate-500">${esc(r.note)}</span>` : ''}</td><td class="p-2 text-center">${esc(r.status)}</td><td class="p-2 text-right font-bold text-green-700">${r.direction === 'In' ? `+${fmt(r.amount)}` : '—'}</td><td class="p-2 text-right font-bold text-red-700">${r.direction === 'Out' ? `-${fmt(r.amount)}` : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="text-center text-slate-500 py-8">ဒီအကောင့်အတွက် အဝင်/အထွက် စာရင်းမရှိသေးပါ။</div>';
+      content.innerHTML = `<div class="grid grid-cols-3 gap-2 mb-4 text-center text-xs"><div class="bg-green-50 rounded-lg p-2">စုစုပေါင်း အဝင်<br><b class="text-base text-green-700">+${fmt(totalIn)} ${esc(currency || '')}</b></div><div class="bg-red-50 rounded-lg p-2">စုစုပေါင်း အထွက်<br><b class="text-base text-red-700">-${fmt(totalOut)} ${esc(currency || '')}</b></div><div class="bg-blue-50 rounded-lg p-2">အသားတင် လှုပ်ရှားမှု<br><b class="text-base text-blue-700">${fmt(totalIn - totalOut)} ${esc(currency || '')}</b></div></div>${table}<p class="text-[11px] text-slate-500 mt-3">မှတ်ချက်: လက်ကျန်ကို ကိုယ်တိုင်ပြင်ထားသော Adjustment များသည် Invoice အဝင်/အထွက်စာရင်းထဲ မပါပါ။</p>`;
+      modal.style.display = 'flex';
+  };
 
   function loadTreasuryData() {
       if(typeof syncAllLedgerDropdowns === 'function') syncAllLedgerDropdowns(); 
@@ -6409,6 +6537,7 @@ function openAdmin() {
                           ${estThbHtml}
                       </div>
                       <div class="flex gap-1 items-start">
+                          <button onclick="window.openTreasuryActivity('${key}', '${String(acc.name || '').replace(/'/g, "\\'")}', '${curr}')" class="text-[10px] bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">စာရင်း</button>
                           <button onclick="adjustTreasuryBalance('${key}')" class="text-[10px] bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1 rounded font-bold">ပြင်မည်</button>
                           <button onclick="deleteMasterAccount('${key}')" class="text-[10px] bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 px-2 py-1 rounded font-bold">✕</button>
                       </div>
@@ -6452,6 +6581,7 @@ function openAdmin() {
                               ${estThbHtml}
                           </div>
                           <div class="flex gap-1 items-start">
+                              <button onclick="window.openTreasuryActivity('BANK_${bId}', '${String(acc.name || '').replace(/'/g, "\\'")}', '${curr}')" class="text-[10px] bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">စာရင်း</button>
                               <button onclick="adjustTreasuryBalance('BANK_${bId}')" class="text-[10px] bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1 rounded font-bold">လက်ကျန်ပြင်မည်</button>
                           </div>
                       </div>
@@ -6494,6 +6624,7 @@ function openAdmin() {
                               ${estThbHtml}
                           </div>
                           <div class="flex gap-1 items-start">
+                              <button onclick="window.openTreasuryActivity('QR_${index}', '${String(name || '').replace(/'/g, "\\'")}', '${curr}')" class="text-[10px] bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">စာရင်း</button>
                               <button onclick="adjustTreasuryBalance('QR_${index}')" class="text-[10px] bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 px-2 py-1 rounded font-bold">လက်ကျန်ပြင်မည်</button>
                           </div>
                       </div>
@@ -8017,6 +8148,9 @@ function openAdmin() {
       }
 
      // ✅ 1. မျက်နှာပြင် (UI) ကို ချက်ချင်း အရင် Update လုပ်ပါမည် (Delay မဖြစ်စေရန်)
+     const successTimestamp = newStatus === 'Success' && oldStatus !== 'Success' ? new Date().toISOString() : (tx.successAt || null);
+     if (newStatus === 'Success' && oldStatus !== 'Success') tx.successAt = successTimestamp;
+     if (newStatus !== 'Success' && oldStatus === 'Success') delete tx.successAt;
      tx.status = newStatus;
      
      // 🌟 Targeted row update instead of full render
@@ -8034,7 +8168,10 @@ function openAdmin() {
 
      try {
           // ✅ 2. ထို့နောက်မှ Firebase ကို နောက်ကွယ်မှ လှမ်းပို့ပါမည်
-          await getHistoryDocRef(tx).update({ status: newStatus });
+          const statusUpdate = { status: newStatus };
+          if (newStatus === 'Success' && oldStatus !== 'Success') statusUpdate.successAt = successTimestamp;
+          if (newStatus !== 'Success' && oldStatus === 'Success') statusUpdate.successAt = firebase.firestore.FieldValue.delete();
+          await getHistoryDocRef(tx).update(statusUpdate);
           
           // 🌟 Log မှတ်မည် 
           logActivity("Status Change", `ID: ${invId} ၏ Status ကို '${newStatus}' သို့ ပြောင်းလဲခဲ့သည်။`);
@@ -11450,16 +11587,54 @@ Return ONLY JSON.`;
   async function uploadSlipImageToImgBB(file) {
       if (!file || !file.type?.startsWith('image/')) throw new Error('ရွေးထားသောဖိုင်သည် ပုံဖိုင်မဟုတ်ပါ');
       if (file.size > 32 * 1024 * 1024) throw new Error('ပုံဖိုင်အရွယ်အစား 32MB ထက်ကြီးနေပါသည်');
-      const formData = new FormData();
-      formData.append('image', file, file.name || `slip-${Date.now()}.jpg`);
-      const response = await fetch(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(IMGBB_API_KEY)}`, { method: 'POST', body: formData });
-      let result = null;
-      try { result = await response.json(); } catch (e) { throw new Error(`ImgBB response မဖတ်နိုင်ပါ (${response.status})`); }
-      if (!response.ok || !result?.success || !result?.data?.url) {
-          const apiMessage = result?.error?.message || result?.error?.errors?.[0]?.detail || `HTTP ${response.status}`;
-          throw new Error(`ImgBB upload မအောင်မြင်ပါ: ${apiMessage}`);
+      const apiKey = String(IMGBB_API_KEY || '').trim();
+      if (!apiKey) throw new Error('ImgBB API Key မထည့်ရသေးပါ');
+      const endpoint = `https://api.imgbb.com/1/upload?key=${encodeURIComponent(apiKey)}`;
+      const readJson = async (response) => {
+          let result = null;
+          try { result = await response.json(); } catch (e) { throw new Error(`ImgBB response မဖတ်နိုင်ပါ (${response.status})`); }
+          if (response.ok && result?.success && result?.data?.url) return result.data.url;
+          const apiMessage = result?.error?.message || result?.error?.errors?.[0]?.detail || result?.status_txt || `HTTP ${response.status}`;
+          throw new Error(`ImgBB upload မအောင်မြင်ပါ (${response.status}): ${apiMessage}`);
+      };
+      const convertToJpegBlob = async () => {
+          const bitmap = await createImageBitmap(file);
+          const maxSide = 2600;
+          const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+          canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+          const ctx = canvas.getContext('2d', { alpha: false });
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+          bitmap.close?.();
+          return await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('JPEG ပြောင်း၍မရပါ')), 'image/jpeg', 0.92));
+      };
+
+      // ပထမနည်း — မူရင်း Multipart File Upload
+      try {
+          const formData = new FormData();
+          formData.append('image', file, file.name || `slip-${Date.now()}.jpg`);
+          return await readJson(await fetch(endpoint, { method: 'POST', body: formData }));
+      } catch (multipartError) {
+          // ဒုတိယနည်း — ImgBB တရားဝင် Base64 Upload (400 Internal upload error fallback)
+          try {
+              const base64 = await fileToBase64(file);
+              const body = new URLSearchParams({ key: apiKey, image: base64 });
+              return await readJson(await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body }));
+          } catch (base64Error) {
+              // တတိယနည်း — PNG/WebP/RGBA ပုံကို Browser ထဲမှာ JPEG ပြောင်းပြီး Upload ပြန်စမ်းမည်
+              try {
+                  const jpegBlob = await convertToJpegBlob();
+                  const jpegForm = new FormData();
+                  jpegForm.append('image', jpegBlob, `slip-${Date.now()}.jpg`);
+                  return await readJson(await fetch(endpoint, { method: 'POST', body: jpegForm }));
+              } catch (jpegError) {
+                  throw new Error(`${multipartError.message || multipartError} | Base64 retry: ${base64Error.message || base64Error} | JPEG retry: ${jpegError.message || jpegError}`);
+              }
+          }
       }
-      return result.data.url;
   }
   window.handleSlipUpload = async function(event) {
       const files = Array.from(event.target.files || []); if (files.length === 0) return;
@@ -11647,7 +11822,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       }
 
       if (existingSlips.length + files.length > 10) { alert(`၁၀ ပုံထက် ကျော်လွန်နေပါသည်။`); return; }
-      let uploadedUrls = []; let hasError = false;
+      let uploadedUrls = []; let hasError = false; let uploadErrors = [];
       
       const uploadBtn = document.querySelector(`button[onclick*="triggerSlipUpload('${invId}')"]`);
       let origBtnText = "";
@@ -11663,7 +11838,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           const uploadResults = await Promise.all(Array.from(files, async (file) => {
               try {
                   return await uploadSlipImageToImgBB(file);
-              } catch (err) { console.warn('Slip upload failed:', err?.message || err); }
+              } catch (err) { uploadErrors.push(err?.message || String(err)); console.warn('Slip upload failed:', err?.message || err); }
               hasError = true;
               return null;
           }));
@@ -11712,7 +11887,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               if (hasError) window.showToast("တချို့ပုံများမှာ အခက်အခဲရှိခဲ့ပါသည်။", "⚠️");
               else window.showToast("Customer စလစ်ပုံ သိမ်းဆည်းပြီးပါပြီ။", "✅");
               renderHistoryRows(allLoadedHistory); 
-          } else { alert(`ပုံ Upload မအောင်မြင်ပါ။\n\n${hasError ? 'ImgBB API Key, Internet သို့မဟုတ် ပုံဖိုင်ကို စစ်ဆေးပါ။' : 'Upload result မရရှိပါ။'}`); }
+          } else { alert(`ပုံ Upload မအောင်မြင်ပါ။\n\n${uploadErrors.length ? uploadErrors.join('\n') : (hasError ? 'ImgBB API Key, Internet သို့မဟုတ် ပုံဖိုင်ကို စစ်ဆေးပါ။' : 'Upload result မရရှိပါ။')}`); }
       } catch (e) { alert(`ပုံ Upload မအောင်မြင်ပါ။\n\n${e?.message || 'Connection စစ်ဆေးပါ။'}`); } 
       finally { if (uploadBtn) { uploadBtn.innerHTML = origBtnText; uploadBtn.disabled = false; } window.currentSlipUploadMode = null; window.hideUploadingIndicator(); }
   }
@@ -11736,7 +11911,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       if (!IMGBB_API_KEY) { alert("ImgBB API Key ထည့်သွင်းထားခြင်း မရှိပါ။"); return; } 
       if (files.length > 5) { alert("တစ်ကြိမ်လျှင် ပုံ ၅ ပုံထက်ပို၍ မတင်ပါနှင့်။"); return; }
 
-      let uploadedUrls = []; let hasError = false;
+      let uploadedUrls = []; let hasError = false; let uploadErrors = [];
       const origBtn = document.querySelector(smartSlipMode === 'in' ? 'button[onclick="triggerSmartSlip(\'in\')"]' : 'button[onclick="triggerSmartSlip(\'out\')"]');
       const origText = origBtn ? origBtn.innerHTML : '';
       if (origBtn) { origBtn.innerHTML = "⏳ စစ်ဆေးနေသည်..."; origBtn.disabled = true; }
@@ -11754,7 +11929,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           const uploadResults = await Promise.all(Array.from(files, async (file) => {
               try {
                   return await uploadSlipImageToImgBB(file);
-              } catch (err) { console.warn('Slip upload failed:', err?.message || err); }
+              } catch (err) { uploadErrors.push(err?.message || String(err)); console.warn('Slip upload failed:', err?.message || err); }
               hasError = true;
               return null;
           }));
@@ -11797,7 +11972,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
                   // 🌟 Bug Fix: ပမာဏ သုညဖြစ်နေရင်တောင် AI ရဲ့ raw text ကို Alert ထဲမှာ ပြပေးမယ်
                   alert("စလစ်ထဲမှ ငွေပမာဏကို အလိုအလျောက် ဆွဲထုတ်၍မရပါ။\n\nAI ဖတ်ထားသောစာ:\n" + newExtractedText); 
               }
-          } else { alert(`ပုံ Upload မအောင်မြင်ပါ။\n\n${hasError ? 'ImgBB API Key, Internet သို့မဟုတ် ပုံဖိုင်ကို စစ်ဆေးပါ။' : 'Upload result မရရှိပါ။'}`); }
+          } else { alert(`ပုံ Upload မအောင်မြင်ပါ။\n\n${uploadErrors.length ? uploadErrors.join('\n') : (hasError ? 'ImgBB API Key, Internet သို့မဟုတ် ပုံဖိုင်ကို စစ်ဆေးပါ။' : 'Upload result မရရှိပါ။')}`); }
       } catch (e) { alert(`စလစ် Upload မအောင်မြင်ပါ။\n\n${e?.message || 'Connection စစ်ဆေးပါ။'}`); } 
       finally { if (origBtn) { origBtn.innerHTML = origText; origBtn.disabled = false; } window.hideUploadingIndicator(); }
   }
