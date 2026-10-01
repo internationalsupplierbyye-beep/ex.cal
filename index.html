@@ -726,6 +726,7 @@
       <input type="text" inputmode="decimal" id="balEditAmtInput" class="bal-edit-amt-input" placeholder="0" oninput="window.updateBalEditDelta()">
       <div class="bal-edit-current" id="balEditCurrentLabel">လက်ရှိလက်ကျန်: 0</div>
       <div class="bal-edit-delta zero" id="balEditDeltaLabel">ပြောင်းလဲမှု မရှိသေးပါ</div>
+      <input type="text" id="balEditReasonInput" class="admin-input-box text-sm mt-2" placeholder="Adjustment အကြောင်းပြချက် (ဥပမာ - အဖွင့်လက်ကျန် / ငွေသားထည့် / ပြန်ထုတ်)">
     </div>
 
     <div class="bal-edit-btns">
@@ -2167,6 +2168,7 @@
   let FIREBASE_HIDDEN_DEVICES = []; 
   let FIREBASE_TREASURY = {}; // 🌟 Master Accounts များကို သိမ်းမည့် State 
   let FIREBASE_TREASURY_ORDER = []; // 🌟 Master Account အစီအစဉ် 
+  let FIREBASE_TREASURY_ADJUSTMENTS = {}; // Manual balance changes, kept with the existing shared data document
   
   // 🌟 Expense အတွက် State အသစ်
   let FIREBASE_EXPENSES = {};
@@ -5009,6 +5011,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         
         // 🌟 Treasury ဒေတာကို ဆွဲယူခြင်း
 if (data.treasuryAccounts) FIREBASE_TREASURY = data.treasuryAccounts;
+FIREBASE_TREASURY_ADJUSTMENTS = (data.treasuryAdjustments && typeof data.treasuryAdjustments === 'object') ? data.treasuryAdjustments : {};
 if (data.treasuryOrder) {
     FIREBASE_TREASURY_ORDER = data.treasuryOrder;
 } else {
@@ -6435,7 +6438,7 @@ function openAdmin() {
       const modal = document.getElementById('treasuryActivityModal');
       if (modal) modal.style.display = 'none';
   };
-  window.openTreasuryActivity = function(accountId, accountName, currency) {
+  window.openTreasuryActivity = async function(accountId, accountName, currency) {
       const modal = document.getElementById('treasuryActivityModal');
       const content = document.getElementById('treasuryActivityContent');
       if (!modal || !content) return;
@@ -6462,6 +6465,16 @@ function openAdmin() {
           const exp = FIREBASE_EXPENSES?.[id];
           if (exp && matches(exp.ledger)) rows.push({ date: exp.date, id: exp.linkedTransactionId || id, type: `Expense - ${exp.desc || exp.type || ''}`, status: 'Expense', direction: 'Out', amount: Number(exp.amount) || 0, note: exp.currency || '' });
       });
+      Object.values(FIREBASE_TREASURY_ADJUSTMENTS || {}).forEach(a => {
+          if (a && matches(a.accountId)) rows.push({ date: a.timestamp, id: a.id || 'ADJUSTMENT', type: `Adjustment — ${a.reason || 'Manual balance adjustment'}`, status: 'Adjustment', direction: Number(a.change || 0) >= 0 ? 'In' : 'Out', amount: Math.abs(Number(a.change || 0)), note: `${a.before ?? 0} → ${a.after ?? 0}` });
+      });
+      try {
+          const adjustmentSnap = await firebase.firestore().collection('treasury_adjustments').where('accountId', '==', accountId).get();
+          adjustmentSnap.forEach(doc => {
+              const a = doc.data() || {};
+              rows.push({ date: a.timestamp, id: `ADJ-${doc.id.slice(0, 6)}`, type: `Adjustment — ${a.reason || ''}`, status: 'Adjustment', direction: Number(a.change || 0) >= 0 ? 'In' : 'Out', amount: Math.abs(Number(a.change || 0)), note: `${a.before ?? 0} → ${a.after ?? 0}` });
+          });
+      } catch (e) { console.warn('Treasury adjustment history unavailable:', e?.message || e); }
       rows.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
       const totalIn = rows.filter(r => r.direction === 'In').reduce((n, r) => n + r.amount, 0);
       const totalOut = rows.filter(r => r.direction === 'Out').reduce((n, r) => n + r.amount, 0);
@@ -6470,7 +6483,7 @@ function openAdmin() {
       document.getElementById('treasuryActivityTitle').textContent = `စာရင်း — ${accountName || accountId}`;
       document.getElementById('treasuryActivitySubtitle').textContent = `${currency || acc?.currency || ''} · လက်ရှိလက်ကျန် ${fmt(currentBalance)}`;
       const table = rows.length ? `<div class="overflow-x-auto"><table class="w-full text-xs whitespace-nowrap"><thead><tr class="bg-slate-100"><th class="p-2 text-left">ရက်စွဲ</th><th class="p-2 text-left">Invoice / ID</th><th class="p-2 text-left">အမျိုးအစား</th><th class="p-2 text-center">Status</th><th class="p-2 text-right">အဝင်</th><th class="p-2 text-right">အထွက်</th></tr></thead><tbody>${rows.map(r => `<tr class="border-b"><td class="p-2">${esc(dateText(r.date))}</td><td class="p-2 font-bold">${esc(r.id)}</td><td class="p-2">${esc(r.type)}${r.note ? `<br><span class="text-[10px] text-slate-500">${esc(r.note)}</span>` : ''}</td><td class="p-2 text-center">${esc(r.status)}</td><td class="p-2 text-right font-bold text-green-700">${r.direction === 'In' ? `+${fmt(r.amount)}` : '—'}</td><td class="p-2 text-right font-bold text-red-700">${r.direction === 'Out' ? `-${fmt(r.amount)}` : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="text-center text-slate-500 py-8">ဒီအကောင့်အတွက် အဝင်/အထွက် စာရင်းမရှိသေးပါ။</div>';
-      content.innerHTML = `<div class="grid grid-cols-3 gap-2 mb-4 text-center text-xs"><div class="bg-green-50 rounded-lg p-2">စုစုပေါင်း အဝင်<br><b class="text-base text-green-700">+${fmt(totalIn)} ${esc(currency || '')}</b></div><div class="bg-red-50 rounded-lg p-2">စုစုပေါင်း အထွက်<br><b class="text-base text-red-700">-${fmt(totalOut)} ${esc(currency || '')}</b></div><div class="bg-blue-50 rounded-lg p-2">အသားတင် လှုပ်ရှားမှု<br><b class="text-base text-blue-700">${fmt(totalIn - totalOut)} ${esc(currency || '')}</b></div></div>${table}<p class="text-[11px] text-slate-500 mt-3">မှတ်ချက်: လက်ကျန်ကို ကိုယ်တိုင်ပြင်ထားသော Adjustment များသည် Invoice အဝင်/အထွက်စာရင်းထဲ မပါပါ။</p>`;
+      content.innerHTML = `<div class="grid grid-cols-3 gap-2 mb-4 text-center text-xs"><div class="bg-green-50 rounded-lg p-2">စုစုပေါင်း အဝင်<br><b class="text-base text-green-700">+${fmt(totalIn)} ${esc(currency || '')}</b></div><div class="bg-red-50 rounded-lg p-2">စုစုပေါင်း အထွက်<br><b class="text-base text-red-700">-${fmt(totalOut)} ${esc(currency || '')}</b></div><div class="bg-blue-50 rounded-lg p-2">အသားတင် လှုပ်ရှားမှု<br><b class="text-base text-blue-700">${fmt(totalIn - totalOut)} ${esc(currency || '')}</b></div></div>${table}<p class="text-[11px] text-slate-500 mt-3">မှတ်ချက်: Adjustment များကို အောက်ပါစာရင်းတွင် <b>Adjustment</b> အဖြစ် သီးခြားပြထားပြီး Invoice Profit/Transaction တွက်ချက်မှုထဲ မပါပါ။</p>`;
       modal.style.display = 'flex';
   };
 
@@ -6737,6 +6750,7 @@ function openAdmin() {
 
       document.getElementById('balEditAccLabel').textContent = dispName;
       document.getElementById('balEditAmtInput').value = (acc.balance || 0);
+      document.getElementById('balEditReasonInput').value = '';
       document.getElementById('balEditCurrentLabel').textContent = `လက်ရှိလက်ကျန်: ${(acc.balance || 0).toLocaleString()}`;
       window.updateBalEditDelta();
 
@@ -6788,10 +6802,26 @@ function openAdmin() {
       }
 
       let change = newBal - _balEditCtx.currentBal;
+      const reason = String(document.getElementById('balEditReasonInput')?.value || '').trim() || 'Manual balance adjustment';
 
       try {
           // 🌟 သီးသန့် Balance ကိုသာ Increment ဖြင့် လှမ်း Update လုပ်မည်
           await window.updateBalancesSafely([{ id: id, change: change }]);
+
+          if (change !== 0) {
+              const adjustmentId = `ADJ_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+              const adjustmentRecord = {
+                  id: adjustmentId, accountId: id, accountName: acc.name || acc.file || id,
+                  currency: acc.currency || '', before: _balEditCtx.currentBal,
+                  after: newBal, change, reason, timestamp: new Date().toISOString(),
+                  actorEmail: firebase.auth?.().currentUser?.email || '',
+                  deviceId: CURRENT_DEVICE_ID || 'Unknown'
+              };
+              FIREBASE_TREASURY_ADJUSTMENTS[adjustmentId] = adjustmentRecord;
+              try {
+                  await dbRef.update({ treasuryAdjustments: FIREBASE_TREASURY_ADJUSTMENTS });
+              } catch (logError) { console.warn('Treasury adjustment audit save skipped:', logError?.message || logError); }
+          }
 
           if (isMaster && newName !== null) {
               await updateFirebase(updateTarget === 'all' ? 'all' : updateTarget);
@@ -12518,13 +12548,13 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           let dateStr = dt.toLocaleDateString('en-GB') + " " + dt.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
           let sColor = tx.status === 'Success' ? '#15803d' : (tx.status === 'Cancelled' ? '#b91c1c' : '#b45309');
           htmlRows += `
-            <tr style="border-bottom: 1px solid #e2e8f0; font-size:12px;">
-                <td style="padding: 8px;">${i+1}</td>
-                <td style="padding: 8px;">${dateStr}</td>
-                <td style="padding: 8px; font-weight:bold; color:#1e40af;">${tx.id}</td>
-                <td style="padding: 8px;">${tx.type}</td>
-                <td style="padding: 8px; font-weight:bold; color:${sColor};">${tx.status || 'Pending'}</td>
-                <td style="padding: 8px; font-weight:bold; color:#15803d;">${tx.inAmt} ➔ ${tx.outAmt}</td>
+            <tr style="border-bottom: 1px solid #e2e8f0; font-size:12px; vertical-align:middle;">
+                <td style="padding: 8px 6px; text-align:center; white-space:nowrap;">${i+1}</td>
+                <td style="padding: 8px 6px; white-space:nowrap;">${dateStr}</td>
+                <td style="padding: 8px 6px; font-weight:bold; color:#1e40af; white-space:nowrap;">${tx.id}</td>
+                <td style="padding: 8px 6px; white-space:nowrap;">${tx.type}</td>
+                <td style="padding: 8px 6px; text-align:center; font-weight:bold; color:${sColor}; white-space:nowrap;">${tx.status || 'Pending'}</td>
+                <td style="padding: 8px 6px; text-align:right; font-weight:bold; color:#15803d; white-space:nowrap; font-size:11px;">${tx.inAmt} ➔ ${tx.outAmt}</td>
             </tr>`;
 
           // Success ဖြစ်သော မှတ်တမ်းများကိုသာ Total ထဲ ပေါင်းမည် (Pending/Cancelled ကို မထည့်ပါ)
@@ -12593,8 +12623,9 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
                   </div>
               </div>
               <table style="width: 100%; border-collapse: collapse; table-layout: fixed; background: rgba(255, 255, 255, 0.75);">
+                  <colgroup><col style="width:5%;"><col style="width:17%;"><col style="width:18%;"><col style="width:14%;"><col style="width:12%;"><col style="width:34%;"></colgroup>
                   <thead style="background: rgba(241, 245, 249, 0.9);">
-                      <tr><th style="width: 50px; padding: 10px;">No.</th><th style="padding: 10px;">Date & Time</th><th style="padding: 10px;">Invoice ID</th><th style="padding: 10px;">Type</th><th style="padding: 10px;">Status</th><th style="padding: 10px;">Amount</th></tr>
+                      <tr><th style="padding: 10px 6px; text-align:center; white-space:nowrap;">No.</th><th style="padding: 10px 6px; white-space:nowrap;">Date & Time</th><th style="padding: 10px 6px; white-space:nowrap;">Invoice ID</th><th style="padding: 10px 6px; white-space:nowrap;">Type</th><th style="padding: 10px 6px; text-align:center; white-space:nowrap;">Status</th><th style="padding: 10px 6px; text-align:right; white-space:nowrap;">Amount</th></tr>
                   </thead>
                   <tbody>${htmlRows}</tbody>
               </table>
