@@ -1476,7 +1476,8 @@
           <button onclick="searchHistoryLocally(true)" class="btn bg-blue-600 !py-1 !px-3 !text-sm" title="ရှာရန်">🔍</button>
           <button onclick="clearHistoryFilters()" class="btn2 !py-1 !px-3 !text-sm whitespace-nowrap" title="ID/Name/Phone/Ref၊ ရက်စွဲနှင့် Status Filter အားလုံးကို ရှင်းမည်">✖ Clear Filter</button>
           <button onclick="loadHistory()" class="btn2 !py-1 !px-3 !text-sm" title="Refresh">🔄</button>
-          <button id="btnExportCSV" onclick="exportHistoryCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="Excel ဖိုင်ထုတ်ရန်">📥 Export</button>
+          <button id="btnExportCSV" onclick="exportHistoryCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="Excel ဖိုင်ထုတ်ရန်">📥 CSV</button>
+          <button id="btnExportPDF" onclick="exportHistoryPDF()" class="btn bg-red-600 hover:bg-red-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="PDF ဖိုင်ထုတ်ရန်">📄 PDF</button>
           <button id="btnClearHistory" onclick="clearAllHistory()" class="btn bg-red-600 hover:bg-red-700 !py-1 !px-3 !text-sm whitespace-nowrap" title="မှတ်တမ်းအားလုံးကို ဖျက်မည်">🗑 Clear All</button>
         </div>
       </div>
@@ -1932,7 +1933,8 @@
         </div>
         <div class="flex items-center gap-3 flex-wrap justify-end">
             <div id="treasuryTotals" class="text-[10px] font-black text-right leading-tight text-gray-600"></div>
-            <button onclick="exportInternalTransfersCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-3 !text-sm whitespace-nowrap">📥 Export Transfers</button>
+            <button onclick="exportInternalTransfersCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-2 !text-xs whitespace-nowrap">CSV</button>
+            <button onclick="exportInternalTransfersPDF()" class="btn bg-red-600 hover:bg-red-700 !py-1 !px-2 !text-xs whitespace-nowrap">PDF</button>
             <button onclick="loadTreasuryData()" class="btn2 !py-1 !px-3 !text-sm">🔄 Refresh</button>
         </div>
       </div>
@@ -3777,7 +3779,7 @@ window.showToast = function(message, icon = "✅") {
   }
   window.extractInvIdFromText = extractInvIdFromText;
 
-  async function logActivity(actionTitle, details, invIdArg) {
+  async function logActivity(actionTitle, details, invIdArg, meta = {}) {
       const currentDeviceId = CURRENT_DEVICE_ID || "Unknown";
       const mappedDeviceName = FIREBASE_DEVICE_NAMES[currentDeviceId] || currentDeviceId;
       
@@ -3789,7 +3791,8 @@ window.showToast = function(message, icon = "✅") {
           // 🕒 Invoice အလိုက် အစဉ်လိုက်ပြန်ကြည့်နိုင်ရန် invId ကိုပါ သိမ်းထားမည်
           invId: invIdArg || extractInvIdFromText(details) || '',
           actorEmail: (function(){ try { return (firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.email) || ''; } catch (e) { return ''; } })(),
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          ...meta
       };
       
       try {
@@ -6489,6 +6492,20 @@ function openAdmin() {
       Object.values(FIREBASE_TREASURY_ADJUSTMENTS || {}).forEach(a => {
           if (a && matches(a.accountId)) rows.push({ date: a.timestamp, id: a.id || 'ADJUSTMENT', type: `Adjustment — ${a.reason || 'Manual balance adjustment'}`, status: 'Adjustment', direction: Number(a.change || 0) >= 0 ? 'In' : 'Out', amount: Math.abs(Number(a.change || 0)), note: `${a.before ?? 0} → ${a.after ?? 0}` });
       });
+      // Internal Transfer ကို Activity Ledger ထဲမှာ From = Out, To = In အဖြစ် ပြမည်
+      try {
+          const transferSnap = await firebase.firestore().collection('activity_logs').where('action', '==', 'Internal Transfer').limit(500).get();
+          transferSnap.forEach(doc => {
+              const t = doc.data() || {};
+              const amount = Number(t.transferAmount || 0);
+              if (!amount) return;
+              const legacyText = String(t.details || '');
+              const legacyOut = !t.transferFromId && legacyText.includes(`[${accountName}] မှ`);
+              const legacyIn = !t.transferToId && legacyText.includes(`သို့ [${accountName}]`);
+              if (matches(t.transferFromId) || legacyOut) rows.push({ date: t.timestamp, id: `TR-${doc.id.slice(0, 7)}`, type: 'Internal Transfer', status: 'Transfer', direction: 'Out', amount, note: `သို့ ${t.transferToName || t.transferToId || legacyText}` });
+              if (matches(t.transferToId) || legacyIn) rows.push({ date: t.timestamp, id: `TR-${doc.id.slice(0, 7)}`, type: 'Internal Transfer', status: 'Transfer', direction: 'In', amount, note: `မှ ${t.transferFromName || t.transferFromId || legacyText}` });
+          });
+      } catch (e) { console.warn('Internal transfer activity unavailable:', e?.message || e); }
       try {
           const adjustmentSnap = await firebase.firestore().collection('treasury_adjustments').where('accountId', '==', accountId).get();
           adjustmentSnap.forEach(doc => {
@@ -6910,7 +6927,11 @@ function openAdmin() {
               { id: toId, change: amt }
           ]);
           
-          logActivity("Internal Transfer", `[${fromName}] မှ [${toName}] သို့ ${amt.toLocaleString()} ရွှေ့ပြောင်းခဲ့သည်။`);
+          await logActivity("Internal Transfer", `[${fromName}] မှ [${toName}] သို့ ${amt.toLocaleString()} ${fromCurrency} ရွှေ့ပြောင်းခဲ့သည်။`, '', {
+              transferFromId: fromId, transferToId: toId,
+              transferFromName: fromName, transferToName: toName,
+              transferAmount: amt, transferCurrency: String(fromCurrency || selectedCurrency || '').toUpperCase()
+          });
           
           document.getElementById('transferAmt').value = '';
           loadTreasuryData();
@@ -9895,6 +9916,55 @@ async function loadHistory() {
       link.setAttribute("download", `Exchange_History_${dateString}.csv`);
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
+
+    async function exportHtmlBlockToPdf(title, html, filename) {
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'position:fixed;left:-99999px;top:0;width:1100px;padding:36px;background:#fff;color:#0f172a;font-family:Arial,sans-serif;';
+        wrap.innerHTML = `<h1 style="font-size:24px;font-weight:900;text-align:center;color:#1e40af;margin:0 0 6px;">Thailand Guide - Supplier By Ye</h1><h2 style="font-size:17px;text-align:center;color:#475569;margin:0 0 22px;border-bottom:2px solid #e2e8f0;padding-bottom:14px;">${title}</h2>${html}`;
+        document.body.appendChild(wrap);
+        try {
+            await document.fonts?.ready;
+            const canvas = await html2canvas(wrap, { scale: 1.6, backgroundColor: '#fff', useCORS: true, logging: false });
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            const pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
+            const margin = 24, usableW = pageW - margin * 2, pagePxH = Math.floor(canvas.width * ((pageH - margin * 2) / usableW));
+            for (let y = 0, page = 0; y < canvas.height; y += pagePxH, page++) {
+                if (page) pdf.addPage();
+                const sliceH = Math.min(pagePxH, canvas.height - y);
+                const slice = document.createElement('canvas'); slice.width = canvas.width; slice.height = sliceH;
+                slice.getContext('2d').drawImage(canvas, 0, y, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+                pdf.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, usableW, sliceH * usableW / canvas.width);
+            }
+            pdf.save(filename);
+        } finally { wrap.remove(); }
+    }
+
+    window.exportHistoryPDF = async function() {
+        if (!Array.isArray(allLoadedHistory) || allLoadedHistory.length === 0) return alert('PDF ထုတ်ရန် မှတ်တမ်း မရှိသေးပါ။');
+        const esc = v => String(v ?? '-').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const rows = allLoadedHistory.map(d => {
+            const dt = new Date(d.timestamp || '');
+            const date = isNaN(dt) ? '-' : dt.toLocaleString('en-GB', { timeZone: d.tz || 'Asia/Bangkok', hour12: true }).replace(/,/g, '');
+            return `<tr><td>${esc(d.id)}</td><td>${esc(date)}</td><td>${esc(d.customerName || '-')}</td><td>${esc(d.type || '-')}</td><td>${esc(d.inAmt || '-')} ➜ ${esc(d.outAmt || '-')}</td><td>${esc(d.status || 'Pending')}</td></tr>`;
+        }).join('');
+        await exportHtmlBlockToPdf('Exchange History', `<table style="width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed;"><thead><tr style="background:#eaf2ff;"><th>ID</th><th>Date/Time</th><th>Customer</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table><style>th,td{border:1px solid #cbd5e1;padding:7px;text-align:left;word-break:break-word;}th{font-weight:900;}</style>`, `Exchange_History_${new Date().toISOString().slice(0,10)}.pdf`);
+    };
+
+    window.exportInternalTransfersPDF = async function() {
+        const today = new Date(), fromDefault = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`, toDefault = today.toISOString().slice(0,10);
+        const from = prompt('From (YYYY-MM-DD):', fromDefault); if (from === null) return;
+        const to = prompt('To (YYYY-MM-DD):', toDefault); if (to === null) return;
+        const fromISO = new Date(from + 'T00:00:00').toISOString(), toISO = new Date(to + 'T23:59:59.999').toISOString();
+        try {
+            const snap = await firebase.firestore().collection('activity_logs').where('timestamp','>=',fromISO).where('timestamp','<=',toISO).orderBy('timestamp','desc').get();
+            const logs = []; snap.forEach(doc => { const d = doc.data() || {}; if (d.action === 'Internal Transfer') logs.push(d); });
+            if (!logs.length) return alert('PDF ထုတ်ရန် Internal Transfer မှတ်တမ်း မရှိသေးပါ။');
+            const esc = v => String(v ?? '-').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            const rows = logs.map(d => `<tr><td>${esc(new Date(d.timestamp).toLocaleString('en-GB',{timeZone:ADMIN_TIMEZONE||'Asia/Bangkok',hour12:true}))}</td><td>${esc(d.transferFromName || '-')}</td><td>${esc(d.transferToName || '-')}</td><td style="text-align:right;">${Number(d.transferAmount||0).toLocaleString()} ${esc(d.transferCurrency||'')}</td><td>${esc(d.deviceName||'-')}</td></tr>`).join('');
+            await exportHtmlBlockToPdf('Internal Transfer History', `<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:#eaf2ff;"><th>Date/Time</th><th>From</th><th>To</th><th>Amount</th><th>Device</th></tr></thead><tbody>${rows}</tbody></table><style>th,td{border:1px solid #cbd5e1;padding:8px;text-align:left;}th{font-weight:900;}</style>`, `Internal_Transfers_${new Date().toISOString().slice(0,10)}.pdf`);
+        } catch (e) { console.error('Internal Transfer PDF Error:', e); alert('PDF ထုတ်ရာတွင် အခက်အခဲရှိပါသည်။'); }
+    };
 
     // 👇👇👇 ဤနေရာမှ စတင်၍ Code အသစ် ကူးထည့်ပါ 👇👇👇
     // --- 📥 Export Internal Transfers (Treasury Tab) ---
