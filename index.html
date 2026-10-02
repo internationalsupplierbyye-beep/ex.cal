@@ -2166,6 +2166,8 @@
   let ACTIVE_BANK_INFO = {};
   let FIREBASE_DEVICE_NAMES = {}; 
   let FIREBASE_HIDDEN_DEVICES = []; 
+  let FIREBASE_DEVICE_PRESENCE = {}; // deviceId -> {lastSeen, role, ...}
+  let devicePresenceTimer = null;
   let FIREBASE_TREASURY = {}; // 🌟 Master Accounts များကို သိမ်းမည့် State 
   let FIREBASE_TREASURY_ORDER = []; // 🌟 Master Account အစီအစဉ် 
   let FIREBASE_TREASURY_ADJUSTMENTS = {}; // Manual balance changes, kept with the existing shared data document
@@ -4841,6 +4843,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         CURRENT_ROLE = 'guest';
       }
       setupUIForRole(CURRENT_ROLE);
+      if (['main admin', 'admin', 'staff', 'agent'].includes(String(CURRENT_ROLE || '').toLowerCase())) startDevicePresenceHeartbeat();
       const stillElevated = ['main admin', 'admin', 'staff', 'agent'].includes(CURRENT_ROLE);
       if (stillElevated && CURRENT_ROLE === 'agent') {
         loadPublicDataOnce();
@@ -4940,6 +4943,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
             CURRENT_ROLE = 'guest';
           }
           setupUIForRole(CURRENT_ROLE);
+          if (['main admin', 'admin', 'staff', 'agent'].includes(String(CURRENT_ROLE || '').toLowerCase())) startDevicePresenceHeartbeat();
 
           const stillElevated = ['main admin', 'admin', 'staff', 'agent'].includes(CURRENT_ROLE);
           const wasElevated = ['main admin', 'admin', 'staff', 'agent'].includes(previousRole);
@@ -5004,6 +5008,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         }
         
         FIREBASE_DEVICE_NAMES = data.deviceNames || {}; FIREBASE_HIDDEN_DEVICES = data.hiddenDevices || []; 
+        FIREBASE_DEVICE_PRESENCE = (data.devicePresence && typeof data.devicePresence === 'object') ? data.devicePresence : {};
         
         // 🌟 အသစ်ထည့်ရန်: Password
         if (data.system_passwords) FIREBASE_SYSTEM_PASSWORDS = data.system_passwords;
@@ -5178,6 +5183,22 @@ if (data.telegram) {
     });
     } // 👈 loadAdminDataOnce() function ကုန်ပါပြီ
   } catch (err) {}
+
+  function startDevicePresenceHeartbeat() {
+      if (!dbRef || !CURRENT_DEVICE_ID) return;
+      if (devicePresenceTimer) clearInterval(devicePresenceTimer);
+      const beat = async () => {
+          const id = CURRENT_DEVICE_ID;
+          if (!id || !dbRef) return;
+          const record = { lastSeen: new Date().toISOString(), role: CURRENT_ROLE || 'guest', deviceName: FIREBASE_DEVICE_NAMES[id] || id };
+          FIREBASE_DEVICE_PRESENCE[id] = record;
+          try {
+              await dbRef.update(new firebase.firestore.FieldPath('devicePresence', id), record);
+          } catch (e) { console.warn('Device presence update skipped:', e?.message || e); }
+      };
+      beat();
+      devicePresenceTimer = setInterval(beat, 30000);
+  }
 
   // 🌟 Type အလိုက် ခွဲသိမ်းမည့် အပိုင်း (Data Overwrite မဖြစ်စေရန်)
   async function updateFirebase(type = 'all') {
@@ -7181,6 +7202,12 @@ function openAdmin() {
           uniqueDevices.add(doc.id);
       });
 
+      // Presence ကို fresh ဖတ်ရန် — အခြားစက်က heartbeat update လုပ်ထားတာ ချက်ချင်းမြင်နိုင်စေရန်
+      try {
+          const freshAdmin = await dbRef.get();
+          if (freshAdmin.exists) FIREBASE_DEVICE_PRESENCE = freshAdmin.data().devicePresence || FIREBASE_DEVICE_PRESENCE || {};
+      } catch (presenceReadError) { console.warn('Device presence read skipped:', presenceReadError?.message || presenceReadError); }
+
       const snap = await firebase.firestore().collection("exchange_history").orderBy("timestamp", "desc").limit(300).get();
       snap.forEach(doc => { const d = doc.data(); if(d.deviceId) uniqueDevices.add(d.deviceId); });
       
@@ -7194,6 +7221,15 @@ function openAdmin() {
         const currentConfig = FIREBASE_DEVICE_PERMISSIONS[id] || { role: 'guest' };
         const currentRole = (currentConfig.role || 'guest').toLowerCase();
         const currentCanSave = currentConfig.canSave === true || ['admin', 'main admin'].includes(currentRole);
+        const presence = FIREBASE_DEVICE_PRESENCE[id] || {};
+        const seenAt = presence.lastSeen ? new Date(presence.lastSeen).getTime() : 0;
+        const isOnline = Number.isFinite(seenAt) && seenAt > 0 && (Date.now() - seenAt) <= 90000;
+        const presenceHtml = isOnline
+            ? `<span class="text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5 whitespace-nowrap">● Online</span>`
+            : `<span class="text-[10px] font-black text-slate-500 bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 whitespace-nowrap">○ Offline</span>`;
+        const lastSeenHtml = seenAt > 0
+            ? `<span class="text-[9px] text-slate-400 whitespace-nowrap">နောက်ဆုံး: ${new Date(seenAt).toLocaleString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true })}</span>`
+            : `<span class="text-[9px] text-slate-400 whitespace-nowrap">မတွေ့ရသေးပါ</span>`;
         
         // Main Admin မှလွဲ၍ အခြားသူများ Role/Save Permission ပြင်ခွင့်မရှိစေရန် (Disabled)
         const isMainAdmin = (CURRENT_ROLE === 'main admin');
@@ -7202,7 +7238,7 @@ function openAdmin() {
         
         html += `
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 mb-2 gap-2 bg-white p-3 rounded-xl border border-slate-100">
-          <div class="font-mono text-xs font-bold text-slate-500 w-full sm:w-1/4 truncate" title="${id}">${id}</div>
+          <div class="w-full sm:w-1/4 min-w-0"><div class="font-mono text-xs font-bold text-slate-500 truncate" title="${id}">${id}</div><div class="flex items-center gap-1 mt-1">${presenceHtml}${lastSeenHtml}</div></div>
           <input type="text" id="devname_${id}" class="admin-input-box !mb-0 !py-1 text-sm flex-1" placeholder="အမည်ပေးရန်..." value="${currentName}">
           
           <select id="devrole_${id}" class="border rounded-lg px-2 py-1 text-xs font-bold bg-slate-50 text-purple-800 border-purple-200" ${disableSelect}>
