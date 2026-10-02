@@ -11344,8 +11344,8 @@ Return ONLY JSON.`;
       };
 
       let lastError = null;
-      // Model တစ်ခုချင်း timeout များ စုပေါင်းပြီး မိနစ်များစွာ မကြာစေရန် စုစုပေါင်း 60 စက္ကန့်ကန့်သတ်မည်။
-      const globalDeadline = Date.now() + 60000;
+      // Model တစ်ခုချင်း timeout များ စုပေါင်းပြီး Upload flow မနှေးစေရန် စုစုပေါင်း 32 စက္ကန့်ကန့်သတ်မည်။
+      const globalDeadline = Date.now() + 32000;
       for (const model of SLIP_OCR_MODELS) {
           const remainingMs = globalDeadline - Date.now();
           if (remainingMs <= 0) break;
@@ -11354,13 +11354,16 @@ Return ONLY JSON.`;
               continue;
           }
           try {
-              const result = await callSlipOcrModel(model, base64Image, Math.min(25000, remainingMs));
+              const result = await callSlipOcrModel(model, base64Image, Math.min(12000, remainingMs));
               if (result) return result;
           } catch (error) {
               const msg = String(error.message || error);
               // Fallback အတွက်မျှော်လင့်ထားသော error ဖြစ်သောကြောင့် Console ကို red error မဖြစ်စေရန် warn သုံးမည်။
               console.warn(`Slip OCR fallback skipped ${model}:`, msg);
               lastError = error;
+              if (/permission.?denied|access denied|project has been denied|api key|invalid api key|not found|not supported|unauthorized|forbidden/i.test(msg)) {
+                  return `⚠️ OCR API Access မရပါ။ Admin > API Keys / Gemini Project Access ကို စစ်ပါ။`;
+              }
               // 🌟 Quota ကုန်ခြင်း (429/quota) ဖြစ်မှသာ ဒီနေ့အတွက် Skip List ထဲ ထည့်မည်
               // (503 High-demand လိုမျိုး ယာယီ Error တွေကိုတော့ Skip List ထဲ မထည့်ပါ — ခဏနေရင် ပြန်ကောင်းနိုင်လို့)
               if (msg.includes('429') || /quota/i.test(msg)) markExhausted(model);
@@ -11665,7 +11668,7 @@ Return ONLY JSON.`;
       };
       const convertToJpegBlob = async () => {
           const bitmap = await createImageBitmap(file);
-          const maxSide = 2600;
+          const maxSide = 1900;
           const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
           const canvas = document.createElement('canvas');
           canvas.width = Math.max(1, Math.round(bitmap.width * scale));
@@ -11675,32 +11678,30 @@ Return ONLY JSON.`;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
           bitmap.close?.();
-          return await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('JPEG ပြောင်း၍မရပါ')), 'image/jpeg', 0.92));
+          return await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('JPEG ပြောင်း၍မရပါ')), 'image/jpeg', 0.84));
       };
-
-      // ပထမနည်း — မူရင်း Multipart File Upload
-      try {
-          const formData = new FormData();
-          formData.append('image', file, file.name || `slip-${Date.now()}.jpg`);
-          return await readJson(await fetch(endpoint, { method: 'POST', body: formData }));
-      } catch (multipartError) {
-          // ဒုတိယနည်း — ImgBB တရားဝင် Base64 Upload (400 Internal upload error fallback)
+      const jpegBlob = await convertToJpegBlob();
+      let lastError = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), attempt === 0 ? 12000 : 8000);
           try {
-              const base64 = await fileToBase64(file);
-              const body = new URLSearchParams({ key: apiKey, image: base64 });
-              return await readJson(await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body }));
-          } catch (base64Error) {
-              // တတိယနည်း — PNG/WebP/RGBA ပုံကို Browser ထဲမှာ JPEG ပြောင်းပြီး Upload ပြန်စမ်းမည်
-              try {
-                  const jpegBlob = await convertToJpegBlob();
-                  const jpegForm = new FormData();
-                  jpegForm.append('image', jpegBlob, `slip-${Date.now()}.jpg`);
-                  return await readJson(await fetch(endpoint, { method: 'POST', body: jpegForm }));
-              } catch (jpegError) {
-                  throw new Error(`${multipartError.message || multipartError} | Base64 retry: ${base64Error.message || base64Error} | JPEG retry: ${jpegError.message || jpegError}`);
-              }
-          }
+              const formData = new FormData();
+              formData.append('image', jpegBlob, `slip-${Date.now()}.jpg`);
+              return await readJson(await fetch(endpoint, { method: 'POST', body: formData, signal: controller.signal }));
+          } catch (e) {
+              lastError = e?.name === 'AbortError' ? new Error('ImgBB Upload Timeout') : e;
+              if (attempt === 0) await new Promise(r => setTimeout(r, 700));
+          } finally { clearTimeout(timer); }
       }
+      throw lastError || new Error('ImgBB upload မအောင်မြင်ပါ');
+  }
+
+  async function mapSlipFilesWithConcurrency(files, worker, limit = 2) {
+      const results = new Array(files.length); let next = 0;
+      const run = async () => { while (true) { const i = next++; if (i >= files.length) return; results[i] = await worker(files[i], i); } };
+      await Promise.all(Array.from({ length: Math.min(limit, files.length) }, run));
+      return results;
   }
   window.handleSlipUpload = async function(event) {
       const files = Array.from(event.target.files || []); if (files.length === 0) return;
@@ -11894,6 +11895,10 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       let origBtnText = "";
       if (uploadBtn) { origBtnText = uploadBtn.innerHTML; uploadBtn.innerHTML = "တင်နေသည် ⏳"; uploadBtn.disabled = true; }
       window.showUploadingIndicator("Slip စစ်ဆေး/တင်နေသည်...");
+      const ocrResultsPromise = mapSlipFilesWithConcurrency(Array.from(files), async (file) => {
+          try { return await extractSlipDataWithGemini(await fileToBase64(file)); }
+          catch (e) { return `⚠️ OCR Error: ${e?.message || e}`; }
+      }, 2);
 
       try {
           // 🌟 Bug Fix: files[i] တစ်ပုံပုံ upload မအောင်မြင်ခဲ့ရင် uploadedUrls[] က files[] ထက်တိုသွားတာမို့
@@ -11901,13 +11906,13 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           // Slip2Go စစ်ဆေးမှု၊ OCR block အရေအတွက် စတာတွေ slipUrls နဲ့ desync ဖြစ်စေနိုင်ပါတယ်။
           // ဒါကြောင့် files[] အတိုင်း 1:1 (upload မအောင်မြင်ရင် null) tracking လုပ်ပြီး auto skip လုပ်ပါမည်။
           // ပုံများကို တစ်ပုံပြီးတစ်ပုံ မစောင့်ဘဲ တပြိုင်နက် upload လုပ်ပါမည်။
-          const uploadResults = await Promise.all(Array.from(files, async (file) => {
+          const uploadResults = await mapSlipFilesWithConcurrency(Array.from(files), async (file) => {
               try {
                   return await uploadSlipImageToImgBB(file);
               } catch (err) { uploadErrors.push(err?.message || String(err)); console.warn('Slip upload failed:', err?.message || err); }
               hasError = true;
               return null;
-          }));
+          }, 2);
           uploadedUrls = uploadResults.filter(Boolean);
 
          if (uploadedUrls.length > 0) {
@@ -11915,10 +11920,11 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               let blocks = [];
 
               // OCR နှင့် Slip2Go စစ်ဆေးမှုကို ပုံတစ်ပုံချင်းစီအတွက် တပြိုင်နက်လုပ်ပါမည်။
+              const ocrResults = await ocrResultsPromise;
               const processed = await Promise.all(files.map(async (file, i) => {
                   const currentImgUrl = uploadResults[i];
                   if (!currentImgUrl) return null;
-                  let data = flagLowConfidenceOcr(await extractSlipDataWithGemini(await fileToBase64(file)));
+                  let data = flagLowConfidenceOcr(ocrResults[i] || '⚠️ OCR ဖတ်၍မရပါ');
                   if (uploadMode === 'in' && /THB|บาท|baht|ဘတ်/i.test(data)) {
                       const r = await verifyWithSlip2Go(currentImgUrl);
                       if (r.checked && !r.isValid) data = `🛑 [SLIP2GO သတိပေးချက်: စလစ်အတု ဖြစ်နိုင်ပါသည်! - ${r.message}] | ` + data;
@@ -11982,6 +11988,10 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       const origText = origBtn ? origBtn.innerHTML : '';
       if (origBtn) { origBtn.innerHTML = "⏳ စစ်ဆေးနေသည်..."; origBtn.disabled = true; }
       window.showUploadingIndicator("Slip စစ်ဆေး/တင်နေသည်...");
+      const ocrResultsPromise = mapSlipFilesWithConcurrency(Array.from(files), async (file) => {
+          try { return await extractSlipDataWithGemini(await fileToBase64(file)); }
+          catch (e) { return `⚠️ OCR Error: ${e?.message || e}`; }
+      }, 2);
 
       try {
           // 🌟 Cache ဟောင်းသုံးမည့်အစား Slip စစ်တိုင်း history အသစ်ဆုံးကို Firestore ကနေ ပြန်ဆွဲမည်
@@ -11992,23 +12002,24 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           // 🌟 Bug Fix: files[i] တစ်ပုံပုံ upload မအောင်မြင်ခဲ့ရင် uploadedUrls[] တိုသွားလို့ i-index ချင်း
           // မကိုက်တော့ပါ (processSlipFiles ကိစ္စတူ) — files[] အတိုင်း 1:1 tracking လုပ်ပြီး skip လုပ်ပါမည်။
           // ပုံများကို တစ်ပုံပြီးတစ်ပုံ မစောင့်ဘဲ တပြိုင်နက် upload လုပ်ပါမည်။
-          const uploadResults = await Promise.all(Array.from(files, async (file) => {
+          const uploadResults = await mapSlipFilesWithConcurrency(Array.from(files), async (file) => {
               try {
                   return await uploadSlipImageToImgBB(file);
               } catch (err) { uploadErrors.push(err?.message || String(err)); console.warn('Slip upload failed:', err?.message || err); }
               hasError = true;
               return null;
-          }));
+          }, 2);
           uploadedUrls = uploadResults.filter(Boolean);
 
           if (uploadedUrls.length > 0) {
               let blocks = []; let aiParsedData = { amount: 0, currency: '' };
 
               // ပုံများ၏ OCR နှင့် Slip2Go စစ်ဆေးမှုကို တပြိုင်နက်လုပ်ပါမည်။
+              const ocrResults = await ocrResultsPromise;
               const processed = await Promise.all(files.map(async (file, i) => {
                   const currentImgUrl = uploadResults[i];
                   if (!currentImgUrl) return null;
-                  let data = flagLowConfidenceOcr(await extractSlipDataWithGemini(await fileToBase64(file)));
+                  let data = flagLowConfidenceOcr(ocrResults[i] || '⚠️ OCR ဖတ်၍မရပါ');
                   if (smartSlipMode === 'in' && /THB|บาท|baht|ဘတ်/i.test(data)) {
                       const r = await verifyWithSlip2Go(currentImgUrl);
                       if (r.checked && !r.isValid) data = `🛑 [SLIP2GO သတိပေးချက်: စလစ်အတု ဖြစ်နိုင်ပါသည်! - ${r.message}] | ` + data;
