@@ -10395,9 +10395,16 @@ async function loadHistory() {
   }
 
   function getCurrentAccessConfig() {
-      return CURRENT_ACCESS_CONFIG && Object.keys(CURRENT_ACCESS_CONFIG).length
-          ? CURRENT_ACCESS_CONFIG
-          : (FIREBASE_DEVICE_PERMISSIONS[CURRENT_DEVICE_ID] || {});
+      const userConfig = CURRENT_ACCESS_CONFIG && Object.keys(CURRENT_ACCESS_CONFIG).length
+          ? CURRENT_ACCESS_CONFIG : {};
+      const deviceConfig = FIREBASE_DEVICE_PERMISSIONS[CURRENT_DEVICE_ID] || {};
+      // Email Staff session သည် user_roles ကိုဖတ်သော်လည်း Main Admin ၏ Save ခွင့်သည်
+      // device_roles ထဲတွင် ရှိနိုင်သောကြောင့် config တစ်ခုတည်းကို မရွေးဘဲ နှစ်ခုကို ပေါင်းဖတ်မည်။
+      return {
+          ...deviceConfig,
+          ...userConfig,
+          canSave: userConfig.canSave === true || deviceConfig.canSave === true
+      };
   }
 
   function canSaveTransactions() {
