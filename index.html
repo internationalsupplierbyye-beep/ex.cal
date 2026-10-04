@@ -222,6 +222,8 @@
     .bal-edit-btns { display:flex; gap:10px; margin-top: 18px; }
 
     .tab-btn { padding: 10px 16px; font-weight: bold; border-bottom: 3px solid transparent; color: #64748b; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .history-filter-controls { font-size: .72rem; }
+    .history-filter-controls input, .history-filter-controls select, .history-filter-controls button { font-size: .72rem !important; }
     /* 🔔 Work Queue Notification Badge */
     .tab-badge { display:inline-block; min-width:20px; margin-left:6px; padding:1px 6px; border-radius:999px;
       background:#ef4444; color:#fff; font-size:11px; font-weight:900; line-height:1.55; text-align:center;
@@ -983,8 +985,8 @@
             <label class="save-mode-option"><input type="radio" name="saveMode" value="bank"><span>BANK</span></label>
         </div>
         <div class="quick-jpg-grid" aria-label="Quick JPG Save">
-          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg','download',this)" title="ဘတ် → ကျပ် JPG တိုက်ရိုက်သိမ်းရန်">ထိုင်းဘတ်→မြန်မာကျပ်</button>
-          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg','download',this)" title="ကျပ် → ဘတ် JPG တိုက်ရိုက်သိမ်းရန်">မြန်မာကျပ်→ထိုင်းဘတ်</button>
+          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg','download',this)" title="ဘတ် → ကျပ် JPG တိုက်ရိုက်သိမ်းရန်">ဘတ်→ကျပ်</button>
+          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg','download',this)" title="ကျပ် → ဘတ် JPG တိုက်ရိုက်သိမ်းရန်">ကျပ်→ဘတ်</button>
           <button type="button" class="quick-jpg-btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','jpg','download',this)" title="ဒေါင် → ကျပ် JPG တိုက်ရိုက်သိမ်းရန်">ဒေါင်→ကျပ်</button>
           <button type="button" class="quick-jpg-btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','jpg','download',this)" title="ကျပ် → ဒေါင် JPG တိုက်ရိုက်သိမ်းရန်">ကျပ်→ဒေါင်</button>
         </div>
@@ -1339,7 +1341,7 @@
     
     <div id="adminTabsHeader">
       <div class="admin-group-nav" id="adminGroupNav" role="tablist" aria-label="Admin menu groups">
-        <button type="button" class="admin-group-btn active" data-admin-group="overview" onclick="window.selectAdminGroup('overview')">📊 Overview</button>
+        <button type="button" class="admin-group-btn active" data-admin-group="overview" onclick="window.selectAdminGroup('overview')">📊 Overview<span id="overviewWorkQueueBadge" class="tab-badge" style="display:none;">0</span></button>
         <button type="button" class="admin-group-btn" data-admin-group="transactions" onclick="window.selectAdminGroup('transactions')">📜 Transactions</button>
         <button type="button" class="admin-group-btn" data-admin-group="money" onclick="window.selectAdminGroup('money')">💰 Money</button>
         <button type="button" class="admin-group-btn" data-admin-group="accounts" onclick="window.selectAdminGroup('accounts')">👥 Accounts</button>
@@ -1514,7 +1516,7 @@
     <div id="tab-history" class="tab-pane">
       <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
         <h3 class="font-bold text-gray-800">📜 ငွေလွှဲမှတ်တမ်းများ</h3>
-        <div class="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 overflow-x-auto">
+        <div class="history-filter-controls flex gap-2 w-full sm:w-auto mt-2 sm:mt-0 overflow-x-auto">
           <input type="text" id="searchInvId" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[120px]" placeholder="ID, Name, Phone, Ref ဖြင့်ရှာရန်" oninput="searchHistoryLocally(true)">
           <input type="date" id="searchDate" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[130px]" onchange="searchHistoryLocally(true)" title="ရက်စွဲဖြင့်ရှာရန်">
           <select id="searchStatus" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[130px]" onchange="searchHistoryLocally(true)" title="Status ဖြင့်ရှာရန်">
@@ -3811,6 +3813,7 @@ window.showToast = function(message, icon = "✅") {
       const tabBtn = document.getElementById('btnTabWorkQueue');
       const adminBtn = document.querySelector('.admin-btn');
       const groupedBadge = document.getElementById('groupedWorkQueueBadge');
+      const overviewBadge = document.getElementById('overviewWorkQueueBadge');
       if (badge) {
           if (n > 0) {
               badge.textContent = n > 99 ? '99+' : String(n);
@@ -3823,6 +3826,11 @@ window.showToast = function(message, icon = "✅") {
       }
       if (tabBtn) tabBtn.classList.toggle('has-work', n > 0);
       if (adminBtn) adminBtn.classList.toggle('has-work', n > 0);
+      if (overviewBadge) {
+          overviewBadge.textContent = n > 99 ? '99+' : String(n);
+          overviewBadge.style.display = n > 0 ? 'inline-block' : 'none';
+          overviewBadge.classList.toggle('pulse', n > 0);
+      }
       if (groupedBadge) {
           groupedBadge.textContent = n > 99 ? '99+' : String(n);
           groupedBadge.style.display = n > 0 ? 'inline-block' : 'none';
@@ -3861,9 +3869,20 @@ window.showToast = function(message, icon = "✅") {
       };
       
       try {
-          // Firebase တွင် activity_logs ဆိုသည့် နေရာသစ်တစ်ခု ဆောက်၍ သိမ်းမည်
+          // Firebase တွင် activity_logs ဆိုသည့် နေရာသစ်တွင်လည်း သိမ်းမည်။
           await firebase.firestore().collection("activity_logs").add(logEntry);
       } catch (e) { console.error("Log Activity Error: ", e); }
+      try {
+          // Staff/Agent View အတွက် Invoice document ထဲတွင် timeline copy တစ်ခု သိမ်းမည်။
+          // activity_logs ကို Staff rules က မဖတ်ခွင့်ပေးထားလျှင်တောင် မိမိမြင်ခွင့်ရှိသော Invoice မှတ်တမ်းမှ ဖတ်နိုင်မည်။
+          if (logEntry.invId) {
+              const isAgent = String(CURRENT_ROLE || '').toLowerCase() === 'agent';
+              const txRef = isAgent
+                  ? firebase.firestore().collection('agent_history').doc(currentAgentOwnerEmail()).collection('transactions').doc(logEntry.invId)
+                  : firebase.firestore().collection('exchange_history').doc(logEntry.invId);
+              await txRef.set({ activityLogEntries: firebase.firestore.FieldValue.arrayUnion(logEntry) }, { merge: true });
+          }
+      } catch (e) { console.error("Invoice Timeline Mirror Error: ", e); }
   }
 
   async function loadActivityLogs() {
@@ -10656,7 +10675,18 @@ async function loadHistory() {
       body.innerHTML = '<p class="text-center text-sm text-blue-500 p-4">မှတ်တမ်းများ ရှာဖွေနေပါသည်...</p>';
 
       // ခေါင်းစဉ်တွင် Invoice အကျဉ်းချုပ် ပြမည်
-      const tx = (Array.isArray(allLoadedHistory) ? allLoadedHistory : []).find(item => item.id === id);
+      let tx = (Array.isArray(allLoadedHistory) ? allLoadedHistory : []).find(item => item.id === id);
+      // Staff View တွင် local history snapshot ဟောင်းဖြစ်နေနိုင်သဖြင့် မိမိဖတ်ခွင့်ရှိသော Invoice document ကို တိုက်ရိုက်ဖတ်မည်။
+      if (!tx) {
+          try {
+              const isAgent = String(CURRENT_ROLE || '').toLowerCase() === 'agent';
+              const txRef = isAgent
+                  ? firebase.firestore().collection('agent_history').doc(currentAgentOwnerEmail()).collection('transactions').doc(id)
+                  : firebase.firestore().collection('exchange_history').doc(id);
+              const txSnap = await txRef.get();
+              if (txSnap.exists) tx = { id, ...txSnap.data() };
+          } catch (e) { console.warn('Invoice record read for timeline failed:', e?.message || e); }
+      }
       if (subtitle) {
           subtitle.textContent = tx
               ? `${id} · ${tx.customerName || 'Customer မရှိ'} · ${tx.status || '-'} · ${tx.inAmt || ''} ➜ ${tx.outAmt || ''}`
@@ -10665,6 +10695,10 @@ async function loadHistory() {
 
       try {
           const merged = new Map();
+          // Staff/Agent မှတ်တမ်းဖတ်ခွင့်အတွက် Invoice document ထဲက mirror logs ကို အရင်ထည့်မည်။
+          if (tx && Array.isArray(tx.activityLogEntries)) {
+              tx.activityLogEntries.forEach((row, idx) => merged.set(`invoice-mirror-${idx}-${row.timestamp || ''}`, row));
+          }
           // (၁) invId field ပါသော log အသစ်များ
           try {
               const tagged = await firebase.firestore().collection('activity_logs')
@@ -10688,6 +10722,20 @@ async function loadHistory() {
               return at - bt; // အစောဆုံး ➜ နောက်ဆုံး
           });
 
+          if (!rows.length) {
+              // Global activity_logs ကို Staff rules က ပိတ်ထားသော အဟောင်း Invoice များတွင်လည်း
+              // “Log မရှိ” ဟု အလွတ်မပြဘဲ Invoice record ကိုယ်တိုင်ကို အခြေခံ Timeline အဖြစ် ပြမည်။
+              if (tx) {
+                  rows.push({
+                      action: 'Invoice Record',
+                      details: `ID: ${id} ကို ${tx.status || 'Pending'} အဖြစ် မှတ်တမ်းတင်ထားသည်။`,
+                      userRole: tx.userRole || (tx.agentEmail ? 'AGENT' : 'STAFF'),
+                      deviceName: tx.deviceId || 'Unknown',
+                      actorEmail: tx.actorEmail || '',
+                      timestamp: tx.timestamp || new Date().toISOString()
+                  });
+              }
+          }
           if (!rows.length) {
               body.innerHTML = `<div class="p-6 text-center">
                   <p class="text-sm font-bold text-gray-500">ဤ Invoice အတွက် လုပ်ဆောင်ချက် မှတ်တမ်း မတွေ့ပါ။</p>
