@@ -154,6 +154,12 @@
     html.dark .order-btns button { background:#0f172a; color:#cbd5e1; border-color:#475569; }
     .export-actions { display:flex !important; flex-wrap:nowrap; justify-content:center; gap:.45rem; align-items:center; width:100%; }
     .export-actions > button { flex:0 0 90px; width:90px; max-width:90px; min-width:90px; height:40px; min-height:40px; box-sizing:border-box; padding:.3rem .2rem !important; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; text-align:center; font-size:.72rem; line-height:1.1; border-radius:11px; }
+    .quick-jpg-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.35rem; margin-top:.55rem; }
+    .quick-jpg-btn { min-width:0; min-height:34px; padding:.28rem .18rem; border:1px solid #fecaca; border-radius:9px; background:#fff7f7; color:#b91c1c; font-size:.66rem; line-height:1.15; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; transition:all .15s ease; }
+    .quick-jpg-btn:hover { background:#fee2e2; border-color:#f87171; }
+    .quick-jpg-btn:active { transform:translateY(1px); }
+    .quick-jpg-btn:disabled { opacity:.6; cursor:not-allowed; }
+    .customer-country-code { width:78px !important; min-width:78px !important; max-width:78px !important; padding-left:6px !important; padding-right:4px !important; font-size:.68rem !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .btn-private-save { background:#0f766e !important; color:#fff !important; border:1px solid #0f766e !important; }
     .btn-private-save:hover { background:#115e59 !important; }
     #customToast { top:auto !important; bottom:1rem !important; right:1rem !important; left:auto !important; width:min(34rem,calc(100vw - 2rem)) !important; z-index:55 !important; pointer-events:none !important; justify-content:flex-end; }
@@ -163,6 +169,8 @@
       .export-actions { display:grid !important; grid-template-columns:repeat(2,90px); justify-content:center; gap:.35rem; }
       .export-actions > button:last-child { grid-column:1 / -1; justify-self:center; }
       .export-actions > button { flex:0 0 90px; width:90px; min-width:90px; height:40px; min-height:40px; font-size:.68rem; }
+      .quick-jpg-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:.25rem; }
+      .quick-jpg-btn { min-height:32px; font-size:.57rem; padding:.25rem .1rem; }
       #customToast { top:auto !important; bottom:calc(1rem + env(safe-area-inset-bottom)) !important; right:.75rem !important; left:auto !important; width:calc(100vw - 1.5rem) !important; }
     }
 
@@ -225,6 +233,28 @@
       border-radius:50%; background:#ef4444; box-shadow:0 0 0 2px #fff; animation: tabBadgePulse 1.6s ease-in-out infinite; }
     .tab-btn:hover { color: #111827; background: #f1f5f9; }
     .tab-btn.active { color: #2563eb; border-color: #2563eb; background: #eff6ff; }
+    /* Grouped Admin navigation: the original tab buttons remain in the DOM for
+       existing code paths, but the user sees a compact Main Group + Sub-tab UI. */
+    #adminTabsHeader { position:sticky; top:0; z-index:20; display:block; background:#fff; border-bottom:0; padding:0 0 8px; }
+    .admin-group-nav { display:flex; gap:6px; overflow-x:auto; padding:4px; border:1px solid #e2e8f0; border-radius:14px; background:#f8fafc; scrollbar-width:none; }
+    .admin-group-nav::-webkit-scrollbar, .admin-sub-nav::-webkit-scrollbar { display:none; }
+    .admin-group-btn { flex:0 0 auto; border:1px solid transparent; border-radius:10px; padding:8px 13px; background:transparent; color:#64748b; font-size:.78rem; font-weight:900; cursor:pointer; white-space:nowrap; transition:all .18s ease; }
+    .admin-group-btn:hover { color:#1d4ed8; background:#eff6ff; }
+    .admin-group-btn.active { color:#fff; background:#2563eb; box-shadow:0 4px 10px rgba(37,99,235,.22); }
+    .admin-sub-nav { display:flex; gap:5px; overflow-x:auto; min-height:38px; margin-top:6px; padding:4px; border:1px solid #dbeafe; border-radius:12px; background:#f8fbff; scrollbar-width:none; }
+    .admin-sub-btn { flex:0 0 auto; border:0; border-radius:8px; padding:7px 11px; background:transparent; color:#64748b; font-size:.72rem; font-weight:900; cursor:pointer; white-space:nowrap; }
+    .admin-sub-btn:hover { color:#1d4ed8; background:#eff6ff; }
+    .admin-sub-btn.active { color:#1e40af; background:#dbeafe; box-shadow:inset 0 -2px 0 #2563eb; }
+    .admin-sub-badge { display:inline-block; min-width:18px; margin-left:4px; padding:1px 5px; border-radius:999px; background:#ef4444; color:#fff; font-size:.62rem; line-height:1.45; text-align:center; vertical-align:middle; box-shadow:0 0 0 2px #f8fbff; }
+    .admin-sub-badge.pulse { animation:tabBadgePulse 1.6s ease-in-out infinite; }
+    .legacy-tab-btn { display:none !important; }
+    @media (max-width:640px) {
+      #adminTabsHeader { padding-bottom:6px; }
+      .admin-group-nav { gap:4px; padding:3px; }
+      .admin-group-btn { padding:7px 10px; font-size:.7rem; }
+      .admin-sub-nav { margin-top:5px; min-height:34px; }
+      .admin-sub-btn { padding:6px 9px; font-size:.67rem; }
+    }
 
     /* General Settings nested tabs: compact layout matching the approved preview. */
     .general-settings-shell { background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:16px; box-shadow:0 8px 24px rgba(15,23,42,.05); }
@@ -233,7 +263,7 @@
     .general-settings-role-pill { display:inline-flex; align-items:center; border:1px solid #b9b5ff; border-radius:999px; padding:4px 9px; background:#f3f2ff; color:#5144cf; font-size:.68rem; font-weight:900; }
     .general-settings-subtitle { margin:0 0 14px; color:#64748b; font-size:.75rem; line-height:1.25rem; }
     .general-settings-tab-shell { border:1px solid #e2e8f0; border-radius:14px; background:#fbfdff; padding:6px; }
-    .general-settings-tab-nav { display:flex; gap:5px; overflow-x:auto; border-bottom:1px solid #e2e8f0; padding:0 1px 6px; scrollbar-width:thin; }
+    .general-settings-tab-nav { display:none; gap:5px; overflow-x:auto; border-bottom:1px solid #e2e8f0; padding:0 1px 6px; scrollbar-width:thin; }
     .general-settings-subtab-btn { min-height:38px; padding:8px 12px; border:0; border-radius:10px; background:transparent; color:#64748b; cursor:pointer; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; font-size:.78rem; font-weight:900; transition:all .18s ease; }
     .general-settings-subtab-btn:hover { color:#3730a3; background:#eef2ff; }
     .general-settings-subtab-btn.active { color:#fff; background:#4f46e5; box-shadow:0 5px 12px rgba(79,70,229,.20); }
@@ -827,7 +857,7 @@
   <section class="box rate-panel-box">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 rate-panel-grid">
       <div class="rounded-xl border border-blue-100 bg-blue-50/40 p-3 rate-panel-card">
-        <div class="rate-card-title"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag">ဘတ် → ကျပ် <span class="text-[10px] text-blue-500">(အဝင်)</span></div>
+        <div class="rate-card-title"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag">ထိုင်းဘတ် → မြန်မာကျပ် <span class="text-[10px] text-blue-500">(အဝင်)</span></div>
         <div class="rate-inline-field">
           <span class="rate-inline-label">၁ သိန်း MMK =</span>
           <input id="rate100kIn" class="rate-card-input rate-inline-input" type="text" inputmode="decimal" placeholder="767">
@@ -842,7 +872,7 @@
       </div>
 
       <div class="rounded-xl border border-emerald-100 bg-emerald-50/40 p-3 rate-panel-card">
-        <div class="rate-card-title"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag">ကျပ် → ဘတ် <span class="text-[10px] text-emerald-600">(အထွက်)</span></div>
+        <div class="rate-card-title"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag">မြန်မာကျပ် → ထိုင်းဘတ် <span class="text-[10px] text-emerald-600">(အထွက်)</span></div>
         <div class="rate-inline-field">
           <span class="rate-inline-label">၁ သိန်း MMK =</span>
           <input id="rate100kOut" class="rate-card-input rate-inline-input" type="text" inputmode="decimal" placeholder="760">
@@ -952,6 +982,12 @@
             <label class="save-mode-option"><input type="radio" name="saveMode" value="qr"><span>QR</span></label>
             <label class="save-mode-option"><input type="radio" name="saveMode" value="bank"><span>BANK</span></label>
         </div>
+        <div class="quick-jpg-grid" aria-label="Quick JPG Save">
+          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg','download',this)" title="ဘတ် → ကျပ် JPG တိုက်ရိုက်သိမ်းရန်">ထိုင်းဘတ်→မြန်မာကျပ်</button>
+          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg','download',this)" title="ကျပ် → ဘတ် JPG တိုက်ရိုက်သိမ်းရန်">မြန်မာကျပ်→ထိုင်းဘတ်</button>
+          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','jpg','download',this)" title="ဒေါင် → ကျပ် JPG တိုက်ရိုက်သိမ်းရန်">ဒေါင်→ကျပ်</button>
+          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','jpg','download',this)" title="ကျပ် → ဒေါင် JPG တိုက်ရိုက်သိမ်းရန်">ကျပ်→ဒေါင်</button>
+        </div>
       </div>
 
       <div class="card p-3">
@@ -968,14 +1004,14 @@
         <p id="qrOwnerName" class="text-center text-slate-700 mt-2 text-sm pb-1"><span data-i18n="owner_name">အကောင့်နာမည်:</span> <span class="font-black" id="qrOwnerValue">—</span></p>
         <div class="mt-2 border-t pt-2 text-left">
           <p class="font-black text-center pb-1 text-sm" data-i18n="bank_preview">Bank Info Preview</p>
-          <div id="bankPreviewMini" class="text-xs text-slate-700 mt-1 text-center pb-1">ဘဏ်မရွေးထားသေးပါ။</div>
+        <div id="bankPreviewMini" class="text-xs text-slate-700 mt-1 text-center pb-1">ဘဏ်မရွေးထားသေးပါ။</div>
         </div>
       </div>
     </div>
   </section>
 
   <section id="box-thb2mmk" class="box capture-target">
-    <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="thb_to_mmk">ဘတ် → မြန်မာကျပ်</h2>
+    <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="thb_to_mmk">ထိုင်းဘတ် → မြန်မာကျပ်</h2>
     <div class="grid grid-cols-2 gap-3 mt-2">
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag"><span data-i18n="lbl_thb">ဘတ်ငွေ</span></label>
@@ -989,7 +1025,7 @@
         </div>
       </div>
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">ကျပ်ငွေ</span></label>
         <input id="mmkOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
         <!-- 🌟 MMK Quick Amount Buttons 🌟 -->
         <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1019,10 +1055,10 @@
   </section>
 
   <section id="box-mmk2thb" class="box capture-target">
-    <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="mmk_to_thb">မြန်မာကျပ် → ဘတ်</h2>
+    <h2 class="text-lg font-black mb-1 text-blue-700" data-i18n="mmk_to_thb">မြန်မာကျပ် → ထိုင်းဘတ်</h2>
     <div class="grid grid-cols-2 gap-3 mt-2">
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">ကျပ်ငွေ</span></label>
         <input id="mmkIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
         <!-- 🌟 MMK Quick Amount Buttons 🌟 -->
         <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1064,7 +1100,7 @@
 
 
   <section id="box-vnd2mmk" class="box capture-target">
-    <h2 class="text-lg font-black mb-1 text-red-600" data-i18n="vnd_to_mmk">ဗီယက်နမ်ဒေါင် → မြန်မာကျပ်</h2>
+    <h2 class="text-lg font-black mb-1 text-red-600" data-i18n="vnd_to_mmk">ဗီယက်နမ်ဒေါင် → ကျပ်ငွေ</h2>
     <div class="grid grid-cols-2 gap-3 mt-2">
       <div>
         <label class="label"><img src="https://flagcdn.com/w20/vn.png" alt="VN" class="flag"><span data-i18n="lbl_vnd">ဒေါင်ငွေ</span></label>
@@ -1078,7 +1114,7 @@
         </div>
       </div>
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">ကျပ်ငွေ</span></label>
         <input id="mmkOut2" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
         <!-- 🌟 MMK Quick Amount Buttons 🌟 -->
         <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1108,10 +1144,10 @@
   </section>
 
   <section id="box-mmk2vnd" class="box capture-target">
-    <h2 class="text-lg font-black mb-1 text-red-600" data-i18n="mmk_to_vnd">မြန်မာကျပ် → ဗီယက်နမ်ဒေါင်</h2>
+    <h2 class="text-lg font-black mb-1 text-red-600" data-i18n="mmk_to_vnd">ကျပ်ငွေ → ဗီယက်နမ်ဒေါင်</h2>
     <div class="grid grid-cols-2 gap-3 mt-2">
       <div>
-        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">မြန်မာကျပ်</span></label>
+        <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">ကျပ်ငွေ</span></label>
         <input id="mmkIn2" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
         <!-- 🌟 MMK Quick Amount Buttons (VND Section) 🌟 -->
         <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1268,7 +1304,14 @@
       </div>
       <div>
         <label class="text-xs font-bold text-gray-600 mb-1 block">ဖုန်းနံပါတ် (Option)</label>
-        <input type="text" id="qCusPhone" class="admin-input-box !mb-0 text-sm" placeholder="ဥပမာ - 09123456789">
+        <div class="flex gap-2">
+          <select id="qCusCountryCode" class="admin-input-box !mb-0 text-sm customer-country-code" aria-label="Customer phone country code">
+            <option value="+66">🇹🇭 +66 Thailand</option>
+            <option value="+95">🇲🇲 +95 Myanmar</option>
+            <option value="+93">🇦🇫 +93 Afghanistan</option><option value="+61">🇦🇺 +61 Australia</option><option value="+855">🇰🇭 +855 Cambodia</option><option value="+86">🇨🇳 +86 China</option><option value="+33">🇫🇷 +33 France</option><option value="+49">🇩🇪 +49 Germany</option><option value="+91">🇮🇳 +91 India</option><option value="+62">🇮🇩 +62 Indonesia</option><option value="+81">🇯🇵 +81 Japan</option><option value="+856">🇱🇦 +856 Laos</option><option value="+60">🇲🇾 +60 Malaysia</option><option value="+65">🇸🇬 +65 Singapore</option><option value="+82">🇰🇷 +82 South Korea</option><option value="+886">🇹🇼 +886 Taiwan</option><option value="+44">🇬🇧 +44 United Kingdom</option><option value="+1">🇺🇸 +1 United States</option><option value="+84">🇻🇳 +84 Vietnam</option>
+          </select>
+          <input type="text" id="qCusPhone" class="admin-input-box !mb-0 text-sm flex-1" placeholder="ဖုန်းနံပါတ် (Code မပါဘဲ)" inputmode="tel">
+        </div>
       </div>
       <div class="flex gap-2 mt-5">
         <button onclick="document.getElementById('quickCusModal').style.display='none'" class="btn2 w-1/2">ပိတ်မည်</button>
@@ -1294,19 +1337,28 @@
       </div>
     </div>
     
-    <div class="flex border-b mb-4 overflow-x-auto shrink-0 pb-1" id="adminTabsHeader">
-      <!-- 🔢 Tab အစဉ်လိုက် — Work Queue ➜ Dashboard ➜ History ➜ လက်ကျန်ငွေ ➜ Customers ➜ အထွေထွေ ➜ အသုံးစရိတ် ➜ QR ➜ ဘဏ် ➜ Logs -->
-      <button class="tab-btn" onclick="switchTab('tab-work-queue', this)" id="btnTabWorkQueue">📋 Work Queue<span id="workQueueTabBadge" class="tab-badge" style="display:none;">0</span></button>
-      <button class="tab-btn active" onclick="switchTab('tab-dashboard', this)" id="btnTabDashboard">📊 Dashboard</button>
-      <button class="tab-btn" onclick="switchTab('tab-history', this)" id="btnTabHistory">📜 မှတ်တမ်းများ</button>
-      <button class="tab-btn" onclick="switchTab('tab-treasury', this)" id="btnTabTreasury">💰 လက်ကျန်ငွေ</button>
-      <button class="tab-btn" onclick="switchTab('tab-customers', this)" id="btnTabCustomers">👥 Customers</button>
-      <button class="tab-btn" onclick="switchTab('tab-general', this)" id="btnTabGeneral">အထွေထွေ</button>
-      <button class="tab-btn" onclick="switchTab('tab-expenses', this)" id="btnTabExpenses">💸 အသုံးစရိတ်</button>
-      <button class="tab-btn" onclick="switchTab('tab-qrs', this)" id="btnTabQrs">QR များ</button>
-      <button class="tab-btn" onclick="switchTab('tab-banks', this)" id="btnTabBanks">ဘဏ်များ</button>
-      <button class="tab-btn" onclick="switchTab('tab-agent-accounts', this)" id="btnTabAgentAccounts">🏦 Agent Bank / QR</button>
-      <button class="tab-btn" onclick="switchTab('tab-logs', this)" id="btnTabLogs">📝 Logs</button>
+    <div id="adminTabsHeader">
+      <div class="admin-group-nav" id="adminGroupNav" role="tablist" aria-label="Admin menu groups">
+        <button type="button" class="admin-group-btn active" data-admin-group="overview" onclick="window.selectAdminGroup('overview')">📊 Overview</button>
+        <button type="button" class="admin-group-btn" data-admin-group="transactions" onclick="window.selectAdminGroup('transactions')">📜 Transactions</button>
+        <button type="button" class="admin-group-btn" data-admin-group="money" onclick="window.selectAdminGroup('money')">💰 Money</button>
+        <button type="button" class="admin-group-btn" data-admin-group="accounts" onclick="window.selectAdminGroup('accounts')">👥 Accounts</button>
+        <button type="button" class="admin-group-btn" data-admin-group="settings" onclick="window.selectAdminGroup('settings')">⚙️ Settings</button>
+      </div>
+      <div id="adminSubNav" class="admin-sub-nav" role="tablist" aria-label="Admin sub-tabs"></div>
+      <div id="adminLegacyTabs" class="hidden" aria-hidden="true">
+        <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-work-queue', this)" id="btnTabWorkQueue">📋 Work Queue<span id="workQueueTabBadge" class="tab-badge" style="display:none;">0</span></button>
+        <button class="tab-btn legacy-tab-btn active" onclick="switchTab('tab-dashboard', this)" id="btnTabDashboard">📊 Dashboard</button>
+        <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-history', this)" id="btnTabHistory">📜 မှတ်တမ်းများ</button>
+        <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-treasury', this)" id="btnTabTreasury">💰 လက်ကျန်ငွေ</button>
+        <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-customers', this)" id="btnTabCustomers">👥 Customers</button>
+        <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-general', this)" id="btnTabGeneral">အထွေထွေ</button>
+        <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-expenses', this)" id="btnTabExpenses">💸 အသုံးစရိတ်</button>
+        <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-qrs', this)" id="btnTabQrs">QR များ</button>
+        <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-banks', this)" id="btnTabBanks">ဘဏ်များ</button>
+        <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-agent-accounts', this)" id="btnTabAgentAccounts">🏦 Agent Bank / QR</button>
+        <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-logs', this)" id="btnTabLogs">📝 Logs</button>
+      </div>
     </div>
 
     <div id="tab-work-queue" class="tab-pane">
@@ -1900,7 +1952,14 @@
             <input type="hidden" id="cusId">
             <div class="flex flex-col lg:flex-row gap-2 mb-3">
               <input id="cusName" class="admin-input-box text-sm flex-1" placeholder="*အမည်">
-              <input id="cusPhone" class="admin-input-box text-sm flex-1" placeholder="ဖုန်းနံပါတ်">
+              <div class="flex gap-2 flex-1">
+                <select id="cusCountryCode" class="admin-input-box text-sm customer-country-code" aria-label="Customer phone country code">
+                  <option value="+66">🇹🇭 +66 Thailand</option>
+                  <option value="+95">🇲🇲 +95 Myanmar</option>
+                  <option value="+93">🇦🇫 +93 Afghanistan</option><option value="+61">🇦🇺 +61 Australia</option><option value="+855">🇰🇭 +855 Cambodia</option><option value="+86">🇨🇳 +86 China</option><option value="+33">🇫🇷 +33 France</option><option value="+49">🇩🇪 +49 Germany</option><option value="+91">🇮🇳 +91 India</option><option value="+62">🇮🇩 +62 Indonesia</option><option value="+81">🇯🇵 +81 Japan</option><option value="+856">🇱🇦 +856 Laos</option><option value="+60">🇲🇾 +60 Malaysia</option><option value="+65">🇸🇬 +65 Singapore</option><option value="+82">🇰🇷 +82 South Korea</option><option value="+886">🇹🇼 +886 Taiwan</option><option value="+44">🇬🇧 +44 United Kingdom</option><option value="+1">🇺🇸 +1 United States</option><option value="+84">🇻🇳 +84 Vietnam</option>
+                </select>
+                <input id="cusPhone" class="admin-input-box text-sm flex-1" placeholder="ဖုန်းနံပါတ် (Code မပါဘဲ)" inputmode="tel">
+              </div>
               <input id="cusSocial" class="admin-input-box text-sm flex-1" placeholder="Social Media">
               <input id="cusBankName" class="admin-input-box text-sm flex-1" placeholder="ဘဏ်အမည်">
               <input id="cusBankNo" class="admin-input-box text-sm flex-1" placeholder="ဘဏ်နံပါတ်">
@@ -3751,6 +3810,7 @@ window.showToast = function(message, icon = "✅") {
       const badge = document.getElementById('workQueueTabBadge');
       const tabBtn = document.getElementById('btnTabWorkQueue');
       const adminBtn = document.querySelector('.admin-btn');
+      const groupedBadge = document.getElementById('groupedWorkQueueBadge');
       if (badge) {
           if (n > 0) {
               badge.textContent = n > 99 ? '99+' : String(n);
@@ -3763,6 +3823,11 @@ window.showToast = function(message, icon = "✅") {
       }
       if (tabBtn) tabBtn.classList.toggle('has-work', n > 0);
       if (adminBtn) adminBtn.classList.toggle('has-work', n > 0);
+      if (groupedBadge) {
+          groupedBadge.textContent = n > 99 ? '99+' : String(n);
+          groupedBadge.style.display = n > 0 ? 'inline-block' : 'none';
+          groupedBadge.classList.toggle('pulse', n > 0);
+      }
   }
   window.updateWorkQueueBadge = updateWorkQueueBadge;
 
@@ -5379,10 +5444,10 @@ function openAdmin() {
     shell.className = 'general-settings-shell';
     shell.innerHTML = `
       <div class="general-settings-title-row">
-        <h2 class="general-settings-title">⚙️ General Settings</h2>
+        <h2 class="general-settings-title">⚙️ Settings</h2>
         <span class="general-settings-role-pill">Main Admin</span>
       </div>
-      <p class="general-settings-subtitle">အထွေထွေ Settings များကို အပိုင်းလိုက် သီးခြားစီ စီမံနိုင်ပါသည်။</p>
+      <p class="general-settings-subtitle">System၊ Agent၊ Receipt နှင့် Access Settings</p>
       <div class="general-settings-tab-shell">
         <nav class="general-settings-tab-nav" aria-label="General Settings sections"></nav>
         <div class="general-settings-panels"></div>
@@ -5506,6 +5571,100 @@ function openAdmin() {
     if (subTabId === 'agents') loadAgentAccounts();
   }
 
+  const ADMIN_TAB_GROUPS = {
+    overview: [
+      ['tab-work-queue', '📋 Work Queue', 'btnTabWorkQueue'],
+      ['tab-dashboard', '📊 Dashboard', 'btnTabDashboard'],
+      ['tab-logs', '📝 Logs', 'btnTabLogs']
+    ],
+    transactions: [
+      ['tab-history', '📜 History', 'btnTabHistory'],
+      ['tab-expenses', '💸 Expenses', 'btnTabExpenses']
+    ],
+    money: [
+      ['tab-treasury', '💰 Treasury', 'btnTabTreasury']
+    ],
+    accounts: [
+      ['tab-customers', '👥 Customers', 'btnTabCustomers'],
+      ['tab-banks', '🏦 Banks', 'btnTabBanks'],
+      ['tab-qrs', '🔲 QR / PP', 'btnTabQrs'],
+      ['tab-agent-accounts', '🧑‍💼 Agent Bank / QR', 'btnTabAgentAccounts']
+    ],
+    settings: [
+      ['settings-agents', '🧑‍💼 Agent', 'btnTabGeneral'],
+      ['settings-system', '⚙️ System', 'btnTabGeneral'],
+      ['settings-receipt', '🧾 Receipt', 'btnTabGeneral'],
+      ['settings-integrations', '🔗 Integrations', 'btnTabGeneral'],
+      ['settings-automation', '🤖 Automation', 'btnTabGeneral'],
+      ['settings-access', '👥 Access', 'btnTabGeneral']
+    ]
+  };
+  let ACTIVE_ADMIN_GROUP = 'overview';
+
+  function isAdminLegacyTabVisible(buttonId) {
+    const el = document.getElementById(buttonId);
+    if (!el) return false;
+    return el.style.display !== 'none';
+  }
+  function getVisibleAdminGroupItems(groupName) {
+    return (ADMIN_TAB_GROUPS[groupName] || []).filter(item => isAdminLegacyTabVisible(item[2]));
+  }
+  function renderAdminSubTabs(groupName, preferredTabId = '') {
+    const nav = document.getElementById('adminSubNav');
+    if (!nav) return '';
+    const items = getVisibleAdminGroupItems(groupName);
+    nav.innerHTML = items.map(([tabId, label]) => `<button type="button" class="admin-sub-btn" data-admin-subtab="${tabId}" onclick="window.openAdminSubTab('${tabId}')">${label}${tabId === 'tab-work-queue' ? '<span id="groupedWorkQueueBadge" class="admin-sub-badge" style="display:none;">0</span>' : ''}</button>`).join('');
+    const legacyBadge = document.getElementById('workQueueTabBadge');
+    if (legacyBadge && typeof updateWorkQueueBadge === 'function') updateWorkQueueBadge(legacyBadge.textContent === '99+' ? 100 : Number(legacyBadge.textContent || 0));
+    const selected = items.some(item => item[0] === preferredTabId) ? preferredTabId : (items[0]?.[0] || '');
+    nav.querySelectorAll('[data-admin-subtab]').forEach(btn => btn.classList.toggle('active', btn.dataset.adminSubtab === selected));
+    return selected;
+  }
+  function renderAdminGroupButtons(groupName) {
+    document.querySelectorAll('[data-admin-group]').forEach(btn => btn.classList.toggle('active', btn.dataset.adminGroup === groupName));
+  }
+  window.selectAdminGroup = function(groupName, preferredTabId = '') {
+    const items = getVisibleAdminGroupItems(groupName);
+    if (!items.length) return;
+    ACTIVE_ADMIN_GROUP = groupName;
+    renderAdminGroupButtons(groupName);
+    const selected = renderAdminSubTabs(groupName, preferredTabId);
+    if (selected) {
+      const selectedItem = items.find(item => item[0] === selected);
+      const legacyBtn = document.getElementById(selectedItem?.[2] || '');
+      if (groupName === 'settings' && selected.startsWith('settings-')) {
+        switchTab('tab-general', legacyBtn);
+        if (typeof switchGeneralSettingsSubTab === 'function') switchGeneralSettingsSubTab(selected.replace('settings-', ''));
+        // switchTab('tab-general') synchronizes the legacy pane and may select
+        // System as its fallback. Restore the exact grouped sub-tab the user
+        // clicked so the highlight always matches the visible settings panel.
+        renderAdminSubTabs(groupName, selected);
+      } else {
+        switchTab(selected, legacyBtn);
+      }
+    }
+  };
+  window.openAdminSubTab = function(tabId) {
+    const group = Object.keys(ADMIN_TAB_GROUPS).find(name => ADMIN_TAB_GROUPS[name].some(item => item[0] === tabId));
+    if (group) window.selectAdminGroup(group, tabId);
+  };
+  function syncAdminGroupedNav(tabId) {
+    const group = tabId === 'tab-general' ? 'settings' : Object.keys(ADMIN_TAB_GROUPS).find(name => ADMIN_TAB_GROUPS[name].some(item => item[0] === tabId));
+    if (!group) return;
+    ACTIVE_ADMIN_GROUP = group;
+    renderAdminGroupButtons(group);
+    renderAdminSubTabs(group, group === 'settings' ? 'settings-system' : tabId);
+  }
+  function refreshAdminGroupedNav(preferredTabId = '') {
+    const preferredGroup = Object.keys(ADMIN_TAB_GROUPS).find(name => getVisibleAdminGroupItems(name).some(item => item[0] === preferredTabId));
+    const currentPane = document.querySelector('.tab-pane.active')?.id || '';
+    const group = preferredGroup || (currentPane === 'tab-general' ? 'settings' : Object.keys(ADMIN_TAB_GROUPS).find(name => getVisibleAdminGroupItems(name).some(item => item[0] === currentPane))) || Object.keys(ADMIN_TAB_GROUPS).find(name => getVisibleAdminGroupItems(name).length);
+    if (group) {
+      ACTIVE_ADMIN_GROUP = group;
+      renderAdminGroupButtons(group);
+      renderAdminSubTabs(group, preferredTabId || currentPane);
+    }
+  }
   function switchTab(tabId, btnElement) {
     const targetPane = document.getElementById(tabId);
     if (!targetPane) return;
@@ -5523,6 +5682,7 @@ function openAdmin() {
     targetPane.style.setProperty('display', 'block', 'important');
     targetPane.setAttribute('aria-hidden', 'false');
     if (btnElement) btnElement.classList.add('active');
+    syncAdminGroupedNav(tabId);
 
     if (tabId === 'tab-history' || tabId === 'tab-dashboard' || tabId === 'tab-work-queue') {
         // Only load history if it hasn't been loaded yet, to avoid unnecessary timeouts/flickers when switching tabs
@@ -6055,10 +6215,31 @@ function openAdmin() {
       renderCustomerAdminList();
   };
 
+  function getCustomerPhonePayload(inputId, selectId) {
+      const input = document.getElementById(inputId);
+      const select = document.getElementById(selectId);
+      const raw = String(input?.value || '').trim().replace(/[()\-]/g, ' ').replace(/\s+/g, ' ');
+      const selectedCode = String(select?.value || '+66');
+      if (!raw) return { phone: '', phoneCountryCode: selectedCode };
+      if (raw.startsWith('+')) {
+          const match = raw.match(/^\+(\d{1,3})/);
+          return { phone: raw, phoneCountryCode: match ? `+${match[1]}` : selectedCode };
+      }
+      return { phone: `${selectedCode} ${raw}`, phoneCountryCode: selectedCode };
+  }
+  function setCustomerPhoneForm(phone, inputId, selectId) {
+      const input = document.getElementById(inputId);
+      const select = document.getElementById(selectId);
+      const raw = String(phone || '').trim();
+      const match = raw.match(/^(\+\d{1,3})\s*(.*)$/);
+      if (select && match && Array.from(select.options).some(o => o.value === match[1])) select.value = match[1];
+      if (input) input.value = match ? match[2] : raw;
+  }
   async function saveCustomerData() {
       const idInput = document.getElementById('cusId').value;
       const name = document.getElementById('cusName').value.trim();
-      const phone = document.getElementById('cusPhone').value.trim();
+      const phoneData = getCustomerPhonePayload('cusPhone', 'cusCountryCode');
+      const phone = phoneData.phone;
       const social = document.getElementById('cusSocial').value.trim();
       const bankName = document.getElementById('cusBankName').value.trim();
       const bankNo = document.getElementById('cusBankNo').value.trim();
@@ -6083,7 +6264,7 @@ function openAdmin() {
       const existingOwner = !isNew ? FIREBASE_CUSTOMERS[cusId] : null;
       const agentOwner = String(CURRENT_ROLE || '').toLowerCase() === 'agent';
       const newCustomerData = {
-          id: cusId, name, phone, social, bankName, bankNo, allowedPayoutAccountIds,
+          id: cusId, name, phone, phoneCountryCode: phoneData.phoneCountryCode, social, bankName, bankNo, allowedPayoutAccountIds,
           ownerType: agentOwner ? 'AGENT' : (existingOwner?.ownerType || 'MAIN'),
           ownerAgentId: agentOwner ? currentAgentOwnerEmail() : (existingOwner?.ownerAgentId || null),
           ownerAgentName: agentOwner ? (CURRENT_ACCESS_CONFIG?.name || currentAgentOwnerEmail()) : (existingOwner?.ownerAgentName || '')
@@ -6155,6 +6336,7 @@ function openAdmin() {
       document.getElementById('cusId').value = '';
       document.getElementById('cusName').value = '';
       document.getElementById('cusPhone').value = '';
+      if (document.getElementById('cusCountryCode')) document.getElementById('cusCountryCode').value = '+66';
       document.getElementById('cusSocial').value = '';
       document.getElementById('cusBankName').value = '';
       document.getElementById('cusBankNo').value = '';
@@ -6173,7 +6355,7 @@ function openAdmin() {
       const c = FIREBASE_CUSTOMERS[id]; if(!c) return;
       document.getElementById('cusId').value = c.id;
       document.getElementById('cusName').value = c.name || '';
-      document.getElementById('cusPhone').value = c.phone || '';
+      setCustomerPhoneForm(c.phone || '', 'cusPhone', 'cusCountryCode');
       document.getElementById('cusSocial').value = c.social || '';
       document.getElementById('cusBankName').value = c.bankName || '';
       document.getElementById('cusBankNo').value = c.bankNo || '';
@@ -6270,8 +6452,36 @@ function openAdmin() {
       document.getElementById('customCusDropdown').classList.add('hidden');
       document.getElementById('cusSearchInput').value = '';
       filterCusDropdown();
+      const payoutSelection = {
+          bank: document.getElementById('bankSelect')?.value || '',
+          qr: document.getElementById('qrSelect')?.value || '',
+          pp: document.getElementById('ppSelect')?.value || '',
+          qrCurrency: document.getElementById('qrCurrencyFilter')?.value || 'ALL',
+          bankCurrency: document.getElementById('bankCurrencyFilter')?.value || 'ALL',
+          source: document.getElementById('qrSourceTabPp')?.classList.contains('active') ? 'pp' : 'qr'
+      };
       // Customer ပြောင်းလျှင် payout Bank/QR ကို permission အတိုင်း ချက်ချင်းပြန်စစ်ထုတ်မည်။
       initDropdowns(); 
+      const qrCurrency = document.getElementById('qrCurrencyFilter');
+      const bankCurrency = document.getElementById('bankCurrencyFilter');
+      if (qrCurrency) qrCurrency.value = payoutSelection.qrCurrency;
+      if (bankCurrency) bankCurrency.value = payoutSelection.bankCurrency;
+      if (typeof window.filterPayoutSelectorCurrency === 'function') {
+          window.filterPayoutSelectorCurrency('qr', payoutSelection.qrCurrency);
+          window.filterPayoutSelectorCurrency('bank', payoutSelection.bankCurrency);
+      }
+      const restoreSelect = (id, value) => {
+          const el = document.getElementById(id);
+          if (!el || !value) return;
+          const option = Array.from(el.options).find(o => o.value === value && !o.hidden);
+          if (option) el.value = value;
+      };
+      restoreSelect('bankSelect', payoutSelection.bank);
+      restoreSelect('qrSelect', payoutSelection.qr);
+      restoreSelect('ppSelect', payoutSelection.pp || payoutSelection.qr);
+      if (typeof window.switchQrSourceTab === 'function') window.switchQrSourceTab(payoutSelection.source);
+      refreshBankInfo(false);
+      refreshQrPreview(false);
   }
 
   document.addEventListener('click', function(event) {
@@ -6285,7 +6495,8 @@ function openAdmin() {
   async function saveQuickCustomer(event) {
       const name = document.getElementById('qCusName').value.trim();
       const social = document.getElementById('qCusSocial').value.trim();
-      const phone = document.getElementById('qCusPhone').value.trim();
+      const phoneData = getCustomerPhonePayload('qCusPhone', 'qCusCountryCode');
+      const phone = phoneData.phone;
 
       if(!name) return alert("Customer အမည် ထည့်ပေးပါ။");
 
@@ -6296,7 +6507,7 @@ function openAdmin() {
       const cusId = "CUS-" + Date.now();
       const agentOwner = String(CURRENT_ROLE || '').toLowerCase() === 'agent';
       const newCustomerData = {
-          id: cusId, name, phone, social, bankName: '', bankNo: '', allowedPayoutAccountIds: [],
+          id: cusId, name, phone, phoneCountryCode: phoneData.phoneCountryCode, social, bankName: '', bankNo: '', allowedPayoutAccountIds: [],
           ownerType: agentOwner ? 'AGENT' : 'MAIN',
           ownerAgentId: agentOwner ? currentAgentOwnerEmail() : null,
           ownerAgentName: agentOwner ? (CURRENT_ACCESS_CONFIG?.name || currentAgentOwnerEmail()) : ''
@@ -6314,6 +6525,7 @@ function openAdmin() {
       document.getElementById('qCusName').value = '';
       document.getElementById('qCusSocial').value = '';
       document.getElementById('qCusPhone').value = '';
+      if (document.getElementById('qCusCountryCode')) document.getElementById('qCusCountryCode').value = '+66';
 
       try {
           // Agent Customer ကို Agent သီးသန့် collection ထဲသိမ်းမည်။ Main/Admin Customer က admin_data ထဲတွင် ဆက်သိမ်းမည်။
@@ -10077,6 +10289,13 @@ async function loadHistory() {
         const w2 = clone.querySelector('.lang-warn2'); if(w2 && customTexts.warn2) { w2.textContent = replaceVars(customTexts.warn2); }
         const w3 = clone.querySelector('.lang-warn3'); if(w3 && customTexts.warn3) { w3.textContent = replaceVars(customTexts.warn3); }
         const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = replaceVars(customTexts.thanks); }
+        const originalHeading = clone.querySelector('h2');
+        if (originalHeading) {
+            if (clone.id === 'box-thb2mmk') originalHeading.textContent = 'ထိုင်းဘတ် → မြန်မာကျပ်';
+            else if (clone.id === 'box-mmk2thb') originalHeading.textContent = 'မြန်မာကျပ် → ထိုင်းဘတ်';
+            else if (clone.id === 'box-vnd2mmk') originalHeading.textContent = 'ဗီယက်နမ်ဒေါင် → ကျပ်ငွေ';
+            else if (clone.id === 'box-mmk2vnd') originalHeading.textContent = 'ကျပ်ငွေ → ဗီယက်နမ်ဒေါင်';
+        }
         return;
     }
     
@@ -10738,6 +10957,7 @@ async function loadHistory() {
       const customerId = document.getElementById('mainCustomerSelect')?.value || '';
       const customer = customerId && FIREBASE_CUSTOMERS ? FIREBASE_CUSTOMERS[customerId] : null;
       const customerName = customer ? customer.name + (customer.social ? ` (${customer.social})` : '') : '—';
+      const customerPhone = customer?.phone || '';
       const now = new Date();
       const datePart = now.getFullYear().toString().slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
       const invId = `INV${datePart}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -10756,6 +10976,8 @@ async function loadHistory() {
           tz: ADMIN_TIMEZONE,
           deviceId: CURRENT_DEVICE_ID || 'Unknown',
           customerName,
+          customerPhone,
+          customerPhoneCountryCode: customer?.phoneCountryCode || '',
           receiptNotiIncluded: !!document.getElementById('includeReceiptNoti')?.checked,
           receiptNotiText: String(FIREBASE_RECEIPT_TEXTS[document.getElementById('saveLangSelect')?.value || 'orig']?.noti || '').trim(),
           agentEmail: String(CURRENT_ROLE || '').toLowerCase() === 'agent' ? currentAgentOwnerEmail() : '',
@@ -10850,11 +11072,18 @@ async function loadHistory() {
           else if(el.id.toLowerCase().includes('thb')) val += ' THB';
           else if(el.id.toLowerCase().includes('vnd')) val += ' VND';
 
+          let displayVal = val;
+          if (lang === 'orig') {
+            if (el.id.toLowerCase().includes('mmk')) displayVal = `${(el.value || '').trim() || '0'} ကျပ်ငွေ`;
+            else if (el.id.toLowerCase().includes('thb')) displayVal = `${(el.value || '').trim() || '0'} ဘတ်ငွေ`;
+            else if (el.id.toLowerCase().includes('vnd')) displayVal = `${(el.value || '').trim() || '0'} ဒေါင်ငွေ`;
+          }
           const div=document.createElement('div');
-          div.className=el.className || ''; div.style.whiteSpace='nowrap'; div.style.overflow='hidden'; div.style.textOverflow='ellipsis'; div.style.display='flex'; div.style.alignItems='center'; div.style.lineHeight='1.5'; div.style.minHeight='56px'; div.style.height='56px'; div.style.paddingTop='12px'; div.style.paddingBottom='14px';
-          div.style.setProperty('font-size', '1.7rem', 'important');
+          div.className=el.className || ''; div.style.whiteSpace='nowrap'; div.style.overflow='visible'; div.style.textOverflow='clip'; div.style.display='flex'; div.style.alignItems='center'; div.style.lineHeight='1.35'; div.style.minHeight='56px'; div.style.height='56px'; div.style.boxSizing='border-box'; div.style.paddingTop='10px'; div.style.paddingBottom='12px'; div.style.paddingLeft='10px'; div.style.paddingRight='10px'; div.style.minWidth='0';
+          div.style.setProperty('font-size', '1.38rem', 'important');
+          div.style.setProperty('font-weight', '900', 'important');
           
-          div.textContent = val;
+          div.textContent = displayVal;
           if (!isTarget) inValueStr = val; else outValueStr = val;
           el.replaceWith(div);
         });
@@ -12829,6 +13058,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       
       const timeSettingsBlock = document.getElementById('timeSettingsBlock');
       if (timeSettingsBlock) { timeSettingsBlock.style.display = (role === 'main admin') ? 'block' : 'none'; }
+      refreshAdminGroupedNav(document.querySelector('.tab-pane.active')?.id || 'tab-dashboard');
       updateSelectorBalanceStatuses();
   }
 
