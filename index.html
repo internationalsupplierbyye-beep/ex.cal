@@ -10409,8 +10409,9 @@ async function loadHistory() {
 
   function canSaveTransactions() {
       const role = String(CURRENT_ROLE || 'guest').toLowerCase();
-      if (role === 'main admin' || role === 'admin' || role === 'agent') return true;
-      return role === 'staff' && getCurrentAccessConfig().canSave === true;
+      // Staff Role ရှိလျှင် Main Admin ၏ Save checkbox မလိုဘဲ Invoice Save ခွင့်ပြုမည်။
+      if (role === 'main admin' || role === 'admin' || role === 'staff' || role === 'agent') return true;
+      return false;
   }
 
   function isRetryableSmartError(error) {
