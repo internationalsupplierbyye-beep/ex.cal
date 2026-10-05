@@ -3219,7 +3219,7 @@ window.showToast = function(message, icon = "✅") {
                   let profit = (s.rate - rate) * matchQty; 
                   if (includeThisRecord) {
                       const detail = ensureProfitDetail();
-                      if (detail) { detail.grossProfit += profit; detail.lotMatches.push({ qty: matchQty, rate: s.rate, profit }); }
+                      if (detail) { detail.grossProfit += profit; detail.lotMatches.push({ qty: matchQty, rate: s.rate, currency, profit }); }
                       if (currency === 'THB') {
                           periodProfitThb += profit;
                           periodProfitThbInBaht += (profit / rate);
@@ -3242,7 +3242,7 @@ window.showToast = function(message, icon = "✅") {
                   let profit = (rate - l.rate) * matchQty;
                   if (includeThisRecord) {
                       const detail = ensureProfitDetail();
-                      if (detail) { detail.grossProfit += profit; detail.lotMatches.push({ qty: matchQty, rate: l.rate, profit }); }
+                      if (detail) { detail.grossProfit += profit; detail.lotMatches.push({ qty: matchQty, rate: l.rate, currency, profit }); }
                       if (currency === 'THB') {
                           periodProfitThb += profit;
                           periodProfitThbInBaht += (profit / rate); 
@@ -3536,6 +3536,13 @@ window.showToast = function(message, icon = "✅") {
       const rows = Array.isArray(LAST_PROFIT_DETAILS) ? LAST_PROFIT_DETAILS : [];
       const esc = value => typeof smartEscapeHtml === 'function' ? smartEscapeHtml(String(value ?? '')) : String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
       const fmt = value => Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const fifoRateLabel = (lot, row) => {
+          const currency = String(lot.currency || (String(row.type || '').includes('VND') ? 'VND' : 'THB')).toUpperCase();
+          const unit = currency === 'VND' ? 'ဒေါင်' : 'ဘတ်';
+          const rate = Number(lot.rate || 0);
+          const reverse = rate > 0 ? (100000 / rate) : 0;
+          return `${fmt(rate)} ကျပ်/တစ်${unit} (${fmt(100000)} ကျပ် = ${fmt(reverse)} ${unit})`;
+      };
       const gross = rows.reduce((sum, row) => sum + Number(row.grossProfit || 0), 0);
       const fees = rows.reduce((sum, row) => sum + Number(row.feeMmk || 0), 0);
       const net = gross - fees;
@@ -3546,7 +3553,7 @@ window.showToast = function(message, icon = "✅") {
             <div class="text-right text-sm font-bold">${esc(row.type)}<br><span class="text-xs text-slate-500">${esc(row.inAmt)} ➔ ${esc(row.outAmt)}</span></div>
           </div>
           <div class="text-xs font-bold text-slate-600 mb-1">FIFO Lot Matches</div>
-          <div class="space-y-1 text-xs">${row.lotMatches.map((lot, index) => `<div class="flex justify-between gap-2"><span>FIFO Lot ${index + 1}: ${fmt(lot.qty)} × ${fmt(lot.rate)}</span><span class="font-bold ${Number(lot.profit) >= 0 ? 'text-green-700' : 'text-red-700'}">${fmt(lot.profit)} MMK</span></div>`).join('')}</div>
+          <div class="space-y-1 text-xs">${row.lotMatches.map((lot, index) => `<div class="flex justify-between gap-2"><span>FIFO Lot ${index + 1}: ${fmt(lot.qty)} × ${fifoRateLabel(lot, row)}</span><span class="font-bold ${Number(lot.profit) >= 0 ? 'text-green-700' : 'text-red-700'}">${fmt(lot.profit)} MMK</span></div>`).join('')}</div>
           <div class="grid grid-cols-3 gap-2 border-t mt-2 pt-2 text-xs text-right"><span>Gross<br><b>${fmt(row.grossProfit)} MMK</b></span><span>Fee<br><b class="text-red-600">-${fmt(row.feeMmk)} MMK</b></span><span>Net<br><b class="text-green-700">${fmt(row.netProfit)} MMK</b></span></div>
         </div>`).join('') : '<div class="text-center text-slate-500 py-8">ဒီကာလအတွင်း FIFO ဖြင့် Realized Profit ဖြစ်သော Success Transaction မရှိပါ။</div>';
       content.innerHTML = `<div class="grid grid-cols-3 gap-2 mb-4 text-center text-xs"><div class="bg-slate-50 rounded-lg p-2">Included<br><b class="text-base">${rows.length}</b></div><div class="bg-slate-50 rounded-lg p-2">Gross Profit<br><b class="text-base">${fmt(gross)} MMK</b></div><div class="bg-green-50 rounded-lg p-2">Net Profit<br><b class="text-base text-green-700">${fmt(net)} MMK</b><br><span class="text-red-600">Fees -${fmt(fees)} MMK</span></div></div>${cards}`;
