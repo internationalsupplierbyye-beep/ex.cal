@@ -1526,6 +1526,7 @@
           <select id="searchStatus" class="admin-input-box !mb-0 !py-1 text-sm flex-1 min-w-[130px]" onchange="searchHistoryLocally(true)" title="Status ဖြင့်ရှာရန်">
               <option value="">Status အားလုံး</option>
               <option value="Pending">⏳ Pending</option>
+              <option value="Partial">◐ Partial</option>
               <option value="Owing">💸 ကြိုလွဲပြီး (Owing)</option>
               <option value="Success">✅ Success</option>
               <option value="Cancelled">❌ Cancelled</option>
@@ -3219,7 +3220,7 @@ window.showToast = function(message, icon = "✅") {
                   let profit = (s.rate - rate) * matchQty; 
                   if (includeThisRecord) {
                       const detail = ensureProfitDetail();
-                      if (detail) { detail.grossProfit += profit; detail.lotMatches.push({ qty: matchQty, rate: s.rate, currency, profit }); }
+                      if (detail) { detail.grossProfit += profit; detail.lotMatches.push({ qty: matchQty, rate: s.rate, profit }); }
                       if (currency === 'THB') {
                           periodProfitThb += profit;
                           periodProfitThbInBaht += (profit / rate);
@@ -3242,7 +3243,7 @@ window.showToast = function(message, icon = "✅") {
                   let profit = (rate - l.rate) * matchQty;
                   if (includeThisRecord) {
                       const detail = ensureProfitDetail();
-                      if (detail) { detail.grossProfit += profit; detail.lotMatches.push({ qty: matchQty, rate: l.rate, currency, profit }); }
+                      if (detail) { detail.grossProfit += profit; detail.lotMatches.push({ qty: matchQty, rate: l.rate, profit }); }
                       if (currency === 'THB') {
                           periodProfitThb += profit;
                           periodProfitThbInBaht += (profit / rate); 
@@ -3536,13 +3537,6 @@ window.showToast = function(message, icon = "✅") {
       const rows = Array.isArray(LAST_PROFIT_DETAILS) ? LAST_PROFIT_DETAILS : [];
       const esc = value => typeof smartEscapeHtml === 'function' ? smartEscapeHtml(String(value ?? '')) : String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
       const fmt = value => Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const fifoRateLabel = (lot, row) => {
-          const currency = String(lot.currency || (String(row.type || '').includes('VND') ? 'VND' : 'THB')).toUpperCase();
-          const unit = currency === 'VND' ? 'ဒေါင်' : 'ဘတ်';
-          const rate = Number(lot.rate || 0);
-          const reverse = rate > 0 ? (100000 / rate) : 0;
-          return `${fmt(rate)} ကျပ်/တစ်${unit} (${fmt(100000)} ကျပ် = ${fmt(reverse)} ${unit})`;
-      };
       const gross = rows.reduce((sum, row) => sum + Number(row.grossProfit || 0), 0);
       const fees = rows.reduce((sum, row) => sum + Number(row.feeMmk || 0), 0);
       const net = gross - fees;
@@ -3553,7 +3547,7 @@ window.showToast = function(message, icon = "✅") {
             <div class="text-right text-sm font-bold">${esc(row.type)}<br><span class="text-xs text-slate-500">${esc(row.inAmt)} ➔ ${esc(row.outAmt)}</span></div>
           </div>
           <div class="text-xs font-bold text-slate-600 mb-1">FIFO Lot Matches</div>
-          <div class="space-y-1 text-xs">${row.lotMatches.map((lot, index) => `<div class="flex justify-between gap-2"><span>FIFO Lot ${index + 1}: ${fmt(lot.qty)} × ${fifoRateLabel(lot, row)}</span><span class="font-bold ${Number(lot.profit) >= 0 ? 'text-green-700' : 'text-red-700'}">${fmt(lot.profit)} MMK</span></div>`).join('')}</div>
+          <div class="space-y-1 text-xs">${row.lotMatches.map((lot, index) => `<div class="flex justify-between gap-2"><span>FIFO Lot ${index + 1}: ${fmt(lot.qty)} × ${fmt(lot.rate)}</span><span class="font-bold ${Number(lot.profit) >= 0 ? 'text-green-700' : 'text-red-700'}">${fmt(lot.profit)} MMK</span></div>`).join('')}</div>
           <div class="grid grid-cols-3 gap-2 border-t mt-2 pt-2 text-xs text-right"><span>Gross<br><b>${fmt(row.grossProfit)} MMK</b></span><span>Fee<br><b class="text-red-600">-${fmt(row.feeMmk)} MMK</b></span><span>Net<br><b class="text-green-700">${fmt(row.netProfit)} MMK</b></span></div>
         </div>`).join('') : '<div class="text-center text-slate-500 py-8">ဒီကာလအတွင်း FIFO ဖြင့် Realized Profit ဖြစ်သော Success Transaction မရှိပါ။</div>';
       content.innerHTML = `<div class="grid grid-cols-3 gap-2 mb-4 text-center text-xs"><div class="bg-slate-50 rounded-lg p-2">Included<br><b class="text-base">${rows.length}</b></div><div class="bg-slate-50 rounded-lg p-2">Gross Profit<br><b class="text-base">${fmt(gross)} MMK</b></div><div class="bg-green-50 rounded-lg p-2">Net Profit<br><b class="text-base text-green-700">${fmt(net)} MMK</b><br><span class="text-red-600">Fees -${fmt(fees)} MMK</span></div></div>${cards}`;
@@ -9762,6 +9756,8 @@ function openAdmin() {
         
         if (status === 'Success') {
             statusColor = 'bg-green-100 text-green-800 border-green-300';
+        } else if (status === 'Partial') {
+            statusColor = 'bg-orange-100 text-orange-800 border-orange-300';
         } else if (status === 'Owing') {
             statusColor = 'bg-blue-100 text-blue-800 border-blue-300';
         } else if (status === 'Cancelled' || status === 'Auto Cancel') {
@@ -9822,6 +9818,7 @@ function openAdmin() {
           statusHtml = `
             <select onchange="window.updateTxStatus('${d.id}', this.value, this)" class="border rounded px-2 py-1 text-xs font-bold ${statusColor}" style="width:auto; max-width:140px;">
                 <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
+                <option value="Partial" ${status === 'Partial' ? 'selected' : ''}>Partial</option>
                 <option value="Owing" ${status === 'Owing' ? 'selected' : ''}>Owing</option>
                 <option value="Success" ${status === 'Success' ? 'selected' : ''}>Success</option>
                 <option value="Cancelled" ${status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
@@ -10803,11 +10800,12 @@ async function loadHistory() {
       if (!list) return;
       const history = Array.isArray(allLoadedHistory) ? allLoadedHistory : [];
       const pending = history.filter(tx => tx.status === 'Pending');
+      const partial = history.filter(tx => tx.status === 'Partial');
       const owing = history.filter(tx => tx.status === 'Owing');
       const review = history.filter(isQueueReviewRecord);
-      const pendingIds = new Set([...pending, ...owing].map(tx => tx.id));
+      const pendingIds = new Set([...pending, ...partial, ...owing].map(tx => tx.id));
       const items = history.filter(tx => pendingIds.has(tx.id) || isQueueReviewRecord(tx)).sort((a, b) => {
-          const score = tx => tx.status === 'Pending' ? 0 : (tx.status === 'Owing' ? 1 : 2);
+          const score = tx => tx.status === 'Pending' ? 0 : (tx.status === 'Partial' ? 1 : (tx.status === 'Owing' ? 2 : 3));
           return score(a) - score(b) || (smartTimestampMs(a.timestamp) || 0) - (smartTimestampMs(b.timestamp) || 0);
       }).slice(0, 40);
       const setCount = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = String(value); };
@@ -10816,7 +10814,7 @@ async function loadHistory() {
       setCount('queueReviewCount', review.length);
       setCount('queueRetryCount', RETRY_OPERATION_QUEUE.length);
       // 🔔 Work Queue Tab ပေါ်တွင် လုပ်စရာအရေအတွက်ကို Noti အဖြစ် ပြမည်
-      updateWorkQueueBadge(pending.length + owing.length + review.length + RETRY_OPERATION_QUEUE.length);
+      updateWorkQueueBadge(pending.length + partial.length + owing.length + review.length + RETRY_OPERATION_QUEUE.length);
       renderRetryQueue();
       if (!items.length) {
           list.innerHTML = `<p class="p-6 text-center text-sm text-emerald-700 font-bold">✅ လုပ်ရန်ကျန်သော History အလုပ် မရှိပါ။</p>`;
@@ -10828,7 +10826,7 @@ async function loadHistory() {
           const isReviewItem = isQueueReviewRecord(tx);
           const reviewBadge = isReviewItem ? '<span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700 text-[10px] font-bold">🔎 ပြန်စစ်ရန်</span>' : '';
           const reviewAction = isReviewItem ? `<button onclick="markReviewComplete('${smartEscapeHtml(tx.id || '')}', this)" class="btn bg-emerald-600 hover:bg-emerald-700 !py-1 !px-2 !text-xs">✅ စစ်ပြီးပါပြီ</button>` : '';
-          const statusClass = status === 'Pending' ? 'bg-amber-100 text-amber-800' : (status === 'Owing' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-700');
+          const statusClass = status === 'Pending' ? 'bg-amber-100 text-amber-800' : (status === 'Partial' ? 'bg-orange-100 text-orange-800' : (status === 'Owing' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-700'));
           return `<div class="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50">
             <div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><b class="text-sm text-slate-800">${smartEscapeHtml(tx.id || '—')}</b><span class="px-2 py-0.5 rounded ${statusClass} text-[10px] font-bold">${smartEscapeHtml(status)}</span>${reviewBadge}</div>
               <div class="text-xs text-slate-600 mt-1 truncate">${smartEscapeHtml(tx.customerName || 'Customer မရွေးရသေး')} · ${smartEscapeHtml(tx.type || '')}</div>
@@ -10931,7 +10929,7 @@ async function loadHistory() {
           if (rowDate !== dateKey) return;
           todayCount++;
           const status = String(tx?.status || '');
-          if (!['Success', 'Pending', 'Owing', 'Cancelled', 'Auto Cancel'].includes(status)) warnings.push(`${id}: မသိသော status ${status || '(empty)'}`);
+          if (!['Success', 'Pending', 'Partial', 'Owing', 'Cancelled', 'Auto Cancel'].includes(status)) warnings.push(`${id}: မသိသော status ${status || '(empty)'}`);
           if (status === 'Success') {
               if (!(smartParseAmount(tx.inAmt) > 0)) errors.push(`${id}: Success ဖြစ်သော်လည်း inAmt မမှန်ပါ`);
               if (!(smartParseAmount(tx.outAmt) > 0)) errors.push(`${id}: Success ဖြစ်သော်လည်း outAmt မမှန်ပါ`);
@@ -12426,18 +12424,44 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       document.getElementById('smartMatchTitle').textContent = smartSlipMode === 'in' ? "📥 ဝင်စလစ်နှင့် ကိုက်ညီသောမှတ်တမ်း" : "📤 ထွက်စလစ်နှင့် ကိုက်ညီသောမှတ်တမ်း";
 
       const listDiv = document.getElementById('smartMatchList'); listDiv.innerHTML = '';
+      const getAttachedTotal = (tx, mode, currency) => {
+          if (!tx?.extractedInfo) return 0;
+          let total = 0;
+          getExtractedInfoBlocks(tx.extractedInfo).forEach(block => {
+              const label = String(block).match(/^\s*\[(ဝင်စလစ်|ထွက်စလစ်)\]/)?.[1];
+              if (label !== (mode === 'in' ? 'ဝင်စလစ်' : 'ထွက်စလစ်')) return;
+              const parts = String(block).replace(/^\s*\[(ဝင်စလစ်|ထွက်စလစ်)\]\s*/, '').split('|').map(x => x.trim()).filter(Boolean);
+              const match = (parts[parts.length - 1] || '').match(/([\d,]+(?:\.\d+)?)\s*(THB|MMK|VND|บาท|ဘတ်|ကျပ်|Ks)/i);
+              if (!match) return;
+              const raw = match[2].toUpperCase();
+              const foundCurrency = ['บาท','ဘတ်'].includes(match[2]) ? 'THB' : (['ကျပ်','KS'].includes(raw) ? 'MMK' : raw);
+              if (foundCurrency === currency) total += Number(match[1].replace(/,/g, '')) || 0;
+          });
+          return total;
+      };
       let matches = allLoadedHistory.filter(tx => {
-          if (smartSlipMode === 'in' && tx.status !== 'Pending') return false;
-          if (smartSlipMode === 'out' && tx.status !== 'Pending' && tx.status !== 'Success') return false;
+          // Status ကို အရင် Success ပြောင်းပြီး နောက်မှ စလစ်တင်နိုင်သော လုပ်ငန်းစဉ်ကိုလည်း
+          // ထောက်ပံ့ရမည်။ Success Invoice ကို တွေ့လျှင် Attach Only အဖြစ်သာ ဆက်လုပ်မည်။
+          if (!['Pending', 'Partial', 'Success'].includes(tx.status)) return false;
           let targetAmtStr = smartSlipMode === 'in' ? tx.inAmt : tx.outAmt;
           let txAmt = parseFloat(targetAmtStr.replace(/[^\d.]/g, '')) || 0;
           let txCurr = targetAmtStr.includes('THB') ? 'THB' : (targetAmtStr.includes('VND') ? 'VND' : 'MMK');
           if (aiCurr && txCurr !== aiCurr) return false;
-          let diff = Math.abs(aiAmt - txAmt);
-          if (txCurr === 'THB' && diff <= 2) return true;
-          if (txCurr === 'MMK' && diff <= 200) return true;
-          if (txCurr === 'VND' && diff <= 5000) return true;
+          const alreadyPaid = tx.status === 'Success' ? 0 : getAttachedTotal(tx, smartSlipMode, txCurr);
+          const matchTarget = Math.max(0, txAmt - alreadyPaid);
+          let diff = Math.abs(aiAmt - matchTarget);
+          const tolerance = txCurr === 'THB' ? 2 : (txCurr === 'VND' ? 5000 : 200);
+          if (diff <= tolerance) { tx.__smartMatchPartial = false; return true; }
+          // ၁၀ သိန်း Slip ကို ၂၀/၃၀ သိန်း Pending/Partial Invoice ထဲသို့
+          // တစ်စိတ်တစ်ပိုင်း ထည့်နိုင်ရန် Candidate အဖြစ်ပြမည်။
+          if ((tx.status === 'Pending' || tx.status === 'Partial') && aiAmt > 0 && aiAmt < matchTarget - tolerance) {
+              tx.__smartMatchPartial = true;
+              return true;
+          }
           return false;
+      }).sort((a, b) => {
+          const priority = { Pending: 0, Partial: 1, Success: 2 };
+          return (priority[a.status] ?? 9) - (priority[b.status] ?? 9);
       });
 
       if (matches.length === 0) {
@@ -12446,7 +12470,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           matches.forEach(tx => {
               let targetAmtStr = smartSlipMode === 'in' ? tx.inAmt : tx.outAmt;
               let btnClass = smartSlipMode === 'in' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700';
-              let btnText = smartSlipMode === 'in' ? 'အတည်ပြုမည်' : 'စလစ်တွဲမည်';
+              let btnText = (smartSlipMode === 'in' && tx.status === 'Pending' && !tx.__smartMatchPartial) ? 'အတည်ပြုမည်' : 'စလစ်တွဲမည်';
               let inMethod = tx.method || "မပါ";
 
               // 🌟 Invoice ထုတ်ခဲ့သော ရက်စွဲ/အချိန် (History Table ကနေ format တူအောင်)
@@ -12454,7 +12478,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               try { dateStr = new Date(tx.timestamp).toLocaleString('en-GB', { timeZone: ADMIN_TIMEZONE || 'Asia/Bangkok', hour12: true }); } catch(e) {}
 
               // 🌟 Status Badge
-              let statusColor = tx.status === 'Success' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300';
+              let statusColor = tx.status === 'Success' ? 'bg-green-100 text-green-800 border-green-300' : (tx.status === 'Partial' ? 'bg-orange-100 text-orange-800 border-orange-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300');
               let statusHtml = `<span class="border rounded px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${statusColor}">${tx.status}</span>`;
 
               // 🌟 ဝင်စလစ် / ထွက်စလစ် ဘယ်ဟာက ချိတ်ပြီးသားလဲ သီးခြားစီ ခွဲပြီး Badge ပြရန်
@@ -12483,7 +12507,10 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
                       <p>📅 ထုတ်ချိန်: <span class="font-bold text-gray-700">${dateStr}</span></p>
                       <p>Customer: <span class="font-bold text-gray-800">${tx.customerName || '-'}</span></p>
                       <p>အဝင် (In): <span class="font-bold text-green-700">${inMethod}</span></p>
-                      <p>ပမာဏ: <span class="font-black text-green-700 text-sm">${targetAmtStr}</span></p>
+                          <p>ပမာဏ: <span class="font-black text-green-700 text-sm">${targetAmtStr}</span></p>
+                          ${tx.__smartMatchPartial ? '<p class="text-[10px] font-bold text-orange-700">◐ Partial Candidate — ဒီ Slip ကို ပေါင်းထည့်မည်</p>' : ''}
+                          ${tx.status === 'Partial' && !tx.__smartMatchPartial ? '<p class="text-[10px] font-bold text-orange-700">◐ Partial — ကျန်ငွေနဲ့ ကိုက်ညီမှုကို စစ်ထားသည်</p>' : ''}
+                          ${tx.status === 'Success' ? '<p class="text-[10px] font-bold text-blue-700">ℹ️ Success ဖြစ်ပြီးသား — စလစ်ပုံသာ ထပ်တွဲမည်</p>' : ''}
                   </div>
                   <button onclick='confirmSmartMatch("${tx.id}", ${JSON.stringify(imgUrls).replace(/'/g, "&#39;")}, ${JSON.stringify(fullAiText).replace(/'/g, "&#39;")})' class="w-full text-white font-bold py-1.5 rounded-lg shadow-sm text-sm ${btnClass}">${btnText}</button>
               </div>`;
@@ -12527,9 +12554,14 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
 
           // 🌟 ဝင်စလစ် ဖြစ်ပြီး Invoice ရွေးလိုက်ရင် Success confirm modal ကို ချက်ချင်း ဖွင့်ပေးမည်
           // (ပိုက်ဆံအိတ် ဘယ်ဟာကနေဝင်/ထွက်မလဲ auto ရွေးပြီးသားမို့ "အတည်ပြုမည်" တစ်ခါပဲ ထပ်နှိပ်ရင် ရပါပြီ)
-          if (smartSlipMode === 'in' && tx.status === 'Pending') {
+          if (tx.status === 'Pending' && tx.__smartMatchPartial) {
+              window.showToast("Partial စလစ်တွဲပြီးပါပြီ — ကျန်ငွေကို ဆက်တင်ပါ", "◐");
+              await finalizeTxStatus(invId, 'Partial', "");
+          } else if (smartSlipMode === 'in' && tx.status === 'Pending') {
               window.showToast("စလစ်ကိုက်ညီပါသည် — Success လုပ်ရန် အတည်ပြုပါ", "✅");
               setTimeout(() => { if (typeof window.updateTxStatus === 'function') window.updateTxStatus(invId, 'Success', null); }, 350);
+          } else if (tx.status === 'Partial') {
+              window.showToast("စလစ်တွဲပြီးပါပြီ — ကျန်ငွေပြည့်လျှင် Success ပြောင်းပါ", "◐");
           } else {
               window.showToast("စလစ်တွဲခြင်း အောင်မြင်ပါပြီ။", "✅");
           }
