@@ -12552,9 +12552,28 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               sendTelegramPhoto(url, cap, TELEGRAM_SLIP_TOPIC_ID);
           });
 
-          // 🌟 ဝင်စလစ် ဖြစ်ပြီး Invoice ရွေးလိုက်ရင် Success confirm modal ကို ချက်ချင်း ဖွင့်ပေးမည်
-          // (ပိုက်ဆံအိတ် ဘယ်ဟာကနေဝင်/ထွက်မလဲ auto ရွေးပြီးသားမို့ "အတည်ပြုမည်" တစ်ခါပဲ ထပ်နှိပ်ရင် ရပါပြီ)
-          if (tx.status === 'Pending' && tx.__smartMatchPartial) {
+          // 🌟 Slip အားလုံးပေါင်းပြီး Invoice ပမာဏပြည့်/ကျော်မကျော် စစ်မည်။
+          // Partial Invoice ၏ နောက်ဆုံး Slip ဖြစ်လျှင် လက်ရှိ Success Modal ကို ဖွင့်ပေးမည်။
+          const completionTargetText = smartSlipMode === 'in' ? tx.inAmt : tx.outAmt;
+          const completionTarget = parseFloat(String(completionTargetText || '').replace(/[^\d.]/g, '')) || 0;
+          const completionCurrency = /THB|บาท|ဘတ်/i.test(String(completionTargetText)) ? 'THB' : (/VND/i.test(String(completionTargetText)) ? 'VND' : 'MMK');
+          let attachedTotal = 0;
+          getExtractedInfoBlocks(finalExtractedInfo).forEach(block => {
+              const label = String(block).match(/^\s*\[(ဝင်စလစ်|ထွက်စလစ်)\]/)?.[1];
+              if (label !== (smartSlipMode === 'in' ? 'ဝင်စလစ်' : 'ထွက်စလစ်')) return;
+              const parts = String(block).replace(/^\s*\[(ဝင်စလစ်|ထွက်စလစ်)\]\s*/, '').split('|').map(x => x.trim()).filter(Boolean);
+              const m = (parts[parts.length - 1] || '').match(/([\d,]+(?:\.\d+)?)\s*(THB|MMK|VND|บาท|ဘတ်|ကျပ်|Ks)/i);
+              if (!m) return;
+              const raw = m[2].toUpperCase();
+              const currency = ['บาท','ဘတ်'].includes(m[2]) ? 'THB' : (['ကျပ်','KS'].includes(raw) ? 'MMK' : raw);
+              if (currency === completionCurrency) attachedTotal += Number(m[1].replace(/,/g, '')) || 0;
+          });
+          const completionTolerance = completionCurrency === 'THB' ? 2 : (completionCurrency === 'VND' ? 5000 : 200);
+          const isFullyPaid = completionTarget > 0 && attachedTotal >= completionTarget - completionTolerance;
+          if ((tx.status === 'Pending' || tx.status === 'Partial') && isFullyPaid) {
+              window.showToast("စလစ်စုစုပေါင်း ပြည့်ပါပြီ — Success အတည်ပြုပါ", "✅");
+              setTimeout(() => { if (typeof window.updateTxStatus === 'function') window.updateTxStatus(invId, 'Success', null); }, 350);
+          } else if (tx.status === 'Pending' && tx.__smartMatchPartial) {
               window.showToast("Partial စလစ်တွဲပြီးပါပြီ — ကျန်ငွေကို ဆက်တင်ပါ", "◐");
               await finalizeTxStatus(invId, 'Partial', "");
           } else if (smartSlipMode === 'in' && tx.status === 'Pending') {
