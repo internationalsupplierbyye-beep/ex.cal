@@ -11577,13 +11577,14 @@ ID: <code>${invId}</code>
 
   // --- AI Slip Reader (Gemini API) ---
   // API response တွင် အလုပ်လုပ်ကြောင်းတွေ့ရသော model များကိုသာ သုံးပါမည်။
-  // gemini-3-flash, gemini-2.5-flash နှင့် အခြား preview/pro model များသည်
-  // လက်ရှိ project endpoint တွင် 404/403 ပြန်နေသောကြောင့် fallback စာရင်းမှ ဖယ်ထားပါသည်။
+  // Deprecated model ID များကို မသုံးတော့ဘဲ လက်ရှိ supported model များကိုသာ
+  // အစဉ်လိုက် စမ်းမည်။ Google ဘက်က auto-redirect ရှိသော်လည်း client ဘက်တွင်
+  // model အသစ်ကို တိုက်ရိုက်ခေါ်ခြင်းက warning/latency လျော့စေသည်။
   // အစဉ်: အသစ်ဆုံး/အရည်အသွေးကောင်းသော Flash → နောက် Flash fallback
   const SLIP_OCR_MODELS = [
-      "gemini-3.7-flash",
+      "gemini-3.8-flash",
       "gemini-3.6-flash",
-      "gemini-3.5-flash"
+      "gemini-3.5-flash-lite"
   ];
 
   // 🌟 Bug Fix: AI က တခါတလေ | နဲ့ ဖြတ်ရမယ့် format ကို လိုက်မနာဘဲ အလယ်မှာ ရပ်သွားတာမျိုး၊
@@ -11725,9 +11726,11 @@ Return ONLY JSON.`;
               // Fallback အတွက်မျှော်လင့်ထားသော error ဖြစ်သောကြောင့် Console ကို red error မဖြစ်စေရန် warn သုံးမည်။
               console.warn(`Slip OCR fallback skipped ${model}:`, msg);
               lastError = error;
-              if (/permission.?denied|access denied|project has been denied|api key|invalid api key|not found|not supported|unauthorized|forbidden/i.test(msg)) {
+              if (/permission.?denied|access denied|project has been denied|api key|invalid api key|unauthorized|forbidden/i.test(msg)) {
                   return `⚠️ OCR API Access မရပါ။ Admin > API Keys / Gemini Project Access ကို စစ်ပါ။`;
               }
+              // Model ID မတွေ့ခြင်း/မထောက်ပံ့ခြင်းက fallback model ကို ဆက်စမ်းနိုင်သော error ဖြစ်သည်။
+              // ဒီနေရာမှာ ချက်ချင်း ရပ်မထားဘဲ နောက် model သို့ ဆက်သွားမည်။
               // 🌟 Quota ကုန်ခြင်း (429/quota) ဖြစ်မှသာ ဒီနေ့အတွက် Skip List ထဲ ထည့်မည်
               // (503 High-demand လိုမျိုး ယာယီ Error တွေကိုတော့ Skip List ထဲ မထည့်ပါ — ခဏနေရင် ပြန်ကောင်းနိုင်လို့)
               if (msg.includes('429') || /quota/i.test(msg)) markExhausted(model);
