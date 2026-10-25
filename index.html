@@ -10537,9 +10537,10 @@ async function loadHistory() {
       if (!count) { list.classList.add('hidden'); list.innerHTML = ''; return; }
       list.classList.remove('hidden');
       list.innerHTML = `<div class="font-bold text-orange-800 mb-2">🔁 မအောင်မြင်သေးသောလုပ်ဆောင်ချက်များ (${count})</div>` + RETRY_OPERATION_QUEUE.slice(0, 8).map(op => {
-          const label = (op.type === 'firestore-set' || op.type === 'firestore-agent-set') ? 'Transaction Save' : (op.type === 'firestore-update' ? 'Review Complete' : (op.type === 'telegram-alert' ? 'Telegram Report/Alert' : 'Telegram Backup'));
+          const label = op.meta?.kind === 'daily-report' ? '📊 Daily Closing Report (Failed)' : (op.meta?.kind === 'scheduled-backup' ? '💾 Auto Scheduled Backup (Failed)' : ((op.type === 'firestore-set' || op.type === 'firestore-agent-set') ? 'Transaction Save' : (op.type === 'firestore-update' ? 'Review Complete' : (op.type === 'telegram-alert' ? 'Telegram Report/Alert' : 'Telegram Backup'))));
+          const failedBadge = (op.meta?.kind === 'daily-report' || op.meta?.kind === 'scheduled-backup') ? '<span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-bold">Failed</span>' : '';
           return `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white border border-orange-100 rounded-lg p-2 mb-1 text-xs">
-            <span><b>${smartEscapeHtml(label)}</b> <span class="text-slate-500">${smartEscapeHtml(op.meta?.invId || op.meta?.date || '')}</span><br><span class="text-slate-400">ကြိုးစားမှု: ${op.attempts || 0}</span></span>
+            <span><b>${smartEscapeHtml(label)}</b> ${failedBadge} <span class="text-slate-500">${smartEscapeHtml(op.meta?.invId || op.meta?.date || '')}</span><br><span class="text-slate-400">ကြိုးစားမှု: ${op.attempts || 0}</span></span>
             <button onclick="retryFailedOperations()" class="btn bg-orange-500 hover:bg-orange-600 !py-1 !px-2 !text-xs">Retry Now</button>
           </div>`;
       }).join('');
@@ -10571,7 +10572,7 @@ async function loadHistory() {
                   } else if (op.type === 'telegram-alert') {
                       ok = await sendTelegramAlert(op.payload.messageText, op.payload.topicId);
                   } else if (op.type === 'telegram-backup') {
-                      ok = await sendBackupToTelegram(!!op.payload.isAuto, { skipQueue: true });
+                      ok = await sendBackupToTelegram(!!op.payload.isAuto, { skipQueue: true, date: op.meta?.date || '' });
                   }
               } catch (e) { errorText = e.message || String(e); ok = false; }
               if (ok) {
@@ -10599,6 +10600,9 @@ async function loadHistory() {
               }
           }
           persistRetryQueue();
+          // အဟောင်းရက်၏ Failed item အောင်မြင်သွားပါက နောက်ရက်များကိုလည်း ချက်ချင်း catch-up ဆက်လုပ်မည်။
+          try { await checkAndSendDailyReport(); } catch (e) { console.warn('Daily Report catch-up after retry failed:', e); }
+          try { await checkAndSendScheduledBackup(); } catch (e) { console.warn('Backup catch-up after retry failed:', e); }
           updateConnectionStatus(true, RETRY_OPERATION_QUEUE.length ? 'တချို့အလုပ်များ မအောင်မြင်သေးပါ' : 'Retry အားလုံး အောင်မြင်');
           if (!RETRY_OPERATION_QUEUE.length && typeof window.showToast === 'function') window.showToast('Retry Queue ရှင်းပြီးပါပြီ။', '✅');
       } finally {
@@ -12801,6 +12805,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
   // 🌟 Backup ဖိုင်ကို Telegram သို့ .json Document အဖြစ် ပို့ခြင်း
   async function sendBackupToTelegram(isAuto, options = {}) {
       const skipQueue = !!options.skipQueue;
+      const requestedDate = options.date || getTzTodayAndTime().todayTzStr;
       if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
           console.warn("Telegram Backup: Bot Token/Chat ID မရှိပါ။");
           return false;
@@ -12809,7 +12814,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           const backupData = buildBackupDataObject();
           const backupCheck = validateBackupDataObject(backupData);
           if (!backupCheck.ok) { console.error('Backup validation failed:', backupCheck.errors); return false; }
-          const dateStr = new Date().toISOString().slice(0, 10);
+          const dateStr = requestedDate;
           const jsonBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
 
           const formData = new FormData();
@@ -12827,8 +12832,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       } catch (e) {
           console.error("Telegram Backup Error:", e);
           if (!skipQueue && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-              const date = new Date().toISOString().slice(0, 10);
-              queueRetryOperation({ type: 'telegram-backup', payload: { isAuto: !!isAuto }, meta: { kind: isAuto ? 'scheduled-backup' : 'manual-backup', date } });
+              queueRetryOperation({ type: 'telegram-backup', payload: { isAuto: !!isAuto }, meta: { kind: isAuto ? 'scheduled-backup' : 'manual-backup', date: requestedDate } });
           }
           return false;
       }
@@ -12843,40 +12847,66 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       return { todayTzStr, nowHM: `${hh}:${mm}`, nowTz, tz };
   }
 
+  function addScheduleDateDays(dateKey, days) {
+      const d = new Date(`${dateKey}T00:00:00Z`);
+      if (isNaN(d.getTime())) return dateKey;
+      d.setUTCDate(d.getUTCDate() + days);
+      return d.toISOString().slice(0, 10);
+  }
+
+  function getMissedScheduleDates(lastSentDate, todayDate, nowHM, scheduledTime) {
+      const endDate = nowHM >= scheduledTime ? todayDate : addScheduleDateDays(todayDate, -1);
+      let cursor = lastSentDate ? addScheduleDateDays(lastSentDate, 1) : todayDate;
+      const dates = [];
+      // Maximum 31 days catch-up ဖြင့် Page ပြန်ဝင်ချိန်မှာ အလွန်များသော Telegram ပို့မှု မဖြစ်စေပါ။
+      while (cursor <= endDate && dates.length < 31) {
+          dates.push(cursor);
+          cursor = addScheduleDateDays(cursor, 1);
+      }
+      return dates;
+  }
+
+  async function saveDailyReportSentDate(dateKey) {
+      LAST_DAILY_REPORT_SENT_DATE = dateKey;
+      if (dbRef) {
+          try { await dbRef.set({ dailyReport: { enabled: DAILY_REPORT_ENABLED, time: DAILY_REPORT_TIME, topicId: TELEGRAM_DAILY_REPORT_TOPIC_ID, lastSentDate: dateKey } }, { merge: true }); }
+          catch (e) { console.error("Daily Report Save Error:", e); }
+      }
+  }
+
+  async function saveScheduledBackupSentDate(dateKey) {
+      LAST_AUTO_BACKUP_SENT_DATE = dateKey;
+      if (dbRef) {
+          try { await dbRef.set({ scheduledBackup: { enabled: AUTO_BACKUP_ENABLED, time: AUTO_BACKUP_TIME, topicId: TELEGRAM_BACKUP_TOPIC_ID, lastSentDate: dateKey } }, { merge: true }); }
+          catch (e) { console.error("Auto Backup Save Error:", e); }
+      }
+  }
+
   // 🌟 Daily Closing Report ကို အချိန်တန်လျှင် Telegram သို့ Auto ပို့ခြင်း
   async function checkAndSendDailyReport() {
       if (!DAILY_REPORT_ENABLED) return;
       const { todayTzStr, nowHM } = getTzTodayAndTime();
       if (nowHM < DAILY_REPORT_TIME) return;
-      if (LAST_DAILY_REPORT_SENT_DATE === todayTzStr) return; // ဒီနေ့ ပို့ပြီးသား
-
-      if (hasPendingRetry('daily-report', todayTzStr)) return;
-      let reportText = '';
-      try {
-          reportText = await buildDailyReportText();
-      } catch (e) {
-          console.error('Daily Report data validation/build failed:', e);
-          return;
-      }
-      // Telegram ဆီ မရောက်သေးလျှင် နောက်ကွယ် Retry Queue ထဲသိမ်းပြီး အောင်မြင်မှသာ sent date မှတ်မည်။
-      const reportTopicId = TELEGRAM_DAILY_REPORT_TOPIC_ID || TELEGRAM_TOPIC_ID;
-      const success = await sendTelegramAlert(reportText, reportTopicId);
-      if (!success) {
-          queueRetryOperation({ type: 'telegram-alert', payload: { messageText: reportText, topicId: reportTopicId }, meta: { kind: 'daily-report', date: todayTzStr } });
-          console.error("Daily Report: Telegram ပို့မှု မအောင်မြင်ပါ၊ Retry Queue ထဲသိမ်းထားပါသည်။");
-          return;
-      }
-
-      LAST_DAILY_REPORT_SENT_DATE = todayTzStr;
-      if (dbRef) {
-          try {
-              await dbRef.set({ dailyReport: { enabled: DAILY_REPORT_ENABLED, time: DAILY_REPORT_TIME, topicId: TELEGRAM_DAILY_REPORT_TOPIC_ID, lastSentDate: todayTzStr } }, { merge: true });
-          } catch (e) { console.error("Daily Report Save Error:", e); }
+      const dueDates = getMissedScheduleDates(LAST_DAILY_REPORT_SENT_DATE, todayTzStr, nowHM, DAILY_REPORT_TIME);
+      for (const reportDate of dueDates) {
+          if (hasPendingRetry('daily-report', reportDate)) continue;
+          let reportText = '';
+          try { reportText = await buildDailyReportText(reportDate); }
+          catch (e) { console.error('Daily Report data validation/build failed:', e); continue; }
+          const reportTopicId = TELEGRAM_DAILY_REPORT_TOPIC_ID || TELEGRAM_TOPIC_ID;
+          const success = await sendTelegramAlert(reportText, reportTopicId);
+          if (!success) {
+              queueRetryOperation({ type: 'telegram-alert', payload: { messageText: reportText, topicId: reportTopicId }, meta: { kind: 'daily-report', date: reportDate, status: 'Failed' } });
+              console.error(`Daily Report (${reportDate}): Telegram ပို့မှု မအောင်မြင်ပါ၊ Retry Queue ထဲသိမ်းထားပါသည်။`);
+              return;
+          }
+          await saveDailyReportSentDate(reportDate);
       }
   }
 
-  async function buildDailyReportText() {
+  async function buildDailyReportText(reportDate = '') {
       const { todayTzStr, tz } = getTzTodayAndTime();
+      const targetDate = reportDate || todayTzStr;
       let successCount = 0, pendingCount = 0, owingCount = 0, cancelCount = 0;
       let volThb = 0, volMmk = 0, volVnd = 0;
 
@@ -12885,12 +12915,12 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       // App စဖွင့်ပြီး ၁၀ စက္ကန့်အကြာမှာ auto-run ဖြစ်တတ်လို့) `allLoadedHistory` က [] အလွတ်
       // ဖြစ်နေတတ်သဖြင့် အားလုံး 0 ပြနေခဲ့ခြင်း ဖြစ်သည်။ ဒီအတွက် History Tab ဖွင့်ထား/မထား
       // မသက်ဆိုင်ဘဲ ယနေ့အတွက် Firestore ကနေ တိုက်ရိုက် ပြန်ဆွဲယူသည့် fallback ကို ထည့်သည်
-      const fetchedReport = await fetchDailyReportHistoryData(todayTzStr, tz);
+      const fetchedReport = await fetchDailyReportHistoryData(targetDate, tz);
       let reportSourceData = fetchedReport.records;
       if ((!Array.isArray(reportSourceData) || reportSourceData.length === 0) && Array.isArray(allLoadedHistory) && allLoadedHistory.length) {
           reportSourceData = allLoadedHistory;
       }
-      const reportCheck = validateReportRecords(reportSourceData, todayTzStr, tz, { complete: fetchedReport.complete, error: fetchedReport.error });
+      const reportCheck = validateReportRecords(reportSourceData, targetDate, tz, { complete: fetchedReport.complete, error: fetchedReport.error });
       REPORT_VALIDATION_STATE = { kind: 'daily-report', ...reportCheck };
       if (!reportCheck.ok) {
           throw new Error('Daily Report data check မအောင်မြင်ပါ: ' + reportCheck.errors.slice(0, 4).join('; '));
@@ -12900,7 +12930,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
           if (!tx.timestamp) return;
           let recDateObj;
           try { recDateObj = new Date(new Date(tx.timestamp).toLocaleString('en-US', { timeZone: tz })); } catch(e) { return; }
-          if (toYYYYMMDD(recDateObj) !== todayTzStr) return;
+          if (toYYYYMMDD(recDateObj) !== targetDate) return;
 
           if (tx.status === 'Success') {
               successCount++;
@@ -12920,7 +12950,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       let profitThbBahtText = "";
       try {
           const fifoData = await fetchAllSuccessHistoryForFifo(true);
-          const profitMetrics = calculateDailyProfitMetrics(fifoData, todayTzStr, tz);
+          const profitMetrics = calculateDailyProfitMetrics(fifoData, targetDate, tz);
           const totalProfit = profitMetrics.totalProfit;
           const thbProfit = profitMetrics.periodProfitThb;
           const thbProfitInBaht = profitMetrics.periodProfitThbInBaht;
@@ -12937,6 +12967,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       // 🌟 လက်ကျန်ငွေ — FIFO Active Lot (Currency-level exposure) မဟုတ်တော့ဘဲ Treasury Tab ထဲက
       // Bank/Wallet/QR အကောင့် တစ်ခုချင်းစီရဲ့ တကယ့် လက်ကျန်ငွေ (Real Balance) ကို ဖော်ပြမည်
       let balanceLine = "N/A";
+      let balanceTotalSummary = "N/A";
       try {
           let bankLines = [];
           let totals = { MMK: 0, THB: 0, VND: 0 };
@@ -12967,18 +12998,28 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               }
           });
 
+          const mmkPerThb = Number(useRate || 0);
+          const vndPerMmk = Number(getVndRate('in') || getVndRate('out') || LAST_RATE.vndIn || LAST_RATE.vndOut || 0);
+          let totalThbEquivalent = Number(totals.THB || 0);
+          if (mmkPerThb > 0) totalThbEquivalent += Number(totals.MMK || 0) / mmkPerThb;
+          if (mmkPerThb > 0 && vndPerMmk > 0) totalThbEquivalent += Number(totals.VND || 0) / vndPerMmk / mmkPerThb;
+          const totalRateNote = mmkPerThb > 0 && vndPerMmk > 0 ? 'MMK + THB + VND အားလုံးကို Rate ဖြင့်ပြောင်းတွက်ထားသည်' : 'ရရှိနိုင်သော Rate များအတိုင်းသာ ပြောင်းတွက်ထားသည်';
+          balanceTotalSummary = `💰 <b>Total Balance ≈ ${totalThbEquivalent.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB</b>\n<em>${totalRateNote}</em>`;
+
           let totalLine = `Total MMK: ${(totals.MMK || 0).toLocaleString()}`;
           if (useRate > 0 && totals.MMK > 0) {
               totalLine += ` (≈ ${(totals.MMK / useRate).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB)`;
           }
           totalLine += `\nTotal THB: ${(totals.THB || 0).toLocaleString()}\nTotal VND: ${(totals.VND || 0).toLocaleString()}`;
+          balanceTotalSummary = totalLine;
 
           balanceLine = bankLines.length > 0
               ? `${bankLines.join('\n')}\n\n<b>― Total ―</b>\n${totalLine}`
               : "အကောင့် မရှိသေးပါ";
       } catch (e) { console.error("Daily Report Balance Calc Error:", e); }
 
-      const reportBase = `📊 <b>နေ့စဉ် အနှစ်ချုပ် (Daily Closing Report)</b>\n📅 ${todayTzStr}\n\n✅ အောင်မြင်: ${successCount}\n⏳ Pending: ${pendingCount}\n💸 Owing: ${owingCount}\n❌ Cancel: ${cancelCount}\n\n💰 <b>ယနေ့ Volume</b>\nTHB: ${volThb.toLocaleString()}\nMMK: ${volMmk.toLocaleString()}\nVND: ${volVnd.toLocaleString()}\n\n${profitLine}\n\n🏦 <b>လက်ကျန်ငွေ (Account Balances)</b>\n${balanceLine}`;
+      const totalTransactions = successCount + pendingCount + owingCount + cancelCount;
+      const reportBase = `📊 <b>နေ့စဉ် အနှစ်ချုပ် (Daily Closing Report)</b>\n📅 ${targetDate}\n\n📦 <b>စုစုပေါင်း မှတ်တမ်း: ${totalTransactions}</b>\n💼 <b>စုစုပေါင်း ငွေလက်ကျန်</b>\n${balanceTotalSummary}\n\n✅ အောင်မြင်: ${successCount}\n⏳ Pending: ${pendingCount}\n💸 Owing: ${owingCount}\n❌ Cancel: ${cancelCount}\n\n💰 <b>ယနေ့ Volume</b>\nTHB: ${volThb.toLocaleString()}\nMMK: ${volMmk.toLocaleString()}\nVND: ${volVnd.toLocaleString()}\n\n${profitLine}\n\n🏦 <b>လက်ကျန်ငွေ (Account Balances)</b>\n${balanceLine}`;
       return appendReportValidationNote(reportBase, reportCheck);
   }
 
@@ -12987,16 +13028,14 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       if (!AUTO_BACKUP_ENABLED) return;
       const { todayTzStr, nowHM } = getTzTodayAndTime();
       if (nowHM < AUTO_BACKUP_TIME) return;
-      if (LAST_AUTO_BACKUP_SENT_DATE === todayTzStr) return; // ဒီနေ့ ပို့ပြီးသား
-      if (hasPendingRetry('scheduled-backup', todayTzStr)) return;
-
-      const success = await sendBackupToTelegram(true);
-      if (success) {
-          LAST_AUTO_BACKUP_SENT_DATE = todayTzStr;
-          if (dbRef) {
-              try {
-                  await dbRef.set({ scheduledBackup: { enabled: AUTO_BACKUP_ENABLED, time: AUTO_BACKUP_TIME, topicId: TELEGRAM_BACKUP_TOPIC_ID, lastSentDate: todayTzStr } }, { merge: true });
-              } catch (e) { console.error("Auto Backup Save Error:", e); }
+      const dueDates = getMissedScheduleDates(LAST_AUTO_BACKUP_SENT_DATE, todayTzStr, nowHM, AUTO_BACKUP_TIME);
+      for (const backupDate of dueDates) {
+          if (hasPendingRetry('scheduled-backup', backupDate)) continue;
+          const success = await sendBackupToTelegram(true, { date: backupDate });
+          if (success) await saveScheduledBackupSentDate(backupDate);
+          else {
+              console.error(`Auto Backup (${backupDate}): ပို့မှု မအောင်မြင်ပါ၊ Work Queue / Retry Queue ထဲတွင် ကျန်ပါမည်။`);
+              return;
           }
       }
   }
