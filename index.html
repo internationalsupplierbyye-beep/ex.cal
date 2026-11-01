@@ -1201,10 +1201,10 @@
 <input type="file" id="slipUploader" accept="image/*" multiple style="display: none;" onchange="handleSlipUpload(event)">
 <input type="hidden" id="uploadTargetInvId">
 
-<div id="successTxModal" style="display:none;" class="fixed inset-0 bg-black/60 z-[70] items-center justify-center p-4">
-  <div class="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl border-t-4 border-green-500">
-    <h3 id="successModalTitle" class="text-lg font-black mb-4 text-green-700">✅ ငွေလွှဲအောင်မြင်ကြောင်း အတည်ပြုရန်</h3>
-    <div class="space-y-3">
+<div id="successTxModal" style="display:none;" class="fixed inset-0 bg-black/60 z-[70] items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-white rounded-xl max-w-sm w-full max-h-[90vh] p-5 shadow-2xl border-t-4 border-green-500 flex flex-col overflow-hidden">
+    <h3 id="successModalTitle" class="text-lg font-black mb-4 text-green-700 flex-none">✅ ငွေလွှဲအောင်မြင်ကြောင်း အတည်ပြုရန်</h3>
+    <div class="space-y-3 overflow-y-auto flex-1 min-h-0 pr-1">
        <p class="text-sm text-gray-600">ပြေစာ ID: <span id="successModalInvId" class="font-bold text-black"></span></p>
        <div id="successModalSummary" class="grid grid-cols-3 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1.5 text-[10px] leading-tight">
           <div class="min-w-0"><div class="font-bold text-slate-500">Customer</div><div id="successModalCustomer" class="font-black text-slate-800 truncate" title="Customer">—</div></div>
@@ -1244,13 +1244,13 @@
              <div class="grid grid-cols-2 gap-1.5"><select id="successFeeMode" onchange="window.toggleSuccessFeeSide()" class="admin-input-box !mb-0 text-xs"><option value="deduct">Amount ထဲမှဖြတ်</option><option value="add_on_top">အပိုကောက်</option><option value="business_paid" selected>ကိုယ်တိုင်ခံ</option></select><div id="successFeeSideWrap"><select id="successFeeSide" class="admin-input-box !mb-0 text-xs"><option value="in">အဝင်ဘက်</option><option value="out">အထွက်ဘက်</option></select></div></div>
              <input id="successFeeType" class="admin-input-box !mb-0 text-xs" placeholder="Fee အမျိုးအစား (QR Fee / Bank Fee)">
              <div id="successFeeTypeSuggestions" class="flex flex-wrap gap-1"></div>
-             <select id="successFeeLedger" class="admin-input-box !mb-0 text-xs"><option value="">Fee ဖြတ်မည့် Wallet / Bank</option></select>
+             <select id="successFeeLedger" class="admin-input-box !mb-0 text-xs"><option value="">ရွေးထားသော Currency ထဲမှ Fee ဖြတ်မည့် Wallet</option></select>
           </div>
        </div>
-       <div class="flex gap-2 mt-5">
-           <button onclick="document.getElementById('successTxModal').style.display='none'; window.pendingTargetStatus=null; window.isEditingWallet=false;" class="btn2 w-1/2 text-sm">ပိတ်မည်</button>
-           <button onclick="confirmSuccessStatus()" class="btn bg-green-600 hover:bg-green-700 w-1/2 text-sm">အတည်ပြုမည်</button>
-       </div>
+    </div>
+    <div class="flex gap-2 mt-4 pt-3 border-t border-slate-200 flex-none">
+        <button onclick="document.getElementById('successTxModal').style.display='none'; window.pendingTargetStatus=null; window.isEditingWallet=false;" class="btn2 w-1/2 text-sm">ပိတ်မည်</button>
+        <button onclick="confirmSuccessStatus()" class="btn bg-green-600 hover:bg-green-700 w-1/2 text-sm">အတည်ပြုမည်</button>
     </div>
   </div>
 </div>
@@ -2278,6 +2278,7 @@
   let AUTO_BACKUP_TIME = "23:00";
   let TELEGRAM_BACKUP_TOPIC_ID = "";
   let LAST_AUTO_BACKUP_SENT_DATE = "";
+  let SCHEDULED_FAILURES = [];
 
   let FIREBASE_RECEIPT_TEXTS = {
       orig: {
@@ -5270,6 +5271,7 @@ if (data.telegram) {
             TELEGRAM_DAILY_REPORT_TOPIC_ID = data.dailyReport.topicId || "";
             LAST_DAILY_REPORT_SENT_DATE = data.dailyReport.lastSentDate || "";
         }
+        SCHEDULED_FAILURES = Array.isArray(data.scheduledFailures) ? data.scheduledFailures.filter(item => item && item.type && item.meta?.kind && item.meta?.date) : [];
         const dailyReportEnabledInput = document.getElementById('adminDailyReportEnabled');
         if (dailyReportEnabledInput) dailyReportEnabledInput.checked = DAILY_REPORT_ENABLED;
         const dailyReportTimeInput = document.getElementById('adminDailyReportTime');
@@ -5299,6 +5301,15 @@ if (data.telegram) {
                 try { checkAndSendScheduledBackup(); } catch(e) { console.error("Auto Backup Check Error:", e); }
             }, 5 * 60 * 1000); // ၅ မိနစ်တစ်ကြိမ် စစ်ဆေးမည်
             setTimeout(() => {
+                try {
+                    SCHEDULED_FAILURES.forEach(item => {
+                        if (!RETRY_OPERATION_QUEUE.some(existing => existing.meta?.kind === item.meta?.kind && existing.meta?.date === item.meta?.date)) {
+                            RETRY_OPERATION_QUEUE.push(item);
+                        }
+                    });
+                    persistRetryQueue();
+                    retryFailedOperations();
+                } catch(e) { console.error("Scheduled Failure Catch-up Error:", e); }
                 try { checkAndSendDailyReport(); } catch(e) { console.error("Daily Report Check Error:", e); }
                 try { checkAndSendScheduledBackup(); } catch(e) { console.error("Auto Backup Check Error:", e); }
             }, 10000); // App စတင်ချိန် ၁၀ စက္ကန့်အကြာတွင်လည်း တစ်ကြိမ် စစ်ဆေးမည်
@@ -5844,15 +5855,24 @@ function openAdmin() {
   window.populateSuccessFeeLedgers = function(selected='') {
       const sel = document.getElementById('successFeeLedger'); if (!sel) return;
       const curr = document.getElementById('successFeeCurrency')?.value || '';
-      sel.innerHTML = '<option value="">Fee ဖြတ်မည့် Wallet / Bank</option>' + Object.keys(FIREBASE_TREASURY || {}).filter(id => !curr || !FIREBASE_TREASURY[id].currency || FIREBASE_TREASURY[id].currency === curr).map(id => `<option value="${smartEscapeHtml(id)}" ${id === selected ? 'selected' : ''}>${smartEscapeHtml(FIREBASE_TREASURY[id].name || id)} (${smartEscapeHtml(FIREBASE_TREASURY[id].currency || '')})</option>`).join('');
+      const walletIds = Object.keys(FIREBASE_TREASURY || {}).filter(id => {
+          const walletCurrency = String(FIREBASE_TREASURY[id]?.currency || 'MMK').toUpperCase();
+          return !curr || walletCurrency === String(curr).toUpperCase();
+      });
+      sel.innerHTML = '<option value="">ရွေးထားသော Currency ထဲမှ Fee ဖြတ်မည့် Wallet</option>' + walletIds.map(id => `<option value="${smartEscapeHtml(id)}" ${id === selected ? 'selected' : ''}>${smartEscapeHtml(FIREBASE_TREASURY[id].name || id)} (${smartEscapeHtml(FIREBASE_TREASURY[id].currency || 'MMK')})</option>`).join('');
   };
-  // Success/Owing မှာ ရွေးထားတဲ့ Out Wallet ကို Fee Wallet အဖြစ် auto-select လုပ်ပေးမည်။ User က Fee Wallet ကို manual ပြန်ရွေးနိုင်သည်။
+  // Out Wallet သည် Fee Currency နှင့်တူလျှင်သာ default အဖြစ်ရွေးမည်။ User ရွေးထားသော Fee Wallet ကို မဖျက်ပါ။
   window.syncSuccessFeeWalletFromOut = function() {
       const outId = document.getElementById('successOutLedger')?.value || '';
       const feeSel = document.getElementById('successFeeLedger');
-      if (!feeSel || !outId || !FIREBASE_TREASURY?.[outId]) return;
-      window.populateSuccessFeeLedgers(outId);
-      feeSel.value = outId;
+      const feeCurrency = String(document.getElementById('successFeeCurrency')?.value || '').toUpperCase();
+      if (!feeSel) return;
+      const currentFeeWallet = feeSel.value || '';
+      const currentStillValid = currentFeeWallet && Array.from(feeSel.options).some(option => option.value === currentFeeWallet);
+      const outCurrency = String(FIREBASE_TREASURY?.[outId]?.currency || 'MMK').toUpperCase();
+      const canUseOutAsDefault = !!(outId && FIREBASE_TREASURY?.[outId] && (!feeCurrency || outCurrency === feeCurrency));
+      const preferredWallet = currentStillValid ? currentFeeWallet : (canUseOutAsDefault ? outId : '');
+      window.populateSuccessFeeLedgers(preferredWallet);
   };
   window.prepareSuccessFeeFields = function(tx) {
       const enabled = document.getElementById('successFeeEnabled');
@@ -8206,7 +8226,7 @@ function openAdmin() {
       if (index === -1) return;
       const tx = allLoadedHistory[index];
       const mode = window.isEditingWallet ? 'edit' : (window.pendingTargetStatus || 'Success');
-      if (document.getElementById('successFeeEnabled')?.checked && !(Number(document.getElementById('successFeeAmount')?.value) > 0)) { alert('Fee ပမာဏ မှန်ကန်စွာ ထည့်ပါ။'); return; }
+      if (document.getElementById('successFeeEnabled')?.checked && !(parseNum(document.getElementById('successFeeAmount')?.value) > 0)) { alert('Fee ပမာဏ မှန်ကန်စွာ ထည့်ပါ။'); return; }
 
       const inSelect = document.getElementById('successInLedger');
       const outSelect = document.getElementById('successOutLedger');
@@ -10494,6 +10514,25 @@ async function loadHistory() {
       return RETRY_OPERATION_QUEUE.some(op => op.meta && op.meta.kind === kind && (!date || op.meta.date === date));
   }
 
+  function persistScheduledFailures() {
+      if (!dbRef) return;
+      dbRef.set({ scheduledFailures: SCHEDULED_FAILURES.slice(-100) }, { merge: true }).catch(e => console.warn('Scheduled failure state save failed:', e));
+  }
+
+  function rememberScheduledFailure(op) {
+      if (!['daily-report', 'scheduled-backup'].includes(op?.meta?.kind) || !op?.meta?.date) return;
+      SCHEDULED_FAILURES = SCHEDULED_FAILURES.filter(item => !(item.meta?.kind === op.meta.kind && item.meta?.date === op.meta.date));
+      SCHEDULED_FAILURES.push(op);
+      persistScheduledFailures();
+  }
+
+  function forgetScheduledFailure(op) {
+      if (!op?.meta?.kind || !op?.meta?.date) return;
+      const before = SCHEDULED_FAILURES.length;
+      SCHEDULED_FAILURES = SCHEDULED_FAILURES.filter(item => !(item.meta?.kind === op.meta.kind && item.meta?.date === op.meta.date));
+      if (SCHEDULED_FAILURES.length !== before) persistScheduledFailures();
+  }
+
   function queueRetryOperation(operation) {
       const op = {
           id: operation.id || ('retry_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)),
@@ -10510,6 +10549,7 @@ async function loadHistory() {
           (op.meta?.date ? existing.meta?.date === op.meta.date : true)
       );
       if (!duplicate) RETRY_OPERATION_QUEUE.push(op);
+      if (!duplicate) rememberScheduledFailure(op);
       persistRetryQueue();
       renderRetryQueue();
       updateConnectionStatus(navigator.onLine !== false, duplicate ? 'Retry item ရှိပြီးသား' : 'မအောင်မြင်သေးသောအလုပ်ကို သိမ်းထားသည်');
@@ -10577,6 +10617,7 @@ async function loadHistory() {
               } catch (e) { errorText = e.message || String(e); ok = false; }
               if (ok) {
                   RETRY_OPERATION_QUEUE = RETRY_OPERATION_QUEUE.filter(item => item.id !== op.id);
+                  forgetScheduledFailure(op);
                   if (op.meta?.kind === 'review-complete' && op.meta.invId) {
                       const reviewed = (Array.isArray(allLoadedHistory) ? allLoadedHistory : []).find(item => item.id === op.meta.invId);
                       if (reviewed) Object.assign(reviewed, {
@@ -12808,6 +12849,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       const requestedDate = options.date || getTzTodayAndTime().todayTzStr;
       if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
           console.warn("Telegram Backup: Bot Token/Chat ID မရှိပါ။");
+          if (!skipQueue) queueRetryOperation({ type: 'telegram-backup', payload: { isAuto: !!isAuto }, meta: { kind: isAuto ? 'scheduled-backup' : 'manual-backup', date: requestedDate, status: 'Failed' }, lastError: 'Telegram Bot Token/Chat ID မရှိပါ' });
           return false;
       }
       try {
