@@ -2318,6 +2318,8 @@
 let AUTO_CANCEL_DAYS = 3;    // Auto Cancel ဖြစ်ရန် Default (၃ ရက်)
 let calcLock = false;
   let allLoadedHistory = [];
+  let historyRealtimeUnsub = null;
+  let adminRealtimeUnsub = null;
   
   // 🌟 Database Pagination States
   let lastVisibleDoc = null;
@@ -5101,7 +5103,34 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         }, (err) => console.warn("device_roles listen error:", err.code));
     });
 
+    // Firestore admin_data realtime listener: Treasury/Bank/QR/Customer changes from another device
+    // are applied to the local state and visible panels without requiring a manual Refresh.
+    function startAdminRealtimeListener() {
+      if (!dbRef || typeof dbRef.onSnapshot !== 'function') return;
+      if (typeof adminRealtimeUnsub === 'function') adminRealtimeUnsub();
+      adminRealtimeUnsub = dbRef.onSnapshot((snap) => {
+        if (!snap.exists) return;
+        const data = snap.data() || {};
+        let changed = false;
+        if (data.treasuryAccounts && typeof data.treasuryAccounts === 'object') { FIREBASE_TREASURY = data.treasuryAccounts; changed = true; }
+        if (Array.isArray(data.treasuryOrder)) { FIREBASE_TREASURY_ORDER = data.treasuryOrder; changed = true; }
+        if (data.banks && typeof data.banks === 'object') { FIREBASE_BANKS = data.banks; FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(data.banks); changed = true; }
+        if (Array.isArray(data.qrs)) { FIREBASE_QRS = data.qrs.map(q => typeof q === 'string' ? { file:q, name:q.replace(/\.[^.]+$/, '') } : q); changed = true; }
+        if (data.customers && typeof data.customers === 'object') { FIREBASE_CUSTOMERS = data.customers; FIREBASE_CUSTOMER_ORDER = data.customerOrder || Object.keys(data.customers); changed = true; }
+        if (data.expenses && typeof data.expenses === 'object') { FIREBASE_EXPENSES = data.expenses; FIREBASE_EXPENSE_ORDER = data.expenseOrder || Object.keys(data.expenses); changed = true; }
+        if (data.treasuryAdjustments && typeof data.treasuryAdjustments === 'object') { FIREBASE_TREASURY_ADJUSTMENTS = data.treasuryAdjustments; changed = true; }
+        if (data.lastRates) { applySavedRates(data.lastRates, false); changed = true; }
+        if (!changed) return;
+        if (typeof syncAllLedgerDropdowns === 'function') syncAllLedgerDropdowns();
+        if (typeof updateSelectorBalanceStatuses === 'function') updateSelectorBalanceStatuses();
+        const activeTab = document.querySelector('.tab-pane.active')?.id;
+        if (activeTab === 'tab-treasury' && typeof loadTreasuryData === 'function') loadTreasuryData();
+        if (activeTab === 'tab-expenses' && typeof renderExpenseList === 'function') renderExpenseList();
+      }, (err) => console.warn('admin_data realtime listener error:', err.code || err));
+    }
+
     function loadAdminDataOnce() {
+      startAdminRealtimeListener();
     dbRef.get().then((docSnap) => {
       if (docSnap.exists) {
         const data = docSnap.data();
@@ -6810,6 +6839,11 @@ function openAdmin() {
               if (matches(t.transferToId) || legacyIn) rows.push({ date: t.timestamp, id: `TR-${doc.id.slice(0, 7)}`, type: 'Internal Transfer', status: 'Transfer', direction: 'In', amount, note: `မှ ${t.transferFromName || t.transferFromId || legacyText}` });
           });
       } catch (e) { console.warn('Internal transfer activity unavailable:', e?.message || e); }
+      // Manual adjustments are stored in admin_data.treasuryAdjustments; include them in the account ledger.
+      Object.values(FIREBASE_TREASURY_ADJUSTMENTS || {}).forEach(a => {
+          if (!a || String(a.accountId) !== String(accountId)) return;
+          rows.push({ date: a.timestamp, id: `ADJ-${String(a.id || '').slice(-7)}`, type: `Adjustment — ${a.reason || ''}`, status: 'Adjustment', direction: Number(a.change || 0) >= 0 ? 'In' : 'Out', amount: Math.abs(Number(a.change || 0)), note: `${a.before ?? 0} → ${a.after ?? 0}` });
+      });
       try {
           const adjustmentSnap = await firebase.firestore().collection('treasury_adjustments').where('accountId', '==', accountId).get();
           adjustmentSnap.forEach(doc => {
@@ -6876,6 +6910,16 @@ function openAdmin() {
                   estThbHtml = `<div class="text-[11px] text-blue-600 font-bold mt-0.5">≈ ${(Number(acc.balance || 0) / useRate).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB <span class="text-[9px] text-blue-400">(Est: ${formatMmk(100000/useRate)})</span></div>`;
               }
           }
+          if (curr === 'VND') {
+              const vndPerMmk = Number(getVndRate('in') || getVndRate('out') || LAST_RATE.vndIn || LAST_RATE.vndOut || 0);
+              const mmkPerThb = Number(window.GLOBAL_EST_RATE_THB || LAST_RATE.inv || 0);
+              if (vndPerMmk > 0) {
+                  const estMmk = Number(acc.balance || 0) / vndPerMmk;
+                  const mmkHtml = `≈ ${estMmk.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} MMK`;
+                  const thbHtml = mmkPerThb > 0 ? ` · ≈ ${(estMmk / mmkPerThb).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB` : '';
+                  estThbHtml = `<div class="text-[11px] text-blue-600 font-bold mt-0.5">${mmkHtml}${thbHtml} <span class="text-[9px] text-blue-400">(Est)</span></div>`;
+              }
+          }
 
           list.innerHTML += `
               <div class="list-item ${bgClass} border ${borderClass} rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default" draggable="true" data-index="${index}" data-type="treasury" ondragstart="handleDragStart(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" ondragend="handleDragEnd(event)">
@@ -6921,6 +6965,16 @@ function openAdmin() {
                       estThbHtml = `<div class="text-[11px] text-blue-600 font-bold mt-0.5">≈ ${(Number(acc.balance || 0) / useRate).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB <span class="text-[9px] text-blue-400">(Est)</span></div>`;
                   }
               }
+              if (curr === 'VND') {
+                  const vndPerMmk = Number(getVndRate('in') || getVndRate('out') || LAST_RATE.vndIn || LAST_RATE.vndOut || 0);
+                  const mmkPerThb = Number(window.GLOBAL_EST_RATE_THB || LAST_RATE.inv || 0);
+                  if (vndPerMmk > 0) {
+                      const estMmk = Number(acc.balance || 0) / vndPerMmk;
+                      const mmkHtml = `≈ ${estMmk.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} MMK`;
+                      const thbHtml = mmkPerThb > 0 ? ` · ≈ ${(estMmk / mmkPerThb).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB` : '';
+                      estThbHtml = `<div class="text-[11px] text-blue-600 font-bold mt-0.5">${mmkHtml}${thbHtml} <span class="text-[9px] text-blue-400">(Est)</span></div>`;
+                  }
+              }
 
               list.innerHTML += `
                   <div class="${bgClass} border border-dashed ${borderClass} rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow cursor-default">
@@ -6962,6 +7016,16 @@ function openAdmin() {
                   let useRate = window.GLOBAL_EST_RATE_THB || (LAST_RATE.inv || 0);
                   if (useRate > 0) {
                       estThbHtml = `<div class="text-[11px] text-blue-600 font-bold mt-0.5">≈ ${(Number(acc.balance || 0) / useRate).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB <span class="text-[9px] text-blue-400">(Est)</span></div>`;
+                  }
+              }
+              if (curr === 'VND') {
+                  const vndPerMmk = Number(getVndRate('in') || getVndRate('out') || LAST_RATE.vndIn || LAST_RATE.vndOut || 0);
+                  const mmkPerThb = Number(window.GLOBAL_EST_RATE_THB || LAST_RATE.inv || 0);
+                  if (vndPerMmk > 0) {
+                      const estMmk = Number(acc.balance || 0) / vndPerMmk;
+                      const mmkHtml = `≈ ${estMmk.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} MMK`;
+                      const thbHtml = mmkPerThb > 0 ? ` · ≈ ${(estMmk / mmkPerThb).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB` : '';
+                      estThbHtml = `<div class="text-[11px] text-blue-600 font-bold mt-0.5">${mmkHtml}${thbHtml} <span class="text-[9px] text-blue-400">(Est)</span></div>`;
                   }
               }
 
@@ -7020,9 +7084,12 @@ function openAdmin() {
                       <span class="text-base font-black text-blue-800">${(totals.THB||0).toLocaleString()}</span>
                   </div>
                   
-                  <div class="border-2 border-orange-500 bg-orange-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm h-fit">
-                      <span class="text-[10px] font-black text-orange-600 uppercase">VND</span>
-                      <span class="text-base font-black text-orange-800">${(totals.VND||0).toLocaleString()}</span>
+                  <div class="flex flex-col items-end">
+                      <div class="border-2 border-orange-500 bg-orange-50 rounded-lg px-3 py-1 flex items-baseline gap-1.5 shadow-sm h-fit">
+                          <span class="text-[10px] font-black text-orange-600 uppercase">VND</span>
+                          <span class="text-base font-black text-orange-800">${(totals.VND||0).toLocaleString()}</span>
+                      </div>
+                      ${vndPerMmk > 0 && totals.VND > 0 ? `<div class="text-[9px] text-blue-600 font-bold mt-1 text-right leading-tight"><div>≈ ${vndInMmk.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} MMK</div>${mmkPerThb > 0 ? `<div>≈ ${vndInThb.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} THB (Est)</div>` : ''}</div>` : ''}
                   </div>
                   ${totalThbHtml}
                 </div>
@@ -7163,6 +7230,11 @@ function openAdmin() {
               try {
                   await dbRef.update({ treasuryAdjustments: FIREBASE_TREASURY_ADJUSTMENTS });
               } catch (logError) { console.warn('Treasury adjustment audit save skipped:', logError?.message || logError); }
+              await logActivity('Treasury Balance Adjustment', `Account [${adjustmentRecord.accountName}] လက်ကျန်ကို ${adjustmentRecord.before.toLocaleString()} ${adjustmentRecord.currency} မှ ${adjustmentRecord.after.toLocaleString()} ${adjustmentRecord.currency} သို့ ပြင်ဆင်ခဲ့သည်။ ပြောင်းလဲမှု: ${adjustmentRecord.change > 0 ? '+' : ''}${adjustmentRecord.change.toLocaleString()}။ အကြောင်းပြချက်: ${adjustmentRecord.reason}`, '', {
+                  accountId: adjustmentRecord.accountId, accountName: adjustmentRecord.accountName, currency: adjustmentRecord.currency,
+                  before: adjustmentRecord.before, after: adjustmentRecord.after, change: adjustmentRecord.change, reason: adjustmentRecord.reason,
+                  adjustmentId: adjustmentRecord.id
+              });
           }
 
           if (isMaster && newName !== null) {
@@ -10007,7 +10079,32 @@ function firestoreWithTimeout(promise, ms = HISTORY_LOAD_TIMEOUT_MS) {
   ]);
 }
 
+function startHistoryRealtimeListener() {
+  const isAgent = String(CURRENT_ROLE || '').toLowerCase() === 'agent';
+  const historyCollection = isAgent
+    ? firebase.firestore().collection('agent_history').doc(currentAgentOwnerEmail()).collection('transactions')
+    : firebase.firestore().collection('exchange_history');
+  if (!historyCollection || typeof historyCollection.onSnapshot !== 'function') return;
+  if (typeof historyRealtimeUnsub === 'function') historyRealtimeUnsub();
+  historyRealtimeUnsub = historyCollection.orderBy('timestamp', 'desc').limit(HISTORY_PAGE_SIZE).onSnapshot((snap) => {
+    let incoming = snap.docs.map(doc => doc.data());
+    if (isAgent) {
+      const email = currentAgentOwnerEmail();
+      incoming = incoming.filter(tx => String(tx.agentEmail || tx.actorEmail || '').toLowerCase() === email);
+    }
+    allLoadedHistory = incoming;
+    lastVisibleDoc = snap.docs.length === HISTORY_PAGE_SIZE ? snap.docs[snap.docs.length - 1] : null;
+    const hasFilter = ['searchInvId','searchDate','searchStatus'].some(id => String(document.getElementById(id)?.value || '').trim());
+    if (hasFilter && typeof searchHistoryLocally === 'function') searchHistoryLocally();
+    else if (typeof renderHistoryRows === 'function') renderHistoryRows(allLoadedHistory);
+    markFifoDataDirty();
+    const activeTab = document.querySelector('.tab-pane.active')?.id;
+    if (activeTab === 'tab-dashboard' && (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') && typeof refreshFifoDashboard === 'function') refreshFifoDashboard(true);
+  }, (err) => console.warn('history realtime listener error:', err.code || err));
+}
+
 async function loadHistory() {
+  startHistoryRealtimeListener();
   const list = document.getElementById('adminHistoryList');
   const loadMoreContainer = document.getElementById('loadMoreContainer');
   const requestSeq = ++historyRequestSeq;
