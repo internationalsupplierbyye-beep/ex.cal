@@ -2217,6 +2217,7 @@
   let deviceRoleUnsub = null; // device_roles/{uid} real-time listener ကို ပယ်ဖျက်ရန် reference
   let FIREBASE_CONFIG_REF = null; // 🌟 Admin Settings ကနေ Account အသစ်ဖန်တီးရန် Secondary Firebase App အတွက်
   let SESSION_START_AT = null; // Email Login ဝင်ချိန် (Session Timeout / Force Logout တွက်ချက်ရန်)
+  let PENDING_EMAIL_LOGIN_OPEN_ADMIN = false; // checkLogin နှင့် onAuthStateChanged duplicate မဖြစ်စေရန်
   let IS_EMAIL_SESSION = false;
   let SESSION_TIMEOUT_HOURS = 24; // Admin Settings ကနေ ပြောင်းနိုင်သည်
   let CURRENT_ACCESS_CONFIG = {};
@@ -4973,11 +4974,13 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     // ဖြင့် device တစ်ခုချင်းစီကို cryptographically verified UID တစ်ခု အစားထိုးပေးမည်။
     // Role ကို 'device_roles/{uid}' collection ထဲမှာ Firestore Rules က verify လို့ရအောင် သိမ်းမည်။
     async function restoreEmailSession(user) {
-      CURRENT_DEVICE_ID = user.email; // 🌟 BUG FIX: Email login အတွက် Device ID/Name ကို history မှတ်တမ်းများတွင် "Unknown" မဖြစ်တော့စေရန်
+      CURRENT_DEVICE_ID = user.email; // Email login အတွက် Device ID
       const dispEl = document.getElementById('displayDeviceId');
       if (dispEl) dispEl.textContent = user.email + " (Email Login)";
       const switchBtn = document.getElementById('btnSwitchToDeviceMode');
       if (switchBtn) switchBtn.style.display = 'block';
+      // Anonymous Device mode listener ကို Email role နဲ့ မရောစေရန် ရပ်မည်
+      if (typeof deviceRoleUnsub === 'function') { deviceRoleUnsub(); deviceRoleUnsub = null; }
       try {
         const docRef = await firebase.firestore().collection("user_roles").doc(user.email).get();
         CURRENT_ACCESS_CONFIG = docRef.exists ? (docRef.data() || {}) : {};
@@ -4985,21 +4988,32 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       } catch (e) {
         CURRENT_ROLE = 'guest';
       }
+      const stillElevated = ['main admin', 'admin', 'staff', 'agent'].includes(String(CURRENT_ROLE || '').toLowerCase());
+      if (!stillElevated) {
+        const wasFreshLogin = PENDING_EMAIL_LOGIN_OPEN_ADMIN;
+        PENDING_EMAIL_LOGIN_OPEN_ADMIN = false;
+        if (wasFreshLogin) alert("သင့်အကောင့်အတွက် Role သတ်မှတ်ထားခြင်း မရှိပါ။ Admin ကို ဆက်သွယ်ပါ။");
+        firebase.auth().signOut();
+        return;
+      }
       setupUIForRole(CURRENT_ROLE);
-      if (['main admin', 'admin', 'staff', 'agent'].includes(String(CURRENT_ROLE || '').toLowerCase())) startDevicePresenceHeartbeat();
-      const stillElevated = ['main admin', 'admin', 'staff', 'agent'].includes(CURRENT_ROLE);
-      if (stillElevated && CURRENT_ROLE === 'agent') {
+      startDevicePresenceHeartbeat();
+      if (CURRENT_ROLE === 'agent') {
         loadPublicDataOnce();
         loadAgentCustomers();
         loadAgentTelegramConfig();
-      } else if (stillElevated) {
+      } else {
         loadAdminDataOnce();
         SESSION_START_AT = Date.now();
         IS_EMAIL_SESSION = true;
         startSessionTimeoutWatcher();
-        attachUserRoleListener(user.email);
       }
-      else firebase.auth().signOut(); // Role မရှိတော့ရင် Email session ကို ရှင်းပြီး Anonymous device mode ပြန်ဝင်စေမည်
+      attachUserRoleListener(user.email);
+      if (PENDING_EMAIL_LOGIN_OPEN_ADMIN) {
+        PENDING_EMAIL_LOGIN_OPEN_ADMIN = false;
+        closeLogin();
+        openAdmin();
+      }
     }
 
     // 🌟 user_roles/{email} ကို Real-time စောင့်ကြည့်ခြင်း (Role ဖျက်/ပြင် + Force Logout နှစ်မျိုးလုံးကို ဒီတစ်နေရာတည်းက ကိုင်တွယ်)
@@ -5454,70 +5468,28 @@ function openAdmin() {
   }
 
   async function checkLogin() {
-    let email = document.getElementById('adminEmailInput').value.trim();
-    let pass = document.getElementById('adminPassInput').value.trim();
+    const email = document.getElementById('adminEmailInput').value.trim();
+    const pass = document.getElementById('adminPassInput').value.trim();
+    if (!email || !pass) return alert("Email နှင့် Password ကို ပြည့်စုံစွာ ထည့်ပါ။");
 
-    if(!email || !pass) {
-        return alert("Email နှင့် Password ကို ပြည့်စုံစွာ ထည့်ပါ။");
-    }
-
-    // Button ကို Loading ပုံစံပြောင်းမည်
     const loginBtn = document.querySelector('#loginModal .bg-blue-600');
     const origText = loginBtn.innerText;
     loginBtn.innerText = "Checking...";
     loginBtn.disabled = true;
-
+    PENDING_EMAIL_LOGIN_OPEN_ADMIN = true;
     try {
-        // ၁။ Firebase Authentication ဖြင့် Login ဝင်ခြင်း
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, pass);
-        const user = userCredential.user;
-
-        // ၂။ Login ဝင်သွားသော Email ကိုသုံးပြီး 'user_roles' Collection ထဲမှ Role ကို သွားဖတ်ခြင်း
-        const docRef = await firebase.firestore().collection("user_roles").doc(user.email).get();
-
-        if (docRef.exists) {
-            let roleData = docRef.data();
-
-            // Device-bypass (Anonymous Auth) listener ကို ရပ်လိုက်မည် — Email login role က override လုပ်ရန်
-            if (typeof deviceRoleUnsub === 'function') { deviceRoleUnsub(); deviceRoleUnsub = null; }
-            
-            CURRENT_DEVICE_ID = user.email; // 🌟 BUG FIX: history မှတ်တမ်းများတွင် "Unknown" မဖြစ်စေရန်
-            const dispEl = document.getElementById('displayDeviceId');
-            if (dispEl) dispEl.textContent = user.email + " (Email Login)";
-            const switchBtn = document.getElementById('btnSwitchToDeviceMode');
-            if (switchBtn) switchBtn.style.display = 'block';
-            SESSION_START_AT = Date.now();
-            IS_EMAIL_SESSION = true;
-            startSessionTimeoutWatcher();
-
-            // ၃။ Database ထဲရှိ role ("staff", "admin", "main admin") ကို CURRENT_ROLE သို့ ထည့်ပေးခြင်း
-            CURRENT_ACCESS_CONFIG = roleData || {};
-            CURRENT_ROLE = roleData.role || 'guest';
-            if (String(CURRENT_ROLE || '').toLowerCase() === 'agent') {
-                CURRENT_ACCESS_CONFIG.assignedPaymentMethodIds = Array.isArray(roleData.assignedPaymentMethodIds) ? roleData.assignedPaymentMethodIds : [];
-                CURRENT_ACCESS_CONFIG.rateMarkup = roleData.rateMarkup || {};
-                setTimeout(() => { initDropdowns(); scheduleDropdownRefresh(); }, 0);
-            }
-            
-            setupUIForRole(CURRENT_ROLE);
-            if (typeof loadAdminDataOnce === 'function') loadAdminDataOnce(); // admin_data (customers/treasury/apiKeys) ကို ယခုမှ ဆွဲယူခွင့်ရမည်
-            closeLogin();
-            openAdmin();
-
-            // 🌟 SECURITY FIX: user_roles ကို Real-time စောင့်ကြည့်ခြင်း (Role ဖျက်/ပြင် + Force Logout)
-            attachUserRoleListener(user.email);
-        } else {
-            alert("သင့်အကောင့်အတွက် Role သတ်မှတ်ထားခြင်း မရှိပါ။ Admin ကို ဆက်သွယ်ပါ။");
-            await firebase.auth().signOut(); // Role မရှိပါက ချက်ချင်း ပြန်ထွက်စေမည်
-        }
-    } catch(error) {
-        console.error("Login Error:", error);
-        alert("Login မအောင်မြင်ပါ: စကားဝှက် သို့မဟုတ် Email မှားယွင်းနေပါသည်။");
+      // onAuthStateChanged -> restoreEmailSession() က role/data ကို တစ်ကြိမ်တည်း ဆက်လုပ်မည်။
+      await firebase.auth().signInWithEmailAndPassword(email, pass);
+    } catch (error) {
+      PENDING_EMAIL_LOGIN_OPEN_ADMIN = false;
+      console.error("Login Error:", error);
+      alert("Login မအောင်မြင်ပါ: စကားဝှက် သို့မဟုတ် Email မှားယွင်းနေပါသည်။");
     } finally {
-        loginBtn.innerText = origText;
-        loginBtn.disabled = false;
+      loginBtn.innerText = origText;
+      loginBtn.disabled = false;
     }
-}
+  }
+
 
   if(document.getElementById('adminPassInput')) {
       document.getElementById('adminPassInput').addEventListener('keypress', function (e) { 
@@ -13025,7 +12997,9 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
   async function checkAndSendDailyReport() {
       if (!DAILY_REPORT_ENABLED) return;
       const { todayTzStr, nowHM } = getTzTodayAndTime();
-      if (nowHM < DAILY_REPORT_TIME) return;
+      // Do not return before the scheduled time: getMissedScheduleDates() already
+      // excludes today's date when the current time is early, while still allowing
+      // yesterday (or older missed dates) to catch up immediately after login.
       const dueDates = getMissedScheduleDates(LAST_DAILY_REPORT_SENT_DATE, todayTzStr, nowHM, DAILY_REPORT_TIME);
       for (const reportDate of dueDates) {
           if (hasPendingRetry('daily-report', reportDate)) continue;
@@ -13166,7 +13140,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
   async function checkAndSendScheduledBackup() {
       if (!AUTO_BACKUP_ENABLED) return;
       const { todayTzStr, nowHM } = getTzTodayAndTime();
-      if (nowHM < AUTO_BACKUP_TIME) return;
+      // Missed backup dates must be eligible immediately after an admin login;
+      // getMissedScheduleDates() prevents the current date from running early.
       const dueDates = getMissedScheduleDates(LAST_AUTO_BACKUP_SENT_DATE, todayTzStr, nowHM, AUTO_BACKUP_TIME);
       for (const backupDate of dueDates) {
           if (hasPendingRetry('scheduled-backup', backupDate)) continue;
