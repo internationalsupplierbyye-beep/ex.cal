@@ -1024,6 +1024,8 @@
         <input id="thbIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
         <!-- 🌟 THB Quick Amount Buttons 🌟 -->
         <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 100)">+100</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 500)">+500</button>
             <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 1000)">+1,000</button>
             <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 2000)">+2,000</button>
             <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbIn', 5000)">+5,000</button>
@@ -1034,11 +1036,13 @@
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">ကျပ်ငွေ</span></label>
         <input id="mmkOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
         <!-- 🌟 MMK Quick Amount Buttons 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 100000)">+၁ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 500000)">+၅ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 1000000)">+၁၀ သိန်း</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut', 0, true)">C</button>
+        <div class="grid grid-cols-6 gap-1 mt-1.5 w-full">
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut', 5000)">+5K</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut', 50000)">+50K</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut', 100000)">+1L</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut', 500000)">+5L</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut', 1000000)">+10L</button>
+            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut', 0, true)">C</button>
         </div>
       </div>
     </div>
@@ -1067,11 +1071,13 @@
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">ကျပ်ငွေ</span></label>
         <input id="mmkIn" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
         <!-- 🌟 MMK Quick Amount Buttons 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 100000)">+၁ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 500000)">+၅ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 1000000)">+၁၀ သိန်း</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn', 0, true)">C</button>
+        <div class="grid grid-cols-6 gap-1 mt-1.5 w-full">
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn', 5000)">+5K</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn', 50000)">+50K</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn', 100000)">+1L</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn', 500000)">+5L</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn', 1000000)">+10L</button>
+            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn', 0, true)">C</button>
         </div>
       </div>
       <div>
@@ -1079,6 +1085,8 @@
         <input id="thbOut" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
         <!-- 🌟 THB Quick Amount Buttons 🌟 -->
         <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 100)">+100</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 500)">+500</button>
             <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 1000)">+1,000</button>
             <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 2000)">+2,000</button>
             <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('thbOut', 5000)">+5,000</button>
@@ -1123,11 +1131,13 @@
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">ကျပ်ငွေ</span></label>
         <input id="mmkOut2" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
         <!-- 🌟 MMK Quick Amount Buttons 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut2', 100000)">+၁ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut2', 500000)">+၅ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut2', 1000000)">+၁၀ သိန်း</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkOut2', 0, true)">C</button>
+        <div class="grid grid-cols-6 gap-1 mt-1.5 w-full">
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut2', 5000)">+5K</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut2', 50000)">+50K</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut2', 100000)">+1L</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut2', 500000)">+5L</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut2', 1000000)">+10L</button>
+            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkOut2', 0, true)">C</button>
         </div>
       </div>
     </div>
@@ -1156,11 +1166,13 @@
         <label class="label"><img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag"><span data-i18n="lbl_mmk">ကျပ်ငွေ</span></label>
         <input id="mmkIn2" class="amt-input w-full mt-1" type="text" inputmode="decimal" data-i18n-ph="ph_enter" placeholder="ရိုက်ထည့်ပါ">
         <!-- 🌟 MMK Quick Amount Buttons (VND Section) 🌟 -->
-        <div class="flex gap-1 mt-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn2', 100000)">+၁ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn2', 500000)">+၅ သိန်း</button>
-            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn2', 1000000)">+၁၀ သိန်း</button>
-            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold ml-auto shadow-sm flex-shrink-0" onclick="addQuickAmt('mmkIn2', 0, true)">C</button>
+        <div class="grid grid-cols-6 gap-1 mt-1.5 w-full">
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn2', 5000)">+5K</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn2', 50000)">+50K</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn2', 100000)">+1L</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn2', 500000)">+5L</button>
+            <button class="bg-gray-100 hover:bg-gray-200 text-gray-500 border border-gray-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn2', 1000000)">+10L</button>
+            <button class="bg-red-50 hover:bg-red-100 text-red-500 border border-red-200 px-1 py-0.5 rounded text-[9px] font-bold shadow-sm min-w-0 w-full" onclick="addQuickAmt('mmkIn2', 0, true)">C</button>
         </div>
       </div>
       <div>
@@ -4417,6 +4429,13 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       const pp = document.getElementById('ppSelect');
       const qrBtn = document.getElementById('qrSourceTabQr');
       const ppBtn = document.getElementById('qrSourceTabPp');
+      // Tab ပြောင်းတိုင်း မသက်ဆိုင်တဲ့ဘက်က အဟောင်းရွေးထားမှုကို ရှင်းမည်။
+      if (QR_SOURCE_TAB === 'qr') {
+        if (pp) pp.value = '';
+        if (qr && String(qr.value || '').startsWith('PP:')) qr.value = '';
+      } else {
+        if (qr && !String(qr.value || '').startsWith('PP:')) qr.value = '';
+      }
       if (qr) qr.classList.toggle('hidden', QR_SOURCE_TAB !== 'qr');
       if (pp) pp.classList.toggle('hidden', QR_SOURCE_TAB !== 'pp');
       if (qr) qr.querySelectorAll('option[data-qr-kind]').forEach(option => { option.hidden = QR_SOURCE_TAB === 'qr' ? option.dataset.qrKind !== 'qr' : option.dataset.qrKind !== 'pp'; });
@@ -4425,6 +4444,8 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       const active = QR_SOURCE_TAB === 'pp' ? pp : qr;
       if (active && active.value !== (qr?.value || '')) {
         if (qr) qr.value = active.value;
+        refreshQrPreview(false);
+      } else {
         refreshQrPreview(false);
       }
     }
@@ -4711,6 +4732,15 @@ window.autoCancelOldPendingLots = async function(dataArray) {
   }
   window.generatePromptPayPayload = generatePromptPayPayload;
 
+  // 🌟 PP ရွေးချယ်လျှင် Receipt Noti ကို အလိုအလျောက်ထည့်မည်။
+  // User က checkbox ကို ကိုယ်တိုင်ပြောင်းပြီးပါက payment method မပြောင်းမချင်း မ overwrite လုပ်ပါ။
+  let receiptNotiManualOverride = false;
+  function autoSetReceiptNotiForPaymentMethod(paymentKey) {
+      const checkbox = document.getElementById('includeReceiptNoti');
+      if (!checkbox || receiptNotiManualOverride) return;
+      checkbox.checked = String(paymentKey || '').trim().toUpperCase().startsWith('PP:');
+  }
+
   // 🌟 Dynamic PromptPay QR ကို System နဲ့ ချိတ်ဆက်ပေးမည့်အပိုင်း 🌟
   let qrDebounceTimer;
   async function refreshQrPreview(skipRadioUpdate = false) {
@@ -4747,7 +4777,8 @@ window.autoCancelOldPendingLots = async function(dataArray) {
             isAutoChanging = false;
         }
 
-        const file = qrSelect.value; 
+        const file = qrSelect.value;
+        autoSetReceiptNotiForPaymentMethod(file); 
 
         let customOwner = '';
         const foundQr = FIREBASE_QRS.find(q => (typeof q === 'string' ? q : q.file) === file);
@@ -4827,9 +4858,11 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     if(bankEl) bankEl.addEventListener('change', () => refreshBankInfo(false));
     
     const qrEl = document.getElementById('qrSelect');
-    if(qrEl) qrEl.addEventListener('change', () => refreshQrPreview(false));
+    if(qrEl) qrEl.addEventListener('change', () => { receiptNotiManualOverride = false; const pp = document.getElementById('ppSelect'); if (pp) pp.value = ''; refreshQrPreview(false); });
     const ppEl = document.getElementById('ppSelect');
-    if(ppEl) ppEl.addEventListener('change', () => { const qr = document.getElementById('qrSelect'); if (qr) qr.value = ppEl.value; refreshQrPreview(false); });
+    if(ppEl) ppEl.addEventListener('change', () => { receiptNotiManualOverride = false; const qr = document.getElementById('qrSelect'); if (qr) qr.value = ppEl.value; refreshQrPreview(false); });
+    const receiptNotiEl = document.getElementById('includeReceiptNoti');
+    if (receiptNotiEl) receiptNotiEl.addEventListener('change', () => { receiptNotiManualOverride = true; });
     const qrCurrencyEl = document.getElementById('qrCurrencyFilter');
     if(qrCurrencyEl) qrCurrencyEl.addEventListener('change', () => window.filterPayoutSelectorCurrency('qr', qrCurrencyEl.value));
     const bankCurrencyEl = document.getElementById('bankCurrencyFilter');
