@@ -1261,7 +1261,7 @@
        </div>
     </div>
     <div class="flex gap-2 mt-4 pt-3 border-t border-slate-200 flex-none">
-        <button onclick="document.getElementById('successTxModal').style.display='none'; window.pendingTargetStatus=null; window.isEditingWallet=false;" class="btn2 w-1/2 text-sm">ပိတ်မည်</button>
+        <button onclick="window.closeSuccessModal()" class="btn2 w-1/2 text-sm">ပိတ်မည်</button>
         <button onclick="confirmSuccessStatus()" class="btn bg-green-600 hover:bg-green-700 w-1/2 text-sm">အတည်ပြုမည်</button>
     </div>
   </div>
@@ -1374,7 +1374,6 @@
         <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-expenses', this)" id="btnTabExpenses">💸 အသုံးစရိတ်</button>
         <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-qrs', this)" id="btnTabQrs">QR များ</button>
         <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-banks', this)" id="btnTabBanks">ဘဏ်များ</button>
-        <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-agent-accounts', this)" id="btnTabAgentAccounts">🏦 Agent Bank / QR</button>
         <button class="tab-btn legacy-tab-btn" onclick="switchTab('tab-logs', this)" id="btnTabLogs">📝 Logs</button>
       </div>
     </div>
@@ -1803,7 +1802,6 @@
         </div>
         <div class="flex gap-1 mb-3">
           <select id="newAccountRole" class="border rounded-lg px-2 py-1 text-xs font-bold bg-slate-50 text-purple-800 border-purple-200">
-             <option value="agent">Agent (Own Customers)</option>
              <option value="staff">Staff (History)</option>
              <option value="admin">Admin (Full)</option>
              <option value="main admin">Main Admin</option>
@@ -1813,7 +1811,6 @@
         <div class="flex gap-1 mb-3">
           <input type="text" id="newUserRoleEmail" class="admin-input-box !mb-0 !py-1 text-sm flex-1" placeholder="Email ရှိပြီးသားအား Role ပေးရန်...">
           <select id="newUserRoleValue" class="border rounded-lg px-2 py-1 text-xs font-bold bg-slate-50 text-purple-800 border-purple-200">
-             <option value="agent">Agent (Own Customers)</option>
              <option value="staff">Staff (History)</option>
              <option value="admin">Admin (Full)</option>
              <option value="main admin">Main Admin</option>
@@ -2222,6 +2219,12 @@
   // 🌟 စကားဝှက်များကို ဒီနေရာမှာ သတ်မှတ်ပါ
   // 🌟 Role & Permission States (Firebase မှ ဆွဲယူမည်)
   let CURRENT_ROLE = 'guest'; // မူလအခြေအနေ (Guest)
+  // Agent workflow ကို ဖယ်ရှားထားသောကြောင့် legacy Agent role များကို privileged session
+  // အဖြစ် မဖွင့်ဘဲ guest အဖြစ်သာထားမည်။ Staff/Admin workflow များ မထိခိုက်ပါ။
+  function normalizeAppRole(value) {
+      const role = String(value || 'guest').trim().toLowerCase();
+      return role === 'agent' ? 'guest' : role;
+  }
   let userRoleUnsub = null; // Email/Password login user_roles real-time listener ကို ပယ်ဖျက်ရန် reference
   let FIREBASE_SYSTEM_PASSWORDS = {}; 
   let FIREBASE_DEVICE_PERMISSIONS = {};
@@ -3089,6 +3092,11 @@ window.showToast = function(message, icon = "✅") {
   }
 
   async function refreshFifoDashboard(forceRefresh = false) {
+      // Full-history FIFO query ကြာနေချိန်တွင် ယခင်တွက်ထားသော dashboard ကို ချက်ချင်းပြမည်။
+      // Query ပြီးမှသာ အသစ်သော result ဖြင့် ပြန်အစားထိုးမည်။
+      if (fifoLoadedOnce && fifoDataDirty && typeof updateDashboard === 'function') {
+          updateDashboard(allSuccessHistoryForFifo);
+      }
       await fetchAllSuccessHistoryForFifo(forceRefresh);
       if (typeof updateDashboard === 'function') updateDashboard(allSuccessHistoryForFifo);
   }
@@ -5017,7 +5025,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
       try {
         const docRef = await firebase.firestore().collection("user_roles").doc(user.email).get();
         CURRENT_ACCESS_CONFIG = docRef.exists ? (docRef.data() || {}) : {};
-        CURRENT_ROLE = (docRef.exists && docRef.data().role) ? docRef.data().role : 'guest';
+        CURRENT_ROLE = normalizeAppRole(docRef.exists && docRef.data().role ? docRef.data().role : 'guest');
       } catch (e) {
         CURRENT_ROLE = 'guest';
       }
@@ -5126,7 +5134,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           if (snap.exists && snap.data().role) {
             FIREBASE_DEVICE_PERMISSIONS[user.uid] = { ...(snap.data() || {}), name: snap.data().name || '', role: snap.data().role };
             CURRENT_ACCESS_CONFIG = FIREBASE_DEVICE_PERMISSIONS[user.uid];
-            CURRENT_ROLE = snap.data().role.toLowerCase();
+            CURRENT_ROLE = normalizeAppRole(snap.data().role);
           } else {
             delete FIREBASE_DEVICE_PERMISSIONS[user.uid];
             CURRENT_ACCESS_CONFIG = {};
@@ -5574,7 +5582,6 @@ function openAdmin() {
     const nav = shell.querySelector('.general-settings-tab-nav');
     const panels = shell.querySelector('.general-settings-panels');
     const subTabs = [
-      { id: 'agents', icon: '🧑‍💼', label: 'Agent', title: '🧑‍💼 Agent Account စီမံရန်', note: 'Agent Account အသစ်ဖွင့်ခြင်းနှင့် စာရင်းကြည့်ခြင်း' },
       { id: 'system', icon: '⚙️', label: 'System', title: '⚙️ System Settings', note: 'စနစ်နှင့် လက်ကျန်အရောင်သတ်မှတ်ချက်များ' },
       { id: 'receipt', icon: '🧾', label: 'Receipt', title: '🧾 Receipt Settings', note: 'ပြေစာဒီဇိုင်းနှင့် စာသားများ' },
       { id: 'integrations', icon: '🔗', label: 'Integrations', title: '🔗 Integrations', note: 'Telegram နှင့် Developer API များ' },
@@ -5917,11 +5924,11 @@ function openAdmin() {
       document.getElementById('successFeeMode').value = 'business_paid'; document.getElementById('successFeeSide').value = ''; document.getElementById('successFeeType').value = '';
       document.getElementById('successFeeFields').classList.add('hidden'); window.populateSuccessFeeLedgers(tx?.ledgerOut || ''); window.toggleSuccessFeeSide();
   };
-  window.applySuccessFeeFromConfirm = async function() {
+  window.applySuccessFeeFromConfirm = async function(invoiceId = pendingSuccessTxId) {
       if (!document.getElementById('successFeeEnabled')?.checked) return;
       const amount = parseNum(document.getElementById('successFeeAmount')?.value) || 0;
       if (amount <= 0) throw new Error('Fee ပမာဏ ထည့်ပါ');
-      document.getElementById('txFeeInvId').textContent = pendingSuccessTxId;
+      document.getElementById('txFeeInvId').textContent = invoiceId || '';
       document.getElementById('txFeeAmount').value = amount;
       document.getElementById('txFeeCurrency').value = document.getElementById('successFeeCurrency').value;
       document.getElementById('txFeeMode').value = document.getElementById('successFeeMode').value;
@@ -7782,7 +7789,6 @@ function openAdmin() {
                   <input type="text" id="userrolename_${btoa(email)}" value="${currentName}" placeholder="Name (Dev ID) ထည့်ပါ..." class="admin-input-box !mb-0 !py-1 !mt-1 text-xs w-full" ${disableSelect}>
                 </div>
                 <select id="userrole_${btoa(email)}" class="border rounded-lg px-2 py-1 text-xs font-bold bg-slate-50 text-purple-800 border-purple-200" ${disableSelect}>
-                   <option value="agent" ${role === 'agent' ? 'selected' : ''}>Agent (Own Customers)</option>
                    <option value="staff" ${role === 'staff' ? 'selected' : ''}>Staff (History)</option>
                    <option value="admin" ${role === 'admin' ? 'selected' : ''}>Admin (Full)</option>
                    <option value="main admin" ${role === 'main admin' ? 'selected' : ''}>Main Admin</option>
@@ -7838,7 +7844,7 @@ function openAdmin() {
   }
 
   async function createAgentAccount(event) {
-      if (CURRENT_ROLE !== 'main admin') return alert('Main Admin သာ Agent Account ဖွင့်ခွင့်ရှိပါသည်။');
+      return alert('Agent စနစ်ကို ဖယ်ရှားထားသောကြောင့် Agent Account အသစ် မဖန်တီးနိုင်ပါ။');
       const name = document.getElementById('agentAccountName')?.value.trim();
       const email = document.getElementById('agentAccountEmail')?.value.trim().toLowerCase();
       const pass = document.getElementById('agentAccountPassword')?.value || '';
@@ -7990,7 +7996,10 @@ function openAdmin() {
       };
       const finalHtml = buildLedgerHtml('');
       const transferHtml = buildLedgerHtml(transferCurrency);
-      const dropdownIds = ['newBankLedger', 'newQrLedger', 'successInLedger', 'successOutLedger', 'successOutLedger2', 'transferFromAcc', 'transferToAcc', 'manualLotFromAcc', 'manualLotToAcc', 'expLedger'];
+      // Success modal dropdowns are initialized separately by
+      // filterAndInitSuccessDropdowns().  Do not let a background data refresh
+      // replace them with the unfiltered all-currency list while the modal is open.
+      const dropdownIds = ['newBankLedger', 'newQrLedger', 'transferFromAcc', 'transferToAcc', 'manualLotFromAcc', 'manualLotToAcc', 'expLedger'];
       dropdownIds.forEach(id => {
           const el = document.getElementById(id);
           if (el) {
@@ -8035,53 +8044,133 @@ function openAdmin() {
       }
   };
  
-  // 🌟 (အသစ်) Offline / Concurrent ဖြစ်ချိန်များအတွက် လက်ကျန်ငွေကို လုံခြုံစွာ နှုတ်/ပေါင်းပေးမည့် Function 🌟
-  window.updateBalancesSafely = async function(updatesArray) {
-      let aggregated = {};
-      // တွက်ချက်မှုများ ထပ်နေပါက ပေါင်းရုံးမည်
-      updatesArray.forEach(upd => {
-          if(!upd.id) return;
-          aggregated[upd.id] = (aggregated[upd.id] || 0) + upd.change;
+  // History status/ledger fields နှင့် wallet balances ကို တစ်ကြိမ်တည်း commit လုပ်မည့်
+  // concurrency-safe helper။ expectedStatus မကိုက်လျှင် အခြား device က အရင်လုပ်ပြီးသားဟုယူဆပြီး abort လုပ်မည်။
+  window.commitHistoryAndBalancesAtomically = async function(tx, expectedStatus, historyPayload, balanceChanges = []) {
+      if (!tx || !dbRef) throw new Error('Transaction context မပြည့်စုံပါ။');
+      const historyRef = getHistoryDocRef(tx);
+      const changes = {};
+      (balanceChanges || []).forEach(item => {
+          if (!item || !item.id || !Number.isFinite(Number(item.change)) || Number(item.change) === 0) return;
+          changes[item.id] = (changes[item.id] || 0) + Number(item.change);
       });
 
-      // 🐛 BUG FIX: Bank Code / Treasury ID ထဲမှာ dot (.) ပါနေရင် (ဥပမာ "K.B.Z") dot-string key
-      // ("banks.K.B.Z.balance") ကို Firestore က nested field path လို့ အလွဲအမှား ယူဆပြီး
-      // မှားယွင်းတဲ့နေရာကို update လုပ်တတ်ပါတယ်။ FieldPath ကို segment အနေနဲ့ တိုက်ရိုက်ပေးလိုက်ရင်
-      // dot ပါလည်း တစ်ခုတည်းသော field name အဖြစ်ပဲ မှန်ကန်စွာ ကိုင်တွယ်ပါတယ် (deviceNames fix ကဲ့သို့)
-      let updatePairs = [];
-      let qrChanged = false;
-
-      for (let id in aggregated) {
-          let change = aggregated[id];
-          if (change === 0) continue;
-
-          let acc = window.getLedgerAccount(id);
-          if (acc) acc.balance = (acc.balance || 0) + change; // Local စက်ထဲတွင် ပြင်မည်
-
-          // Database တွင် Increment ဖြင့် သီးသန့် တိုး/လျှော့မည် (Offline ဖြစ်နေလည်း ပြဿနာမရှိပါ)
-          if (FIREBASE_TREASURY[id]) {
-              updatePairs.push(new firebase.firestore.FieldPath('treasuryAccounts', id, 'balance'), firebase.firestore.FieldValue.increment(change));
-          } else if (id.startsWith('BANK_')) {
-              let bId = id.replace('BANK_', '');
-              updatePairs.push(new firebase.firestore.FieldPath('banks', bId, 'balance'), firebase.firestore.FieldValue.increment(change));
-          } else if (id.startsWith('QR_')) {
-              qrChanged = true; 
+      await firebase.firestore().runTransaction(async firestoreTx => {
+          const historySnap = await firestoreTx.get(historyRef);
+          const adminSnap = await firestoreTx.get(dbRef);
+          if (!historySnap.exists) throw new Error('Invoice မတွေ့ပါ။');
+          const current = historySnap.data() || {};
+          if (String(current.status || 'Pending') !== String(expectedStatus || 'Pending')) {
+              throw new Error(`Invoice status ပြောင်းပြီးသားဖြစ်ပါသည် (${current.status || 'Pending'})။`);
           }
-      }
 
-      if (updatePairs.length > 0) {
-          await dbRef.update(...updatePairs);
-      }
-      if (qrChanged) {
-          await dbRef.update({ qrs: FIREBASE_QRS });
-      }
+          const adminData = adminSnap.exists ? (adminSnap.data() || {}) : {};
+          const treasury = adminData.treasuryAccounts && typeof adminData.treasuryAccounts === 'object' ? adminData.treasuryAccounts : {};
+          const banks = adminData.banks && typeof adminData.banks === 'object' ? adminData.banks : {};
+          let qrs = Array.isArray(adminData.qrs) ? JSON.parse(JSON.stringify(adminData.qrs)) : [];
+          const updatePairs = [];
+
+          Object.keys(changes).forEach(id => {
+              const change = changes[id];
+              if (treasury[id]) {
+                  updatePairs.push(new firebase.firestore.FieldPath('treasuryAccounts', id, 'balance'), firebase.firestore.FieldValue.increment(change));
+              } else if (id.startsWith('BANK_')) {
+                  const bankId = id.slice(5);
+                  if (!banks[bankId]) throw new Error(`Bank wallet မတွေ့ပါ (${bankId})။`);
+                  updatePairs.push(new firebase.firestore.FieldPath('banks', bankId, 'balance'), firebase.firestore.FieldValue.increment(change));
+              } else if (id.startsWith('QR_')) {
+                  const qrIndex = Number(id.slice(3));
+                  if (!Number.isInteger(qrIndex) || !qrs[qrIndex]) throw new Error(`QR wallet မတွေ့ပါ (${id})။`);
+                  const qr = qrs[qrIndex];
+                  if (typeof qr === 'object') qr.balance = (Number(qr.balance) || 0) + change;
+              }
+          });
+
+          if (Object.keys(changes).some(id => id.startsWith('QR_'))) updatePairs.push('qrs', qrs);
+          if (updatePairs.length) firestoreTx.update(dbRef, ...updatePairs);
+          firestoreTx.update(historyRef, historyPayload || {});
+      });
+  };
+
+  // 🌟 (အသစ်) Offline / Concurrent ဖြစ်ချိန်များအတွက် လက်ကျန်ငွေကို လုံခြုံစွာ နှုတ်/ပေါင်းပေးမည့် Function 🌟
+  window.updateBalancesSafely = async function(updatesArray) {
+      const aggregated = {};
+      (updatesArray || []).forEach(upd => {
+          if (!upd || !upd.id || !Number.isFinite(Number(upd.change))) return;
+          aggregated[upd.id] = (aggregated[upd.id] || 0) + Number(upd.change);
+      });
+      const ids = Object.keys(aggregated).filter(id => aggregated[id] !== 0);
+      if (!ids.length || !dbRef) return;
+
+      await firebase.firestore().runTransaction(async firestoreTx => {
+          const snap = await firestoreTx.get(dbRef);
+          const data = snap.exists ? (snap.data() || {}) : {};
+          const treasury = data.treasuryAccounts && typeof data.treasuryAccounts === 'object' ? data.treasuryAccounts : {};
+          const banks = data.banks && typeof data.banks === 'object' ? data.banks : {};
+          const qrs = Array.isArray(data.qrs) ? JSON.parse(JSON.stringify(data.qrs)) : [];
+          const updatePairs = [];
+          let qrChanged = false;
+
+          ids.forEach(id => {
+              const change = aggregated[id];
+              if (treasury[id]) {
+                  updatePairs.push(new firebase.firestore.FieldPath('treasuryAccounts', id, 'balance'), firebase.firestore.FieldValue.increment(change));
+              } else if (id.startsWith('BANK_')) {
+                  const bankId = id.slice(5);
+                  if (!banks[bankId]) throw new Error(`Bank wallet မတွေ့ပါ (${bankId})။`);
+                  updatePairs.push(new firebase.firestore.FieldPath('banks', bankId, 'balance'), firebase.firestore.FieldValue.increment(change));
+              } else if (id.startsWith('QR_')) {
+                  const qrIndex = Number(id.slice(3));
+                  if (!Number.isInteger(qrIndex) || !qrs[qrIndex]) throw new Error(`QR wallet မတွေ့ပါ (${id})။`);
+                  if (typeof qrs[qrIndex] === 'object') {
+                      qrs[qrIndex].balance = (Number(qrs[qrIndex].balance) || 0) + change;
+                      qrChanged = true;
+                  }
+              }
+          });
+
+          if (qrChanged) updatePairs.push('qrs', qrs);
+          if (updatePairs.length) firestoreTx.update(dbRef, ...updatePairs);
+      });
+
+      // Firestore transaction အောင်မြင်ပြီးမှ local cache ကို update မည်။
+      ids.forEach(id => {
+          const acc = window.getLedgerAccount(id);
+          if (acc) acc.balance = (Number(acc.balance) || 0) + aggregated[id];
+      });
       updateSelectorBalanceStatuses();
   };
+  // Success modal အတွက် payment method / amount မှ currency ကို တိတိကျကျ resolve လုပ်မည်။
+  // Bank/QR record ထဲတွင် currency ရှိလျှင် type string ထက် ၎င်းကို ဦးစားပေးမည်။
+  function resolveSuccessModalCurrencies(tx) {
+      let inCurr = '', outCurr = '';
+      const typeParts = String(tx?.type || '').split(' ➔ ');
+      if (typeParts.length === 2) {
+          inCurr = String(typeParts[0] || '').trim().toUpperCase();
+          outCurr = String(typeParts[1] || '').trim().toUpperCase();
+      }
+
+      const resolved = resolveHistoricalPaymentMethod(tx);
+      const methodCurrency = String(resolved?.record?.currency || '').trim().toUpperCase();
+      if (methodCurrency && (methodCurrency === 'MMK' || methodCurrency === 'THB' || methodCurrency === 'VND')) {
+          // Receipt တွင် ရွေးထားသော Bank/QR သည် customer ငွေဝင်မည့်ဘက်ဖြစ်သည်။
+          inCurr = methodCurrency;
+      }
+      return { inCurr, outCurr };
+  }
+
   // 🌟 Currency အလိုက် သီးသန့်စစ်ထုတ်ပေးမည့် Function 🌟
   window.filterAndInitSuccessDropdowns = function(inCurr, outCurr, preferredInId = '') {
+      inCurr = String(inCurr || '').trim().toUpperCase();
+      outCurr = String(outCurr || '').trim().toUpperCase();
       const buildOptions = (targetCurr, preferredId = '') => {
           const options = [];
-          const currencyOk = (record, id) => !targetCurr || String(record?.currency || '').toUpperCase() === String(targetCurr || '').toUpperCase() || id === preferredId;
+          const currencyOk = (record, id) => {
+              const recordCurrency = String(record?.currency || '').trim().toUpperCase();
+              // Currency မရှိသော legacy wallet ကို မသေချာဘဲ ပြမထားပါနှင့်။
+              // မူရင်း linked wallet ဖြစ်လျှင်သာ preferredId ဖြင့် ထည့်ခွင့်ပြုမည်။
+              return id === preferredId || (!!targetCurr && recordCurrency === targetCurr);
+          };
           const add = (id, text, currency, isPreferred = false) => {
               const m = String(currency || 'MMK').toUpperCase();
               const cls = m === 'THB' ? 'opt-thb' : m === 'VND' ? 'opt-vnd' : 'opt-mmk';
@@ -8264,13 +8353,7 @@ function openAdmin() {
       document.getElementById('successModalInvId').textContent = invId;
       document.getElementById('successTxModal').style.display = 'flex';
 
-      let inCurr = '', outCurr = '';
-      try {
-          let parts = tx.type.split(' ➔ ');
-          if (parts.length === 2) {
-              inCurr = parts[0].trim(); outCurr = parts[1].trim();
-          }
-      } catch(e) {}
+      const { inCurr, outCurr } = resolveSuccessModalCurrencies(tx);
 
       filterAndInitSuccessDropdowns(inCurr, outCurr);
       
@@ -8295,9 +8378,37 @@ function openAdmin() {
       }
   };
   
+  // Success modal ကို ပိတ်သည့်အခါ ယခင် invoice / split / fee state မကျန်စေရန် reset လုပ်မည်။
+  window.closeSuccessModal = function(preserveFee = false) {
+      const modal = document.getElementById('successTxModal');
+      if (modal) modal.style.display = 'none';
+      if (pendingSuccessSelectEl && pendingSuccessTxId) {
+          const current = allLoadedHistory.find(x => x.id === pendingSuccessTxId);
+          if (current && pendingSuccessSelectEl.isConnected) pendingSuccessSelectEl.value = current.status || 'Pending';
+      }
+      const split = document.getElementById('successSplitOutCheck');
+      if (split) split.checked = false;
+      if (typeof window.toggleOutSplit === 'function') window.toggleOutSplit(false);
+      if (!preserveFee) {
+          ['successOutAmt1', 'successOutAmt2', 'successFeeAmount', 'successFeeType'].forEach(id => {
+              const el = document.getElementById(id); if (el) el.value = '';
+          });
+          const fee = document.getElementById('successFeeEnabled');
+          if (fee) fee.checked = false;
+          const feeFields = document.getElementById('successFeeFields');
+          if (feeFields) feeFields.classList.add('hidden');
+      }
+      pendingSuccessTxId = null;
+      pendingSuccessSelectEl = null;
+      window.pendingTargetStatus = null;
+      window.isEditingWallet = false;
+      window.successModalMode = 'full';
+  };
+
   // 🌟 Modal ထဲမှ အတည်ပြု (Confirm) နှိပ်သောအခါ အလုပ်လုပ်မည့် Function (ပြန်လည်ဖြည့်စွက်ခြင်း) 🌟
   window.confirmSuccessStatus = async function() {
       if (!pendingSuccessTxId) return;
+      const confirmedTxId = pendingSuccessTxId;
 
       const index = allLoadedHistory.findIndex(x => x.id === pendingSuccessTxId);
       if (index === -1) return;
@@ -8358,35 +8469,29 @@ function openAdmin() {
                   balanceChanges.push({ id: newLedgerOut, change: -outTotalNumeric });
               }
 
-              const updatePayload = { ledgerOut: newLedgerOut };
+              const updatePayload = { ledgerOut: newLedgerOut, status: 'Owing' };
               updatePayload.ledgerOutSplit = isSplit ? newLedgerOutSplit : firebase.firestore.FieldValue.delete();
 
-              await getHistoryDocRef(tx).update(updatePayload);
+              await window.commitHistoryAndBalancesAtomically(tx, tx.status || 'Pending', updatePayload, balanceChanges);
               tx.ledgerOut = newLedgerOut;
               tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
+              tx.status = 'Owing';
 
-              if (balanceChanges.length > 0 && !isAgentRole()) {
-                  await window.updateBalancesSafely(balanceChanges);
-                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
-              }
-
-              document.getElementById('successTxModal').style.display = 'none';
-              await finalizeTxStatus(pendingSuccessTxId, 'Owing', "");
+              window.closeSuccessModal(true);
+              renderHistoryRows(allLoadedHistory);
           }
           // ==== Mode 2: "Owing" → "Success" (ဝင်ငွေအကောင့်ကိုသာ ရွေးပြီး ဖြည့်ပေးမည်၊ Out ကို ထပ်မနှုတ်တော့) ====
           else if (mode === 'Success_FromOwing') {
               if (newLedgerIn) balanceChanges.push({ id: newLedgerIn, change: +inTotalNumeric });
 
-              await getHistoryDocRef(tx).update({ ledgerIn: newLedgerIn });
+              const successAt = new Date().toISOString();
+              await window.commitHistoryAndBalancesAtomically(tx, 'Owing', { ledgerIn: newLedgerIn, status: 'Success', successAt }, balanceChanges);
               tx.ledgerIn = newLedgerIn;
+              tx.status = 'Success';
+              tx.successAt = successAt;
 
-              if (balanceChanges.length > 0 && !isAgentRole()) {
-                  await window.updateBalancesSafely(balanceChanges);
-                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
-              }
-
-              document.getElementById('successTxModal').style.display = 'none';
-              await finalizeTxStatus(pendingSuccessTxId, 'Success', "");
+              window.closeSuccessModal(true);
+              renderHistoryRows(allLoadedHistory);
           }
           // ==== Mode 3 & 4: ရှိပြီးသား လုပ်ဆောင်ချက်များ (Pending→Success ပုံမှန်၊ Wallet ပြန်ရွေးခြင်း) ====
           else if (mode === 'edit') {
@@ -8411,17 +8516,12 @@ function openAdmin() {
               const updatePayload = { ledgerIn: newLedgerIn, ledgerOut: newLedgerOut };
               updatePayload.ledgerOutSplit = isSplit ? newLedgerOutSplit : firebase.firestore.FieldValue.delete();
 
-              await getHistoryDocRef(tx).update(updatePayload);
+              await window.commitHistoryAndBalancesAtomically(tx, tx.status || 'Success', updatePayload, balanceChanges);
               tx.ledgerIn = newLedgerIn;
               tx.ledgerOut = newLedgerOut;
               tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
 
-              if (balanceChanges.length > 0 && !isAgentRole()) {
-                  await window.updateBalancesSafely(balanceChanges);
-                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
-              }
-
-              document.getElementById('successTxModal').style.display = 'none';
+              window.closeSuccessModal(true);
               renderHistoryRows(allLoadedHistory);
           }
           else {
@@ -8434,23 +8534,23 @@ function openAdmin() {
                   balanceChanges.push({ id: newLedgerOut, change: -outTotalNumeric });
               }
 
-              const updatePayload = { ledgerIn: newLedgerIn, ledgerOut: newLedgerOut };
+              const successAt = new Date().toISOString();
+              const updatePayload = { ledgerIn: newLedgerIn, ledgerOut: newLedgerOut, status: 'Success', successAt };
               updatePayload.ledgerOutSplit = isSplit ? newLedgerOutSplit : firebase.firestore.FieldValue.delete();
 
-              await getHistoryDocRef(tx).update(updatePayload);
+              await window.commitHistoryAndBalancesAtomically(tx, tx.status || 'Pending', updatePayload, balanceChanges);
               tx.ledgerIn = newLedgerIn;
               tx.ledgerOut = newLedgerOut;
               tx.ledgerOutSplit = isSplit ? newLedgerOutSplit : null;
 
-              if (balanceChanges.length > 0 && !isAgentRole()) {
-                  await window.updateBalancesSafely(balanceChanges);
-                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
-              }
-
-              document.getElementById('successTxModal').style.display = 'none';
-              await finalizeTxStatus(pendingSuccessTxId, 'Success', "");
+              tx.status = 'Success';
+              tx.successAt = successAt;
+              window.closeSuccessModal(true);
           }
-          if (!isAgentRole()) await window.applySuccessFeeFromConfirm();
+          markFifoDataDirty();
+          if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') refreshFifoDashboard(true);
+          if (!isAgentRole()) await window.applySuccessFeeFromConfirm(confirmedTxId);
+          window.closeSuccessModal();
 
       } catch(e) {
           console.error("Confirm Success Error:", e);
@@ -8486,14 +8586,7 @@ function openAdmin() {
           return;
       }
 
-      let inCurr = '', outCurr = '';
-      try {
-          let parts = tx.type.split(' ➔ ');
-          if (parts.length === 2) {
-              inCurr = parts[0].trim();
-              outCurr = parts[1].trim();
-          }
-      } catch(e) {}
+      const { inCurr, outCurr } = resolveSuccessModalCurrencies(tx);
 
       // Status CHANGE modal ကို ဖွင့်ချိန်မှာ Customer နဲ့ အဝင်/အထွက် Amount ကို တစ်ခါတည်း ပြမည်။
       window.populateSuccessModalSummary(tx);
@@ -8578,6 +8671,7 @@ function openAdmin() {
       const index = allLoadedHistory.findIndex(x => x.id === invId);
       const tx = allLoadedHistory[index];
       const oldStatus = tx.status;
+      let balanceReversalChanges = [];
 
       // 🌟 "ကြိုလွဲပြီး (Owing)" အခြေအနေမှ Success မဖြစ်ဘဲ ထွက်သွားရင် (ဥပမာ Cancel) အရင်နှုတ်ထားတဲ့ ငွေထုတ်ပေးမှုကို Treasury ထဲ ပြန်ဖြည့်ပေးမည်
       if (oldStatus === 'Owing' && newStatus !== 'Success') {
@@ -8588,10 +8682,7 @@ function openAdmin() {
               } else if (tx.ledgerOut) {
                   revertChanges.push({ id: tx.ledgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
               }
-              if (revertChanges.length > 0 && !isAgentRole()) {
-                  await window.updateBalancesSafely(revertChanges);
-                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
-              }
+              if (revertChanges.length > 0 && !isAgentRole()) balanceReversalChanges.push(...revertChanges);
           } catch(e) { console.error("Owing Revert Error:", e); }
       }
 
@@ -8608,10 +8699,7 @@ function openAdmin() {
                   revertChanges.push({ id: tx.ledgerOut, change: +(parseFloat(String(tx.outAmt).replace(/[^\d.]/g, '')) || 0) });
               }
 
-              if (revertChanges.length > 0 && !isAgentRole()) {
-                  await window.updateBalancesSafely(revertChanges);
-                  if (typeof loadTreasuryData === 'function') loadTreasuryData();
-              }
+              if (revertChanges.length > 0 && !isAgentRole()) balanceReversalChanges.push(...revertChanges);
           } catch(e) { console.error("Success Revert Error:", e); }
       }
 
@@ -8632,14 +8720,19 @@ function openAdmin() {
      }
      
      markFifoDataDirty();
-     if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') { refreshFifoDashboard(true); }
 
      try {
           // ✅ 2. ထို့နောက်မှ Firebase ကို နောက်ကွယ်မှ လှမ်းပို့ပါမည်
           const statusUpdate = { status: newStatus };
           if (newStatus === 'Success' && oldStatus !== 'Success') statusUpdate.successAt = successTimestamp;
           if (newStatus !== 'Success' && oldStatus === 'Success') statusUpdate.successAt = firebase.firestore.FieldValue.delete();
-          await getHistoryDocRef(tx).update(statusUpdate);
+          await window.commitHistoryAndBalancesAtomically(tx, oldStatus || 'Pending', statusUpdate, balanceReversalChanges);
+          balanceReversalChanges.forEach(change => {
+              const account = window.getLedgerAccount(change.id);
+              if (account) account.balance = (Number(account.balance) || 0) + Number(change.change || 0);
+          });
+          if (balanceReversalChanges.length && typeof loadTreasuryData === 'function') loadTreasuryData();
+          if (CURRENT_ROLE === 'main admin' || CURRENT_ROLE === 'admin') refreshFifoDashboard(true);
           
           // 🌟 Log မှတ်မည် 
           logActivity("Status Change", `ID: ${invId} ၏ Status ကို '${newStatus}' သို့ ပြောင်းလဲခဲ့သည်။`);
@@ -9074,7 +9167,7 @@ function openAdmin() {
               }
           }
 
-          await firebase.firestore().collection("exchange_history").doc(invId).update(updatePayload);
+          await getHistoryDocRef(tx).update(updatePayload);
 
           logActivity("Edit Amounts", `ID: ${invId} ၏ ပမာဏများကို (${tx.inAmt} ➔ ${tx.outAmt}, ${tx.rate || '-'}) မှ (${newIn} ➔ ${newOut}, ${newRate || '-'}) သို့ ပြင်ဆင်ခဲ့သည်။${isSplitActive ? ` (Split: ${newSplitAmt1} / ${newSplitAmt2})` : ''}`);
 
@@ -10097,7 +10190,16 @@ function startHistoryRealtimeListener() {
       const email = currentAgentOwnerEmail();
       incoming = incoming.filter(tx => String(tx.agentEmail || tx.actorEmail || '').toLowerCase() === email);
     }
-    allLoadedHistory = incoming;
+    // Realtime query သည် ပထမဆုံး page 50 ခုသာ ပြန်ပေးသောကြောင့် Load More ဖြင့်
+    // ရှိပြီးသား older records များကို wholesale replace မလုပ်ဘဲ ID အလိုက် merge လုပ်မည်။
+    // ပထမဆုံး load မပြီးသေးသောအချိန်တွင်သာ incoming page ဖြင့် initialize လုပ်မည်။
+    if (Array.isArray(allLoadedHistory) && allLoadedHistory.length > HISTORY_PAGE_SIZE) {
+      const merged = new Map(allLoadedHistory.map(item => [item.id, item]));
+      incoming.forEach(item => merged.set(item.id, { ...(merged.get(item.id) || {}), ...item }));
+      allLoadedHistory = Array.from(merged.values()).sort((a, b) => smartTimestampMs(b.timestamp) - smartTimestampMs(a.timestamp));
+    } else {
+      allLoadedHistory = incoming;
+    }
     lastVisibleDoc = snap.docs.length === HISTORY_PAGE_SIZE ? snap.docs[snap.docs.length - 1] : null;
     const hasFilter = ['searchInvId','searchDate','searchStatus'].some(id => String(document.getElementById(id)?.value || '').trim());
     if (hasFilter && typeof searchHistoryLocally === 'function') searchHistoryLocally();
@@ -12442,9 +12544,9 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       if(!IMGBB_API_KEY) { alert("ImgBB API Key ထည့်သွင်းထားခြင်း မရှိပါ။"); return; } 
       
       const index = allLoadedHistory.findIndex(x => x.id === invId); 
+      const tx = index !== -1 ? allLoadedHistory[index] : null;
       let existingSlips = []; let previousExtractedInfo = ""; 
-      if(index !== -1) { 
-          let tx = allLoadedHistory[index]; 
+      if(tx) { 
           existingSlips = tx.slipUrls || []; 
           if (tx.slipUrl && existingSlips.length === 0) existingSlips = [tx.slipUrl]; 
           previousExtractedInfo = tx.extractedInfo || ""; 
@@ -12510,7 +12612,8 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
 
               let finalExtractedInfo = previousExtractedInfo ? previousExtractedInfo + " | " + newExtractedText : newExtractedText;
 
-              await firebase.firestore().collection("exchange_history").doc(invId).update({ 
+              if (!tx) { alert('မှတ်တမ်းကို မတွေ့ပါ။ History ကို refresh လုပ်ပြီး ထပ်ကြိုးစားပါ။'); return; }
+              await getHistoryDocRef(tx).update({ 
                   slipUrls: combinedUrls, slipUrl: combinedUrls[0] || null, extractedInfo: finalExtractedInfo 
               });
               if(index !== -1) { 
@@ -12737,7 +12840,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       let finalExtractedInfo = rebuildExtractedInfo(existingBlocks.concat(newBlocks));
 
       try {
-          await firebase.firestore().collection("exchange_history").doc(invId).update({
+          await getHistoryDocRef(tx).update({
               slipUrls: combinedUrls, slipUrl: combinedUrls[0] || null, extractedInfo: finalExtractedInfo
           });
           tx.slipUrls = combinedUrls; tx.slipUrl = combinedUrls[0] || null; tx.extractedInfo = finalExtractedInfo;
@@ -12853,7 +12956,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       
       try {
           if (slipArr.length === 0) {
-              await firebase.firestore().collection("exchange_history").doc(invId).update({
+              await getHistoryDocRef(tx).update({
                   slipUrls: firebase.firestore.FieldValue.delete(),
                   slipUrl: firebase.firestore.FieldValue.delete(),
                   extractedInfo: firebase.firestore.FieldValue.delete()
@@ -12865,7 +12968,7 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
               let newExtractedInfo = rebuildExtractedInfo(infoBlocks);
               let updatePayload = { slipUrls: slipArr, slipUrl: slipArr[0] };
               updatePayload.extractedInfo = newExtractedInfo ? newExtractedInfo : firebase.firestore.FieldValue.delete();
-              await firebase.firestore().collection("exchange_history").doc(invId).update(updatePayload);
+              await getHistoryDocRef(tx).update(updatePayload);
               tx.slipUrls = slipArr;
               tx.slipUrl = slipArr[0];
               tx.extractedInfo = newExtractedInfo || null;
