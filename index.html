@@ -265,7 +265,7 @@
     .general-settings-role-pill { display:inline-flex; align-items:center; border:1px solid #b9b5ff; border-radius:999px; padding:4px 9px; background:#f3f2ff; color:#5144cf; font-size:.68rem; font-weight:900; }
     .general-settings-subtitle { margin:0 0 14px; color:#64748b; font-size:.75rem; line-height:1.25rem; }
     .general-settings-tab-shell { border:1px solid #e2e8f0; border-radius:14px; background:#fbfdff; padding:6px; }
-    .general-settings-tab-nav { display:none; gap:5px; overflow-x:auto; border-bottom:1px solid #e2e8f0; padding:0 1px 6px; scrollbar-width:thin; }
+    .general-settings-tab-nav { display:flex; gap:5px; overflow-x:auto; border-bottom:1px solid #e2e8f0; padding:0 1px 6px; scrollbar-width:thin; }
     .general-settings-subtab-btn { min-height:38px; padding:8px 12px; border:0; border-radius:10px; background:transparent; color:#64748b; cursor:pointer; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; font-size:.78rem; font-weight:900; transition:all .18s ease; }
     .general-settings-subtab-btn:hover { color:#3730a3; background:#eef2ff; }
     .general-settings-subtab-btn.active { color:#fff; background:#4f46e5; box-shadow:0 5px 12px rgba(79,70,229,.20); }
@@ -5584,12 +5584,10 @@ function openAdmin() {
       </div>
       <p class="general-settings-subtitle">System၊ Agent၊ Receipt နှင့် Access Settings</p>
       <div class="general-settings-tab-shell">
-        <nav class="general-settings-tab-nav" aria-label="General Settings sections"></nav>
         <div class="general-settings-panels"></div>
       </div>`;
     root.appendChild(shell);
 
-    const nav = shell.querySelector('.general-settings-tab-nav');
     const panels = shell.querySelector('.general-settings-panels');
     const subTabs = [
       { id: 'system', icon: '⚙️', label: 'System', title: '⚙️ System Settings', note: 'စနစ်နှင့် လက်ကျန်အရောင်သတ်မှတ်ချက်များ' },
@@ -5599,20 +5597,7 @@ function openAdmin() {
       { id: 'access', icon: '👥', label: 'Access', title: '👥 Access & Security', note: 'Device၊ Account နှင့် Session ခွင့်ပြုချက်များ' }
     ];
     const panelById = {};
-    const buttonById = {};
-
     subTabs.forEach((tab) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'general-settings-subtab-btn';
-      button.dataset.generalSubtab = tab.id;
-      button.setAttribute('aria-controls', `general-settings-panel-${tab.id}`);
-      button.setAttribute('aria-selected', 'false');
-      button.innerHTML = `<span aria-hidden="true">${tab.icon}</span><span>${tab.label}</span>`;
-      button.addEventListener('click', () => switchGeneralSettingsSubTab(tab.id));
-      nav.appendChild(button);
-      buttonById[tab.id] = button;
-
       const panel = document.createElement('section');
       panel.id = `general-settings-panel-${tab.id}`;
       panel.className = 'general-settings-subtab-panel';
@@ -5648,19 +5633,6 @@ function openAdmin() {
     };
     const appendCard = (panel, card) => appendNodes(panel, card ? [card] : [], true);
 
-    panelById.agents.innerHTML += `
-      <div class="bg-indigo-50 border border-indigo-200 p-3 rounded-xl mb-3">
-        <h3 class="font-bold text-indigo-800 mb-2 text-sm">🆕 Agent Account အသစ်ဖွင့်ရန်</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
-          <input id="agentAccountName" class="admin-input-box !mb-0 text-sm" placeholder="Agent အမည်">
-          <input id="agentAccountEmail" type="email" class="admin-input-box !mb-0 text-sm" placeholder="Email">
-          <input id="agentAccountPassword" type="password" class="admin-input-box !mb-0 text-sm" placeholder="Password (အနည်းဆုံး ၆ လုံး)">
-        </div>
-        <button type="button" onclick="createAgentAccount(event)" class="btn bg-indigo-600 hover:bg-indigo-700 w-full !py-1.5 text-sm">Agent Account ဖန်တီးမည်</button>
-      </div>
-      <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-sm text-gray-700">📋 Agent Account များ</h3><button type="button" onclick="loadAgentAccounts()" class="btn2 !py-1 !px-3 !text-xs">🔄 Refresh</button></div>
-      <div id="agentAccountList" class="space-y-2 border rounded-xl bg-gray-50 p-2"><p class="text-center text-sm text-gray-500 p-3">Agent စာရင်းကို ဖတ်နေပါသည်...</p></div>`;
-
     appendCard(panelById.system, generalFeeTypesBlock);
     appendCard(panelById.system, timeSettingsBlock);
     appendCard(panelById.system, timezoneCard);
@@ -5688,15 +5660,9 @@ function openAdmin() {
     if (root.dataset.generalSubtabsReady !== '1') initGeneralSettingsSubTabs();
     const shell = document.getElementById('generalSettingsShell');
     if (!shell) return;
-    const buttons = shell.querySelectorAll('[data-general-subtab]');
     const panels = shell.querySelectorAll('[data-general-subtab-panel]');
-    const validSubTabIds = Array.from(buttons).map((button) => button.dataset.generalSubtab);
+    const validSubTabIds = Array.from(panels).map((panel) => panel.dataset.generalSubtabPanel);
     if (!validSubTabIds.includes(subTabId)) subTabId = 'system';
-    buttons.forEach((button) => {
-      const active = button.dataset.generalSubtab === subTabId;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
     panels.forEach((panel) => {
       const active = panel.dataset.generalSubtabPanel === subTabId;
       panel.classList.toggle('active', active);
@@ -5725,7 +5691,6 @@ function openAdmin() {
       ['tab-agent-accounts', '🧑‍💼 Agent Bank / QR', 'btnTabAgentAccounts']
     ],
     settings: [
-      ['settings-agents', '🧑‍💼 Agent', 'btnTabGeneral'],
       ['settings-system', '⚙️ System', 'btnTabGeneral'],
       ['settings-receipt', '🧾 Receipt', 'btnTabGeneral'],
       ['settings-integrations', '🔗 Integrations', 'btnTabGeneral'],
