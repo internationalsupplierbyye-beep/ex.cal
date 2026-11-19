@@ -2010,7 +2010,7 @@
             <div id="treasuryTotals" class="text-[10px] font-black text-right leading-tight text-gray-600"></div>
             <button onclick="exportInternalTransfersCSV()" class="btn bg-green-600 hover:bg-green-700 !py-1 !px-2 !text-xs whitespace-nowrap">CSV</button>
             <button onclick="exportInternalTransfersPDF()" class="btn bg-red-600 hover:bg-red-700 !py-1 !px-2 !text-xs whitespace-nowrap">PDF</button>
-            <button onclick="loadTreasuryData()" class="btn2 !py-1 !px-3 !text-sm">🔄 Refresh</button>
+            <button onclick="window.refreshTreasuryData()" class="btn2 !py-1 !px-3 !text-sm">🔄 Refresh</button>
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -4477,6 +4477,9 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     }
     window.filterPayoutSelectorCurrency = filterPayoutSelectorCurrency;
     const bankSelect = document.getElementById('bankSelect');
+    const savedBankValue = bankSelect?.value || '';
+    const savedQrValue = document.getElementById('qrSelect')?.value || '';
+    const savedPpValue = document.getElementById('ppSelect')?.value || '';
     if(bankSelect) {
       bankSelect.innerHTML = `<option value="" data-i18n="ph_bank_sel">${dict.ph_bank_sel || '— ဘဏ်ရွေးပါ —'}</option>`;
       finalBankOrder.forEach(key => {
@@ -4495,6 +4498,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           bankSelect.appendChild(o);
         }
       });
+      if (savedBankValue && Array.from(bankSelect.options).some(option => option.value === savedBankValue)) bankSelect.value = savedBankValue;
     }
 
     const qrSelect = document.getElementById('qrSelect');
@@ -4526,7 +4530,9 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         if (ppSelect && String(val).startsWith('PP:')) ppSelect.appendChild(o.cloneNode(true));
       });
     }
-    updatePayoutSelectorAvailability(allowedPayoutIds);
+      if (qrSelect && savedQrValue && Array.from(qrSelect.options).some(option => option.value === savedQrValue)) qrSelect.value = savedQrValue;
+      if (ppSelect && savedPpValue && Array.from(ppSelect.options).some(option => option.value === savedPpValue)) ppSelect.value = savedPpValue;
+      updatePayoutSelectorAvailability(allowedPayoutIds);
     
     populateCustomerDropdown();
     let selectedAllowedForForm = [];
@@ -5167,7 +5173,8 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         if (!snap.exists) return;
         const data = snap.data() || {};
         let changed = false;
-        if (data.treasuryAccounts && typeof data.treasuryAccounts === 'object') { FIREBASE_TREASURY = data.treasuryAccounts; changed = true; }
+        let treasuryChanged = false;
+        if (data.treasuryAccounts && typeof data.treasuryAccounts === 'object') { FIREBASE_TREASURY = data.treasuryAccounts; changed = true; treasuryChanged = true; }
         if (Array.isArray(data.treasuryOrder)) { FIREBASE_TREASURY_ORDER = data.treasuryOrder; changed = true; }
         if (data.banks && typeof data.banks === 'object') { FIREBASE_BANKS = data.banks; FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(data.banks); changed = true; }
         if (Array.isArray(data.qrs)) { FIREBASE_QRS = data.qrs.map(q => typeof q === 'string' ? { file:q, name:q.replace(/\.[^.]+$/, '') } : q); changed = true; }
@@ -5179,7 +5186,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         if (typeof syncAllLedgerDropdowns === 'function') syncAllLedgerDropdowns();
         if (typeof updateSelectorBalanceStatuses === 'function') updateSelectorBalanceStatuses();
         const activeTab = document.querySelector('.tab-pane.active')?.id;
-        if (activeTab === 'tab-treasury' && typeof loadTreasuryData === 'function') loadTreasuryData();
+        if (treasuryChanged && typeof loadTreasuryData === 'function') loadTreasuryData();
         if (activeTab === 'tab-expenses' && typeof renderExpenseList === 'function') renderExpenseList();
       }, (err) => console.warn('admin_data realtime listener error:', err.code || err));
     }
@@ -5402,6 +5409,9 @@ if (data.telegram) {
         loadReceiptTextsToInputs();
         updateReceiptUI();
         scheduleDropdownRefresh();
+        if (['main admin', 'admin', 'staff'].includes(String(CURRENT_ROLE || '').toLowerCase()) && typeof startHistoryRealtimeListener === 'function') {
+          startHistoryRealtimeListener();
+        }
         loadAllAgentCustomersForAdmins();
         syncAgentTelegramConfigs();
 
@@ -6873,6 +6883,31 @@ function openAdmin() {
       const table = rows.length ? `<div class="overflow-x-auto"><table class="w-full text-xs whitespace-nowrap"><thead><tr class="bg-slate-100"><th class="p-2 text-left">ရက်စွဲ</th><th class="p-2 text-left">Invoice / ID</th><th class="p-2 text-left">အမျိုးအစား</th><th class="p-2 text-center">Status</th><th class="p-2 text-right">အဝင်</th><th class="p-2 text-right">အထွက်</th></tr></thead><tbody>${rows.map(r => `<tr class="border-b"><td class="p-2">${esc(dateText(r.date))}</td><td class="p-2 font-bold">${esc(r.id)}</td><td class="p-2">${esc(r.type)}${r.note ? `<br><span class="text-[10px] text-slate-500">${esc(r.note)}</span>` : ''}</td><td class="p-2 text-center">${esc(r.status)}</td><td class="p-2 text-right font-bold text-green-700">${r.direction === 'In' ? `+${fmt(r.amount)}` : '—'}</td><td class="p-2 text-right font-bold text-red-700">${r.direction === 'Out' ? `-${fmt(r.amount)}` : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="text-center text-slate-500 py-8">ဒီအကောင့်အတွက် အဝင်/အထွက် စာရင်းမရှိသေးပါ။</div>';
       content.innerHTML = `<div class="grid grid-cols-3 gap-2 mb-4 text-center text-xs"><div class="bg-green-50 rounded-lg p-2">စုစုပေါင်း အဝင်<br><b class="text-base text-green-700">+${fmt(totalIn)} ${esc(currency || '')}</b></div><div class="bg-red-50 rounded-lg p-2">စုစုပေါင်း အထွက်<br><b class="text-base text-red-700">-${fmt(totalOut)} ${esc(currency || '')}</b></div><div class="bg-blue-50 rounded-lg p-2">အသားတင် လှုပ်ရှားမှု<br><b class="text-base text-blue-700">${fmt(totalIn - totalOut)} ${esc(currency || '')}</b></div></div>${table}<p class="text-[11px] text-slate-500 mt-3">မှတ်ချက်: Adjustment များကို အောက်ပါစာရင်းတွင် <b>Adjustment</b> အဖြစ် သီးခြားပြထားပြီး Invoice Profit/Transaction တွက်ချက်မှုထဲ မပါပါ။</p>`;
       modal.style.display = 'flex';
+  };
+
+  window.refreshTreasuryData = async function() {
+      if (!dbRef) return;
+      const btn = document.querySelector('#tab-treasury button[onclick*="refreshTreasuryData"]');
+      const original = btn?.innerHTML;
+      if (btn) { btn.disabled = true; btn.innerHTML = '🔄 Loading...'; }
+      try {
+          const snap = await dbRef.get();
+          if (!snap.exists) throw new Error('admin_data မတွေ့ပါ');
+          const data = snap.data() || {};
+          if (data.treasuryAccounts && typeof data.treasuryAccounts === 'object') FIREBASE_TREASURY = data.treasuryAccounts;
+          if (Array.isArray(data.treasuryOrder)) FIREBASE_TREASURY_ORDER = data.treasuryOrder;
+          if (data.banks && typeof data.banks === 'object') { FIREBASE_BANKS = data.banks; FIREBASE_BANK_ORDER = data.bankOrder || Object.keys(data.banks); }
+          if (Array.isArray(data.qrs)) FIREBASE_QRS = data.qrs.map(q => typeof q === 'string' ? { file: q, name: q.replace(/\.[^.]+$/, '') } : q);
+          if (typeof syncAllLedgerDropdowns === 'function') syncAllLedgerDropdowns();
+          loadTreasuryData();
+          updateSelectorBalanceStatuses();
+          window.showToast?.('Treasury Balance ကို နောက်ဆုံးအချက်အလက်ဖြင့် Refresh လုပ်ပြီးပါပြီ။', '✅');
+      } catch (e) {
+          console.error('Treasury refresh error:', e);
+          alert('Treasury Refresh မအောင်မြင်ပါ: ' + (e.message || e));
+      } finally {
+          if (btn) { btn.disabled = false; btn.innerHTML = original || '🔄 Refresh'; }
+      }
   };
 
   function loadTreasuryData() {
