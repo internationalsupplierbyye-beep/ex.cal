@@ -718,10 +718,13 @@
       const parentTag = node.parentElement && node.parentElement.tagName;
       if (parentTag !== 'SCRIPT' && parentTag !== 'STYLE' && node.nodeValue.includes('ဘတ်')) nodes.push(node);
     }
-    nodes.forEach(node => { node.nodeValue = node.nodeValue.replace(/(?<!ထိုင်း)ဘတ်(?!ငွေ)/g, 'ထိုင်းဘတ်'); });
+    nodes.forEach(node => {
+      // Rate notes intentionally use “ဘတ်(ထိုင်း)” and “၁ ဘတ်”; do not rewrite those back to “ထိုင်းဘတ်”.
+      node.nodeValue = node.nodeValue.replace(/(?<!ထိုင်း)(?<!၁ )ဘတ်(?!ငွေ)(?!\(ထိုင်း\))/g, 'ထိုင်းဘတ်');
+    });
     root.querySelectorAll?.('[placeholder], [title], [aria-label]').forEach(el => {
-      ['placeholder', 'title', 'aria-label'].forEach(attr => {
-        if (el.hasAttribute(attr)) el.setAttribute(attr, el.getAttribute(attr).replace(/(?<!ထိုင်း)ဘတ်(?!ငွေ)/g, 'ထိုင်းဘတ်'));
+        ['placeholder', 'title', 'aria-label'].forEach(attr => {
+        if (el.hasAttribute(attr)) el.setAttribute(attr, el.getAttribute(attr).replace(/(?<!ထိုင်း)(?<!၁ )ဘတ်(?!ငွေ)(?!\(ထိုင်း\))/g, 'ထိုင်းဘတ်'));
       });
     });
   }
@@ -2745,10 +2748,10 @@ let calcLock = false;
     LAST_RATE.thbOutInv = Number.isFinite(outgoing.perThb) ? outgoing.perThb : null;
     LAST_RATE.r = LAST_RATE.thbOut || LAST_RATE.thbIn || null;
     LAST_RATE.inv = LAST_RATE.thbOutInv || LAST_RATE.thbInInv || null;
-    const inMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(incoming.per100k)} ထိုင်းဘတ် | ၁ ထိုင်းဘတ် = ${fmt2(incoming.perThb)} ကျပ်` : '';
-    const outMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(outgoing.per100k)} ထိုင်းဘတ် | ၁ ထိုင်းဘတ် = ${fmt2(outgoing.perThb)} ကျပ်` : '';
-    const inTopMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(incoming.per100k)} ထိုင်းဘတ်<br>၁ ထိုင်းဘတ် = ${fmt2(incoming.perThb)} ကျပ်` : '';
-    const outTopMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(outgoing.per100k)} ထိုင်းဘတ်<br>၁ ထိုင်းဘတ် = ${fmt2(outgoing.perThb)} ကျပ်` : '';
+    const inMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(incoming.per100k)} ဘတ်(ထိုင်း) | ၁ ဘတ် = ${fmt2(incoming.perThb)} ကျပ်` : '';
+    const outMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(outgoing.per100k)} ဘတ်(ထိုင်း) | ၁ ဘတ် = ${fmt2(outgoing.perThb)} ကျပ်` : '';
+    const inTopMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(incoming.per100k)} ဘတ်(ထိုင်း)<br>၁ ဘတ် = ${fmt2(incoming.perThb)} ကျပ်` : '';
+    const outTopMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(outgoing.per100k)} ဘတ်(ထိုင်း)<br>၁ ဘတ် = ${fmt2(outgoing.perThb)} ကျပ်` : '';
     const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
     const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
     setText('rateNote1', inMsg); setText('rateNote2', outMsg);
@@ -3396,7 +3399,7 @@ window.showToast = function(message, icon = "✅") {
               if (!rate || rate === 0) return '0';
               if (curr === 'THB') {
                   let r = 100000 / rate; 
-                  return '၁သိန်း = ' + r.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' ထိုင်းဘတ်';
+                  return '၁သိန်း = ' + r.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' ဘတ်(ထိုင်း)';
               } else if (curr === 'VND') {
                   let r = 1 / rate; 
                   return '၁ကျပ် = ' + r.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:4}) + ' ဒေါင်';
@@ -3428,7 +3431,7 @@ window.showToast = function(message, icon = "✅") {
               let estStr = '';
               if(avgRate > 0) {
                   if (curr === 'THB') {
-                      estStr = `Est Rate: ၁သိန်း = ${(100000 / avgRate).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2})} ထိုင်းဘတ်`;
+                      estStr = `Est Rate: ၁သိန်း = ${(100000 / avgRate).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2})} ဘတ်(ထိုင်း)`;
                   } else if (curr === 'VND') {
                       estStr = `Est Rate: ၁ကျပ် = ${(1 / avgRate).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:4})} ဒေါင်`;
                   }
@@ -3610,7 +3613,7 @@ window.showToast = function(message, icon = "✅") {
       const fmtLotRate = lot => {
           const rate = Number(lot.rate || 0);
           if (!(rate > 0)) return '—';
-          if (lot.currency === 'THB') return `${fmt(rate)} MMK/THB (တစ်သိန်း = ${fmt(100000 / rate)} ထိုင်းဘတ်)`;
+          if (lot.currency === 'THB') return `${fmt(rate)} MMK/THB (တစ်သိန်း = ${fmt(100000 / rate)} ဘတ်(ထိုင်း))`;
           if (lot.currency === 'VND') return `${fmt(rate)} MMK/VND (၁ ကျပ် = ${fmt(1 / rate)} ဒေါင်)`;
           return fmt(rate);
       };
@@ -3618,7 +3621,7 @@ window.showToast = function(message, icon = "✅") {
       const fmtSummaryRate = (rate, currency) => {
           const n = Number(rate || 0);
           if (!(n > 0)) return '—';
-          if (currency === 'THB') return `တစ်သိန်း = ${fmt(100000 / n)} ထိုင်းဘတ် · ၁ ထိုင်းဘတ် = ${fmt(n)} ကျပ်`;
+          if (currency === 'THB') return `တစ်သိန်း = ${fmt(100000 / n)} ဘတ်(ထိုင်း) · ၁ ဘတ် = ${fmt(n)} ကျပ်`;
           if (currency === 'VND') return `၁ ကျပ် = ${fmt(1 / n)} ဒေါင်`;
           return fmt(n);
       };
@@ -3787,7 +3790,7 @@ window.showToast = function(message, icon = "✅") {
       const type = document.getElementById('manualLotType').value;
       const lbl = document.getElementById('lblManualRate');
       if(type.includes('THB')) {
-          lbl.textContent = "ငွေဈေး (၁ သိန်းကျပ် = ? ထိုင်းဘတ်)";
+          lbl.textContent = "ငွေဈေး (၁ သိန်းကျပ် = ? ဘတ်(ထိုင်း))";
       } else {
           lbl.textContent = "ငွေဈေး (၁ ကျပ် = ? ဒေါင်)";
       }
@@ -9409,7 +9412,8 @@ function openAdmin() {
                   div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.lineHeight = '1.2'; div.style.boxSizing = 'border-box';
                   div.style.minHeight = '56px'; div.style.height = '56px'; div.style.padding = '6px 10px';
                   div.style.setProperty('font-size', '1.38rem', 'important');
-                  div.textContent = voucherCurrencyLabel ? `${String(val ?? '').trim() || '0'} ${voucherCurrencyLabel}` : val;
+                  const cleanVoucherAmount = String(val ?? '').replace(/\s*(THB|MMK|VND)\s*/gi, ' ').replace(/\s+/g, ' ').trim();
+                  div.textContent = voucherCurrencyLabel ? `${cleanVoucherAmount || '0'} ${voucherCurrencyLabel}` : val;
                   inputs[i].replaceWith(div);
               });
           }
@@ -9417,7 +9421,7 @@ function openAdmin() {
           const rateP = clone.querySelector('.rate-note');
           if (rateP) {
               let histRateText = tx.rate || ""; 
-              let rTpl = (T && T.rateTpl) ? T.rateTpl : "မြန်မာငွေ ၁ သိန်း = {r} ထိုင်းဘတ် | ၁ ထိုင်းဘတ် = {inv} ကျပ်";
+              let rTpl = (T && T.rateTpl) ? T.rateTpl : "မြန်မာငွေ ၁ သိန်း = {r} ဘတ်(ထိုင်း) | ၁ ဘတ် = {inv} ကျပ်";
               let vTpl = (T && T.rateVndTpl) ? T.rateVndTpl : "၁ ကျပ် = {v} ဒေါင် (VND)";
 
               if (histRateText.includes('100K =')) {
