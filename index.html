@@ -38,6 +38,25 @@
       padding: 6px 12px; font-size: 0.85rem; font-weight: bold; cursor: pointer;
     }
     .admin-btn:hover { background: rgba(255,255,255,0.3); }
+    .main-admin-amount-toggle {
+      position: absolute; top: 12px; right: 158px;
+      background: rgba(255,255,255,0.2); color: white;
+      border: 1px solid rgba(255,255,255,0.4); border-radius: 8px;
+      min-width: 38px; height: 34px; padding: 4px 8px;
+      font-size: 1rem; font-weight: bold; cursor: pointer; line-height: 1;
+    }
+    .main-admin-amount-toggle:hover { background: rgba(255,255,255,0.3); }
+    .main-admin-amount-toggle[aria-pressed="true"] { background: rgba(15,23,42,0.32); }
+    html.main-admin-amounts-hidden #bankSelect,
+    html.main-admin-amounts-hidden #qrSelect,
+    html.main-admin-amounts-hidden #ppSelect,
+    html.main-admin-amounts-hidden #bankBalanceStatus,
+    html.main-admin-amounts-hidden #qrBalanceStatus {
+      /* Selector option text is rebuilt by JavaScript with a masked balance. */
+    }
+    @media (max-width:640px) {
+      .main-admin-amount-toggle { right: 132px; top: 11px; }
+    }
 
     .lang-switcher {
       position: absolute; top: 12px; left: 12px;
@@ -690,6 +709,23 @@
 <body class="p-3">
 
 <script>
+  function normalizeThaiBahtDisplay(root = document) {
+    if (!root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let node;
+    while ((node = walker.nextNode())) {
+      const parentTag = node.parentElement && node.parentElement.tagName;
+      if (parentTag !== 'SCRIPT' && parentTag !== 'STYLE' && node.nodeValue.includes('ဘတ်')) nodes.push(node);
+    }
+    nodes.forEach(node => { node.nodeValue = node.nodeValue.replace(/(?<!ထိုင်း)ဘတ်(?!ငွေ)/g, 'ထိုင်းဘတ်'); });
+    root.querySelectorAll?.('[placeholder], [title], [aria-label]').forEach(el => {
+      ['placeholder', 'title', 'aria-label'].forEach(attr => {
+        if (el.hasAttribute(attr)) el.setAttribute(attr, el.getAttribute(attr).replace(/(?<!ထိုင်း)ဘတ်(?!ငွေ)/g, 'ထိုင်းဘတ်'));
+      });
+    });
+  }
+
   function changeSystemLanguage(lang) {
     localStorage.setItem('sys_lang_pref', lang);
     const dict = (typeof SYS_DICT !== 'undefined') ? (SYS_DICT[lang] || SYS_DICT['my']) : {};
@@ -708,6 +744,7 @@
       if (dict[key]) el.placeholder = dict[key];
     });
     if (typeof window.translateSettingsText === 'function') window.translateSettingsText(lang);
+    normalizeThaiBahtDisplay(document.body);
   }
 
   function applyDarkModeBtnIcon(isDark) {
@@ -844,6 +881,7 @@
   
   <h1 class="text-xl sm:text-2xl font-black pb-1" data-i18n="app_title">MMK ↔ THB & VND ငွေလဲတွက်ချက်ခြင်း</h1>
   <p class="text-xs sm:text-sm opacity-90 pb-1" data-i18n="app_sub">MMK ↔ THB & VND Exchange Calculator</p>
+  <button id="mainAdminAmountToggle" class="main-admin-amount-toggle" onclick="window.toggleMainAdminAmounts()" style="display:none;" aria-label="ငွေပမာဏ ဖွင့်/ပိတ်" aria-pressed="false" title="ငွေပမာဏ ဖွင့်/ပိတ်">👁️</button>
   <button class="admin-btn" onclick="openAdmin()">🔒 Admin / Staff</button>
 </header>
 
@@ -989,8 +1027,8 @@
             <label class="save-mode-option"><input type="radio" name="saveMode" value="bank"><span>BANK</span></label>
         </div>
         <div class="quick-jpg-grid" aria-label="Quick JPG Save">
-          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg','download',this)" title="ဘတ် → ကျပ် JPG တိုက်ရိုက်သိမ်းရန်">ဘတ်→ကျပ်</button>
-          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg','download',this)" title="ကျပ် → ဘတ် JPG တိုက်ရိုက်သိမ်းရန်">ကျပ်→ဘတ်</button>
+          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-thb2mmk','thb-to-mmk','jpg','download',this)" title="ဘတ်-ကျပ် JPG ပုံသိမ်းရန်">ဘတ်-ကျပ်</button>
+          <button type="button" class="quick-jpg-btn" onclick="saveSection('box-mmk2thb','mmk-to-thb','jpg','download',this)" title="ကျပ်-ဘတ် JPG ပုံသိမ်းရန်">ကျပ်-ဘတ်</button>
           <button type="button" class="quick-jpg-btn" onclick="saveSection('box-vnd2mmk','vnd-to-mmk','jpg','download',this)" title="ဒေါင် → ကျပ် JPG တိုက်ရိုက်သိမ်းရန်">ဒေါင်→ကျပ်</button>
           <button type="button" class="quick-jpg-btn" onclick="saveSection('box-mmk2vnd','mmk-to-vnd','jpg','download',this)" title="ကျပ် → ဒေါင် JPG တိုက်ရိုက်သိမ်းရန်">ကျပ်→ဒေါင်</button>
         </div>
@@ -1283,7 +1321,7 @@
         <input type="text" id="manualLotForeign" class="admin-input-box !mb-0 text-sm" placeholder="ဥပမာ - 5000">
       </div>
       <div>
-        <label id="lblManualRate" class="text-xs font-bold text-gray-600 mb-1 block">ငွေဈေး (၁ သိန်းကျပ် = ? ဘတ်)</label>
+        <label id="lblManualRate" class="text-xs font-bold text-gray-600 mb-1 block">ငွေဈေး (၁ သိန်းကျပ် = ? ထိုင်းဘတ်)</label>
         <input type="text" id="manualLotRate" class="admin-input-box !mb-0 text-sm" placeholder="ဥပမာ - 750">
       </div>
       <div>
@@ -1445,34 +1483,34 @@
           <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="border rounded-lg p-3 bg-blue-50/50 flex flex-col h-full">
                   <div class="font-bold text-blue-800 border-b pb-2 mb-2 flex justify-between items-start">
-                      <span>🇹🇭 THB (ဘတ်)</span>
+                      <span>🇹🇭 THB (ထိုင်းဘတ်)</span>
                       <div class="text-right">
-                          <div id="est_profit_thb" class="text-lg text-green-600 font-black">+ 0 MMK</div>
+                          <div id="est_profit_thb" class="main-page-amount-hidden-target text-lg text-green-600 font-black">+ 0 MMK</div>
                           <div class="text-[10px] font-bold text-gray-500 mt-1 uppercase">Realized Profit</div>
                       </div>
                   </div>
                   <div class="text-xs font-bold text-gray-700 mb-1">Active Lots (လက်ရှိကျန်နေသော):</div>
-                  <div id="thb_active_lots" class="flex-1 overflow-y-auto max-h-40 text-xs space-y-1 bg-white p-2 rounded border border-blue-100 shadow-inner font-mono">
+                  <div id="thb_active_lots" class="main-page-amount-hidden-target flex-1 overflow-y-auto max-h-40 text-xs space-y-1 bg-white p-2 rounded border border-blue-100 shadow-inner font-mono">
                       </div>
               </div>
               <div class="border rounded-lg p-3 bg-orange-50/50 flex flex-col h-full">
                   <div class="font-bold text-orange-800 border-b pb-2 mb-2 flex justify-between items-start">
                       <span>🇻🇳 VND (ဒေါင်)</span>
                       <div class="text-right">
-                          <div id="est_profit_vnd" class="text-lg text-green-600 font-black">+ 0 MMK</div>
+                          <div id="est_profit_vnd" class="main-page-amount-hidden-target text-lg text-green-600 font-black">+ 0 MMK</div>
                           <div class="text-[10px] font-bold text-gray-500 mt-1 uppercase">Realized Profit</div>
                       </div>
                   </div>
                   <div class="text-xs font-bold text-gray-700 mb-1">Active Lots (လက်ရှိကျန်နေသော):</div>
-                  <div id="vnd_active_lots" class="flex-1 overflow-y-auto max-h-40 text-xs space-y-1 bg-white p-2 rounded border border-orange-100 shadow-inner font-mono">
+                  <div id="vnd_active_lots" class="main-page-amount-hidden-target flex-1 overflow-y-auto max-h-40 text-xs space-y-1 bg-white p-2 rounded border border-orange-100 shadow-inner font-mono">
                       </div>
               </div>
           </div>
       <div class="bg-green-50 px-4 py-3 border-t border-green-200 rounded-b-xl flex justify-between items-center">
           <span class="font-bold text-green-800">စုစုပေါင်း အမြတ်ငွေ (Total Profit)</span>
           <div class="text-right">
-             <div class="font-black text-green-700 text-xl" id="dash_total_profit">0 MMK</div>
-             <div id="dash_fee_summary" class="text-[11px] text-slate-500 font-bold mt-1">Fees: -0 MMK ≈ -0 THB</div>
+             <div class="main-page-amount-hidden-target font-black text-green-700 text-xl" id="dash_total_profit">0 MMK</div>
+             <div id="dash_fee_summary" class="main-page-amount-hidden-target text-[11px] text-slate-500 font-bold mt-1">Fees: -0 MMK ≈ -0 THB</div>
           </div>
       </div>
       <div class="px-4 py-3 bg-green-50 border-t border-green-200 text-right">
@@ -1493,34 +1531,34 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 mt-2">
           <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center shadow-sm flex flex-col justify-between">
               <div>
-                  <p class="text-sm text-blue-800 font-bold mb-2 border-b border-blue-200 pb-2">🇹🇭 THB (ဘတ်)</p>
-                  <div class="flex justify-between text-xs mb-1"><span class="text-gray-600">အဝင် (ဝယ်)</span><span class="font-bold text-green-600" id="dash_thb_in">0 THB</span></div>
-                  <div class="flex justify-between text-xs mb-2"><span class="text-gray-600">အထွက် (ရောင်း)</span><span class="font-bold text-red-500" id="dash_thb_out">0 THB</span></div>
+                  <p class="text-sm text-blue-800 font-bold mb-2 border-b border-blue-200 pb-2">🇹🇭 THB (ထိုင်းဘတ်)</p>
+                  <div class="flex justify-between text-xs mb-1"><span class="text-gray-600">အဝင် (ဝယ်)</span><span class="main-page-amount-hidden-target font-bold text-green-600" id="dash_thb_in">0 THB</span></div>
+                  <div class="flex justify-between text-xs mb-2"><span class="text-gray-600">အထွက် (ရောင်း)</span><span class="main-page-amount-hidden-target font-bold text-red-500" id="dash_thb_out">0 THB</span></div>
               </div>
               <div class="flex justify-between text-sm mt-2 pt-2 border-t border-blue-200">
-                  <span class="font-bold text-blue-800">အသားတင် (Net)</span><span class="font-black text-blue-700" id="dash_thb_net">0 THB</span>
+                  <span class="font-bold text-blue-800">အသားတင် (Net)</span><span class="main-page-amount-hidden-target font-black text-blue-700" id="dash_thb_net">0 THB</span>
               </div>
           </div>
           
           <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-center shadow-sm flex flex-col justify-between">
               <div>
                   <p class="text-sm text-emerald-800 font-bold mb-2 border-b border-emerald-200 pb-2">🇲🇲 MMK (ကျပ်)</p>
-                  <div class="flex justify-between text-xs mb-1"><span class="text-gray-600">အဝင်</span><span class="font-bold text-green-600" id="dash_mmk_in">0 MMK</span></div>
-                  <div class="flex justify-between text-xs mb-2"><span class="text-gray-600">အထွက်</span><span class="font-bold text-red-500" id="dash_mmk_out">0 MMK</span></div>
+                  <div class="flex justify-between text-xs mb-1"><span class="text-gray-600">အဝင်</span><span class="main-page-amount-hidden-target font-bold text-green-600" id="dash_mmk_in">0 MMK</span></div>
+                  <div class="flex justify-between text-xs mb-2"><span class="text-gray-600">အထွက်</span><span class="main-page-amount-hidden-target font-bold text-red-500" id="dash_mmk_out">0 MMK</span></div>
               </div>
               <div class="flex justify-between text-sm mt-2 pt-2 border-t border-emerald-200">
-                  <span class="font-bold text-emerald-800">အသားတင် (Net)</span><span class="font-black text-emerald-700" id="dash_mmk_net">0 MMK</span>
+                  <span class="font-bold text-emerald-800">အသားတင် (Net)</span><span class="main-page-amount-hidden-target font-black text-emerald-700" id="dash_mmk_net">0 MMK</span>
               </div>
           </div>
           
           <div class="bg-orange-50 border border-orange-200 p-4 rounded-xl text-center shadow-sm flex flex-col justify-between">
               <div>
                   <p class="text-sm text-orange-800 font-bold mb-2 border-b border-orange-200 pb-2">🇻🇳 VND (ဒေါင်)</p>
-                  <div class="flex justify-between text-xs mb-1"><span class="text-gray-600">အဝင် (ဝယ်)</span><span class="font-bold text-green-600" id="dash_vnd_in">0 VND</span></div>
-                  <div class="flex justify-between text-xs mb-2"><span class="text-gray-600">အထွက် (ရောင်း)</span><span class="font-bold text-red-500" id="dash_vnd_out">0 VND</span></div>
+                  <div class="flex justify-between text-xs mb-1"><span class="text-gray-600">အဝင် (ဝယ်)</span><span class="main-page-amount-hidden-target font-bold text-green-600" id="dash_vnd_in">0 VND</span></div>
+                  <div class="flex justify-between text-xs mb-2"><span class="text-gray-600">အထွက် (ရောင်း)</span><span class="main-page-amount-hidden-target font-bold text-red-500" id="dash_vnd_out">0 VND</span></div>
               </div>
               <div class="flex justify-between text-sm mt-2 pt-2 border-t border-orange-200">
-                  <span class="font-bold text-orange-800">အသားတင် (Net)</span><span class="font-black text-orange-700" id="dash_vnd_net">0 VND</span>
+                  <span class="font-bold text-orange-800">အသားတင် (Net)</span><span class="main-page-amount-hidden-target font-black text-orange-700" id="dash_vnd_net">0 VND</span>
               </div>
           </div>
       </div>
@@ -2707,10 +2745,10 @@ let calcLock = false;
     LAST_RATE.thbOutInv = Number.isFinite(outgoing.perThb) ? outgoing.perThb : null;
     LAST_RATE.r = LAST_RATE.thbOut || LAST_RATE.thbIn || null;
     LAST_RATE.inv = LAST_RATE.thbOutInv || LAST_RATE.thbInInv || null;
-    const inMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(incoming.per100k)} ဘတ် | ၁ ဘတ် = ${fmt2(incoming.perThb)} ကျပ်` : '';
-    const outMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(outgoing.per100k)} ဘတ် | ၁ ဘတ် = ${fmt2(outgoing.perThb)} ကျပ်` : '';
-    const inTopMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(incoming.per100k)} ဘတ်<br>၁ ဘတ် = ${fmt2(incoming.perThb)} ကျပ်` : '';
-    const outTopMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(outgoing.per100k)} ဘတ်<br>၁ ဘတ် = ${fmt2(outgoing.perThb)} ကျပ်` : '';
+    const inMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(incoming.per100k)} ထိုင်းဘတ် | ၁ ထိုင်းဘတ် = ${fmt2(incoming.perThb)} ကျပ်` : '';
+    const outMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(outgoing.per100k)} ထိုင်းဘတ် | ၁ ထိုင်းဘတ် = ${fmt2(outgoing.perThb)} ကျပ်` : '';
+    const inTopMsg = Number.isFinite(incoming.per100k) && incoming.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(incoming.per100k)} ထိုင်းဘတ်<br>၁ ထိုင်းဘတ် = ${fmt2(incoming.perThb)} ကျပ်` : '';
+    const outTopMsg = Number.isFinite(outgoing.per100k) && outgoing.per100k > 0 ? `မြန်မာငွေ ၁ သိန်း = ${fmt2(outgoing.per100k)} ထိုင်းဘတ်<br>၁ ထိုင်းဘတ် = ${fmt2(outgoing.perThb)} ကျပ်` : '';
     const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
     const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
     setText('rateNote1', inMsg); setText('rateNote2', outMsg);
@@ -3358,7 +3396,7 @@ window.showToast = function(message, icon = "✅") {
               if (!rate || rate === 0) return '0';
               if (curr === 'THB') {
                   let r = 100000 / rate; 
-                  return '၁သိန်း = ' + r.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' ဘတ်';
+                  return '၁သိန်း = ' + r.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2}) + ' ထိုင်းဘတ်';
               } else if (curr === 'VND') {
                   let r = 1 / rate; 
                   return '၁ကျပ် = ' + r.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:4}) + ' ဒေါင်';
@@ -3390,7 +3428,7 @@ window.showToast = function(message, icon = "✅") {
               let estStr = '';
               if(avgRate > 0) {
                   if (curr === 'THB') {
-                      estStr = `Est Rate: ၁သိန်း = ${(100000 / avgRate).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2})} ဘတ်`;
+                      estStr = `Est Rate: ၁သိန်း = ${(100000 / avgRate).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2})} ထိုင်းဘတ်`;
                   } else if (curr === 'VND') {
                       estStr = `Est Rate: ၁ကျပ် = ${(1 / avgRate).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:4})} ဒေါင်`;
                   }
@@ -3572,7 +3610,7 @@ window.showToast = function(message, icon = "✅") {
       const fmtLotRate = lot => {
           const rate = Number(lot.rate || 0);
           if (!(rate > 0)) return '—';
-          if (lot.currency === 'THB') return `${fmt(rate)} MMK/THB (တစ်သိန်း = ${fmt(100000 / rate)} ဘတ်)`;
+          if (lot.currency === 'THB') return `${fmt(rate)} MMK/THB (တစ်သိန်း = ${fmt(100000 / rate)} ထိုင်းဘတ်)`;
           if (lot.currency === 'VND') return `${fmt(rate)} MMK/VND (၁ ကျပ် = ${fmt(1 / rate)} ဒေါင်)`;
           return fmt(rate);
       };
@@ -3580,7 +3618,7 @@ window.showToast = function(message, icon = "✅") {
       const fmtSummaryRate = (rate, currency) => {
           const n = Number(rate || 0);
           if (!(n > 0)) return '—';
-          if (currency === 'THB') return `တစ်သိန်း = ${fmt(100000 / n)} ဘတ် · ၁ ဘတ် = ${fmt(n)} ကျပ်`;
+          if (currency === 'THB') return `တစ်သိန်း = ${fmt(100000 / n)} ထိုင်းဘတ် · ၁ ထိုင်းဘတ် = ${fmt(n)} ကျပ်`;
           if (currency === 'VND') return `၁ ကျပ် = ${fmt(1 / n)} ဒေါင်`;
           return fmt(n);
       };
@@ -3664,7 +3702,7 @@ window.showToast = function(message, icon = "✅") {
           
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
               <div style="background: #eff6ff; padding: 15px; border-radius: 12px; border: 1px solid #bfdbfe; text-align:center;">
-                  <h3 style="margin:0 0 10px 0; font-size:16px; color:#1e40af;">THB (ဘတ်)</h3>
+                  <h3 style="margin:0 0 10px 0; font-size:16px; color:#1e40af;">THB (ထိုင်းဘတ်)</h3>
                   <p style="margin:0 0 5px 0; font-size:14px;">In (Buy): <span style="color:#15803d; font-weight:bold;">${thbIn}</span></p>
                   <p style="margin:0 0 10px 0; font-size:14px;">Out (Sell): <span style="color:#b91c1c; font-weight:bold;">${thbOut}</span></p>
                   <div style="border-top: 1px solid #bfdbfe; padding-top:8px;">
@@ -3749,7 +3787,7 @@ window.showToast = function(message, icon = "✅") {
       const type = document.getElementById('manualLotType').value;
       const lbl = document.getElementById('lblManualRate');
       if(type.includes('THB')) {
-          lbl.textContent = "ငွေဈေး (၁ သိန်းကျပ် = ? ဘတ်)";
+          lbl.textContent = "ငွေဈေး (၁ သိန်းကျပ် = ? ထိုင်းဘတ်)";
       } else {
           lbl.textContent = "ငွေဈေး (၁ ကျပ် = ? ဒေါင်)";
       }
@@ -4494,7 +4532,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           let curMeta = getCurrencyMeta(info.currency); // 🌟 Currency အရောင်/အလံ
           const bankLedger = info.ledger && FIREBASE_TREASURY[info.ledger] ? FIREBASE_TREASURY[info.ledger] : info;
           const bankBalance = Number(bankLedger?.balance);
-          const mainAdminBalance = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(bankBalance)
+          const mainAdminBalance = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && !isMainPageAmountsHidden() && Number.isFinite(bankBalance)
             ? ` · ${formatMmk(bankBalance)} ${String(info.currency || bankLedger.currency || 'MMK').toUpperCase()}` : '';
           o.textContent = emoji + curMeta.flag + info.name + ownerAbbr + mainAdminBalance; // နာမည်ဘေးတွင် ကပ်ပြမည်
           o.className = curMeta.cls;
@@ -4530,7 +4568,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         const qrRecord = typeof qr === 'object' ? qr : null;
         const qrBalanceSource = qrRecord?.ledger && FIREBASE_TREASURY[qrRecord.ledger] ? FIREBASE_TREASURY[qrRecord.ledger] : qrRecord;
         const qrBalance = Number(qrBalanceSource?.balance);
-        const qrBalanceLabel = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(qrBalance)
+        const qrBalanceLabel = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && !isMainPageAmountsHidden() && Number.isFinite(qrBalance)
           ? ` · ${formatMmk(qrBalance)} ${String(qrBalanceSource.currency || qrRecord?.currency || 'MMK').toUpperCase()}` : '';
         o.textContent = emoji + curMeta.flag + text + ownerAbbr + qrBalanceLabel; // နာမည်ဘေးတွင် ကပ်ပြမည်
         o.className = curMeta.cls;
@@ -4655,7 +4693,7 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     const dotClass = state === 'green' ? 'status-green' : (state === 'yellow' ? 'status-yellow' : (state === 'red' ? 'status-red' : 'status-unknown'));
     select.classList.add(`balance-${state}`);
     const isMainAdmin = String(CURRENT_ROLE || '').toLowerCase() === 'main admin';
-    const balanceText = isMainAdmin && Number.isFinite(balance) ? `<span class="selector-balance-text">${formatMmk(balance)} ${currency}</span>` : '';
+    const balanceText = isMainAdmin && !isMainPageAmountsHidden() && Number.isFinite(balance) ? `<span class="selector-balance-text">${formatMmk(balance)} ${currency}</span>` : '';
     const stateLabel = state === 'green' ? 'များ' : (state === 'yellow' ? 'ဒုတိယအဆင့်' : (state === 'red' ? 'နည်း' : 'လက်ကျန်မချိတ်ထားပါ'));
 
     statusEl.innerHTML = `<span class="selector-balance-dot ${dotClass}" title="${stateLabel}" aria-label="${stateLabel}"></span>${balanceText}`;
@@ -4708,8 +4746,8 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     if(mini) {
         const balanceSource = info.ledger && FIREBASE_TREASURY[info.ledger] ? FIREBASE_TREASURY[info.ledger] : info;
         const balance = Number(balanceSource?.balance);
-        const balanceHtml = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(balance)
-          ? `<div style="margin-top:5px;color:#64748b;font-size:11px;"><span style="font-weight:900;color:#0f766e">${formatMmk(balance)} ${String(balanceSource.currency || info.currency || 'MMK').toUpperCase()}</span></div>` : '';
+        const balanceHtml = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && !isMainPageAmountsHidden() && Number.isFinite(balance)
+          ? `<div class="main-admin-balance-only" style="margin-top:5px;color:#64748b;font-size:11px;"><span style="font-weight:900;color:#0f766e">${formatMmk(balance)} ${String(balanceSource.currency || info.currency || 'MMK').toUpperCase()}</span></div>` : '';
         mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div>${balanceHtml}</div>`;
     }
   }
@@ -5686,8 +5724,8 @@ function openAdmin() {
 
   const ADMIN_TAB_GROUPS = {
     overview: [
-      ['tab-work-queue', '📋 Work Queue', 'btnTabWorkQueue'],
       ['tab-dashboard', '📊 Dashboard', 'btnTabDashboard'],
+      ['tab-work-queue', '📋 Work Queue', 'btnTabWorkQueue'],
       ['tab-logs', '📝 Logs', 'btnTabLogs']
     ],
     transactions: [
@@ -5733,7 +5771,11 @@ function openAdmin() {
     return selected;
   }
   function renderAdminGroupButtons(groupName) {
-    document.querySelectorAll('[data-admin-group]').forEach(btn => btn.classList.toggle('active', btn.dataset.adminGroup === groupName));
+    document.querySelectorAll('[data-admin-group]').forEach(btn => {
+      const hasVisibleItems = getVisibleAdminGroupItems(btn.dataset.adminGroup).length > 0;
+      btn.style.display = hasVisibleItems ? '' : 'none';
+      btn.classList.toggle('active', hasVisibleItems && btn.dataset.adminGroup === groupName);
+    });
   }
   window.selectAdminGroup = function(groupName, preferredTabId = '') {
     const items = getVisibleAdminGroupItems(groupName);
@@ -9346,6 +9388,7 @@ function openAdmin() {
           if (!original) throw new Error("System Error: Layout not found.");
 
           const clone = original.cloneNode(true);
+          clone.querySelectorAll('.main-admin-balance-only').forEach(el => el.remove());
           clone.querySelectorAll('button').forEach(b => b.remove());
           
           clone.querySelectorAll('.export-only-texts').forEach(el => {
@@ -9358,13 +9401,15 @@ function openAdmin() {
           const inputs = clone.querySelectorAll('input.amt-input');
           if (inputs.length >= 2) {
               [tx.inAmt, tx.outAmt].forEach((val, i) => {
+                  const inputId = String(inputs[i].id || '').toLowerCase();
+                  const voucherCurrencyLabel = inputId.includes('mmk') ? 'ကျပ်ငွေ' : (inputId.includes('thb') ? 'ဘတ်ငွေ' : (inputId.includes('vnd') ? 'ဒေါင်ငွေ' : ''));
                   const div = document.createElement('div');
                   div.className = inputs[i].className || '';
                   div.style.whiteSpace = 'nowrap'; div.style.overflow = 'hidden'; div.style.textOverflow = 'ellipsis'; 
-                  div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.lineHeight = '1.5'; 
-                  div.style.minHeight = '56px'; div.style.height = '56px'; div.style.paddingTop = '12px'; div.style.paddingBottom = '14px';
-                  div.style.setProperty('font-size', '1.7rem', 'important');
-                  div.textContent = val;
+                  div.style.display = 'flex'; div.style.alignItems = 'center'; div.style.lineHeight = '1.2'; div.style.boxSizing = 'border-box';
+                  div.style.minHeight = '56px'; div.style.height = '56px'; div.style.padding = '6px 10px';
+                  div.style.setProperty('font-size', '1.38rem', 'important');
+                  div.textContent = voucherCurrencyLabel ? `${String(val ?? '').trim() || '0'} ${voucherCurrencyLabel}` : val;
                   inputs[i].replaceWith(div);
               });
           }
@@ -9372,7 +9417,7 @@ function openAdmin() {
           const rateP = clone.querySelector('.rate-note');
           if (rateP) {
               let histRateText = tx.rate || ""; 
-              let rTpl = (T && T.rateTpl) ? T.rateTpl : "မြန်မာငွေ ၁ သိန်း = {r} ဘတ် | ၁ ဘတ် = {inv} ကျပ်";
+              let rTpl = (T && T.rateTpl) ? T.rateTpl : "မြန်မာငွေ ၁ သိန်း = {r} ထိုင်းဘတ် | ၁ ထိုင်းဘတ် = {inv} ကျပ်";
               let vTpl = (T && T.rateVndTpl) ? T.rateVndTpl : "၁ ကျပ် = {v} ဒေါင် (VND)";
 
               if (histRateText.includes('100K =')) {
@@ -9514,8 +9559,7 @@ function openAdmin() {
                       const body = document.createElement('div'); body.style.textAlign = 'center';
                       const balanceSource = info.ledger && FIREBASE_TREASURY[info.ledger] ? FIREBASE_TREASURY[info.ledger] : info;
                       const balance = Number(balanceSource?.balance);
-                      const balanceHtml = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(balance)
-                        ? `<div style="margin-top:8px;color:#64748b;font-size:16px;"><span style="font-weight:900;color:#047857">${formatMmk(balance)} ${String(balanceSource.currency || info.currency || 'MMK').toUpperCase()}</span></div>` : '';
+                      const balanceHtml = '';
                       body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>${balanceHtml}`;
                       
                       headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
@@ -10627,11 +10671,12 @@ async function loadHistory() {
             else if (clone.id === 'box-vnd2mmk') originalHeading.textContent = 'ဗီယက်နမ်ဒေါင် → ကျပ်ငွေ';
             else if (clone.id === 'box-mmk2vnd') originalHeading.textContent = 'ကျပ်ငွေ → ဗီယက်နမ်ဒေါင်';
         }
+        normalizeThaiBahtDisplay(clone);
         return;
     }
     
     const T = (typeof I18N !== 'undefined') ? I18N[lang] : null; 
-    if(!T) return;
+    if(!T) { normalizeThaiBahtDisplay(clone); return; }
     
     const h2=clone.querySelector('h2'); const subTop=clone.querySelector('p.sub');
     if(clone.id==='box-thb2mmk'){ if(h2) h2.textContent=T.h_thb2mmk; if(subTop) subTop.textContent=T.sub_thb2mmk; }
@@ -10672,6 +10717,7 @@ async function loadHistory() {
     const w2 = clone.querySelector('.lang-warn2'); if(w2 && customTexts.warn2) { w2.textContent = replaceVars(customTexts.warn2); }
     const w3 = clone.querySelector('.lang-warn3'); if(w3 && customTexts.warn3) { w3.textContent = replaceVars(customTexts.warn3); }
     const thx = clone.querySelector('.lang-thanks'); if(thx && customTexts.thanks) { thx.textContent = replaceVars(customTexts.thanks); }
+    normalizeThaiBahtDisplay(clone);
   }
 
 
@@ -11438,6 +11484,7 @@ async function loadHistory() {
         fmt = (fmt === 'jpg') ? 'jpg' : 'png';
         const original=document.getElementById(sectionId); 
         const clone=original.cloneNode(true);
+        clone.querySelectorAll('.main-admin-balance-only').forEach(el => el.remove());
         
         clone.querySelectorAll('button').forEach(b=>b.remove());
         
@@ -11473,7 +11520,7 @@ async function loadHistory() {
             else if (el.id.toLowerCase().includes('vnd')) displayVal = `${(el.value || '').trim() || '0'} ဒေါင်ငွေ`;
           }
           const div=document.createElement('div');
-          div.className=el.className || ''; div.style.whiteSpace='nowrap'; div.style.overflow='visible'; div.style.textOverflow='clip'; div.style.display='flex'; div.style.alignItems='center'; div.style.lineHeight='1.35'; div.style.minHeight='56px'; div.style.height='56px'; div.style.boxSizing='border-box'; div.style.paddingTop='10px'; div.style.paddingBottom='12px'; div.style.paddingLeft='10px'; div.style.paddingRight='10px'; div.style.minWidth='0';
+          div.className=el.className || ''; div.style.whiteSpace='nowrap'; div.style.overflow='hidden'; div.style.textOverflow='ellipsis'; div.style.display='flex'; div.style.alignItems='center'; div.style.lineHeight='1.2'; div.style.minHeight='56px'; div.style.height='56px'; div.style.boxSizing='border-box'; div.style.padding='6px 10px'; div.style.minWidth='0';
           div.style.setProperty('font-size', '1.38rem', 'important');
           div.style.setProperty('font-weight', '900', 'important');
           
@@ -11547,8 +11594,7 @@ async function loadHistory() {
             const body=document.createElement('div'); body.style.textAlign='center';
             const balanceSource = info.ledger && FIREBASE_TREASURY[info.ledger] ? FIREBASE_TREASURY[info.ledger] : info;
             const balance = Number(balanceSource?.balance);
-            const balanceHtml = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(balance)
-              ? `<div style="margin-top:8px;color:#64748b;font-size:16px;"><span style="font-weight:900;color:#047857">${formatMmk(balance)} ${String(balanceSource.currency || info.currency || 'MMK').toUpperCase()}</span></div>` : '';
+            const balanceHtml = '';
             body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>${balanceHtml}`;
             const receiptNotiEnabled = !!document.getElementById('includeReceiptNoti')?.checked;
             const receiptNotiText = String(FIREBASE_RECEIPT_TEXTS[lang]?.noti || '').trim();
@@ -13507,14 +13553,45 @@ if (!document.getElementById('slipUploadSpinnerStyle')) {
       return `https://tmn.app.link/fcRfbMKlS3b?amount=${amt}`;
   }
 
+  function isMainPageAmountsHidden() {
+      return document.documentElement.classList.contains('main-admin-amounts-hidden');
+  }
+
+  window.toggleMainAdminAmounts = function() {
+      const isHidden = document.documentElement.classList.toggle('main-admin-amounts-hidden');
+      const btn = document.getElementById('mainAdminAmountToggle');
+      if (btn) {
+          btn.setAttribute('aria-pressed', String(isHidden));
+          btn.textContent = isHidden ? '🙈' : '👁️';
+          btn.title = isHidden ? 'ငွေပမာဏ ပြန်ဖွင့်မည်' : 'ငွေပမာဏ ဖျောက်မည်';
+      }
+      if (typeof initDropdowns === 'function') initDropdowns();
+      if (typeof updateSelectorBalanceStatus === 'function') {
+          updateSelectorBalanceStatus('bank');
+          updateSelectorBalanceStatus('qr');
+      }
+  };
+
   function setupUIForRole(role) {
       const adminBtn = document.querySelector('.admin-btn');
+      const amountToggle = document.getElementById('mainAdminAmountToggle');
       const modalTitle = document.getElementById('adminModalTitle');
       const btnExport = document.getElementById('btnExportCSV');
       const btnClear = document.getElementById('btnClearHistory');
       const smartSlipBox = document.getElementById('smartSlipContainer');
       const workQueueBtn = document.getElementById('btnTabWorkQueue');
       const customerAllowedAccountsSection = document.getElementById('customerAllowedAccountsSection');
+
+      if (amountToggle) {
+          const isMainAdmin = String(role || '').toLowerCase() === 'main admin';
+          amountToggle.style.display = isMainAdmin ? 'block' : 'none';
+          if (!isMainAdmin) {
+              document.documentElement.classList.remove('main-admin-amounts-hidden');
+              amountToggle.setAttribute('aria-pressed', 'false');
+              amountToggle.textContent = '👁️';
+              amountToggle.title = 'ငွေပမာဏ ဖွင့်/ပိတ်';
+          }
+      }
 
       // Privacy: AGENT must not see which Bank/QR accounts are allowed for a Customer.
       if (customerAllowedAccountsSection) {
