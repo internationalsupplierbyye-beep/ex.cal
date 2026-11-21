@@ -4492,7 +4492,11 @@ window.autoCancelOldPendingLots = async function(dataArray) {
           let ownerAbbr = getInitials(info.accName); // အတိုကောက် ယူမည်
           let emoji = getEmojiPrefix(info);
           let curMeta = getCurrencyMeta(info.currency); // 🌟 Currency အရောင်/အလံ
-          o.textContent = emoji + curMeta.flag + info.name + ownerAbbr; // နာမည်ဘေးတွင် ကပ်ပြမည်
+          const bankLedger = info.ledger && FIREBASE_TREASURY[info.ledger] ? FIREBASE_TREASURY[info.ledger] : info;
+          const bankBalance = Number(bankLedger?.balance);
+          const mainAdminBalance = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(bankBalance)
+            ? ` · ${formatMmk(bankBalance)} ${String(info.currency || bankLedger.currency || 'MMK').toUpperCase()}` : '';
+          o.textContent = emoji + curMeta.flag + info.name + ownerAbbr + mainAdminBalance; // နာမည်ဘေးတွင် ကပ်ပြမည်
           o.className = curMeta.cls;
           
           bankSelect.appendChild(o);
@@ -4523,7 +4527,12 @@ window.autoCancelOldPendingLots = async function(dataArray) {
         const o = document.createElement('option'); 
         o.value = val; 
         o.dataset.currency = String(typeof qr === 'object' ? (qr.currency || 'MMK') : 'MMK').toUpperCase();
-        o.textContent = emoji + curMeta.flag + text + ownerAbbr; // နာမည်ဘေးတွင် ကပ်ပြမည်
+        const qrRecord = typeof qr === 'object' ? qr : null;
+        const qrBalanceSource = qrRecord?.ledger && FIREBASE_TREASURY[qrRecord.ledger] ? FIREBASE_TREASURY[qrRecord.ledger] : qrRecord;
+        const qrBalance = Number(qrBalanceSource?.balance);
+        const qrBalanceLabel = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(qrBalance)
+          ? ` · ${formatMmk(qrBalance)} ${String(qrBalanceSource.currency || qrRecord?.currency || 'MMK').toUpperCase()}` : '';
+        o.textContent = emoji + curMeta.flag + text + ownerAbbr + qrBalanceLabel; // နာမည်ဘေးတွင် ကပ်ပြမည်
         o.className = curMeta.cls;
         o.dataset.qrKind = String(val).startsWith('PP:') ? 'pp' : 'qr';
         qrSelect.appendChild(o);
@@ -4697,7 +4706,11 @@ window.autoCancelOldPendingLots = async function(dataArray) {
     const logoUrl = (info.logo && info.logo.includes('http')) ? info.logo : "assets/logo/" + (info.logo || 'default.jpg');
     
     if(mini) {
-        mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div></div>`;
+        const balanceSource = info.ledger && FIREBASE_TREASURY[info.ledger] ? FIREBASE_TREASURY[info.ledger] : info;
+        const balance = Number(balanceSource?.balance);
+        const balanceHtml = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(balance)
+          ? `<div style="margin-top:5px;color:#64748b;font-size:11px;"><span style="font-weight:900;color:#0f766e">${formatMmk(balance)} ${String(balanceSource.currency || info.currency || 'MMK').toUpperCase()}</span></div>` : '';
+        mini.innerHTML = `<div style="text-align:center;border:1px solid #e5e7eb;border-radius:14px;padding:15px;background:#fff"><div style="display:flex;justify-content:center;align-items:center;gap:10px;font-weight:900;padding-bottom:5px;"><img src="${logoUrl}" style="width:26px;height:26px;border-radius:8px;border:1px solid #e5e7eb;object-fit:cover;" alt="Logo" /><span>${info.name || ''}</span></div><div style="margin-top:8px;padding-bottom:5px;">ဘဏ်အကောင့်နာမည်: <span style="font-weight:900">${info.accName || ''}</span></div><div style="margin-top:4px;padding-bottom:5px;">ဘဏ်အကောင့်နံပါတ်: <span style="font-weight:900;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo || ''}</span></div>${balanceHtml}</div>`;
     }
   }
 
@@ -7981,9 +7994,18 @@ function openAdmin() {
           const c = String(currency || 'MMK').toUpperCase();
           return c === 'THB' ? { flag: '🟦', cls: 'opt-thb' } : c === 'VND' ? { flag: '🟥', cls: 'opt-vnd' } : { flag: '🟨', cls: 'opt-mmk' };
       };
+      const preservedValues = {};
+      ['newBankLedger', 'newQrLedger', 'transferFromAcc', 'transferToAcc', 'manualLotFromAcc', 'manualLotToAcc', 'expLedger'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) preservedValues[id] = el.value;
+      });
       const option = (value, label, currency) => {
           const meta = currencyMeta(currency);
-          return `<option value="${value}" class="${meta.cls}" data-currency="${String(currency || 'MMK').toUpperCase()}">${meta.flag} ${label} (${String(currency || 'MMK').toUpperCase()})</option>`;
+          const account = window.getLedgerAccount ? window.getLedgerAccount(value) : null;
+          const balance = Number(account?.balance);
+          const balanceLabel = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(balance)
+            ? ` · ${formatMmk(balance)} ${String(currency || 'MMK').toUpperCase()}` : '';
+          return `<option value="${value}" class="${meta.cls}" data-currency="${String(currency || 'MMK').toUpperCase()}">${meta.flag} ${label} (${String(currency || 'MMK').toUpperCase()})${balanceLabel}</option>`;
       };
       const transferCurrency = (document.getElementById('transferCurrency')?.value || '').toUpperCase();
       const optionsHtml = '<option value="">⏳ နောက်မှရွေးမည် (Select Later)</option>';
@@ -8005,6 +8027,8 @@ function openAdmin() {
           if (el) {
               if (el.tomselect) el.tomselect.destroy();
               el.innerHTML = (id === 'transferFromAcc' || id === 'transferToAcc') ? transferHtml : finalHtml;
+              const savedValue = preservedValues[id];
+              if (savedValue && Array.from(el.options).some(option => option.value === savedValue)) el.value = savedValue;
           }
       });
   }
@@ -8174,7 +8198,11 @@ function openAdmin() {
           const add = (id, text, currency, isPreferred = false) => {
               const m = String(currency || 'MMK').toUpperCase();
               const cls = m === 'THB' ? 'opt-thb' : m === 'VND' ? 'opt-vnd' : 'opt-mmk';
-              options.push({ preferred: isPreferred, html: `<option value="${id}" class="${cls}">${text} (${currency || 'MMK'})</option>` });
+              const account = window.getLedgerAccount ? window.getLedgerAccount(id) : null;
+              const balance = Number(account?.balance);
+              const balanceLabel = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(balance)
+                ? ` · ${formatMmk(balance)} ${m}` : '';
+              options.push({ preferred: isPreferred, html: `<option value="${id}" class="${cls}">${text} (${currency || 'MMK'})${balanceLabel}</option>` });
           };
           // Success confirmation တွင် Master Wallet accounts များသာ ပြမည်။
           FIREBASE_TREASURY_ORDER.forEach(key => {
@@ -9484,7 +9512,11 @@ function openAdmin() {
                       const h = document.createElement('div'); h.style.textAlign = 'center'; 
                       h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
                       const body = document.createElement('div'); body.style.textAlign = 'center';
-                      body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
+                      const balanceSource = info.ledger && FIREBASE_TREASURY[info.ledger] ? FIREBASE_TREASURY[info.ledger] : info;
+                      const balance = Number(balanceSource?.balance);
+                      const balanceHtml = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(balance)
+                        ? `<div style="margin-top:8px;color:#64748b;font-size:16px;"><span style="font-weight:900;color:#047857">${formatMmk(balance)} ${String(balanceSource.currency || info.currency || 'MMK').toUpperCase()}</span></div>` : '';
+                      body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>${balanceHtml}`;
                       
                       headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
                       wrap.appendChild(title); wrap.appendChild(box); clone.appendChild(wrap);
@@ -11513,7 +11545,11 @@ async function loadHistory() {
             const h=document.createElement('div'); h.style.textAlign='center'; 
             h.innerHTML = `<div style="font-weight:900;font-size:26px;line-height:1.4;padding-bottom:2px;">${info.name}</div><div style="color:#64748b;font-size:16px;margin-top:2px;padding-bottom:2px;">${T ? T.bankLabel : 'ဘဏ်အချက်အလက်'}</div>`;
             const body=document.createElement('div'); body.style.textAlign='center';
-            body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>`;
+            const balanceSource = info.ledger && FIREBASE_TREASURY[info.ledger] ? FIREBASE_TREASURY[info.ledger] : info;
+            const balance = Number(balanceSource?.balance);
+            const balanceHtml = String(CURRENT_ROLE || '').toLowerCase() === 'main admin' && Number.isFinite(balance)
+              ? `<div style="margin-top:8px;color:#64748b;font-size:16px;"><span style="font-weight:900;color:#047857">${formatMmk(balance)} ${String(balanceSource.currency || info.currency || 'MMK').toUpperCase()}</span></div>` : '';
+            body.innerHTML = `<div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accName : 'ဘဏ်အကောင့်နာမည်')}: <span style="font-weight:900;color:#0f172a;font-size:26px;">${info.accName}</span></div><div style="margin-top:10px;color:#475569;font-size:20px;padding-bottom:4px;">${(T ? T.accNo : 'ဘဏ်အကောင့်နံပါတ်')}:<span style="display:inline-block;margin-left:6px;font-weight:1200;color:#0f172a;font-size:32px;letter-spacing:0.5px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">${info.accNo}</span></div>${balanceHtml}`;
             const receiptNotiEnabled = !!document.getElementById('includeReceiptNoti')?.checked;
             const receiptNotiText = String(FIREBASE_RECEIPT_TEXTS[lang]?.noti || '').trim();
             headerRow.appendChild(logo); headerRow.appendChild(h); box.appendChild(headerRow); box.appendChild(body);
